@@ -225,22 +225,26 @@ impl NeonWarlord {
             // data.push(i as f32 * 0.1);
             data.push(1.0);
         }
-        height_map.set_tile(1, 1, &data);
+        // height_map.set_tile(1, 1, &data);
 
-        height_map.set_tile(0, 0, &data);
-        height_map.set_tile(0, 1, &data);
-        height_map.set_tile(1, 0, &data);
+        // height_map.set_tile(0, 0, &data);
+        // height_map.set_tile(0, 1, &data);
+        // height_map.set_tile(1, 0, &data);
 
 
-        height_map.set_tile(1, 2, &data);
-        height_map.set_tile(2, 1, &data);
-        height_map.set_tile(2, 2, &data);
+        // height_map.set_tile(1, 2, &data);
+        // height_map.set_tile(2, 1, &data);
+        // height_map.set_tile(2, 2, &data);
 
-        height_map.set_tile(0, 2, &data);
-        height_map.set_tile(2, 0, &data);
-
+        // height_map.set_tile(0, 2, &data);
+        // height_map.set_tile(2, 0, &data);
 
         height_map.set_tile(0, 3, &data);
+        height_map.set_tile(0, 0, &data);
+
+
+        height_map.set_tile(3, 3, &data);
+        height_map.set_tile(3, 0, &data);
 
 
 
@@ -541,7 +545,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
 
             self.simple_physics_simulation.update(renderer_interface);
 
-            self.physics_simulation.update_physics();
+            self.physics_simulation.update_physics(&self.height_map);
             self.physics_simulation.update_device(renderer_interface);
         }
         self.watch_fps.stop(watch_index);

@@ -1,6 +1,7 @@
 //! Solves collision for verlet physics
 
 use cgmath::InnerSpace;
+use forward_renderer::height_map::HeightMapInterface;
 use noise::NoiseFn;
 
 use crate::verlet_physics::{self, Vec3, VerletObject, verlet_composition::VerletComposition};
@@ -51,6 +52,7 @@ impl Solver {
     pub fn update_composites(
         &self,
         verlet_compositions: &mut [VerletComposition],
+        height_map: &impl HeightMapInterface,
         dt: f32,
     ) {
         for composition in verlet_compositions {
@@ -58,6 +60,7 @@ impl Solver {
             
             // gravity
             Self::apply_gravity(verlet_objects);
+            Self::apply_map_constraint(verlet_objects, height_map);
             
             // constraints
             for elem in &composition.fixed {
@@ -123,10 +126,28 @@ impl Solver {
             let to_obj = elem.position() - POSITION;
             let dist = to_obj.magnitude();
 
-            if dist > RADIUS - elem._radius() {
+            if dist > RADIUS - elem.radius() {
                 let n = to_obj / dist;
-                let new_pos = POSITION + n * (RADIUS - elem._radius());
+                let new_pos = POSITION + n * (RADIUS - elem.radius());
 
+                elem.set_position(new_pos);
+            }
+        }
+    }
+
+    fn apply_map_constraint(
+        verlet_objects: &mut [VerletObject], 
+        height_map: &impl HeightMapInterface
+    ) {
+        for elem in verlet_objects {
+            let pos = elem.position();
+            let radius = elem.radius();
+            let height = height_map.get_height(&pos);
+
+            if pos.z - radius < height {
+                let mut new_pos = pos;
+                new_pos.z = height + radius;
+                
                 elem.set_position(new_pos);
             }
         }
@@ -155,3 +176,5 @@ impl Solver {
         }
     }
 }
+
+

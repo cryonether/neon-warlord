@@ -58,7 +58,7 @@ impl VerletObject {
         self.position_current = pos;
     }
 
-    pub fn _radius(&self) -> f32 {
+    pub fn radius(&self) -> f32 {
         self._radius
     }
 

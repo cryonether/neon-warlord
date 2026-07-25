@@ -2,6 +2,9 @@
 
 pub mod height_map_drawer;
 
+type Vec3 = cgmath::Vector3<f32>;
+
+
 pub struct HeightMap<
     const WIDTH: usize,
     const HEIGHT: usize,
@@ -21,6 +24,9 @@ impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TIL
     const TILES_X: usize = WIDTH / Self::INNER_WIDTH;
     const TILES_Y: usize = HEIGHT / Self::INNER_HEIGHT;
     const TILE_COUNT: usize = Self::TILES_X * Self::TILES_Y;
+
+    const OFFSET_X: usize = Self::TILES_X / 2;
+    const OFFSET_Y: usize = Self::TILES_X / 2;
 
     pub fn new() -> Self {
         let mut data = Vec::with_capacity(Self::TILE_COUNT);
@@ -121,6 +127,10 @@ impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TIL
     }
 
     pub fn get_height(&self, y: f32, x: f32) -> f32 {
+        // move to the middle
+        let y = y + (Self::OFFSET_Y * Self::INNER_HEIGHT) as f32;
+        let x = x + (Self::OFFSET_X * Self::INNER_WIDTH) as f32;
+
         // Clamp to valid world coordinates
         let x = x.clamp(0.0, (WIDTH - 1) as f32);
         let y = y.clamp(0.0, (HEIGHT - 1) as f32);
@@ -155,5 +165,20 @@ impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TIL
         let hx1 = h01 * (1.0 - tx) + h11 * tx;
 
         hx0 * (1.0 - ty) + hx1 * ty
+    }
+}
+
+pub trait HeightMapInterface {
+    fn get_height(&self, pos: &Vec3) -> f32;
+}
+
+impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TILE_HEIGHT: usize>
+HeightMapInterface for 
+    HeightMap<WIDTH, HEIGHT, TILE_WIDTH, TILE_HEIGHT>
+{
+    fn get_height(&self, pos: &Vec3) -> f32 {
+        let height = self.get_height(pos.y, pos.x);
+
+        return height;
     }
 }

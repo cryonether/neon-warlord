@@ -2,6 +2,7 @@
 
 use std::ops::DerefMut;
 
+use forward_renderer::height_map::HeightMapInterface;
 use wgpu_renderer::{vertex_color_shader::{VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines}, wgpu_renderer::WgpuRendererInterface};
 
 use crate::{agents::{agent_definitions::get_agent_0_definition, agent_drawer::AgentDrawer, agent_factory::{self, AgentFactory}}, game_board::Agent, verlet_physics::{solver::Solver, verlet_composition::VerletComposition}};
@@ -61,13 +62,14 @@ impl PhysicsSimulationV2 {
 
     // Update
 
-    pub fn update_physics(&mut self) 
+    pub fn update_physics(&mut self, height_map: &impl HeightMapInterface) 
     {
         let dt = 1.0 / 60.0;
         self.ticks += 1;
 
         self.solver.update_composites(
             &mut self.verlet_compositions, 
+            height_map,
             dt,
         );
     }

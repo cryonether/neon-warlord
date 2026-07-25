@@ -87,6 +87,9 @@ impl HeightMapDrawer {
         let tiles_y: usize = HEIGHT / inner_height;
         let _tile_count: usize = tiles_x * tiles_y;
 
+        let offset_x: usize = tiles_x / 2;
+        let offset_y: usize = tiles_y / 2;
+
         let data = &height_map.data;
         
         let mut height_map_textures = Vec::new();
@@ -118,8 +121,8 @@ impl HeightMapDrawer {
                 // let data_index = self.height_map_textures.len();
                 let instance = lod_heightmap_shader::Instance {
                     position: [
-                        (tile_x * inner_width) as f32,
-                        (tile_y * inner_height) as f32,
+                        (tile_x * inner_width) as f32 - (offset_x * inner_width) as f32,
+                        (tile_y * inner_height) as f32 - (offset_y * inner_height) as f32,
                         0.0,
                     ],
                     color: [0.2, 0.2, 0.8],

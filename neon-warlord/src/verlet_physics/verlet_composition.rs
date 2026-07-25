@@ -61,7 +61,7 @@ impl VerletComposition {
                         id_1, 
                         pos_1 - pos_0 
                     ).damping(0.9)
-                    .force_split(0.2));
+                    .force_split(0.45));
                 },
                 LinkKind::Linked => {
                     links.push(Link::new(
@@ -76,7 +76,7 @@ impl VerletComposition {
                     
                 },
                 LinkKind::Origin => {
-                    fixed.push(Fixed::new(id_0, pos_0));
+                    // fixed.push(Fixed::new(id_0, pos_0));
                 },
             }
         }
