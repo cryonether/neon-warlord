@@ -1,6 +1,6 @@
 //! Height map for fast height location lookups for the physics engine
 
-/// Sub tiles with overlapping edges
+pub mod height_map_drawer;
 
 pub struct HeightMap<
     const WIDTH: usize,
@@ -8,7 +8,7 @@ pub struct HeightMap<
     const TILE_WIDTH: usize,
     const TILE_HEIGHT: usize,
 > {
-    data: Vec<[[f32; TILE_WIDTH]; TILE_HEIGHT]>,
+    pub data: Vec<[[f32; TILE_WIDTH]; TILE_HEIGHT]>,
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TILE_HEIGHT: usize>
@@ -31,14 +31,14 @@ impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TIL
         Self { data }
     }
 
-    pub fn set_tile(&mut self, world_y: usize, world_x: usize, data: &[f32]){
+    pub fn set_tile(&mut self, tile_y: usize, tile_x: usize, data: &[f32]){
         assert_eq!(data.len(), Self::INNER_SIZE);
-        assert_eq!(world_y % Self::INNER_HEIGHT, 0);
-        assert_eq!(world_x % Self::INNER_WIDTH, 0);
+        // assert_eq!(world_y % Self::INNER_HEIGHT, 0);
+        // assert_eq!(world_x % Self::INNER_WIDTH, 0);
 
-        // Determine sub_map
-        let tile_y = world_y / Self::INNER_HEIGHT;
-        let tile_x = world_x / Self::INNER_WIDTH;
+        // // Determine sub_map
+        // let tile_y = world_y / Self::INNER_HEIGHT;
+        // let tile_x = world_x / Self::INNER_WIDTH;
         let tile = &mut self.data[tile_y * Self::TILES_X + tile_x];
 
         // write inner data
@@ -66,6 +66,26 @@ impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TIL
             for x in 0..Self::INNER_WIDTH {
                 let index = (Self::INNER_HEIGHT - 1) * Self::INNER_WIDTH + x;
                 bottom[0][x + 1] = data[index];
+            }
+        }
+
+        // Copy left edge to left neighbor
+        if tile_x > 0 {
+            let left = &mut self.data[tile_y * Self::TILES_X + (tile_x - 1)];
+
+            for y in 0..Self::INNER_HEIGHT {
+                let index = y * Self::INNER_WIDTH;
+                left[y + 1][TILE_WIDTH - 1] = data[index];
+            }
+        }
+
+        // Copy right edge to right neighbor
+        if tile_x < Self::TILES_X - 1 {
+            let right = &mut self.data[tile_y * Self::TILES_X + (tile_x + 1)];
+
+            for y in 0..Self::INNER_HEIGHT {
+                let index = y * Self::INNER_WIDTH + (Self::INNER_WIDTH - 1);
+                right[y + 1][0] = data[index];
             }
         }
 

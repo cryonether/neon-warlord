@@ -22,9 +22,7 @@ mod agents;
 mod physics_simulation_v2;
 
 use forward_renderer::{
-    AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, TerrainStorage,
-    glow_storage::GlowStorage, particle_storage::ParticleStorage,
-    plasma_orb_storage::PlasmaOrbStorage,
+    AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, TerrainStorage, glow_storage::GlowStorage, height_map::height_map_drawer::HeightMapDrawer, particle_storage::ParticleStorage, plasma_orb_storage::PlasmaOrbStorage,
 };
 use instant::Instant;
 #[cfg(target_arch = "wasm32")]
@@ -58,6 +56,20 @@ struct CameraSettings {
     sensitivity_scroll: f32,
 }
 
+
+const HEIGHT_MAP_INNER_WIDTH: usize = 4;
+const HEIGHT_MAP_INNER_HEIGHT: usize = 4;
+
+const HEIGHT_MAP_TILE_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH+2;
+const HEIGHT_MAP_TILE_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT+2;
+
+const HEIGHT_MAP_NR_TILES_X: usize = 4;
+const HEIGHT_MAP_NR_TILES_Y: usize = 4;
+
+const HEIGHT_MAP_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH * HEIGHT_MAP_NR_TILES_X;
+const HEIGHT_MAP_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT * HEIGHT_MAP_NR_TILES_Y;
+
+
 struct NeonWarlord {
     _settings: settings::Settings,
 
@@ -88,7 +100,9 @@ struct NeonWarlord {
     id: String,
 
     // Terrain
-    terrain: TerrainStorage,
+    // terrain: TerrainStorage,
+    height_map: forward_renderer::height_map::HeightMap<HEIGHT_MAP_WIDTH, HEIGHT_MAP_HEIGHT, HEIGHT_MAP_TILE_WIDTH, HEIGHT_MAP_TILE_HEIGHT>,
+    height_map_drawer: HeightMapDrawer,
 
     // Ants
     ants: AntStorage,
@@ -192,11 +206,62 @@ impl NeonWarlord {
         }
 
         // terrain
-        let terrain = TerrainStorage::new(
-            settings.get_terrain_settings(),
+        // let mut terrain_settings = settings.get_terrain_settings();
+        // terrain_settings.nr_tiles = HEIGHT_MAP_INNER_WIDTH;
+        // terrain_settings.max_depth = 1;
+
+        // let terrain = TerrainStorage::new(
+        //     terrain_settings,
+        //     renderer_interface,
+        //     &renderer.texture_bind_group_layout,
+        //     include_bytes!("../res/tile.png"),
+        // );
+
+        let mut height_map: forward_renderer::height_map::HeightMap<HEIGHT_MAP_WIDTH, HEIGHT_MAP_HEIGHT, HEIGHT_MAP_TILE_WIDTH, HEIGHT_MAP_TILE_HEIGHT>
+            = forward_renderer::height_map::HeightMap::new();
+
+        let mut data = Vec::new();
+        for i in 0..HEIGHT_MAP_INNER_HEIGHT * HEIGHT_MAP_INNER_WIDTH {
+            // data.push(i as f32 * 0.1);
+            data.push(1.0);
+        }
+        height_map.set_tile(1, 1, &data);
+
+        height_map.set_tile(0, 0, &data);
+        height_map.set_tile(0, 1, &data);
+        height_map.set_tile(1, 0, &data);
+
+
+        height_map.set_tile(1, 2, &data);
+        height_map.set_tile(2, 1, &data);
+        height_map.set_tile(2, 2, &data);
+
+        height_map.set_tile(0, 2, &data);
+        height_map.set_tile(2, 0, &data);
+
+
+        height_map.set_tile(0, 3, &data);
+
+
+
+        let height_map_inner_width = HEIGHT_MAP_INNER_WIDTH;
+        let height_map_inner_height = HEIGHT_MAP_INNER_WIDTH;
+        let _height_map_nr_tiles_x = HEIGHT_MAP_NR_TILES_X;
+        let _height_map_nr_tiles_y = HEIGHT_MAP_NR_TILES_Y;
+        let mut height_map_drawer = HeightMapDrawer::new(
+            renderer_interface, 
+            &renderer.texture_bind_group_layout, 
+            include_bytes!("../res/tile.png"), 
+            height_map_inner_width, 
+            height_map_inner_height, 
+            _height_map_nr_tiles_x, 
+            _height_map_nr_tiles_y,
+        );
+
+        height_map_drawer.update(
             renderer_interface,
-            &renderer.texture_bind_group_layout,
-            include_bytes!("../res/tile.png"),
+            &renderer.heightmap_bind_group_layout,
+            &height_map,
         );
 
         // sun
@@ -232,7 +297,9 @@ impl NeonWarlord {
             mouse_pos_x: 0,
             fps,
             debug_overlay,
-            terrain,
+            // terrain,
+            height_map,
+            height_map_drawer,
             // terrain_generator,
             ants,
             _ant_generator: ant_generator,
@@ -374,11 +441,33 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     }
                     // ##########################################################
                     worker::WorkerMessage::TerrainData(terrain_part) => {
-                        self.terrain.update_height_map(
-                            renderer_interface,
-                            &self.renderer.heightmap_bind_group_layout,
-                            *terrain_part,
-                        );
+  
+                        // // update physics
+                        // let max_depth = 1;
+
+                        // let mut data = Vec::new();
+                        // for y in 0..terrain_part.details.nr_tiles {
+                        //     for x in 0..terrain_part.details.nr_tiles {
+                        //         let size_0 = terrain_part.details.size_0;
+                        //         let val = terrain_part.heights[y * size_0 + x];
+                        //         data.push(val);
+                        //     }
+                        // }
+
+                        // if max_depth - terrain_part.details.depth == 1 {
+                        //     let world_y = (terrain_part.details.pos_1.y+HEIGHT_MAP_INNER_HEIGHT as isize/2) as usize;
+                        //     let world_x = (terrain_part.details.pos_1.x+HEIGHT_MAP_INNER_WIDTH as isize/2) as usize;
+
+                        //     self.height_map.set_tile(world_y, world_x, &data);
+                        // }
+
+                        // // update gpu
+                        // self.terrain.update_height_map(
+                        //     renderer_interface,
+                        //     &self.renderer.heightmap_bind_group_layout,
+                        //     *terrain_part,
+                        // );
+                        
                     }
                     // ##########################################################
                     worker::WorkerMessage::Snapshot(snapshot) => {
@@ -473,16 +562,16 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
         // watch_index += 1;
         // self.watch_fps.start(watch_index, "Update Terrain");
         {
-            // set terrain view position
-            self.terrain
-                .set_view_position(&self.renderer.get_view_position());
+            // // set terrain view position
+            // self.terrain
+            //     .set_view_position(&self.renderer.get_view_position());
 
-            // generate map
-            let requests = self.terrain.get_requests().clone();
-            for request in requests {
-                let _ = worker.send(MainMessage::GetTerrain(request));
-            }
-            self.terrain.clear_requests();
+            // // generate map
+            // let requests = self.terrain.get_requests().clone();
+            // for request in requests {
+            //     let _ = worker.send(MainMessage::GetTerrain(request));
+            // }
+            // self.terrain.clear_requests();
         }
         // self.watch_fps.stop(watch_index);
 
@@ -631,7 +720,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
         {
             res = self.renderer.render(
                 renderer_interface,
-                &mut self.terrain,
+                &mut self.height_map_drawer,
                 &[&self.ants.animated_object_storage],
                 &[
                     &self.performance_monitor_fps,
