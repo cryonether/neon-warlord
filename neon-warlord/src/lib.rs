@@ -42,10 +42,7 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage,
-    camera_controller::CameraController, debug_overlay::DebugOverlay,
-    simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage,
-    worker::MainMessage, worker_instance::WorkerInstance,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, game_board::Faction::Red, physics_simulation_v2::PhysicsSimulationV2, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker::MainMessage, worker_instance::WorkerInstance,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -110,6 +107,9 @@ struct NeonWarlord {
 
     // Simple physics simulation
     simple_physics_simulation: SimplePhysicsSimulation,
+
+    // agent physics simulation
+    physics_simulation: PhysicsSimulationV2,
 
     // Worker
     worker: WorkerInstance,
@@ -210,6 +210,10 @@ impl NeonWarlord {
         // Simple physics simulation
         let simple_physics_simulation = SimplePhysicsSimulation::new(renderer_interface);
 
+        // physics simulation
+        let mut physics_simulation = PhysicsSimulationV2::new();
+        physics_simulation.create_agent_0(renderer_interface);
+
         // Worker
         let worker = WorkerInstance::new();
 
@@ -246,6 +250,7 @@ impl NeonWarlord {
             ups: 0,
             ant_positions,
             simple_physics_simulation,
+            physics_simulation,
         }
     }
 }
@@ -446,6 +451,9 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             // self.glows.update(renderer_interface, dt);
 
             self.simple_physics_simulation.update(renderer_interface);
+
+            self.physics_simulation.update_physics();
+            self.physics_simulation.update_device(renderer_interface);
         }
         self.watch_fps.stop(watch_index);
 
@@ -630,8 +638,8 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     &self.performance_monitor_ups,
                     &self.debug_overlay,
                 ],
-                &[&self.sun, &self.simple_physics_simulation],
-                &[&self.simple_physics_simulation],
+                &[&self.sun, &self.simple_physics_simulation, &self.physics_simulation],
+                &[&self.simple_physics_simulation, &self.physics_simulation],
                 &[&self.particles],
                 &[&self.plasma_orbs],
                 &[&self.glows],

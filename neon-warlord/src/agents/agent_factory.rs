@@ -12,7 +12,7 @@ pub struct AgentFactory {
 
 impl AgentFactory {
     pub fn new() -> Self {
-        let re = Regex::new(r"(?P<id>\d+)(?:-(?P<kind>[A-Z])(?P<target>\d+))?\s").unwrap();
+        let re = Regex::new(r"(?P<id>\d+)(?:-(?P<kind>[A-Z])(?P<target>\d+))").unwrap();
 
         Self { re  }
     }
@@ -20,6 +20,8 @@ impl AgentFactory {
     pub fn create_agent<const NR_SLICES: usize, const R: usize, const C: usize>(
         &self,
         layers: &[[[&'static str; C]; R]; NR_SLICES],
+        pos: Vec3,
+        scale: f32,
     ) -> Vec<Node> {
         let mut nodes = Vec::new();
 
@@ -29,6 +31,12 @@ impl AgentFactory {
             for r in 0..R {
                 for c in 0..C {
                     let content = layers[nr_slice][r][c];
+
+                    if content.trim().is_empty() {
+                        // elem is empty or contains only whitespace
+                        continue;
+                    }
+
                     let mut elem = self.parse(content);
                     elem.location = (nr_slice, r, c);
 
@@ -47,15 +55,15 @@ impl AgentFactory {
 
         let origin = &nodes[0];
         let origin_pos = Vec3::new(
-            origin.location.1 as f32, 
-            origin.location.2 as f32,
+            origin.location.2 as f32, 
+            origin.location.1 as f32,
             origin.location.0 as f32
         );
 
         for node in nodes {
          let local_pos = Vec3::new(
-                node.location.1 as f32 - origin_pos.x,
-                node.location.2 as f32 - origin_pos.y,
+                node.location.2 as f32 - origin_pos.x,
+                (node.location.1 as f32 - origin_pos.y) * (-1.0),
                 node.location.0 as f32 - origin_pos.z,
             );
 
@@ -67,18 +75,31 @@ impl AgentFactory {
             });
         }
 
+        // move node
+        for elem in &mut res {
+            elem.pos = elem.pos * scale + pos;
+        }
+
         res
     }
 
     fn parse(&self, elem: &str) -> AgentNode {
         let caps = self
             .re
-            .captures(elem)
-            .expect("regex error, failed parsing agent definition");
+            .captures(elem);
 
-        let id = &caps["id"];
-        let kind = &caps["kind"];
-        let target = &caps["target"];
+        let caps_;
+        match caps {
+            Some(caps) => caps_ = caps,
+            None => {
+                
+                panic!("elem '{elem}' does not match");
+            },
+        }
+
+        let id = &caps_["id"];
+        let kind = &caps_["kind"];
+        let target = &caps_["target"];
 
         let id: usize = id.parse().unwrap();
         let link_target: usize = target.parse().unwrap();
@@ -110,15 +131,6 @@ pub struct AgentNode {
 }
 
 
-fn main_func()
-{
-
-    let definition = get_agent_0_definition();
-
-    // create_agent(&definition);
-}
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,7 +139,7 @@ mod tests {
     fn parse_single_agent_definition() {
         let factory = AgentFactory::new();
 
-        let elem = "13-S9 ";
+        let elem = "13-S9";
 
         let caps = factory
             .re

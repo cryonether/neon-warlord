@@ -1,38 +1,48 @@
 //! Draws an object in 3D
 
 use forward_renderer::{geometry, to_rgb};
-use wgpu_renderer::{vertex_color_shader::{self, VertexColorShaderDraw}, wgpu_renderer::WgpuRendererInterface};
+use wgpu_renderer::{vertex_color_shader::{self, VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines}, wgpu_renderer::WgpuRendererInterface};
 use crate::verlet_physics::verlet_composition::VerletComposition;
 use cgmath::{Rotation3, Zero};
 
 pub struct AgentDrawer {
     nodes_mesh: vertex_color_shader::Mesh,
     nodes_instances: Vec<vertex_color_shader::Instance>,
+
+    links_lines: geometry::Lines,
+    links_mesh: vertex_color_shader::Mesh,
 }
 
 impl AgentDrawer {
     pub fn new(
         wgpu_renderer: &mut dyn WgpuRendererInterface,
-        composition: &VerletComposition
+        composition: &VerletComposition,
+        radius: f32,
     ) -> Self {
-        let radius = 0.1;
+        let nr_nodes = composition.verlet_objects.len();
+        let nr_links = nr_nodes -1;
+
         let nodes_color_0 = to_rgb("#d8b0e8");
         let nodes_color_1 = to_rgb("#300c36");
+        let links_color_0 = to_rgb("#131922");
+        let links_color_1 = to_rgb("#2d2e27");
 
         let nodes_circle =
             geometry::Circle::new_color_fade(radius, 32, nodes_color_0, nodes_color_1);
+        let links_lines = geometry::Lines::new_color_fade(nr_links, links_color_0, links_color_1);
 
         let instance = vertex_color_shader::Instance {
             position: cgmath::Vector3::new(0.0, 0.0, 0.0),
             rotation: cgmath::Quaternion::from_angle_x(cgmath::Deg(90.0)),
         };
 
-        let nr_nodes = composition.verlet_objects.len();
 
         let mut nodes_instances = Vec::with_capacity(nr_nodes);
         for _i in 0..nr_nodes {
             nodes_instances.push(instance);
         }
+
+        let links_instances = vec![vertex_color_shader::Instance::zero()];
 
         let nodes_mesh = vertex_color_shader::Mesh::new(
             wgpu_renderer.device(),
@@ -42,9 +52,19 @@ impl AgentDrawer {
             &nodes_instances,
         );
 
+        let links_mesh = vertex_color_shader::Mesh::new(
+            wgpu_renderer.device(),
+            &links_lines.vertices,
+            &links_lines.colors,
+            &links_lines.indices,
+            &links_instances,
+        );
+
         Self {
             nodes_mesh,
             nodes_instances,
+            links_lines,
+            links_mesh,
         }
     }
 
@@ -63,9 +83,26 @@ impl AgentDrawer {
             instance.position = verlet_object.position();
         }
 
+        let mut i: usize = 0;
+        for elem in &composition.fixed_links {
+            let index_0 = elem.node_id_1;
+            let index_1 = elem.node_id_2;
+
+            let pos_0 = composition.verlet_objects[index_0].position();
+            let pos_1 = composition.verlet_objects[index_1].position();
+
+            self.links_lines.set_line_position(i, pos_0, pos_1);
+
+            i += 1;
+        }
+
         // copy from model to device
+        
         self.nodes_mesh
             .update_instance_buffer(wgpu_renderer.queue(), &self.nodes_instances);
+
+        self.links_mesh
+            .update_vertex_buffer(wgpu_renderer.queue(), &self.links_lines.vertices);
 
     }
 }
@@ -73,5 +110,11 @@ impl AgentDrawer {
 impl VertexColorShaderDraw for AgentDrawer {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
         self.nodes_mesh.draw(render_pass);
+    }
+}
+
+impl VertexColorShaderDrawLines for AgentDrawer {
+    fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
+        self.links_mesh.draw(render_pass);
     }
 }
