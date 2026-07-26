@@ -39,7 +39,7 @@ pub fn get_agent_0_definition() -> [[[&'static str; 9]; 9]; 3] {
         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
     ];
 
-    let res = [layer_0, layer_1, layer_2];
+    
 
-    res
+    [layer_0, layer_1, layer_2]
 }

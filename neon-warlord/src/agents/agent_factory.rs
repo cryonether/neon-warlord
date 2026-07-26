@@ -48,7 +48,7 @@ impl AgentFactory {
 
         // Create result
         let mut res = Vec::with_capacity(nodes.len());
-        if nodes.len() == 0 {
+        if nodes.is_empty() {
             return res;
         }
 
@@ -62,7 +62,7 @@ impl AgentFactory {
         for node in nodes {
          let local_pos = Vec3::new(
                 node.location.2 as f32 - origin_pos.x,
-                (node.location.1 as f32 - origin_pos.y) * (-1.0),
+                -(node.location.1 as f32 - origin_pos.y),
                 node.location.0 as f32 - origin_pos.z,
             );
 
@@ -87,14 +87,14 @@ impl AgentFactory {
             .re
             .captures(elem);
 
-        let caps_;
-        match caps {
-            Some(caps) => caps_ = caps,
+        
+        let caps_ = match caps {
+            Some(caps) => caps,
             None => {
                 
                 panic!("elem '{elem}' does not match");
             },
-        }
+        };
 
         let id = &caps_["id"];
         let kind = &caps_["kind"];

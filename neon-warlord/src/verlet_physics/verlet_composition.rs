@@ -25,7 +25,7 @@ impl VerletComposition {
         let fixed = Vec::new();
         let mut sticky_links = Vec::new();
 
-        if nodes.len() == 0 {
+        if nodes.is_empty() {
             return Self {
                 verlet_objects,
                 links,
