@@ -14,6 +14,12 @@ pub struct HeightMap<
     pub data: Vec<[[f32; TILE_WIDTH]; TILE_HEIGHT]>,
 }
 
+impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TILE_HEIGHT: usize> Default for HeightMap<WIDTH, HEIGHT, TILE_WIDTH, TILE_HEIGHT> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TILE_HEIGHT: usize>
     HeightMap<WIDTH, HEIGHT, TILE_WIDTH, TILE_HEIGHT>
 {
@@ -175,6 +181,6 @@ HeightMapInterface for
     fn get_height(&self, pos: &Vec3) -> f32 {
         let height = self.get_height(pos.y, pos.x);
 
-        return height;
+        height
     }
 }
