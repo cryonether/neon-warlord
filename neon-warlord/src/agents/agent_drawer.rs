@@ -84,6 +84,7 @@ impl AgentDrawer {
         }
 
         let mut i: usize = 0;
+        #[allow(clippy::explicit_counter_loop)]
         for elem in &composition.fixed_links {
             let index_0 = elem.node_id_1;
             let index_1 = elem.node_id_2;

@@ -179,8 +179,8 @@ HeightMapInterface for
     HeightMap<WIDTH, HEIGHT, TILE_WIDTH, TILE_HEIGHT>
 {
     fn get_height(&self, pos: &Vec3) -> f32 {
-        let height = self.get_height(pos.y, pos.x);
+        
 
-        height
+        self.get_height(pos.y, pos.x)
     }
 }

@@ -99,6 +99,7 @@ impl HeightMapDrawer {
 
                 // create host data
                 let mut host_data: Vec<lod_heightmap_shader::Heightmap> = Vec::with_capacity(inner_size);
+                #[allow(clippy::needless_range_loop)]
                 for y in 1..TILE_HEIGHT {
                     for x in 1..TILE_WIDTH {
                         host_data.push(vertex_heightmap_shader::Heightmap { height: tile[y][x] });
