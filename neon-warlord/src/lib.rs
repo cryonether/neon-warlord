@@ -1,5 +1,6 @@
 //! Creates the Neon-Warlord application
 
+mod agents;
 mod ant_ai;
 mod ant_controller;
 mod ant_generator;
@@ -11,6 +12,7 @@ mod game_board;
 mod heightmap_generator;
 mod orb_controller;
 mod orb_storage;
+mod physics_simulation_v2;
 mod procedural_tree;
 mod settings;
 mod simple_physics_simulation;
@@ -18,11 +20,11 @@ mod sun_storage;
 mod verlet_physics;
 mod worker;
 mod worker_instance;
-mod agents;
-mod physics_simulation_v2;
 
 use forward_renderer::{
-    AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage, height_map::height_map_drawer::HeightMapDrawer, particle_storage::ParticleStorage, plasma_orb_storage::PlasmaOrbStorage,
+    AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
+    height_map::height_map_drawer::HeightMapDrawer, particle_storage::ParticleStorage,
+    plasma_orb_storage::PlasmaOrbStorage,
 };
 use instant::Instant;
 #[cfg(target_arch = "wasm32")]
@@ -40,7 +42,10 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, physics_simulation_v2::PhysicsSimulationV2, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage,
+    camera_controller::CameraController, debug_overlay::DebugOverlay,
+    physics_simulation_v2::PhysicsSimulationV2, simple_physics_simulation::SimplePhysicsSimulation,
+    sun_storage::SunStorage, worker_instance::WorkerInstance,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -56,19 +61,17 @@ struct CameraSettings {
     sensitivity_scroll: f32,
 }
 
-
 const HEIGHT_MAP_INNER_WIDTH: usize = 4;
 const HEIGHT_MAP_INNER_HEIGHT: usize = 4;
 
-const HEIGHT_MAP_TILE_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH+2;
-const HEIGHT_MAP_TILE_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT+2;
+const HEIGHT_MAP_TILE_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH + 2;
+const HEIGHT_MAP_TILE_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT + 2;
 
 const HEIGHT_MAP_NR_TILES_X: usize = 4;
 const HEIGHT_MAP_NR_TILES_Y: usize = 4;
 
 const HEIGHT_MAP_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH * HEIGHT_MAP_NR_TILES_X;
 const HEIGHT_MAP_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT * HEIGHT_MAP_NR_TILES_Y;
-
 
 struct NeonWarlord {
     _settings: settings::Settings,
@@ -101,7 +104,12 @@ struct NeonWarlord {
 
     // Terrain
     // terrain: TerrainStorage,
-    height_map: forward_renderer::height_map::HeightMap<HEIGHT_MAP_WIDTH, HEIGHT_MAP_HEIGHT, HEIGHT_MAP_TILE_WIDTH, HEIGHT_MAP_TILE_HEIGHT>,
+    height_map: forward_renderer::height_map::HeightMap<
+        HEIGHT_MAP_WIDTH,
+        HEIGHT_MAP_HEIGHT,
+        HEIGHT_MAP_TILE_WIDTH,
+        HEIGHT_MAP_TILE_HEIGHT,
+    >,
     height_map_drawer: HeightMapDrawer,
 
     // Ants
@@ -217,8 +225,12 @@ impl NeonWarlord {
         //     include_bytes!("../res/tile.png"),
         // );
 
-        let mut height_map: forward_renderer::height_map::HeightMap<HEIGHT_MAP_WIDTH, HEIGHT_MAP_HEIGHT, HEIGHT_MAP_TILE_WIDTH, HEIGHT_MAP_TILE_HEIGHT>
-            = forward_renderer::height_map::HeightMap::new();
+        let mut height_map: forward_renderer::height_map::HeightMap<
+            HEIGHT_MAP_WIDTH,
+            HEIGHT_MAP_HEIGHT,
+            HEIGHT_MAP_TILE_WIDTH,
+            HEIGHT_MAP_TILE_HEIGHT,
+        > = forward_renderer::height_map::HeightMap::new();
 
         let mut data = Vec::new();
         for _i in 0..HEIGHT_MAP_INNER_HEIGHT * HEIGHT_MAP_INNER_WIDTH {
@@ -231,7 +243,6 @@ impl NeonWarlord {
         // height_map.set_tile(0, 1, &data);
         // height_map.set_tile(1, 0, &data);
 
-
         // height_map.set_tile(1, 2, &data);
         // height_map.set_tile(2, 1, &data);
         // height_map.set_tile(2, 2, &data);
@@ -242,23 +253,20 @@ impl NeonWarlord {
         height_map.set_tile(0, 3, &data);
         height_map.set_tile(0, 0, &data);
 
-
         height_map.set_tile(3, 3, &data);
         height_map.set_tile(3, 0, &data);
-
-
 
         let height_map_inner_width = HEIGHT_MAP_INNER_WIDTH;
         let height_map_inner_height = HEIGHT_MAP_INNER_WIDTH;
         let _height_map_nr_tiles_x = HEIGHT_MAP_NR_TILES_X;
         let _height_map_nr_tiles_y = HEIGHT_MAP_NR_TILES_Y;
         let mut height_map_drawer = HeightMapDrawer::new(
-            renderer_interface, 
-            &renderer.texture_bind_group_layout, 
-            include_bytes!("../res/tile.png"), 
-            height_map_inner_width, 
-            height_map_inner_height, 
-            _height_map_nr_tiles_x, 
+            renderer_interface,
+            &renderer.texture_bind_group_layout,
+            include_bytes!("../res/tile.png"),
+            height_map_inner_width,
+            height_map_inner_height,
+            _height_map_nr_tiles_x,
             _height_map_nr_tiles_y,
         );
 
@@ -445,7 +453,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     }
                     // ##########################################################
                     worker::WorkerMessage::TerrainData(_terrain_part) => {
-  
+
                         // // update physics
                         // let max_depth = 1;
 
@@ -471,7 +479,6 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                         //     &self.renderer.heightmap_bind_group_layout,
                         //     *terrain_part,
                         // );
-                        
                     }
                     // ##########################################################
                     worker::WorkerMessage::Snapshot(snapshot) => {
@@ -731,7 +738,11 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     &self.performance_monitor_ups,
                     &self.debug_overlay,
                 ],
-                &[&self.sun, &self.simple_physics_simulation, &self.physics_simulation],
+                &[
+                    &self.sun,
+                    &self.simple_physics_simulation,
+                    &self.physics_simulation,
+                ],
                 &[&self.simple_physics_simulation, &self.physics_simulation],
                 &[&self.particles],
                 &[&self.plasma_orbs],

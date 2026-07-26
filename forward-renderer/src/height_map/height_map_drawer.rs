@@ -1,11 +1,14 @@
 //! Draws a heightmap
 
 use cgmath::Zero;
-use wgpu_renderer::{shape::{self, MeshDataInterface}, vertex_heightmap_shader, wgpu_renderer::WgpuRendererInterface};
+use wgpu_renderer::{
+    shape::{self, MeshDataInterface},
+    vertex_heightmap_shader,
+    wgpu_renderer::WgpuRendererInterface,
+};
 
 use crate::{height_map::HeightMap, lod_heightmap_shader};
 type Vec3 = cgmath::Vector3<f32>;
-
 
 pub struct HeightMapDrawer {
     mesh: lod_heightmap_shader::Mesh,
@@ -34,7 +37,7 @@ impl HeightMapDrawer {
         assert!(height_map_inner_width == height_map_inner_height);
 
         // mesh
-        let grid = shape::Grid::new(1.0, height_map_inner_width+1, 0);
+        let grid = shape::Grid::new(1.0, height_map_inner_width + 1, 0);
         let gird_triangles = grid.triangles();
         let mesh = lod_heightmap_shader::Mesh::from_shape(renderer.device(), gird_triangles);
 
@@ -70,13 +73,17 @@ impl HeightMapDrawer {
         }
     }
 
-    pub fn update<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TILE_HEIGHT: usize>(
+    pub fn update<
+        const WIDTH: usize,
+        const HEIGHT: usize,
+        const TILE_WIDTH: usize,
+        const TILE_HEIGHT: usize,
+    >(
         &mut self,
         wgpu_renderer: &mut dyn WgpuRendererInterface,
         heightmap_bind_group_layout: &lod_heightmap_shader::HeightmapBindGroupLayout,
         height_map: &HeightMap<WIDTH, HEIGHT, TILE_WIDTH, TILE_HEIGHT>,
-    )
-    {
+    ) {
         let inner_width: usize = TILE_WIDTH - 2;
         let inner_height: usize = TILE_HEIGHT - 2;
         let inner_size: usize = inner_width * inner_height;
@@ -89,7 +96,7 @@ impl HeightMapDrawer {
         let offset_y: usize = tiles_y / 2;
 
         let data = &height_map.data;
-        
+
         let mut height_map_textures = Vec::new();
         let mut instances = Vec::new();
 
@@ -98,7 +105,8 @@ impl HeightMapDrawer {
                 let tile = &data[tile_y * tiles_x + tile_x];
 
                 // create host data
-                let mut host_data: Vec<lod_heightmap_shader::Heightmap> = Vec::with_capacity(inner_size);
+                let mut host_data: Vec<lod_heightmap_shader::Heightmap> =
+                    Vec::with_capacity(inner_size);
                 #[allow(clippy::needless_range_loop)]
                 for y in 1..TILE_HEIGHT {
                     for x in 1..TILE_WIDTH {
@@ -111,10 +119,10 @@ impl HeightMapDrawer {
                     wgpu_renderer,
                     heightmap_bind_group_layout,
                     &host_data,
-                    inner_width as u32 +1,
-                    inner_height as u32 +1,
+                    inner_width as u32 + 1,
+                    inner_height as u32 + 1,
                     Some(&format!("terrain y={} x={}", tile_y, tile_x)),
-                );  
+                );
 
                 // create instance
                 let instance = lod_heightmap_shader::Instance {
@@ -128,7 +136,6 @@ impl HeightMapDrawer {
                 };
                 let instance_buffer =
                     lod_heightmap_shader::InstanceBuffer::new(wgpu_renderer.device(), &[instance]);
-
 
                 height_map_textures.push(height_texture);
                 instances.push(instance_buffer);
@@ -163,4 +170,3 @@ impl lod_heightmap_shader::LodHeightMapShaderDraw for HeightMapDrawer {
         }
     }
 }
-

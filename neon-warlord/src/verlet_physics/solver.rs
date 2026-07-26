@@ -57,11 +57,11 @@ impl Solver {
     ) {
         for composition in verlet_compositions {
             let verlet_objects = &mut composition.verlet_objects;
-            
+
             // gravity
             Self::apply_gravity(verlet_objects);
             Self::apply_map_constraint(verlet_objects, height_map);
-            
+
             // constraints
             for elem in &composition.fixed {
                 elem.apply(verlet_objects);
@@ -78,7 +78,6 @@ impl Solver {
 
             // physics equation
             Self::update_positions(verlet_objects, dt);
-
         }
     }
 
@@ -136,8 +135,8 @@ impl Solver {
     }
 
     fn apply_map_constraint(
-        verlet_objects: &mut [VerletObject], 
-        height_map: &impl HeightMapInterface
+        verlet_objects: &mut [VerletObject],
+        height_map: &impl HeightMapInterface,
     ) {
         for elem in verlet_objects {
             let pos = elem.position();
@@ -147,7 +146,7 @@ impl Solver {
             if pos.z - radius < height {
                 let mut new_pos = pos;
                 new_pos.z = height + radius;
-                
+
                 elem.set_position(new_pos);
             }
         }
@@ -176,5 +175,3 @@ impl Solver {
         }
     }
 }
-
-

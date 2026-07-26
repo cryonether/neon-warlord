@@ -6,13 +6,13 @@ mod draw_gui;
 mod forward_renderer;
 pub mod geometry;
 pub mod glow_storage;
+pub mod height_map;
 pub mod lod_heightmap_shader;
 pub mod particle_shader;
 pub mod particle_storage;
 mod performance_monitor;
 pub mod plasma_orb_storage;
 mod terrain_storage;
-pub mod height_map;
 
 pub use animated_object::animated_object_storage::AnimatedObjectStorage;
 pub use draw_gui::DrawGui;
@@ -23,7 +23,6 @@ pub use terrain_storage::HeightMap;
 pub use terrain_storage::TerrainSettings;
 pub use terrain_storage::TerrainStorage;
 pub use terrain_storage::terrain_texture_details::TerrainTextureDetails;
-
 
 // Some random useful utility functions
 

@@ -4,7 +4,6 @@ use crate::verlet_physics::verlet_composition::{LinkKind, Node};
 use regex::Regex;
 type Vec3 = cgmath::Vector3<f32>;
 
-
 pub struct AgentFactory {
     re: Regex,
 }
@@ -13,7 +12,7 @@ impl AgentFactory {
     pub fn new() -> Self {
         let re = Regex::new(r"(?P<id>\d+)(?:-(?P<kind>[A-Z])(?P<target>\d+))").unwrap();
 
-        Self { re  }
+        Self { re }
     }
 
     pub fn create_agent<const NR_SLICES: usize, const R: usize, const C: usize>(
@@ -23,7 +22,6 @@ impl AgentFactory {
         scale: f32,
     ) -> Vec<Node> {
         let mut nodes = Vec::new();
-
 
         // Parse nodes
         #[allow(clippy::needless_range_loop)]
@@ -55,19 +53,19 @@ impl AgentFactory {
 
         let origin = &nodes[0];
         let origin_pos = Vec3::new(
-            origin.location.2 as f32, 
+            origin.location.2 as f32,
             origin.location.1 as f32,
-            origin.location.0 as f32
+            origin.location.0 as f32,
         );
 
         for node in nodes {
-         let local_pos = Vec3::new(
+            let local_pos = Vec3::new(
                 node.location.2 as f32 - origin_pos.x,
                 -(node.location.1 as f32 - origin_pos.y),
                 node.location.0 as f32 - origin_pos.z,
             );
 
-            res.push(Node{
+            res.push(Node {
                 id: node.id,
                 link_kind: node.link_kind,
                 link_target: node.link_target,
@@ -84,17 +82,13 @@ impl AgentFactory {
     }
 
     fn parse(&self, elem: &str) -> AgentNode {
-        let caps = self
-            .re
-            .captures(elem);
+        let caps = self.re.captures(elem);
 
-        
         let caps_ = match caps {
             Some(caps) => caps,
             None => {
-                
                 panic!("elem '{elem}' does not match");
-            },
+            }
         };
 
         let id = &caps_["id"];
@@ -109,7 +103,7 @@ impl AgentFactory {
             "L" => LinkKind::Linked,
             "S" => LinkKind::Sticky,
             "O" => LinkKind::Origin,
-            &_ => panic!("Error parsing agent definition")
+            &_ => panic!("Error parsing agent definition"),
         };
 
         AgentNode {
@@ -121,15 +115,12 @@ impl AgentFactory {
     }
 }
 
-
-
 pub struct AgentNode {
     pub id: usize,
     pub link_kind: LinkKind,
     pub link_target: usize,
     pub location: (usize, usize, usize),
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -141,10 +132,7 @@ mod tests {
 
         let elem = "13-S9";
 
-        let caps = factory
-            .re
-            .captures(elem)
-            .expect("regex should match");
+        let caps = factory.re.captures(elem).expect("regex should match");
 
         assert_eq!(&caps["id"], "13");
         assert_eq!(&caps["kind"], "S");

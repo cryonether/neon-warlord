@@ -4,7 +4,6 @@ pub mod height_map_drawer;
 
 type Vec3 = cgmath::Vector3<f32>;
 
-
 pub struct HeightMap<
     const WIDTH: usize,
     const HEIGHT: usize,
@@ -14,7 +13,9 @@ pub struct HeightMap<
     pub data: Vec<[[f32; TILE_WIDTH]; TILE_HEIGHT]>,
 }
 
-impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TILE_HEIGHT: usize> Default for HeightMap<WIDTH, HEIGHT, TILE_WIDTH, TILE_HEIGHT> {
+impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TILE_HEIGHT: usize>
+    Default for HeightMap<WIDTH, HEIGHT, TILE_WIDTH, TILE_HEIGHT>
+{
     fn default() -> Self {
         Self::new()
     }
@@ -43,7 +44,7 @@ impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TIL
         Self { data }
     }
 
-    pub fn set_tile(&mut self, tile_y: usize, tile_x: usize, data: &[f32]){
+    pub fn set_tile(&mut self, tile_y: usize, tile_x: usize, data: &[f32]) {
         assert_eq!(data.len(), Self::INNER_SIZE);
 
         // get tile
@@ -53,7 +54,7 @@ impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TIL
         for y in 0..Self::INNER_HEIGHT {
             for x in 0..Self::INNER_WIDTH {
                 let index = y * Self::INNER_WIDTH + x;
-                tile[y+1][x+1] = data[index];
+                tile[y + 1][x + 1] = data[index];
             }
         }
 
@@ -115,8 +116,7 @@ impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TIL
         if tile_x > 0 && tile_y < Self::TILES_Y - 1 {
             let bottom_left = &mut self.data[(tile_y + 1) * Self::TILES_X + tile_x - 1];
 
-            bottom_left[0][TILE_WIDTH - 1] =
-                data[(Self::INNER_HEIGHT - 1) * Self::INNER_WIDTH];
+            bottom_left[0][TILE_WIDTH - 1] = data[(Self::INNER_HEIGHT - 1) * Self::INNER_WIDTH];
         }
 
         // Copy bottom-right corner
@@ -175,12 +175,9 @@ pub trait HeightMapInterface {
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TILE_HEIGHT: usize>
-HeightMapInterface for 
-    HeightMap<WIDTH, HEIGHT, TILE_WIDTH, TILE_HEIGHT>
+    HeightMapInterface for HeightMap<WIDTH, HEIGHT, TILE_WIDTH, TILE_HEIGHT>
 {
     fn get_height(&self, pos: &Vec3) -> f32 {
-        
-
         self.get_height(pos.y, pos.x)
     }
 }

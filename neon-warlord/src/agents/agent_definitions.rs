@@ -1,6 +1,6 @@
+//! Definitions for creating agents
 
-
-
+#[rustfmt::skip]
 pub fn get_agent_0_definition() -> [[[&'static str; 9]; 9]; 3] {
 
     let layer_0 = [

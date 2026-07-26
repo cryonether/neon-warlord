@@ -1,9 +1,14 @@
 //! Draws an object in 3D
 
-use forward_renderer::{geometry, to_rgb};
-use wgpu_renderer::{vertex_color_shader::{self, VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines}, wgpu_renderer::WgpuRendererInterface};
 use crate::verlet_physics::verlet_composition::VerletComposition;
 use cgmath::Rotation3;
+use forward_renderer::{geometry, to_rgb};
+use wgpu_renderer::{
+    vertex_color_shader::{
+        self, VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
+    },
+    wgpu_renderer::WgpuRendererInterface,
+};
 
 pub struct AgentDrawer {
     nodes_mesh: vertex_color_shader::Mesh,
@@ -20,7 +25,7 @@ impl AgentDrawer {
         radius: f32,
     ) -> Self {
         let nr_nodes = composition.verlet_objects.len();
-        let nr_links = nr_nodes -1;
+        let nr_links = nr_nodes - 1;
 
         let nodes_color_0 = to_rgb("#d8b0e8");
         let nodes_color_1 = to_rgb("#300c36");
@@ -35,7 +40,6 @@ impl AgentDrawer {
             position: cgmath::Vector3::new(0.0, 0.0, 0.0),
             rotation: cgmath::Quaternion::from_angle_x(cgmath::Deg(90.0)),
         };
-
 
         let mut nodes_instances = Vec::with_capacity(nr_nodes);
         for _i in 0..nr_nodes {
@@ -74,7 +78,7 @@ impl AgentDrawer {
         composition: &VerletComposition,
     ) {
         let size = std::cmp::min(self.nodes_instances.len(), composition.verlet_objects.len());
-        
+
         // copy from physics to model
         for i in 0..size {
             let instance = &mut self.nodes_instances[i];
@@ -98,13 +102,12 @@ impl AgentDrawer {
         }
 
         // copy from model to device
-        
+
         self.nodes_mesh
             .update_instance_buffer(wgpu_renderer.queue(), &self.nodes_instances);
 
         self.links_mesh
             .update_vertex_buffer(wgpu_renderer.queue(), &self.links_lines.vertices);
-
     }
 }
 
