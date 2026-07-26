@@ -39,7 +39,7 @@ impl VerletComposition {
         for node in nodes {
             let pos = pos + node.pos;
 
-            // Create a physcis node
+            // Create a physics node
             verlet_objects.push(VerletObject::new(pos, radius));
         }
 
