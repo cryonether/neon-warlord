@@ -4,6 +4,8 @@ pub mod fixed;
 pub mod fixed_link;
 pub mod link;
 pub mod solver;
+pub mod sticky_link;
+pub mod verlet_composition;
 
 use cgmath::Zero;
 
@@ -56,7 +58,7 @@ impl VerletObject {
         self.position_current = pos;
     }
 
-    pub fn _radius(&self) -> f32 {
+    pub fn radius(&self) -> f32 {
         self._radius
     }
 

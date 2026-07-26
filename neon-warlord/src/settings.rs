@@ -1,6 +1,6 @@
 //! Application settings
 
-use forward_renderer::{RendererSettings, TerrainSettings, animation_shader, lod_heightmap_shader};
+use forward_renderer::{RendererSettings, animation_shader, lod_heightmap_shader};
 
 use crate::{CameraSettings, ObjectSettings};
 
@@ -22,12 +22,12 @@ impl Settings {
         }
     }
 
-    pub fn get_terrain_settings(&self) -> TerrainSettings {
-        TerrainSettings {
-            nr_tiles: 32,
-            max_depth: 5,
-        }
-    }
+    // pub fn get_terrain_settings(&self) -> TerrainSettings {
+    //     TerrainSettings {
+    //         nr_tiles: 32,
+    //         max_depth: 5,
+    //     }
+    // }
 
     pub fn get_object_settings(&self) -> ObjectSettings {
         ObjectSettings { max_nr_ants: 9 }

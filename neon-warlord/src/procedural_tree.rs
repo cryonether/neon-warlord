@@ -8,7 +8,7 @@ use crate::{
     verlet_physics::{self, VerletObject, fixed_link::FixedLink},
 };
 use cgmath::{Rotation3, Zero};
-use forward_renderer::geometry;
+use forward_renderer::{geometry, to_rgb};
 use wgpu_renderer::{
     vertex_color_shader::{
         self, VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
@@ -203,18 +203,6 @@ impl VertexColorShaderDrawLines for ProceduralTree {
     fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
         self.links_mesh.draw(render_pass);
     }
-}
-
-fn to_rgb(hex: &str) -> [f32; 3] {
-    let hex = hex.trim_start_matches('#');
-
-    assert!(hex.len() == 6, "Expected a 6-digit hex color like #RRGGBB");
-
-    let r = u8::from_str_radix(&hex[0..2], 16).unwrap() as f32 / 255.0;
-    let g = u8::from_str_radix(&hex[2..4], 16).unwrap() as f32 / 255.0;
-    let b = u8::from_str_radix(&hex[4..6], 16).unwrap() as f32 / 255.0;
-
-    [r, g, b]
 }
 
 struct CreateLinks<'a> {

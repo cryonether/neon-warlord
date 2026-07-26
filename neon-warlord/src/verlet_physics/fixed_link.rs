@@ -3,11 +3,12 @@
 use crate::verlet_physics::{Vec3, VerletObject};
 
 pub struct FixedLink {
-    node_id_1: usize,
-    node_id_2: usize,
+    pub node_id_1: usize,
+    pub node_id_2: usize,
     target_vector: Vec3,
     stiffness: f32,
     damping: f32,
+    force_split: f32,
 }
 
 impl FixedLink {
@@ -18,6 +19,7 @@ impl FixedLink {
             target_vector,
             stiffness: 1.0,
             damping: 1.0,
+            force_split: 0.6,
         }
     }
 
@@ -28,6 +30,7 @@ impl FixedLink {
             target_vector: self.target_vector,
             stiffness: val,
             damping: self.damping,
+            force_split: self.force_split,
         }
     }
 
@@ -38,6 +41,18 @@ impl FixedLink {
             target_vector: self.target_vector,
             stiffness: self.stiffness,
             damping: val,
+            force_split: self.force_split,
+        }
+    }
+
+    pub fn force_split(self, val: f32) -> Self {
+        Self {
+            node_id_1: self.node_id_1,
+            node_id_2: self.node_id_2,
+            target_vector: self.target_vector,
+            stiffness: self.stiffness,
+            damping: self.damping,
+            force_split: val,
         }
     }
 
@@ -62,8 +77,8 @@ impl FixedLink {
         let stiffness = 2500.0 * self.stiffness;
         let damping = self.damping;
 
-        object_1.accelerate(0.5 * axis * stiffness);
-        object_2.accelerate(-0.5 * axis * stiffness);
+        object_1.accelerate(self.force_split * axis * stiffness);
+        object_2.accelerate((self.force_split - 1.0) * axis * stiffness);
 
         object_1.damp(damping);
         object_2.damp(damping);

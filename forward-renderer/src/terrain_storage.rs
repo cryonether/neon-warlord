@@ -164,7 +164,7 @@ impl TerrainStorage {
         let instance = lod_heightmap_shader::Instance {
             position: [
                 (pos_1.x - point_distance as isize) as f32,
-                (pos_1.y - point_distance as isize) as f32 + 100.0,
+                (pos_1.y - point_distance as isize) as f32 + 0.0,
                 0.0,
             ],
             color: [0.2, 0.2, 0.8],
