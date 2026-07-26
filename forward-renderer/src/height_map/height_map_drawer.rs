@@ -30,7 +30,6 @@ impl HeightMapDrawer {
         height_map_inner_height: usize,
         _height_map_nr_tiles_x: usize,
         _height_map_nr_tiles_y: usize,
-        // heightmap_bind_group_layout: &deferred_heightmap_shader::HeightmapBindGroupLayout,
     ) -> Self {
         assert!(height_map_inner_width == height_map_inner_height);
 
@@ -40,7 +39,6 @@ impl HeightMapDrawer {
         let mesh = lod_heightmap_shader::Mesh::from_shape(renderer.device(), gird_triangles);
 
         // texture
-        // let texture_bytes = include_bytes!("../res/tile.png");
         let texture_image = image::load_from_memory(texture_bytes).unwrap();
         let texture_rgba = texture_image.to_rgba8();
         let texture = lod_heightmap_shader::Texture::new_with_mipmaps(
@@ -118,7 +116,6 @@ impl HeightMapDrawer {
                 );  
 
                 // create instance
-                // let data_index = self.height_map_textures.len();
                 let instance = lod_heightmap_shader::Instance {
                     position: [
                         (tile_x * inner_width) as f32 - (offset_x * inner_width) as f32,

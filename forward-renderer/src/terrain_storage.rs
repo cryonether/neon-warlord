@@ -174,8 +174,6 @@ impl TerrainStorage {
         let instance_buffer =
             lod_heightmap_shader::InstanceBuffer::new(renderer.device(), &[instance]);
 
-
-
         // save device data
         assert_eq!(self.instances.len(), data_index);
         assert_eq!(self.height_map_details.len(), data_index);

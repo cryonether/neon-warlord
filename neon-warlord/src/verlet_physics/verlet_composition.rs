@@ -17,7 +17,6 @@ pub struct VerletComposition {
 impl VerletComposition {
 
     pub fn create(nodes: &[Node], radius: f32) -> VerletComposition {
-        // let radius = 0.5;
         let pos = Vec3::new(0.0, 0.0, 0.0);
 
         let mut verlet_objects = Vec::new();

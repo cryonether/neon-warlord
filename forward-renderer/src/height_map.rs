@@ -39,12 +39,8 @@ impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TIL
 
     pub fn set_tile(&mut self, tile_y: usize, tile_x: usize, data: &[f32]){
         assert_eq!(data.len(), Self::INNER_SIZE);
-        // assert_eq!(world_y % Self::INNER_HEIGHT, 0);
-        // assert_eq!(world_x % Self::INNER_WIDTH, 0);
 
-        // // Determine sub_map
-        // let tile_y = world_y / Self::INNER_HEIGHT;
-        // let tile_x = world_x / Self::INNER_WIDTH;
+        // get tile
         let tile = &mut self.data[tile_y * Self::TILES_X + tile_x];
 
         // write inner data
