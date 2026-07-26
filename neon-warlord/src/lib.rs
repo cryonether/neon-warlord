@@ -20,6 +20,7 @@ mod sun_storage;
 mod verlet_physics;
 mod worker;
 mod worker_instance;
+mod reinforcement_learning;
 
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
