@@ -22,7 +22,7 @@ mod agents;
 mod physics_simulation_v2;
 
 use forward_renderer::{
-    AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, TerrainStorage, glow_storage::GlowStorage, height_map::height_map_drawer::HeightMapDrawer, particle_storage::ParticleStorage, plasma_orb_storage::PlasmaOrbStorage,
+    AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage, height_map::height_map_drawer::HeightMapDrawer, particle_storage::ParticleStorage, plasma_orb_storage::PlasmaOrbStorage,
 };
 use instant::Instant;
 #[cfg(target_arch = "wasm32")]
@@ -40,7 +40,7 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, game_board::Faction::Red, physics_simulation_v2::PhysicsSimulationV2, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker::MainMessage, worker_instance::WorkerInstance,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, physics_simulation_v2::PhysicsSimulationV2, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -221,7 +221,7 @@ impl NeonWarlord {
             = forward_renderer::height_map::HeightMap::new();
 
         let mut data = Vec::new();
-        for i in 0..HEIGHT_MAP_INNER_HEIGHT * HEIGHT_MAP_INNER_WIDTH {
+        for _i in 0..HEIGHT_MAP_INNER_HEIGHT * HEIGHT_MAP_INNER_WIDTH {
             // data.push(i as f32 * 0.1);
             data.push(1.0);
         }
@@ -444,7 +444,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                         );
                     }
                     // ##########################################################
-                    worker::WorkerMessage::TerrainData(terrain_part) => {
+                    worker::WorkerMessage::TerrainData(_terrain_part) => {
   
                         // // update physics
                         // let max_depth = 1;
@@ -517,7 +517,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
 
             self.worker.update(dt);
         }
-        let worker = self.worker.send();
+        let _worker = self.worker.send();
         self.watch_fps.stop(watch_index);
 
         // Calculate current Snapshot

@@ -22,7 +22,7 @@ impl VerletComposition {
         let mut verlet_objects = Vec::new();
         let mut links = Vec::new();
         let mut fixed_links = Vec::new();
-        let mut fixed = Vec::new();
+        let fixed = Vec::new();
         let mut sticky_links = Vec::new();
 
         if nodes.len() == 0 {

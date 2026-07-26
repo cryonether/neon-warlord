@@ -1,11 +1,10 @@
 //! Next iteration of the verlet physics simulation
 
-use std::ops::DerefMut;
 
 use forward_renderer::height_map::HeightMapInterface;
 use wgpu_renderer::{vertex_color_shader::{VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines}, wgpu_renderer::WgpuRendererInterface};
 
-use crate::{agents::{agent_definitions::get_agent_0_definition, agent_drawer::AgentDrawer, agent_factory::{self, AgentFactory}}, game_board::Agent, verlet_physics::{solver::Solver, verlet_composition::VerletComposition}};
+use crate::{agents::{agent_definitions::get_agent_0_definition, agent_drawer::AgentDrawer, agent_factory::AgentFactory}, verlet_physics::{solver::Solver, verlet_composition::VerletComposition}};
 
 type Vec3 = cgmath::Vector3<f32>;
 

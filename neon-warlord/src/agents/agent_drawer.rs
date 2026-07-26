@@ -3,7 +3,7 @@
 use forward_renderer::{geometry, to_rgb};
 use wgpu_renderer::{vertex_color_shader::{self, VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines}, wgpu_renderer::WgpuRendererInterface};
 use crate::verlet_physics::verlet_composition::VerletComposition;
-use cgmath::{Rotation3, Zero};
+use cgmath::Rotation3;
 
 pub struct AgentDrawer {
     nodes_mesh: vertex_color_shader::Mesh,

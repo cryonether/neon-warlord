@@ -21,6 +21,7 @@ use crate::{
 const WATCH_POINTS_SIZE: usize = 10;
 
 pub enum MainMessage {
+    #[allow(unused)]
     GetTerrain(TerrainTextureDetails), // Requests the terrain heightmap
 }
 
