@@ -22,11 +22,11 @@
 //! 
 
 pub mod node;
-pub mod connection;
+pub mod edge;
 pub mod genome;
 
 pub use node::Node;
-pub use connection::Edge;
+pub use edge::Edge;
 pub use genome::Genome;
 
 pub struct Neat {
