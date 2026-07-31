@@ -53,7 +53,7 @@ impl Genome {
         }
     }
 
-    pub fn add_connection(&mut self, id_from: usize, id_to: usize) -> bool {
+    pub fn add_edge(&mut self, id_from: usize, id_to: usize) -> bool {
         // Get node indices
         let node_from = self
             .nodes
@@ -97,8 +97,23 @@ impl Genome {
 
         self.innovation += 1;
 
-        // Insert element
-        let pos = self.edges.partition_point(|e| e.index_to <= edge.index_to);
+        // Get element position
+        let pos = self.edges.partition_point(|e| e.index_to < edge.index_to);
+
+        // Check if element is duplicated
+        for i in pos..self.edges.len() {
+            let edge = &self.edges[i];
+            if edge.index_to == index_to && edge.index_from == index_from {
+                // duplicated
+                return false;
+            }
+
+            if edge.index_to != index_to {
+                break;
+            }
+        }
+
+        // Insert new element
         self.edges.insert(pos, edge);
 
         return true;

@@ -35,7 +35,8 @@ fn test_logic_function(truth_table: &[(f32, f32, f32); 4]) {
         neat.evolve();
     }
 
-    let fitness = neat.get_rank_0().unwrap().fitness;
+    let genome = neat.get_rank_0().unwrap();
+    let fitness = genome.fitness;
     assert!(fitness >= 3.9, "assertion failed: {fitness} >= 3.9");
 }
 

@@ -30,9 +30,13 @@ pub use node::Node;
 pub use edge::Edge;
 pub use genome::Genome;
 
+use fastrand::Rng;
+
 pub struct Neat {
     genomes: Vec<Genome>,
     rank: Vec<usize>,
+
+    rng: Rng,
 }
 
 impl Neat {
@@ -49,7 +53,10 @@ impl Neat {
             rank.push(i);
         } 
 
-        Self { genomes, rank }
+        let seed: u64 = 0;
+        let rng = Rng::with_seed(seed);
+
+        Self { genomes, rank, rng }
     }
 
     /// Ranks all genomes
@@ -68,7 +75,29 @@ impl Neat {
 
 
     pub fn evolve(&mut self) {        
+        for genome in &mut self.genomes {
+            let val = self.rng.f32();
+            if val < 0.1 {
+                Self::add_edge(genome, &mut self.rng);
+            }
 
+        }
+    }
+
+    fn add_edge(genome: &mut Genome, rng: &mut Rng) {
+
+        // try insert element if it isn't duplicated or in the same layer
+        for _i in 0..10 {
+            let size = genome.nodes.len();
+            let id_0 = rng.usize(0..size);
+            let id_1 = rng.usize(id_0..size);
+
+            let res = genome.add_edge(id_0, id_1);
+            if res {
+                // successfully inserted
+                break;
+            }
+        }
     }
 
     fn evaluate() {
@@ -86,6 +115,8 @@ impl Neat {
     fn mate() {
 
     }
+    
+
 }
 
 
