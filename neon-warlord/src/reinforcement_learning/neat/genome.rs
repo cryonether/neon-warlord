@@ -11,6 +11,8 @@ pub struct Genome {
     pub edges: Vec<neat::Edge>,
 
     innovation: usize,
+
+    pub fitness: f32,
 }
 
 impl Genome {
@@ -47,6 +49,7 @@ impl Genome {
             nodes,
             edges,
             innovation:0,
+            fitness: 0.0,
         }
     }
 

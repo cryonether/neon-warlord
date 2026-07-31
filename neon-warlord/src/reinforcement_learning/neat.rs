@@ -24,21 +24,54 @@
 pub mod node;
 pub mod edge;
 pub mod genome;
+mod tests;
 
 pub use node::Node;
 pub use edge::Edge;
 pub use genome::Genome;
 
 pub struct Neat {
-
+    genomes: Vec<Genome>,
+    rank: Vec<usize>,
 }
 
 impl Neat {
-    pub fn new() -> Self {
-        Self {  }
+    pub fn new(
+        nr_sensors: usize,
+        nr_outputs: usize,
+        size: usize
+    ) -> Self {
+        let mut genomes = Vec::with_capacity(size);
+        let mut rank = Vec::with_capacity(size);
+
+        for i in 0..size {
+            genomes.push(Genome::new(nr_sensors, nr_outputs));
+            rank.push(i);
+        } 
+
+        Self { genomes, rank }
     }
 
-    fn evaluate(genome: &mut Genome) {
+    /// Ranks all genomes
+    pub fn rank(&mut self) {
+        self.rank.sort_unstable_by(|&a, &b| {
+            self.genomes[b]
+                .fitness
+                .total_cmp(&self.genomes[a].fitness)
+        });
+    }
+
+    /// Returns the genome with rank 0
+    pub fn get_rank_0(&self) -> Option<&Genome> {
+        self.rank.first().map(|&index| &self.genomes[index])
+    }
+
+
+    pub fn evolve(&mut self) {        
+
+    }
+
+    fn evaluate() {
 
     } 
 
