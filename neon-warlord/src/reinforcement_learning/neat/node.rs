@@ -3,7 +3,6 @@
 #[derive(Clone)]
 pub struct Node {
     // topologically fixed
-
     /// Id of the node
     pub id: usize,
     /// Kind of the node

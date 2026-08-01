@@ -1,5 +1,5 @@
 //! A neural network
-//! 
+//!
 
 use crate::reinforcement_learning::neat::{self, node::NodeKind};
 
@@ -17,41 +17,38 @@ pub struct Genome {
 }
 
 impl Genome {
-    pub fn new(
-        nr_sensors: usize,
-        nr_outputs: usize,
-    ) -> Self {
-       let mut nodes: Vec<neat::Node> =  Vec::with_capacity(nr_sensors + nr_outputs);
-       let edges: Vec<neat::Edge> = Vec::new();
+    pub fn new(nr_sensors: usize, nr_outputs: usize) -> Self {
+        let mut nodes: Vec<neat::Node> = Vec::with_capacity(nr_sensors + nr_outputs);
+        let edges: Vec<neat::Edge> = Vec::new();
 
-       // Sensors  
-       for i in 0..nr_sensors {
-        nodes.push(neat::Node{
-            id: i,
-            kind: neat::node::NodeKind::Sensor,
-            value: 0.0,
-            layer: 0,
-            bias: 0.0,
-        });
-       }
+        // Sensors
+        for i in 0..nr_sensors {
+            nodes.push(neat::Node {
+                id: i,
+                kind: neat::node::NodeKind::Sensor,
+                value: 0.0,
+                layer: 0,
+                bias: 0.0,
+            });
+        }
 
-       // Outputs
-       for i in 0..nr_outputs {
-        nodes.push(neat::Node{
-            id: nr_sensors+i,
-            kind: neat::node::NodeKind::Output,
-            value: 0.0,
-            layer: 1,
-            bias: 0.0,
-        });
-       }
+        // Outputs
+        for i in 0..nr_outputs {
+            nodes.push(neat::Node {
+                id: nr_sensors + i,
+                kind: neat::node::NodeKind::Output,
+                value: 0.0,
+                layer: 1,
+                bias: 0.0,
+            });
+        }
 
         Self {
             nr_sensors,
             nr_outputs,
             nodes,
             edges,
-            innovation:0,
+            innovation: 0,
             fitness: 0.0,
         }
     }
@@ -70,12 +67,12 @@ impl Genome {
             .enumerate()
             .find(|(_, node)| node.id == id_to);
 
-        let (index_from, node_from) = match node_from  {
+        let (index_from, node_from) = match node_from {
             Some(val) => val,
             None => return false,
         };
 
-        let (index_to, node_to) = match node_to  {
+        let (index_to, node_to) = match node_to {
             Some(val) => val,
             None => return false,
         };
@@ -143,7 +140,7 @@ impl Genome {
         // Create node
         let id = self.nodes.len();
 
-        let node = neat::Node{
+        let node = neat::Node {
             id,
             kind: neat::node::NodeKind::Hidden,
             layer,
@@ -153,7 +150,7 @@ impl Genome {
 
         // Insert node
         let pos = self.nodes.partition_point(|n| n.layer <= node.layer);
-        
+
         // Update edge indices
         for edge in &mut self.edges {
             if edge.index_from >= pos {
@@ -163,7 +160,7 @@ impl Genome {
                 edge.index_to += 1;
             }
         }
-        
+
         self.nodes.insert(pos, node);
 
         id
@@ -179,7 +176,7 @@ impl Genome {
         let size = self.nr_outputs;
         let len = self.nodes.len();
 
-        & self.nodes[len-size..len]
+        &self.nodes[len - size..len]
     }
 
     /// Get number of layers
@@ -203,7 +200,7 @@ impl Genome {
                 sum += node_from.value * edge.weight;
 
                 index_edge += 1;
-            } 
+            }
 
             let value = sum + self.nodes[i].bias;
             // let value = sum;
@@ -220,16 +217,12 @@ impl Genome {
     }
 
     fn activation_re_lu(value: f32) -> f32 {
-        // best balance 
+        // best balance
         value.max(0.0)
     }
 
     fn activation_leaky_re_lu(value: f32) -> f32 {
-        if value >= 0.0 {
-            value
-        } else {
-            0.01 * value
-        }
+        if value >= 0.0 { value } else { 0.01 * value }
     }
 
     fn activation_absolute_value(value: f32) -> f32 {
@@ -242,7 +235,7 @@ impl Genome {
 
     fn activation_sigmoid(value: f32) -> f32 {
         // used by the original neat algorithm
-         1.0 / (1.0 + (-value).exp())
+        1.0 / (1.0 + (-value).exp())
     }
 
     fn activation_sine(value: f32) -> f32 {
@@ -252,6 +245,4 @@ impl Genome {
     fn activation_gaussian(value: f32) -> f32 {
         (-(value * value)).exp()
     }
-    
-
 }

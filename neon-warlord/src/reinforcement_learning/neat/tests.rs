@@ -14,7 +14,6 @@ fn test_logic_function(truth_table: &[(f32, f32, f32); 4]) {
         for genom in &mut neat.genomes {
             let mut fitness = 0.0;
             for &(a, b, expected) in truth_table {
-
                 let sensors = genom.sensors();
                 sensors[0].value = a;
                 sensors[1].value = b;
@@ -41,14 +40,13 @@ fn test_logic_function(truth_table: &[(f32, f32, f32); 4]) {
     assert!(fitness >= 3.9, "assertion failed: {fitness} >= 3.9");
 }
 
-
 #[test]
 fn and() {
     let truth_table = [
         (0.0, 0.0, 0.0),
         (0.0, 1.0, 0.0),
         (1.0, 0.0, 0.0),
-        (1.0, 1.0, 1.0), 
+        (1.0, 1.0, 1.0),
     ];
     test_logic_function(&truth_table);
 }

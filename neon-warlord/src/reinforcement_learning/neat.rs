@@ -1,10 +1,10 @@
 //! Implementation of a NEAT algorithm
 //!
 //! Details:
-//! 
+//!
 //! Evolving Neural Networks through Augmenting Topologies (2002)
-//! Kenneth O. Stanley, Risto Miikulainen 
-//! 
+//! Kenneth O. Stanley, Risto Miikulainen
+//!
 //! Abstract:
 //! An important question in neuroevolution is how to gain an advantage from evolving
 //! neural network topologies along with weights. We present a method, NeuroEvolu-
@@ -19,16 +19,16 @@
 //! optimize and complexify solutions simultaneously, offering the possibility of evolving
 //! increasingly complex solutions over generations, and strengthening the analogy with
 //! biological evolution.
-//! 
+//!
 
-pub mod node;
 pub mod edge;
 pub mod genome;
+pub mod node;
 mod tests;
 
-pub use node::Node;
 pub use edge::Edge;
 pub use genome::Genome;
+pub use node::Node;
 
 use fastrand::Rng;
 
@@ -42,18 +42,14 @@ pub struct Neat {
 }
 
 impl Neat {
-    pub fn new(
-        nr_sensors: usize,
-        nr_outputs: usize,
-        size: usize
-    ) -> Self {
+    pub fn new(nr_sensors: usize, nr_outputs: usize, size: usize) -> Self {
         let mut genomes = Vec::with_capacity(size);
         let mut rank = Vec::with_capacity(size);
 
         for i in 0..size {
             genomes.push(Genome::new(nr_sensors, nr_outputs));
             rank.push(i);
-        } 
+        }
 
         let seed: u64 = 0;
         let rng = Rng::with_seed(seed);
@@ -63,11 +59,8 @@ impl Neat {
 
     /// Ranks all genomes
     pub fn rank(&mut self) {
-        self.rank.sort_unstable_by(|&a, &b| {
-            self.genomes[b]
-                .fitness
-                .total_cmp(&self.genomes[a].fitness)
-        });
+        self.rank
+            .sort_unstable_by(|&a, &b| self.genomes[b].fitness.total_cmp(&self.genomes[a].fitness));
     }
 
     /// Returns the genome with rank 0
@@ -78,7 +71,7 @@ impl Neat {
     /// Picks the fittest survivors and replaces the bottom with it
     pub fn survival_selection(&mut self) {
         let survival = 0.2;
-        
+
         // get to genome
         let best = self.get_rank_0();
         let best = match best {
@@ -93,26 +86,22 @@ impl Neat {
         for i in survivor..size {
             let index = self.rank[i];
             self.genomes[index] = best.clone();
-        }  
+        }
     }
 
     /// Modifies the existing genomes
-    pub fn evolve(&mut self) {        
+    pub fn evolve(&mut self) {
         for genome in &mut self.genomes {
             let val = self.rng.f32();
             if val < 0.005 {
                 Self::add_layer(genome, &mut self.rng);
-            }
-            else if val < 0.03 {
+            } else if val < 0.03 {
                 Self::add_node(genome, &mut self.rng);
-            }
-            else if val < 0.08 {
+            } else if val < 0.08 {
                 Self::add_edge(genome, &mut self.rng);
-            }
-            else if val < 0.45 {
+            } else if val < 0.45 {
                 Self::mutate_bias(genome, &mut self.rng);
-            }
-            else if val < 0.9 {
+            } else if val < 0.9 {
                 Self::mutate_weight(genome, &mut self.rng);
             }
         }
@@ -120,7 +109,6 @@ impl Neat {
 
     /// Connects two nodes
     fn add_edge(genome: &mut Genome, rng: &mut Rng) {
-
         // try insert element if it isn't duplicated or in the same layer
         for _i in 0..10 {
             let size = genome.nodes.len();
@@ -156,7 +144,7 @@ impl Neat {
 
         // check if it is activated
         if !edge.enabled {
-            return
+            return;
         }
 
         // get nodes
@@ -170,7 +158,7 @@ impl Neat {
         let layer_node_1 = node_1.layer;
         let id_node_0 = node_0.id;
         let id_node_1 = node_1.id;
-        if layer_node_0+1 >= layer_node_1 {
+        if layer_node_0 + 1 >= layer_node_1 {
             // no layer available to insert the node
             return;
         }
@@ -189,7 +177,6 @@ impl Neat {
 
         assert!(res_0);
         assert!(res_1);
-
     }
 
     /// Modifies the bias value of a node
@@ -205,13 +192,12 @@ impl Neat {
         }
 
         if rng.f32() >= 0.9 {
-             // perturb existing bias
-            let bias =  Self::random_range(rng, -0.5, 0.5);
+            // perturb existing bias
+            let bias = Self::random_range(rng, -0.5, 0.5);
             genome.nodes[index].bias += bias;
-        }
-        else {
+        } else {
             // reset bias
-            let bias =  Self::random_range(rng, -2.0, 2.0);
+            let bias = Self::random_range(rng, -2.0, 2.0);
             genome.nodes[index].bias = bias;
         }
     }
@@ -226,13 +212,12 @@ impl Neat {
         let index = rng.usize(0..size);
 
         if rng.f32() >= 0.9 {
-             // perturb existing weight
-            let weight =  Self::random_range(rng, -0.5, 0.5);
+            // perturb existing weight
+            let weight = Self::random_range(rng, -0.5, 0.5);
             genome.edges[index].weight += weight;
-        }
-        else {
+        } else {
             // reset weight
-            let weight =  Self::random_range(rng, -2.0, 2.0);
+            let weight = Self::random_range(rng, -2.0, 2.0);
             genome.edges[index].weight = weight;
         }
     }
@@ -244,20 +229,7 @@ impl Neat {
 
     // Advanced techniques (not yet implemented)
 
-    fn spicate() {
+    fn spicate() {}
 
-    }
-
-    fn mate() {
-
-    }
-    
-
+    fn mate() {}
 }
-
-
-
-
-
-
-
