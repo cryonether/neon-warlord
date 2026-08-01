@@ -32,6 +32,8 @@ pub use genome::Genome;
 
 use fastrand::Rng;
 
+use crate::reinforcement_learning::neat::node::NodeKind;
+
 pub struct Neat {
     genomes: Vec<Genome>,
     rank: Vec<usize>,
@@ -75,7 +77,7 @@ impl Neat {
 
     /// Picks the fittest survivors and replaces the bottom with it
     pub fn survival_selection(&mut self) {
-        let proportion = 0.3;
+        let survival = 0.2;
         
         // get to genome
         let best = self.get_rank_0();
@@ -86,7 +88,7 @@ impl Neat {
 
         // clone best genome
         let size = self.rank.len();
-        let survivor = (size as f32 * proportion) as usize;
+        let survivor = (size as f32 * survival) as usize;
 
         for i in survivor..size {
             let index = self.rank[i];
@@ -98,14 +100,17 @@ impl Neat {
     pub fn evolve(&mut self) {        
         for genome in &mut self.genomes {
             let val = self.rng.f32();
-            if val < 0.1 {
+            if val < 0.05 {
                 Self::add_edge(genome, &mut self.rng);
             }
-            else if val < 0.2 {
-                Self::modify_bias(genome, &mut self.rng);
+            else if val < 0.08 {
+                Self::add_node(genome, &mut self.rng);
             }
-            else if val < 0.3 {
-                Self::modify_weight(genome, &mut self.rng);
+            else if val < 0.45 {
+                Self::mutate_bias(genome, &mut self.rng);
+            }
+            else if val < 0.9 {
+                Self::mutate_weight(genome, &mut self.rng);
             }
         }
     }
@@ -126,22 +131,55 @@ impl Neat {
         }
     }
 
-    fn modify_bias(genome: &mut Genome, rng: &mut Rng) {
-        let size = genome.nodes.len();
-        let index = rng.usize(0..size);
-        let bias = rng.f32();
-        genome.nodes[index].bias = bias;
+    fn add_node(genome: &mut Genome, rng: &mut Rng) {
+
     }
 
-    fn modify_weight(genome: &mut Genome, rng: &mut Rng) {
+    fn mutate_bias(genome: &mut Genome, rng: &mut Rng) {
+        let size = genome.nodes.len();
+        if size == 0 {
+            return;
+        }
+
+        let index = rng.usize(0..size);
+        if genome.nodes[index].kind == NodeKind::Sensor {
+            return;
+        }
+
+        if rng.f32() >= 0.9 {
+             // perturb existing bias
+            let bias =  Self::random_range(rng, -0.5, 0.5);
+            genome.nodes[index].bias += bias;
+        }
+        else {
+            // reset bias
+            let bias =  Self::random_range(rng, -2.0, 2.0);
+            genome.nodes[index].bias = bias;
+        }
+    }
+
+    fn mutate_weight(genome: &mut Genome, rng: &mut Rng) {
         let size = genome.edges.len();
         if size == 0 {
             return;
         }
 
         let index = rng.usize(0..size);
-        let weight = rng.f32();
-        genome.edges[index].weight = weight;
+
+        if rng.f32() >= 0.9 {
+             // perturb existing weight
+            let weight =  Self::random_range(rng, -0.5, 0.5);
+            genome.edges[index].weight += weight;
+        }
+        else {
+            // reset weight
+            let weight =  Self::random_range(rng, -2.0, 2.0);
+            genome.edges[index].weight = weight;
+        }
+    }
+
+    fn random_range(rng: &mut Rng, start: f32, end: f32) -> f32 {
+        start + rng.f32() * (end - start)
     }
 
     fn evaluate() {

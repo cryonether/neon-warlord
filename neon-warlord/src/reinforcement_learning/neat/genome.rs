@@ -1,7 +1,7 @@
 //! A neural network
 //! 
 
-use crate::{procedural_tree::node, reinforcement_learning::neat};
+use crate::reinforcement_learning::neat::{self, node::NodeKind};
 
 /// A neural network
 #[derive(Clone)]
@@ -182,6 +182,9 @@ impl Genome {
     pub fn evaluate(&mut self) {
         let mut index_edge = 0;
         for i in 0..self.nodes.len() {
+            if self.nodes[i].kind == NodeKind::Sensor {
+                continue;
+            }
 
             // Sum up all edges
             let mut sum = 0.0;
@@ -195,6 +198,7 @@ impl Genome {
             } 
 
             let value = sum + self.nodes[i].bias;
+            // let value = sum;
             self.nodes[i].value = Self::activation_sigmoid(value)
         }
     }

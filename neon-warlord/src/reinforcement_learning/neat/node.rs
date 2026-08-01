@@ -17,8 +17,7 @@ pub struct Node {
     pub value: f32,
     pub bias: f32,
 }
-
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum NodeKind {
     Sensor,
     Output,
