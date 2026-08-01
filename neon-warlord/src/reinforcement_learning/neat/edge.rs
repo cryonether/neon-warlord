@@ -1,5 +1,6 @@
 //! Connection between two elements of the NEAT algorithm
 
+#[derive(Clone)]
 pub struct Edge {
     // topologically fixed
 

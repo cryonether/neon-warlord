@@ -1,6 +1,6 @@
 //! Node of an element of the NEAT algorithm
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Node {
     // topologically fixed
 
@@ -15,9 +15,10 @@ pub struct Node {
 
     /// Value of the node
     pub value: f32,
+    pub bias: f32,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub enum NodeKind {
     Sensor,
     Output,

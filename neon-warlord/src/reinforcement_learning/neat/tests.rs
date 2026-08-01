@@ -32,6 +32,7 @@ fn test_logic_function(truth_table: &[(f32, f32, f32); 4]) {
         }
 
         neat.rank();
+        neat.survival_selection();
         neat.evolve();
     }
 

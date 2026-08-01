@@ -73,14 +73,40 @@ impl Neat {
         self.rank.first().map(|&index| &self.genomes[index])
     }
 
+    /// Picks the fittest survivors and replaces the bottom with it
+    pub fn survival_selection(&mut self) {
+        let proportion = 0.3;
+        
+        // get to genome
+        let best = self.get_rank_0();
+        let best = match best {
+            Some(best) => best.clone(),
+            None => return,
+        };
 
+        // clone best genome
+        let size = self.rank.len();
+        let survivor = (size as f32 * proportion) as usize;
+
+        for i in survivor..size {
+            let index = self.rank[i];
+            self.genomes[index] = best.clone();
+        }  
+    }
+
+    /// Modifies the existing genomes
     pub fn evolve(&mut self) {        
         for genome in &mut self.genomes {
             let val = self.rng.f32();
             if val < 0.1 {
                 Self::add_edge(genome, &mut self.rng);
             }
-
+            else if val < 0.2 {
+                Self::modify_bias(genome, &mut self.rng);
+            }
+            else if val < 0.3 {
+                Self::modify_weight(genome, &mut self.rng);
+            }
         }
     }
 
@@ -98,6 +124,24 @@ impl Neat {
                 break;
             }
         }
+    }
+
+    fn modify_bias(genome: &mut Genome, rng: &mut Rng) {
+        let size = genome.nodes.len();
+        let index = rng.usize(0..size);
+        let bias = rng.f32();
+        genome.nodes[index].bias = bias;
+    }
+
+    fn modify_weight(genome: &mut Genome, rng: &mut Rng) {
+        let size = genome.edges.len();
+        if size == 0 {
+            return;
+        }
+
+        let index = rng.usize(0..size);
+        let weight = rng.f32();
+        genome.edges[index].weight = weight;
     }
 
     fn evaluate() {

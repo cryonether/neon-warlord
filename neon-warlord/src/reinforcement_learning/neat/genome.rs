@@ -4,6 +4,7 @@
 use crate::{procedural_tree::node, reinforcement_learning::neat};
 
 /// A neural network
+#[derive(Clone)]
 pub struct Genome {
     pub nr_sensors: usize,
     pub nr_outputs: usize,
@@ -30,6 +31,7 @@ impl Genome {
             kind: neat::node::NodeKind::Sensor,
             value: 0.0,
             layer: 0,
+            bias: 0.0,
         });
        }
 
@@ -40,6 +42,7 @@ impl Genome {
             kind: neat::node::NodeKind::Output,
             value: 0.0,
             layer: 1,
+            bias: 0.0,
         });
        }
 
@@ -143,6 +146,7 @@ impl Genome {
             kind: neat::node::NodeKind::Hidden,
             layer,
             value: 0.0,
+            bias: 0.0,
         };
 
         // Insert node
@@ -190,7 +194,51 @@ impl Genome {
                 index_edge += 1;
             } 
 
-            self.nodes[i].value = sum;
+            let value = sum + self.nodes[i].bias;
+            self.nodes[i].value = Self::activation_sigmoid(value)
         }
     }
+
+    fn activation_identity(value: f32) -> f32 {
+        value
+    }
+
+    fn activation_binary_step(value: f32) -> f32 {
+        (value >= 0.0) as u8 as f32
+    }
+
+    fn activation_re_lu(value: f32) -> f32 {
+        // best balance 
+        value.max(0.0)
+    }
+
+    fn activation_leaky_re_lu(value: f32) -> f32 {
+        if value >= 0.0 {
+            value
+        } else {
+            0.01 * value
+        }
+    }
+
+    fn activation_absolute_value(value: f32) -> f32 {
+        value.abs()
+    }
+
+    fn activation_tan_h(value: f32) -> f32 {
+        value.tanh()
+    }
+
+    fn activation_sigmoid(value: f32) -> f32 {
+        // used by the original neat algorithm
+         1.0 / (1.0 + (-value).exp())
+    }
+
+    fn activation_sine(value: f32) -> f32 {
+        value.sin()
+    }
+
+    fn activation_gaussian(value: f32) -> f32 {
+        (-(value * value)).exp()
+    }
+
 }
