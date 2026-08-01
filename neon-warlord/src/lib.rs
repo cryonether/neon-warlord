@@ -14,6 +14,7 @@ mod orb_controller;
 mod orb_storage;
 mod physics_simulation_v2;
 mod procedural_tree;
+mod reinforcement_learning;
 mod settings;
 mod simple_physics_simulation;
 mod sun_storage;

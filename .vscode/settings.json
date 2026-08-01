@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
         "verlet"
-    ]
+    ],
+    "rust-analyzer.testExplorer": true,
 }
