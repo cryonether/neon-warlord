@@ -10,7 +10,7 @@ fn test_logic_function(truth_table: &[(f32, f32, f32); 4]) {
 
     let mut neat = Neat::new(2, 1, size);
 
-    for i in 0..n {
+    for _i in 0..n {
         for genom in &mut neat.genomes {
             let mut fitness = 0.0;
             for &(a, b, expected) in truth_table {
