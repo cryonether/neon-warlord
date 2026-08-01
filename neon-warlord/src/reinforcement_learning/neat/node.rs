@@ -13,9 +13,10 @@ pub struct Node {
 
     // variable
 
+    // Bias for the activation function
+    pub bias: f32,
     /// Value of the node
     pub value: f32,
-    pub bias: f32,
 }
 #[derive(Clone, PartialEq)]
 pub enum NodeKind {

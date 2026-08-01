@@ -56,7 +56,7 @@ impl Genome {
         }
     }
 
-    pub fn add_edge(&mut self, id_from: usize, id_to: usize) -> bool {
+    pub fn add_edge(&mut self, id_from: usize, id_to: usize, weight: f32) -> bool {
         // Get node indices
         let node_from = self
             .nodes
@@ -91,7 +91,7 @@ impl Genome {
         let edge = neat::Edge {
             id_from,
             id_to,
-            weight: 0.0,
+            weight,
             enabled: true,
             innovation: self.innovation,
             index_from,
@@ -123,7 +123,7 @@ impl Genome {
     }
 
     pub fn add_layer(&mut self, layer: usize) -> bool {
-        if layer > self.nodes.last().unwrap().layer {
+        if layer == 0 {
             return false;
         }
 
@@ -137,6 +137,8 @@ impl Genome {
         true
     }
 
+    /// Creates a new node
+    /// Returns the id of the new node
     pub fn add_node(&mut self, layer: usize) -> usize {
         // Create node
         let id = self.nodes.len();
@@ -151,17 +153,18 @@ impl Genome {
 
         // Insert node
         let pos = self.nodes.partition_point(|n| n.layer <= node.layer);
-        self.nodes.insert(pos, node);
-
+        
         // Update edge indices
         for edge in &mut self.edges {
-            if edge.index_from > pos {
+            if edge.index_from >= pos {
                 edge.index_from += 1;
             }
-            if edge.index_to > pos {
+            if edge.index_to >= pos {
                 edge.index_to += 1;
             }
         }
+        
+        self.nodes.insert(pos, node);
 
         id
     }
@@ -177,6 +180,11 @@ impl Genome {
         let len = self.nodes.len();
 
         & self.nodes[len-size..len]
+    }
+
+    /// Get number of layers
+    pub fn layers(&self) -> usize {
+        self.nodes.last().unwrap().layer
     }
 
     pub fn evaluate(&mut self) {
@@ -244,5 +252,6 @@ impl Genome {
     fn activation_gaussian(value: f32) -> f32 {
         (-(value * value)).exp()
     }
+    
 
 }

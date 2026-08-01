@@ -100,11 +100,14 @@ impl Neat {
     pub fn evolve(&mut self) {        
         for genome in &mut self.genomes {
             let val = self.rng.f32();
-            if val < 0.05 {
-                Self::add_edge(genome, &mut self.rng);
+            if val < 0.005 {
+                Self::add_layer(genome, &mut self.rng);
+            }
+            else if val < 0.03 {
+                Self::add_node(genome, &mut self.rng);
             }
             else if val < 0.08 {
-                Self::add_node(genome, &mut self.rng);
+                Self::add_edge(genome, &mut self.rng);
             }
             else if val < 0.45 {
                 Self::mutate_bias(genome, &mut self.rng);
@@ -115,6 +118,7 @@ impl Neat {
         }
     }
 
+    /// Connects two nodes
     fn add_edge(genome: &mut Genome, rng: &mut Rng) {
 
         // try insert element if it isn't duplicated or in the same layer
@@ -123,7 +127,7 @@ impl Neat {
             let id_0 = rng.usize(0..size);
             let id_1 = rng.usize(id_0..size);
 
-            let res = genome.add_edge(id_0, id_1);
+            let res = genome.add_edge(id_0, id_1, 0.0);
             if res {
                 // successfully inserted
                 break;
@@ -131,10 +135,64 @@ impl Neat {
         }
     }
 
+    /// Adds an additional layer
+    fn add_layer(genome: &mut Genome, rng: &mut Rng) {
+        let nr_layers = genome.layers() + 1;
+        let layer_index = rng.usize(0..nr_layers);
+
+        genome.add_layer(layer_index);
+    }
+
+    /// Adds a new node between two connections
     fn add_node(genome: &mut Genome, rng: &mut Rng) {
+        // get edge
+        let len_edges = genome.edges.len();
+        if len_edges == 0 {
+            return;
+        }
+
+        let index_edge = rng.usize(0..len_edges);
+        let edge = &mut genome.edges[index_edge];
+
+        // check if it is activated
+        if !edge.enabled {
+            return
+        }
+
+        // get nodes
+        let index_node_0 = edge.index_from;
+        let index_node_1 = edge.index_to;
+
+        // check if there is a layer to place the new node into
+        let node_0 = &genome.nodes[index_node_0];
+        let node_1 = &genome.nodes[index_node_1];
+        let layer_node_0 = node_0.layer;
+        let layer_node_1 = node_1.layer;
+        let id_node_0 = node_0.id;
+        let id_node_1 = node_1.id;
+        if layer_node_0+1 >= layer_node_1 {
+            // no layer available to insert the node
+            return;
+        }
+
+        // deactivate current edge
+        let edge_weight = edge.weight;
+        edge.enabled = false;
+
+        // create new node
+        let layer = layer_node_0 + 1;
+        let id_node_new = genome.add_node(layer);
+
+        // create new connections
+        let res_0 = genome.add_edge(id_node_0, id_node_new, 1.0);
+        let res_1 = genome.add_edge(id_node_new, id_node_1, edge_weight);
+
+        assert_eq!(res_0, true);
+        assert_eq!(res_1, true);
 
     }
 
+    /// Modifies the bias value of a node
     fn mutate_bias(genome: &mut Genome, rng: &mut Rng) {
         let size = genome.nodes.len();
         if size == 0 {
@@ -158,6 +216,7 @@ impl Neat {
         }
     }
 
+    /// Modifies the weight value of an edge
     fn mutate_weight(genome: &mut Genome, rng: &mut Rng) {
         let size = genome.edges.len();
         if size == 0 {
@@ -178,6 +237,7 @@ impl Neat {
         }
     }
 
+    /// Helper function for generation a random value within a range
     fn random_range(rng: &mut Rng, start: f32, end: f32) -> f32 {
         start + rng.f32() * (end - start)
     }
