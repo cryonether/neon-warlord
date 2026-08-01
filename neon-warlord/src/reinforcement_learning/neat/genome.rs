@@ -119,7 +119,7 @@ impl Genome {
         // Insert new element
         self.edges.insert(pos, edge);
 
-        return true;
+        true
     }
 
     pub fn add_layer(&mut self, layer: usize) -> bool {

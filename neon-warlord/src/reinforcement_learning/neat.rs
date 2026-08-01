@@ -187,8 +187,8 @@ impl Neat {
         let res_0 = genome.add_edge(id_node_0, id_node_new, 1.0);
         let res_1 = genome.add_edge(id_node_new, id_node_1, edge_weight);
 
-        assert_eq!(res_0, true);
-        assert_eq!(res_1, true);
+        assert!(res_0);
+        assert!(res_1);
 
     }
 
