@@ -242,13 +242,7 @@ impl Neat {
         start + rng.f32() * (end - start)
     }
 
-    fn evaluate() {
-
-    } 
-
-    fn growth() {
-
-    }
+    // Advanced techniques (not yet implemented)
 
     fn spicate() {
 
