@@ -4,10 +4,11 @@ pub mod definition;
 pub mod swarm;
 pub mod advanced_composition_drawer;
 pub mod motor_linear;
+pub mod sensor_relative_position;
 
 use cgmath::{InnerSpace, MetricSpace, Zero};
 
-use crate::{advanced_composition::{self, definition::NodeKind, motor_linear::MotorLinear}, reinforcement_learning::neat::Neat, verlet_physics::{self, VerletObject}};
+use crate::{advanced_composition::{self, definition::NodeKind, motor_linear::MotorLinear, sensor_relative_position::SensorRelativePosition}, reinforcement_learning::neat::Neat, verlet_physics::{self, VerletObject}};
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -24,7 +25,7 @@ pub struct AdvancedComposition {
 impl AdvancedComposition {
     fn new(definition: &[definition::LocatedNode], pos: Vec3, radius: f32) -> Self {
         let neural_networks = Vec::new();
-        let sensors = Vec::new();
+        let mut sensors = Vec::new();
         let mut actors = Vec::new();
 
         let mut verlet_objects = Vec::new();
@@ -54,6 +55,15 @@ impl AdvancedComposition {
                         node_a_id: a,
                         node_b_id: b,
                     }));
+                },
+                NodeKind::SensorRelativePosition(a) => {
+                    let node_id = verlet_objects.len();
+                    verlet_objects.push(VerletObject::new(position_current, radius));
+
+                    sensors.push(Sensor::RelativePosition(SensorRelativePosition::new(
+                        node_id,
+                        a,
+                    )));
                 },
                 NodeKind::NeuralNetwork => {
                     
@@ -108,7 +118,7 @@ struct NeuralNetwork {
 }
 
 enum Sensor {
-
+    RelativePosition(SensorRelativePosition)
 }
 
 enum Actor {

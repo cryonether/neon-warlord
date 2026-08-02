@@ -36,6 +36,8 @@ pub enum NodeKind {
     Static,
     // Linear Motor
     MotorLinear(usize, usize),
+    // Sensor tracking the relative position to another node
+    SensorRelativePosition(usize),
     // Neural Network
     NeuralNetwork,
 
@@ -75,13 +77,22 @@ fn ml(n:usize, a:usize, b:usize) -> Node {
     }    
 }
 
-fn s(n:usize) -> Node {
+fn z(n:usize) -> Node {
     Node {
         id: n,
         kind: NodeKind::Static,
         edge: EdgeKind::None,
     }    
 }
+
+fn srp(n:usize, a:usize) -> Node {
+    Node {
+        id: n,
+        kind:  NodeKind::SensorRelativePosition(a),
+        edge: EdgeKind::None,
+    }    
+}
+
 
 pub struct LocatedNode {
     pub node: Node,
@@ -213,7 +224,7 @@ pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
         [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [s(1).l(0)  , Z          , Z          , Z          , ml(0, 1, 2), Z   , Z          , Z          , s(2).l(0)  ],
+        [z(1).l(0)  , Z          , Z          , Z          , ml(0, 1, 2), Z   , Z          , Z          , z(2).l(0)  ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
@@ -225,7 +236,7 @@ pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , a(3).d(0) , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , srp(3, 0).d(0) , Z, Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],

@@ -171,7 +171,17 @@ impl Swarm {
 
 
     fn update_sensors(&mut self) {
+        for composition in &mut self.advanced_composition {
+            for sensor in &mut composition.sensors {
+                match sensor{
+                    super::Sensor::RelativePosition(elem) => {
+                        elem.update(&composition.verlet_objects);
 
+                        let _val = elem.get_val();
+                    },
+                }
+            }
+        }
     }
 
     fn update_actors(&mut self, dt: f32) {
