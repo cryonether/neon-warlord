@@ -100,6 +100,12 @@ impl Solver {
                     crate::advanced_composition::Link::Fixed(fixed_link) => {
                         fixed_link.apply(verlet_objects);
                     },
+                    crate::advanced_composition::Link::FixedDistance(link) => {
+                        link.apply(verlet_objects);
+                    },
+                    crate::advanced_composition::Link::Loose(loose_link) => {
+                        loose_link.apply(verlet_objects);
+                    },
                 }
             }
 

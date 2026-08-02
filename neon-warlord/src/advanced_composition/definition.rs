@@ -14,6 +14,16 @@ impl Node {
         self.edge = EdgeKind::Fixed(n);
         self
     }
+
+    fn d(mut self, n:usize) -> Self {
+        self.edge = EdgeKind::FixedDistance(n);
+        self
+    }
+
+    fn l(mut self, n:usize) -> Self {
+        self.edge = EdgeKind::Loose(n);
+        self
+    }
 }
 
 #[derive(Clone, PartialEq)]
@@ -25,7 +35,7 @@ pub enum NodeKind {
     // Fixed
     Static,
     // Linear Motor
-    LinearMotor(usize, usize),
+    MotorLinear(usize, usize),
     // Neural Network
     NeuralNetwork,
 
@@ -35,8 +45,12 @@ pub enum NodeKind {
 pub enum EdgeKind {
     // None
     None,
+    // Loose
+    Loose(usize),
     // Fixed
-    Fixed(usize)
+    Fixed(usize),
+    // Fixed distance
+    FixedDistance(usize),
 }
 
 const Z: Node = Node {
@@ -53,15 +67,15 @@ fn a(n:usize) -> Node {
     }    
 }
 
-fn l(n:usize, a:usize, b:usize) -> Node {
+fn ml(n:usize, a:usize, b:usize) -> Node {
     Node {
         id: n,
-        kind:  NodeKind::LinearMotor(a, b),
+        kind:  NodeKind::MotorLinear(a, b),
         edge: EdgeKind::None,
     }    
 }
 
-fn f(n:usize) -> Node {
+fn s(n:usize) -> Node {
     Node {
         id: n,
         kind: NodeKind::Static,
@@ -171,103 +185,65 @@ pub fn get_agent_0_definition() -> [[[Node; 9]; 9]; 3] {
     [layer_0, layer_1, layer_2]
 }
 
-// #[rustfmt::skip]
-// pub fn get_pendulum_definition() -> [[[&'static str; 9]; 9]; 3] {
+// Nodes:
+// Z ... None
+// a ... Regular Node 
+// s ... Static Node
 
-//     // L(a,b)  ... Linear Motor (left_range, right_range)
-//     // R(a,b,c)... Rotator(target, axis0, axis1)
-//     // N       ... Neural Network
-//     // F       ... Fixed
-//     // A       ... Regular Node
-
-//     let layer_0 = [
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//     ];
-
-//     // let layer_1 = [
-//     //     ["     ", "     ", "     ", "     ", "4          ", "     ", "     ", "     ", "     "],
-//     //     ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//     //     ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//     //     ["     ", "     ", "     ", "     ", "R3+4+0+2-F0", "     ", "     ", "     ", "     "],
-//     //     ["F1   ", "     ", "     ", "     ", "L0+1+2     ", "     ", "     ", "     ", "F2   "],
-//     //     ["N5-F1", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//     //     ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//     //     ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//     //     ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//     // ];
-
-
-//     let layer_1 = [
-//         ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//         ["F1   ", "     ", "     ", "     ", "L0(1,2)    ", "     ", "     ", "     ", "F2   "],
-//         ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-//     ];
-
-
-//     let layer_2 = [
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//         ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "     "],
-//     ];
-
-//     [layer_0, layer_1, layer_2]
-// }
-
-
-
+// Links: 
+// .f ... Fixed position to another node
 
 #[rustfmt::skip]
-pub fn get_pendulum_definition2() -> [[[Node; 9]; 9]; 1] {
-
-    // L(a,b)  ... Linear Motor (left_range, right_range)
-    // R(a,b,c)... Rotator(target, axis0, axis1)
-    // N       ... Neural Network
-    // F       ... Fixed
-    // A       ... Regular Node
+pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
 
     let layer_0 = [
-        [Z          ,        Z          , Z          , Z          , Z          ,                  Z          , Z          , Z          , Z  ],
-        [Z          ,        Z          , Z          , Z          , Z          ,                  Z          , Z          , Z          , Z  ],
-        [Z          ,        Z          , Z          , Z          , Z          ,                  Z          , Z          , Z          , Z  ],
-        [a(3).f(1),Z          , Z          , Z          , Z          ,                  Z          , Z          , Z          , Z  ],
-        [f(1),     Z          , Z          , Z          , l(0, 1, 2), Z          , Z          , Z          , f(2)],
-        [Z          ,        Z          , Z          , Z          , Z          ,                  Z          , Z          , Z          , Z  ],
-        [Z          ,        Z          , Z          , Z          , Z          ,                  Z          , Z          , Z          , Z  ],
-        [Z          ,        Z          , Z          , Z          , Z          ,                  Z          , Z          , Z          , Z  ],
-        [Z          ,        Z          , Z          , Z          , Z          ,                  Z          , Z          , Z          , Z  ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
     ];
 
-    // let layer_1 = [
-    //     ["     ", "     ", "     ", "     ", "4          ", "     ", "     ", "     ", "     "],
-    //     ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-    //     ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-    //     ["     ", "     ", "     ", "     ", "R3+4+0+2-F0", "     ", "     ", "     ", "     "],
-    //     ["F1   ", "     ", "     ", "     ", "L0+1+2     ", "     ", "     ", "     ", "F2   "],
-    //     ["N5-F1", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-    //     ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-    //     ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-    //     ["     ", "     ", "     ", "     ", "           ", "     ", "     ", "     ", "     "],
-    // ];
+    let layer_1 = [
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [s(1).l(0)  , Z          , Z          , Z          , ml(0, 1, 2), Z   , Z          , Z          , s(2).l(0)  ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+    ];
 
-    [layer_0]
+    let layer_2 = [
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , a(3).d(0) , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+    ];
+
+    let layer_3 = [
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+    ];
+
+    [layer_0, layer_1, layer_2, layer_3]
 }
+

@@ -20,6 +20,12 @@ pub struct Swarm {
     /// Draw
     /// 1 element per entity
     drawer: Vec<AdvancedCompositionDrawer>,
+
+
+    // Some random variables
+
+    phase: f32,
+    omega: f32, // radians/sec
 }
 
 impl Swarm {
@@ -46,8 +52,10 @@ impl Swarm {
         // create advanced compositions
         let pos = Vec3::zero();
         let mut advanced_composition = Vec::new();
+
+        let a = f32::sqrt(size as f32) as usize;
         for i in 0..size {
-            let pos = pos + Vec3::new(i as f32, 0.0, 0.0);
+            let pos = pos + Vec3::new((i % a) as f32, (i / a) as f32, 0.0);
 
             advanced_composition.push(AdvancedComposition::new(&definition.nodes, pos, radius));
         }
@@ -58,10 +66,10 @@ impl Swarm {
             drawer.push(AdvancedCompositionDrawer::new(wgpu_renderer, &advanced_composition[i], radius));
         }
 
-        Self { advanced_composition, neat, drawer }
+        Self { advanced_composition, neat, drawer, phase: 0.0, omega: 1.0 }
     }
 
-    pub fn update_physics(&mut self) {
+    pub fn update_physics(&mut self, dt: f32) {
         // input
         self.update_sensors();
 
@@ -75,7 +83,7 @@ impl Swarm {
         self.update_neuron_outputs();
 
         // output
-        self.update_actors();
+        self.update_actors(dt);
 
         // // physics
         // self.update_verlet_physics();
@@ -166,8 +174,25 @@ impl Swarm {
 
     }
 
-    fn update_actors(&mut self) {
+    fn update_actors(&mut self, dt: f32) {
+        self.phase += self.omega * dt;
 
+        // Keep phase small
+        self.phase = self.phase.rem_euclid(std::f32::consts::TAU);
+
+        let sin = self.phase.sin();
+
+        for elem in &mut self.advanced_composition {
+            for actor in &mut elem.actors {
+                match actor {
+                    super::Actor::MotorLinear(motor_linear) => {
+                        motor_linear.update(&mut elem.verlet_objects);
+
+                        motor_linear.accelerate( sin, &mut elem.verlet_objects);
+                    },
+                }
+            }
+        }
     }
 
     // fn update_verlet_physics(&mut self) {

@@ -6,6 +6,7 @@ pub mod link;
 pub mod solver;
 pub mod sticky_link;
 pub mod verlet_composition;
+pub mod loose_link;
 
 use cgmath::Zero;
 
@@ -16,6 +17,8 @@ pub struct VerletObject {
     position_old: Vec3,
     acceleration: Vec3,
     radius: f32,
+
+    pub is_static: bool,
 }
 
 impl VerletObject {
@@ -28,6 +31,7 @@ impl VerletObject {
             position_old,
             acceleration,
             radius,
+            is_static: false,
         }
     }
 
@@ -37,6 +41,10 @@ impl VerletObject {
     }
 
     pub fn update_position(&mut self, dt: f32) {
+        if self.is_static {
+            return;
+        }
+
         let velocity = self.position_current - self.position_old;
         // Save current position
         self.position_old = self.position_current;

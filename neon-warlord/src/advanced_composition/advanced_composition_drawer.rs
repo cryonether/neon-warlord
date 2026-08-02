@@ -96,6 +96,24 @@ impl AdvancedCompositionDrawer {
 
                     self.links_lines.set_line_position(i, pos_0, pos_1);
                 },
+                super::Link::FixedDistance(elem) => {
+                    let index_0 = elem.node_id_1;
+                    let index_1 = elem.node_id_2;
+
+                    let pos_0 = composition.verlet_objects[index_0].position();
+                    let pos_1 = composition.verlet_objects[index_1].position();
+
+                    self.links_lines.set_line_position(i, pos_0, pos_1);
+                },
+                super::Link::Loose(elem) => {
+                    let index_0 = elem.node_id_1;
+                    let index_1 = elem.node_id_2;
+
+                    let pos_0 = composition.verlet_objects[index_0].position();
+                    let pos_1 = composition.verlet_objects[index_1].position();
+
+                    self.links_lines.set_line_position(i, pos_0, pos_1);
+                },
             }
         }
 

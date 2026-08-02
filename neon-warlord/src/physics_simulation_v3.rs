@@ -8,7 +8,7 @@ use wgpu_renderer::{
     wgpu_renderer::WgpuRendererInterface,
 };
 
-use crate::{advanced_composition::{definition::{get_agent_0_definition, parse_definition}, swarm::{self, Swarm}}, verlet_physics::solver::Solver};
+use crate::{advanced_composition::{definition::{get_agent_0_definition, get_pendulum_definition, parse_definition}, swarm::{self, Swarm}}, verlet_physics::solver::Solver};
 
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -28,9 +28,9 @@ impl PhysicsSimulationV3 {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
         let scale = 0.1;
-        let definition = get_agent_0_definition();
+        let definition = get_pendulum_definition();
         let parsed_definition = parse_definition(&definition, pos, scale);
-        let swarm = Swarm::new(wgpu_renderer, &parsed_definition, 5);
+        let swarm = Swarm::new(wgpu_renderer, &parsed_definition, 25);
         
         // solver
         let solver = Solver::new();
@@ -48,7 +48,7 @@ impl PhysicsSimulationV3 {
         let dt = 1.0 / 60.0;
         self.ticks += 1;
 
-        self.swarm.update_physics();
+        self.swarm.update_physics(dt);
 
         self.solver
             .update_advanced_composites(&mut self.swarm.advanced_composition, height_map, dt);
