@@ -2,6 +2,7 @@
 
 pub mod definition;
 pub mod swarm;
+pub mod advanced_composition_drawer;
 
 use cgmath::Zero;
 
@@ -82,6 +83,6 @@ enum Actor {
 //     link_kind: LinkKind,
 // }
 
-enum Link {
+pub enum Link {
     Fixed(verlet_physics::fixed_link::FixedLink)
 }

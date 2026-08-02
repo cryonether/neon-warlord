@@ -74,11 +74,16 @@ pub struct LocatedNode {
     pub pos: Vec3,
 }
 
-fn parse_definition<const NR_SLICES: usize, const R: usize, const C: usize>(
+pub struct ParsedDefinition {
+    pub nodes: Vec<LocatedNode>,
+    pub scale: f32,
+}
+
+pub fn parse_definition<const NR_SLICES: usize, const R: usize, const C: usize>(
     layers: &[[[Node; C]; R]; NR_SLICES],
     pos: Vec3,
     scale: f32,
-) -> Vec<LocatedNode> {
+) -> ParsedDefinition {
     let mut res: Vec<LocatedNode> = Vec::new();
 
     // add elements
@@ -123,7 +128,10 @@ fn parse_definition<const NR_SLICES: usize, const R: usize, const C: usize>(
         elem.pos = elem.pos * scale + pos;
     }
 
-    res
+    ParsedDefinition {
+        nodes: res,
+        scale,
+    }
 }
 
 

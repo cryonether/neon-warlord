@@ -22,6 +22,7 @@ mod verlet_physics;
 mod worker;
 mod worker_instance;
 mod advanced_composition;
+mod physics_simulation_v3;
 
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
@@ -44,10 +45,7 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage,
-    camera_controller::CameraController, debug_overlay::DebugOverlay,
-    physics_simulation_v2::PhysicsSimulationV2, simple_physics_simulation::SimplePhysicsSimulation,
-    sun_storage::SunStorage, worker_instance::WorkerInstance,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, physics_simulation_v2::PhysicsSimulationV2, physics_simulation_v3::PhysicsSimulationV3, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -134,6 +132,7 @@ struct NeonWarlord {
 
     // agent physics simulation
     physics_simulation: PhysicsSimulationV2,
+    physics_simulation_v3: PhysicsSimulationV3,
 
     // Worker
     worker: WorkerInstance,
@@ -294,6 +293,8 @@ impl NeonWarlord {
         physics_simulation.create_agent_0(renderer_interface);
         // physics_simulation.create_pendulum(renderer_interface);
 
+        let physics_simulation_v3 = PhysicsSimulationV3::new(renderer_interface);
+
         // Worker
         let worker = WorkerInstance::new();
 
@@ -333,6 +334,7 @@ impl NeonWarlord {
             ant_positions,
             simple_physics_simulation,
             physics_simulation,
+            physics_simulation_v3,
         }
     }
 }
@@ -557,6 +559,10 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
 
             self.physics_simulation.update_physics(&self.height_map);
             self.physics_simulation.update_device(renderer_interface);
+
+            self.physics_simulation_v3.update_physics(&self.height_map);
+            self.physics_simulation_v3.update_device(renderer_interface);
+
         }
         self.watch_fps.stop(watch_index);
 
@@ -745,8 +751,13 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     &self.sun,
                     &self.simple_physics_simulation,
                     &self.physics_simulation,
+                    &self.physics_simulation_v3,
                 ],
-                &[&self.simple_physics_simulation, &self.physics_simulation],
+                &[
+                    &self.simple_physics_simulation, 
+                    &self.physics_simulation,
+                    &self.physics_simulation_v3,
+                ],
                 &[&self.particles],
                 &[&self.plasma_orbs],
                 &[&self.glows],
