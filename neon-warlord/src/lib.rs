@@ -131,7 +131,7 @@ struct NeonWarlord {
     simple_physics_simulation: SimplePhysicsSimulation,
 
     // agent physics simulation
-    physics_simulation: PhysicsSimulationV2,
+    // physics_simulation: PhysicsSimulationV2,
     physics_simulation_v3: PhysicsSimulationV3,
 
     // Worker
@@ -289,8 +289,8 @@ impl NeonWarlord {
         let simple_physics_simulation = SimplePhysicsSimulation::new(renderer_interface);
 
         // physics simulation
-        let mut physics_simulation = PhysicsSimulationV2::new();
-        physics_simulation.create_agent_0(renderer_interface);
+        // let mut physics_simulation = PhysicsSimulationV2::new();
+        // physics_simulation.create_agent_0(renderer_interface);
         // physics_simulation.create_pendulum(renderer_interface);
 
         let physics_simulation_v3 = PhysicsSimulationV3::new(renderer_interface);
@@ -333,7 +333,7 @@ impl NeonWarlord {
             ups: 0,
             ant_positions,
             simple_physics_simulation,
-            physics_simulation,
+            // physics_simulation,
             physics_simulation_v3,
         }
     }
@@ -557,8 +557,8 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
 
             self.simple_physics_simulation.update(renderer_interface);
 
-            self.physics_simulation.update_physics(&self.height_map);
-            self.physics_simulation.update_device(renderer_interface);
+            // self.physics_simulation.update_physics(&self.height_map);
+            // self.physics_simulation.update_device(renderer_interface);
 
             self.physics_simulation_v3.update_physics(&self.height_map);
             self.physics_simulation_v3.update_device(renderer_interface);
@@ -750,12 +750,12 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 &[
                     &self.sun,
                     &self.simple_physics_simulation,
-                    &self.physics_simulation,
+                    // &self.physics_simulation,
                     &self.physics_simulation_v3,
                 ],
                 &[
                     &self.simple_physics_simulation, 
-                    &self.physics_simulation,
+                    // &self.physics_simulation,
                     &self.physics_simulation_v3,
                 ],
                 &[&self.particles],

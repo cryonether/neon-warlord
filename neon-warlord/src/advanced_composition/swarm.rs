@@ -46,7 +46,9 @@ impl Swarm {
         // create advanced compositions
         let pos = Vec3::zero();
         let mut advanced_composition = Vec::new();
-        for _i in 0..size {
+        for i in 0..size {
+            let pos = pos + Vec3::new(i as f32, 0.0, 0.0);
+
             advanced_composition.push(AdvancedComposition::new(&definition.nodes, pos, radius));
         }
 

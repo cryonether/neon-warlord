@@ -33,7 +33,23 @@ impl AdvancedComposition {
         for elem in definition {
             let position_current = elem.pos + pos;
 
-            verlet_objects.push(VerletObject::new(position_current, radius));
+            match elem.node.kind{
+                NodeKind::None => {
+                    
+                },
+                NodeKind::Regular => {
+                    verlet_objects.push(VerletObject::new(position_current, radius));
+                },
+                NodeKind::Static => {
+                    
+                },
+                NodeKind::LinearMotor(_, _) => {
+                    
+                },
+                NodeKind::NeuralNetwork => {
+                    
+                },
+            }
         } 
 
         // Create all links

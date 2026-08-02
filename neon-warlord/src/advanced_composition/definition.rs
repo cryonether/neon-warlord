@@ -106,18 +106,12 @@ pub fn parse_definition<const NR_SLICES: usize, const R: usize, const C: usize>(
 
     res.sort_by_key(|elem| elem.node.id);
 
-    // change coordinate system
-    let origin = Vec3::new(
-        res[0].pos.y,
-        res[0].pos.x,
-        res[0].pos.z,
-    );
-
+    let origin = res[0].pos;
     for elem in &mut res {
         let local_pos = Vec3::new(
-                elem.pos.y - origin.x,
-                -(elem.pos.x - origin.y),
                 elem.pos.z - origin.z,
+                elem.pos.y - origin.y,
+                elem.pos.x - origin.x,
             );
 
         elem.pos = local_pos;

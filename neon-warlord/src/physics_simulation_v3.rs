@@ -26,11 +26,11 @@ impl PhysicsSimulationV3 {
     ) -> Self {
 
         // agent 0
-        let pos = Vec3::new(1.0, 0.0, 2.0);
+        let pos = Vec3::new(0.0, 0.0, 2.0);
         let scale = 0.1;
         let definition = get_agent_0_definition();
         let parsed_definition = parse_definition(&definition, pos, scale);
-        let swarm = Swarm::new(wgpu_renderer, &parsed_definition, 1);
+        let swarm = Swarm::new(wgpu_renderer, &parsed_definition, 5);
         
         // solver
         let solver = Solver::new();
