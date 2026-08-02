@@ -36,9 +36,9 @@ impl Swarm {
         let radius = definition.scale/2.0;
 
         // create neural networks
-        let nr_neural_networks = Self::count_nr_neural_networks(&definition.nodes);
-        let neural_network_inputs = 2;
-        let neural_network_outputs = 2;
+        let nr_neural_networks = definition.count_nr_neural_networks();
+        let neural_network_inputs = definition.count_nr_neural_network_inputs();
+        let neural_network_outputs = definition.count_nr_neural_network_outputs();
 
         let mut neat = Vec::new();
         for _i in 0..nr_neural_networks {
@@ -57,7 +57,7 @@ impl Swarm {
         for i in 0..size {
             let pos = pos + Vec3::new((i % a) as f32, (i / a) as f32, 0.0);
 
-            advanced_composition.push(AdvancedComposition::new(&definition.nodes, pos, radius));
+            advanced_composition.push(AdvancedComposition::new(&definition, pos, radius));
         }
 
         // drawer
@@ -74,6 +74,7 @@ impl Swarm {
         self.update_sensors();
 
         // evolve
+        self.calculate_fitness();
         self.update_neuron_fitness();
         self.evolve_neurons();
 
@@ -114,6 +115,10 @@ impl Swarm {
                 }
             }
         }
+    }
+
+    fn calculate_fitness(&mut self) {
+        
     }
 
     fn update_neuron_fitness(&mut self) {
@@ -172,12 +177,15 @@ impl Swarm {
 
     fn update_sensors(&mut self) {
         for composition in &mut self.advanced_composition {
-            for sensor in &mut composition.sensors {
+            for (i, sensor) in &mut composition.sensors.iter_mut().enumerate() {
                 match sensor{
                     super::Sensor::RelativePosition(elem) => {
+                        // update sensor
                         elem.update(&composition.verlet_objects);
 
                         let _val = elem.get_val();
+
+                        // update connected neural network
                     },
                 }
             }
@@ -196,6 +204,9 @@ impl Swarm {
             for actor in &mut elem.actors {
                 match actor {
                     super::Actor::MotorLinear(motor_linear) => {
+                        // get output from neural network
+
+                        // update actor
                         motor_linear.update(&mut elem.verlet_objects);
 
                         motor_linear.accelerate( sin, &mut elem.verlet_objects);
@@ -203,21 +214,6 @@ impl Swarm {
                 }
             }
         }
-    }
-
-    // fn update_verlet_physics(&mut self) {
-
-    // }
-
-    fn count_nr_neural_networks(definition: &[definition::LocatedNode]) -> usize {
-        let mut sum = 0;
-        for elem in definition {
-            if elem.node.kind == NodeKind::NeuralNetwork {
-                sum += 1;
-            }
-        }
-
-        sum
     }
 }
 

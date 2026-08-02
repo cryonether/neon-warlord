@@ -5,10 +5,11 @@ pub mod swarm;
 pub mod advanced_composition_drawer;
 pub mod motor_linear;
 pub mod sensor_relative_position;
+pub mod neural_network;
 
 use cgmath::{InnerSpace, MetricSpace, Zero};
 
-use crate::{advanced_composition::{self, definition::NodeKind, motor_linear::MotorLinear, sensor_relative_position::SensorRelativePosition}, reinforcement_learning::neat::Neat, verlet_physics::{self, VerletObject}};
+use crate::{advanced_composition::{self, definition::{NodeKind, ParsedDefinition}, motor_linear::MotorLinear, neural_network::NeuralNetwork, sensor_relative_position::SensorRelativePosition}, reinforcement_learning::neat::Neat, verlet_physics::{self, VerletObject}};
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -23,8 +24,11 @@ pub struct AdvancedComposition {
 }
 
 impl AdvancedComposition {
-    fn new(definition: &[definition::LocatedNode], pos: Vec3, radius: f32) -> Self {
-        let neural_networks = Vec::new();
+    fn new(definition: &ParsedDefinition, pos: Vec3, radius: f32) -> Self {
+        let neural_network_inputs = definition.count_nr_neural_network_inputs();
+        let neural_network_outputs = definition.count_nr_neural_network_outputs();
+
+        let mut neural_networks = Vec::new();
         let mut sensors = Vec::new();
         let mut actors = Vec::new();
 
@@ -32,7 +36,7 @@ impl AdvancedComposition {
         let mut links = Vec::new();
 
         // Create a verlet object for every node
-        for elem in definition {
+        for elem in &definition.nodes {
             let position_current = elem.pos + pos;
 
             match elem.node.kind{
@@ -66,13 +70,15 @@ impl AdvancedComposition {
                     )));
                 },
                 NodeKind::NeuralNetwork => {
-                    
+                    verlet_objects.push(VerletObject::new(position_current, radius));
+
+                    neural_networks.push(NeuralNetwork::new(neural_network_inputs, neural_network_outputs));
                 },
             }
         } 
 
         // Create all links
-        for elem in definition {
+        for elem in &definition.nodes {
             let id_0 = elem.node.id;
             let pos_0 = verlet_objects[id_0].position();
 
@@ -110,12 +116,6 @@ impl AdvancedComposition {
     }
 }
 
-
-struct NeuralNetwork {
-    inputs: Vec<f32>,
-    outputs: Vec<f32>,
-    fitness: f32,
-}
 
 enum Sensor {
     RelativePosition(SensorRelativePosition)

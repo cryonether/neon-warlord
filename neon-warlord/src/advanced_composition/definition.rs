@@ -93,6 +93,14 @@ fn srp(n:usize, a:usize) -> Node {
     }    
 }
 
+fn n(n:usize) -> Node {
+    Node {
+        id: n,
+        kind: NodeKind::NeuralNetwork,
+        edge: EdgeKind::None,
+    }    
+}
+
 
 pub struct LocatedNode {
     pub node: Node,
@@ -104,52 +112,100 @@ pub struct ParsedDefinition {
     pub scale: f32,
 }
 
-pub fn parse_definition<const NR_SLICES: usize, const R: usize, const C: usize>(
-    layers: &[[[Node; C]; R]; NR_SLICES],
-    pos: Vec3,
-    scale: f32,
-) -> ParsedDefinition {
-    let mut res: Vec<LocatedNode> = Vec::new();
+impl ParsedDefinition {
 
-    // add elements
-    for nr_slice in 0..NR_SLICES {
-        for r in 0..R {
-            for c in 0..C {
-                let node = layers[nr_slice][r][c].clone();
+    pub fn parse<const NR_SLICES: usize, const R: usize, const C: usize>(
+        layers: &[[[Node; C]; R]; NR_SLICES],
+        pos: Vec3,
+        scale: f32,
+    ) -> ParsedDefinition {
+        let mut res: Vec<LocatedNode> = Vec::new();
 
-                let pos = Vec3::new(nr_slice as f32, r as f32, c as f32);
+        // add elements
+        for nr_slice in 0..NR_SLICES {
+            for r in 0..R {
+                for c in 0..C {
+                    let node = layers[nr_slice][r][c].clone();
 
-                let agent_node = LocatedNode{
-                    node,
-                    pos,
-                };
+                    let pos = Vec3::new(nr_slice as f32, r as f32, c as f32);
 
-                res.push(agent_node);
+                    let agent_node = LocatedNode{
+                        node,
+                        pos,
+                    };
+
+                    res.push(agent_node);
+                }
             }
+        }
+
+        res.sort_by_key(|elem| elem.node.id);
+
+        let origin = res[0].pos;
+        for elem in &mut res {
+            let local_pos = Vec3::new(
+                    elem.pos.z - origin.z,
+                    elem.pos.y - origin.y,
+                    -elem.pos.x - origin.x,
+                );
+
+            elem.pos = local_pos;
+        }
+
+        // move and scale elements
+        for elem in &mut res {
+            elem.pos = elem.pos * scale + pos;
+        }
+
+        ParsedDefinition {
+            nodes: res,
+            scale,
         }
     }
 
-    res.sort_by_key(|elem| elem.node.id);
+    pub fn count_nr_neural_networks(&self) -> usize {
+        let mut sum = 0;
+        for elem in &self.nodes {
+            if elem.node.kind == NodeKind::NeuralNetwork {
+                sum += 1;
+            }
+        }
 
-    let origin = res[0].pos;
-    for elem in &mut res {
-        let local_pos = Vec3::new(
-                elem.pos.z - origin.z,
-                elem.pos.y - origin.y,
-                elem.pos.x - origin.x,
-            );
-
-        elem.pos = local_pos;
+        sum
     }
 
-    // move and scale elements
-    for elem in &mut res {
-        elem.pos = elem.pos * scale + pos;
+    // Get number of neural network input lines
+    pub fn count_nr_neural_network_inputs(&self) -> usize {
+        let mut sum = 0;
+        for elem in &self.nodes {
+            sum += match elem.node.kind {
+                NodeKind::None => 0,
+                NodeKind::Regular => 0,
+                NodeKind::Static => 0,
+                NodeKind::MotorLinear(_, _) => 0,
+                NodeKind::SensorRelativePosition(_) => 3,
+                NodeKind::NeuralNetwork => 0,
+            };
+        }
+
+        sum
     }
 
-    ParsedDefinition {
-        nodes: res,
-        scale,
+    // Get number of neural network output lines
+    pub fn count_nr_neural_network_outputs(&self) -> usize {
+        let mut sum = 0;
+        for elem in &self.nodes {
+            sum += match elem.node.kind {
+                NodeKind::None => 0,
+                NodeKind::Regular => 0,
+                NodeKind::Static => 0,
+                NodeKind::MotorLinear(_, _) => 1,
+                NodeKind::SensorRelativePosition(_) => 0,
+                NodeKind::NeuralNetwork => 0,
+            };
+        }
+
+        sum
     }
 }
 
@@ -236,7 +292,7 @@ pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , srp(3, 0).d(0) , Z, Z           ],
+        [n(4).f(1)  , Z          , Z          , Z          , Z          , Z          , srp(3, 0).d(0) , Z, Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
