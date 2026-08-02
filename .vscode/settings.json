@@ -3,4 +3,5 @@
         "verlet"
     ],
     "rust-analyzer.testExplorer": true,
+    "explorer.sortOrder": "mixed",
 }

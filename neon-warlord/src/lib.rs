@@ -21,6 +21,7 @@ mod sun_storage;
 mod verlet_physics;
 mod worker;
 mod worker_instance;
+mod advanced_composition;
 
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
@@ -291,6 +292,7 @@ impl NeonWarlord {
         // physics simulation
         let mut physics_simulation = PhysicsSimulationV2::new();
         physics_simulation.create_agent_0(renderer_interface);
+        // physics_simulation.create_pendulum(renderer_interface);
 
         // Worker
         let worker = WorkerInstance::new();

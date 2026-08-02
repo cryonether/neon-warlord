@@ -15,11 +15,11 @@ pub struct VerletObject {
     position_current: Vec3,
     position_old: Vec3,
     acceleration: Vec3,
-    _radius: f32,
+    radius: f32,
 }
 
 impl VerletObject {
-    pub fn new(position_current: Vec3, _radius: f32) -> Self {
+    pub fn new(position_current: Vec3, radius: f32) -> Self {
         let position_old = position_current;
         let acceleration = Vec3::zero();
 
@@ -27,7 +27,7 @@ impl VerletObject {
             position_current,
             position_old,
             acceleration,
-            _radius,
+            radius,
         }
     }
 
@@ -59,7 +59,7 @@ impl VerletObject {
     }
 
     pub fn radius(&self) -> f32 {
-        self._radius
+        self.radius
     }
 
     pub fn damp(&mut self, val: f32) {

@@ -164,7 +164,7 @@ impl Solver {
 
                 let collision_axis = object_1.position() - object_2.position();
                 let dist = collision_axis.magnitude();
-                let min_dist = object_1._radius + object_2._radius;
+                let min_dist = object_1.radius + object_2.radius;
                 if dist < min_dist {
                     let n = collision_axis / dist;
                     let delta = min_dist - dist;

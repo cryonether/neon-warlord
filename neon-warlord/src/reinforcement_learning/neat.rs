@@ -35,7 +35,7 @@ use fastrand::Rng;
 use crate::reinforcement_learning::neat::node::NodeKind;
 
 pub struct Neat {
-    genomes: Vec<Genome>,
+    pub genomes: Vec<Genome>,
     rank: Vec<usize>,
 
     rng: Rng,
