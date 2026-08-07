@@ -3,7 +3,7 @@
 use cgmath::Zero;
 use wgpu_renderer::{vertex_color_shader::{VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines}, wgpu_renderer::WgpuRendererInterface};
 
-use crate::{advanced_composition::{AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer, definition::{self, NodeKind, ParsedDefinition}, neural_network::FitnessFunction}, reinforcement_learning::neat::Neat};
+use crate::{advanced_composition::{AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer, definition::ParsedDefinition, neural_network::FitnessFunction}, reinforcement_learning::neat::Neat};
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -56,7 +56,7 @@ impl Swarm {
         for i in 0..size {
             let pos = pos + Vec3::new((i % a) as f32, (i / a) as f32, 0.0);
 
-            advanced_composition.push(AdvancedComposition::new(&definition, pos, radius));
+            advanced_composition.push(AdvancedComposition::new(definition, pos, radius));
         }
 
         // drawer
@@ -177,7 +177,7 @@ impl Swarm {
         for composition in &mut self.advanced_composition {
             
             let mut index = 0;
-            for (i, sensor) in &mut composition.sensors.iter_mut().enumerate() {
+            for (_i, sensor) in &mut composition.sensors.iter_mut().enumerate() {
                 match sensor{
                     super::Sensor::RelativePosition(elem) => {
                         // update sensor
@@ -186,7 +186,7 @@ impl Swarm {
                         let val = elem.get_val();
 
                         // update connected neural network
-                        if composition.neural_networks.len() > 0 {
+                        if !composition.neural_networks.is_empty() {
                             composition.neural_networks[0].inputs[index] = val.x;
                             composition.neural_networks[0].inputs[index+1] = val.y;
                             composition.neural_networks[0].inputs[index+2] = val.z;
@@ -212,7 +212,7 @@ impl Swarm {
                 match actor {
                     super::Actor::MotorLinear(motor_linear) => {
                         // get output from neural network
-                        if composition.neural_networks.len() > 0 {
+                        if !composition.neural_networks.is_empty() {
                             let val = composition.neural_networks[0].outputs[index];
                             index += 1;
 

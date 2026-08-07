@@ -1,6 +1,5 @@
 //! An actor free to move between two nodes
 
-use std::vec;
 
 use cgmath::InnerSpace;
 

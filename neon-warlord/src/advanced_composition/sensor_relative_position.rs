@@ -1,8 +1,7 @@
 //! A sensor which tracks the position relative to another node
 
-use std::vec;
 
-use cgmath::{InnerSpace, Zero};
+use cgmath::Zero;
 
 use crate::{advanced_composition::Vec3, verlet_physics::VerletObject};
 

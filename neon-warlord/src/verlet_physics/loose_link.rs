@@ -1,6 +1,5 @@
 //! A link between two objects
 
-use cgmath::InnerSpace;
 
 use crate::verlet_physics::VerletObject;
 

@@ -7,9 +7,9 @@ pub mod motor_linear;
 pub mod sensor_relative_position;
 pub mod neural_network;
 
-use cgmath::{InnerSpace, MetricSpace, Zero};
+use cgmath::MetricSpace;
 
-use crate::{advanced_composition::{self, definition::{NodeKind, ParsedDefinition}, motor_linear::MotorLinear, neural_network::{FitnessFunction, NeuralNetwork}, sensor_relative_position::SensorRelativePosition}, reinforcement_learning::neat::Neat, verlet_physics::{self, VerletObject}};
+use crate::{advanced_composition::{definition::{NodeKind, ParsedDefinition}, motor_linear::MotorLinear, neural_network::{FitnessFunction, NeuralNetwork}, sensor_relative_position::SensorRelativePosition}, verlet_physics::{self, VerletObject}};
 
 type Vec3 = cgmath::Vector3<f32>;
 

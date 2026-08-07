@@ -8,7 +8,7 @@ use wgpu_renderer::{
     wgpu_renderer::WgpuRendererInterface,
 };
 
-use crate::{advanced_composition::{definition::{ParsedDefinition, get_agent_0_definition, get_pendulum_definition, get_pendulum_definition_fitness_function}, swarm::{self, Swarm}}, verlet_physics::solver::Solver};
+use crate::{advanced_composition::{definition::{ParsedDefinition, get_pendulum_definition, get_pendulum_definition_fitness_function}, swarm::Swarm}, verlet_physics::solver::Solver};
 
 
 type Vec3 = cgmath::Vector3<f32>;
