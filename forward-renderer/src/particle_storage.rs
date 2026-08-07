@@ -46,17 +46,29 @@ impl ParticleStorage {
         self.instances[index].position = pos.into();
     }
 
+    pub fn set_color(&mut self, index: usize, color: cgmath::Vector3<f32>) {
+        self.instances[index].color = color.into();
+    }
+
     pub fn set_size(&mut self, index: usize, size: f32) {
         self.instances[index].size = size;
     }
 
-    pub fn update(&mut self, renderer: &mut dyn WgpuRendererInterface, dt: instant::Duration) {
+    pub fn set_time(&mut self, index: usize, time: f32) {
+        self.instances[index].time = time;
+    }
+
+    pub fn update_time(&mut self, renderer: &mut dyn WgpuRendererInterface, dt: instant::Duration) {
         let dt = dt.as_secs_f32() / 2.0;
 
         for elem in &mut self.instances {
             elem.time += dt;
         }
 
+        self.update_device(renderer);
+    }
+
+    pub fn update_device(&mut self, renderer: &mut dyn WgpuRendererInterface) {
         self.mesh
             .update_instance_buffer(renderer.queue(), &self.instances);
     }
@@ -64,9 +76,6 @@ impl ParticleStorage {
 
 impl particle_shader::ParticleShaderDraw for ParticleStorage {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        // mesh data
-        let mesh = &self.mesh;
-
-        mesh.draw(render_pass);
+        &self.mesh.draw(render_pass);
     }
 }

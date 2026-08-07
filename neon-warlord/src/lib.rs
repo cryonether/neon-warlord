@@ -64,8 +64,8 @@ struct CameraSettings {
     sensitivity_scroll: f32,
 }
 
-const HEIGHT_MAP_INNER_WIDTH: usize = 4;
-const HEIGHT_MAP_INNER_HEIGHT: usize = 4;
+const HEIGHT_MAP_INNER_WIDTH: usize = 16;
+const HEIGHT_MAP_INNER_HEIGHT: usize = 16;
 
 const HEIGHT_MAP_TILE_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH + 2;
 const HEIGHT_MAP_TILE_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT + 2;
@@ -763,6 +763,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 &[&self.particles],
                 &[&self.plasma_orbs],
                 &[&self.glows],
+                &[],
                 &mut self.watch_fps,
             )
         }

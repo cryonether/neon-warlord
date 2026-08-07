@@ -21,6 +21,7 @@ pub enum ParticleKind {
     FloatToTheMiddle,
     Plasma,
     Glow,
+    BillboardSphere,
 }
 
 impl PipelineParticle {
@@ -39,6 +40,7 @@ impl PipelineParticle {
                 ParticleKind::Plasma => include_str!("shader_plasma.wgsl").into(),
                 ParticleKind::FloatToTheMiddle => include_str!("shader_particle.wgsl").into(),
                 ParticleKind::Glow => include_str!("shader_glow.wgsl").into(),
+                ParticleKind::BillboardSphere => include_str!("shader_bilboard_sphere.wgsl").into(),
             }),
         });
 
@@ -87,6 +89,7 @@ impl PipelineParticle {
                     ParticleKind::FloatToTheMiddle => Some(false),
                     ParticleKind::Plasma => Some(true),
                     ParticleKind::Glow => Some(false),
+                    ParticleKind::BillboardSphere => Some(true),
                 },
                 depth_compare: Some(wgpu::CompareFunction::Less),
                 stencil: wgpu::StencilState::default(),

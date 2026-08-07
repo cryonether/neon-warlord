@@ -10,6 +10,7 @@ mod pipeline_particle;
 pub use instance::Instance;
 pub use mesh::Mesh;
 pub use particle_shader_draw::ParticleShaderDraw;
+pub use particle_shader_draw::ParticleShaderDrawRange;
 pub use pipeline_particle::ParticleKind;
 pub use pipeline_particle::PipelineParticle;
 
