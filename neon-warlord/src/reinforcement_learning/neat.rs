@@ -229,7 +229,7 @@ impl Neat {
 
     // Advanced techniques (not yet implemented)
 
-    fn spicate() {}
+    fn _spicate() {}
 
-    fn mate() {}
+    fn _mate() {}
 }

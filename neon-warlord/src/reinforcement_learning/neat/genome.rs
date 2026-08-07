@@ -86,11 +86,11 @@ impl Genome {
 
         // Create edge
         let edge = neat::Edge {
-            id_from,
-            id_to,
+            _id_from: id_from,
+            _id_to: id_to,
             weight,
             enabled: true,
-            innovation: self.innovation,
+            _innovation: self.innovation,
             index_from,
             index_to,
         };

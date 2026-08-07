@@ -18,6 +18,7 @@ use crate::{
 
 type Vec3 = cgmath::Vector3<f32>;
 
+#[allow(dead_code)]
 pub struct PhysicsSimulationV2 {
     // Physics
     verlet_compositions: Vec<VerletComposition>,
@@ -31,6 +32,7 @@ pub struct PhysicsSimulationV2 {
     agent_factory: AgentFactory,
 }
 
+#[allow(dead_code)]
 impl PhysicsSimulationV2 {
     pub fn new() -> Self {
         let verlet_compositions = Vec::new();
@@ -110,6 +112,7 @@ impl VertexColorShaderDrawLines for PhysicsSimulationV2 {
     }
 }
 
+#[allow(dead_code)]
 enum Drawer {
     AgentDrawer(AgentDrawer),
 }

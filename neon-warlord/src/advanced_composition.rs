@@ -124,11 +124,11 @@ impl AdvancedComposition {
 }
 
 
-enum Sensor {
+pub enum Sensor {
     RelativePosition(SensorRelativePosition)
 }
 
-enum Actor {
+pub enum Actor {
     MotorLinear(MotorLinear)
 }
 
