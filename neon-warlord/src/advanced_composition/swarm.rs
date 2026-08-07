@@ -61,8 +61,8 @@ impl Swarm {
 
         // drawer
         let mut drawer = Vec::new();
-        for i in 0..size {
-            drawer.push(AdvancedCompositionDrawer::new(wgpu_renderer, &advanced_composition[i], radius));
+        for advanced_composition in &advanced_composition {
+            drawer.push(AdvancedCompositionDrawer::new(wgpu_renderer, advanced_composition, radius));
         }
 
         Self { advanced_composition, neat, drawer, phase: 0.0, omega: 1.0 }

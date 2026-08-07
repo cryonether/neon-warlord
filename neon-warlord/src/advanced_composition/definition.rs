@@ -124,6 +124,7 @@ impl ParsedDefinition {
         let mut res: Vec<LocatedNode> = Vec::new();
 
         // add elements
+        #[allow(clippy::needless_range_loop)]
         for nr_slice in 0..NR_SLICES {
             for r in 0..R {
                 for c in 0..C {
