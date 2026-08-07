@@ -5,8 +5,8 @@ use cgmath::InnerSpace;
 use crate::verlet_physics::VerletObject;
 
 pub struct Link {
-    node_id_1: usize,
-    node_id_2: usize,
+    pub node_id_1: usize,
+    pub node_id_2: usize,
     target_distance: f32,
 }
 

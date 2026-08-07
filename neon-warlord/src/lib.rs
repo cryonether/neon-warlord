@@ -1,5 +1,6 @@
 //! Creates the Neon-Warlord application
 
+mod advanced_composition;
 mod agents;
 mod ant_ai;
 mod ant_controller;
@@ -13,6 +14,7 @@ mod heightmap_generator;
 mod orb_controller;
 mod orb_storage;
 mod physics_simulation_v2;
+mod physics_simulation_v3;
 mod procedural_tree;
 mod reinforcement_learning;
 mod settings;
@@ -45,7 +47,7 @@ use winit::event::{ElementState, WindowEvent};
 use crate::{
     ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage,
     camera_controller::CameraController, debug_overlay::DebugOverlay,
-    physics_simulation_v2::PhysicsSimulationV2, simple_physics_simulation::SimplePhysicsSimulation,
+    physics_simulation_v3::PhysicsSimulationV3, simple_physics_simulation::SimplePhysicsSimulation,
     sun_storage::SunStorage, worker_instance::WorkerInstance,
 };
 
@@ -132,7 +134,8 @@ struct NeonWarlord {
     simple_physics_simulation: SimplePhysicsSimulation,
 
     // agent physics simulation
-    physics_simulation: PhysicsSimulationV2,
+    // physics_simulation: PhysicsSimulationV2,
+    physics_simulation_v3: PhysicsSimulationV3,
 
     // Worker
     worker: WorkerInstance,
@@ -289,8 +292,11 @@ impl NeonWarlord {
         let simple_physics_simulation = SimplePhysicsSimulation::new(renderer_interface);
 
         // physics simulation
-        let mut physics_simulation = PhysicsSimulationV2::new();
-        physics_simulation.create_agent_0(renderer_interface);
+        // let mut physics_simulation = PhysicsSimulationV2::new();
+        // physics_simulation.create_agent_0(renderer_interface);
+        // physics_simulation.create_pendulum(renderer_interface);
+
+        let physics_simulation_v3 = PhysicsSimulationV3::new(renderer_interface);
 
         // Worker
         let worker = WorkerInstance::new();
@@ -330,7 +336,8 @@ impl NeonWarlord {
             ups: 0,
             ant_positions,
             simple_physics_simulation,
-            physics_simulation,
+            // physics_simulation,
+            physics_simulation_v3,
         }
     }
 }
@@ -553,8 +560,11 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
 
             self.simple_physics_simulation.update(renderer_interface);
 
-            self.physics_simulation.update_physics(&self.height_map);
-            self.physics_simulation.update_device(renderer_interface);
+            // self.physics_simulation.update_physics(&self.height_map);
+            // self.physics_simulation.update_device(renderer_interface);
+
+            self.physics_simulation_v3.update_physics(&self.height_map);
+            self.physics_simulation_v3.update_device(renderer_interface);
         }
         self.watch_fps.stop(watch_index);
 
@@ -742,9 +752,14 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 &[
                     &self.sun,
                     &self.simple_physics_simulation,
-                    &self.physics_simulation,
+                    // &self.physics_simulation,
+                    &self.physics_simulation_v3,
                 ],
-                &[&self.simple_physics_simulation, &self.physics_simulation],
+                &[
+                    &self.simple_physics_simulation,
+                    // &self.physics_simulation,
+                    &self.physics_simulation_v3,
+                ],
                 &[&self.particles],
                 &[&self.plasma_orbs],
                 &[&self.glows],

@@ -153,7 +153,7 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
         current_depth - bias,
     );
 
-    var shadow = visibility;
+    var shadow = visibility + 0.2;
 
     // load texture
     let color = textureSample(t_texture, s_texture, in.tex_coords);

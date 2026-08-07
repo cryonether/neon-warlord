@@ -1,4 +1,4 @@
 //! Algorithms for reinforcement learning
 
-#[allow(dead_code)]
-mod neat;
+// #[allow(dead_code)]
+pub mod neat;

@@ -4,7 +4,10 @@ use cgmath::InnerSpace;
 use forward_renderer::height_map::HeightMapInterface;
 use noise::NoiseFn;
 
-use crate::verlet_physics::{self, Vec3, VerletObject, verlet_composition::VerletComposition};
+use crate::{
+    advanced_composition::AdvancedComposition,
+    verlet_physics::{self, Vec3, VerletObject, verlet_composition::VerletComposition},
+};
 
 pub struct Solver {
     perlin: noise::Perlin,
@@ -49,7 +52,7 @@ impl Solver {
         self.ticks += 1;
     }
 
-    pub fn update_composites(
+    pub fn _update_composites(
         &self,
         verlet_compositions: &mut [VerletComposition],
         height_map: &impl HeightMapInterface,
@@ -74,6 +77,39 @@ impl Solver {
             }
             for elem in &composition.sticky_links {
                 elem.apply(verlet_objects);
+            }
+
+            // physics equation
+            Self::update_positions(verlet_objects, dt);
+        }
+    }
+
+    pub fn update_advanced_composites(
+        &self,
+        verlet_compositions: &mut [AdvancedComposition],
+        height_map: &impl HeightMapInterface,
+        dt: f32,
+    ) {
+        for composition in verlet_compositions {
+            let verlet_objects = &mut composition.verlet_objects;
+
+            // gravity
+            Self::apply_gravity(verlet_objects);
+            Self::apply_map_constraint(verlet_objects, height_map);
+
+            // links
+            for link in &composition.links {
+                match link {
+                    crate::advanced_composition::Link::Fixed(fixed_link) => {
+                        fixed_link.apply(verlet_objects);
+                    }
+                    crate::advanced_composition::Link::FixedDistance(link) => {
+                        link.apply(verlet_objects);
+                    }
+                    crate::advanced_composition::Link::Loose(loose_link) => {
+                        loose_link.apply(verlet_objects);
+                    }
+                }
             }
 
             // physics equation
@@ -164,7 +200,7 @@ impl Solver {
 
                 let collision_axis = object_1.position() - object_2.position();
                 let dist = collision_axis.magnitude();
-                let min_dist = object_1._radius + object_2._radius;
+                let min_dist = object_1.radius + object_2.radius;
                 if dist < min_dist {
                     let n = collision_axis / dist;
                     let delta = min_dist - dist;
