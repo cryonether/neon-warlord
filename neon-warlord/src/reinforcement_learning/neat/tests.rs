@@ -4,7 +4,7 @@
 
 use super::*;
 
-fn test_logic_function(truth_table: &[(f32, f32, f32); 4]) {
+fn _test_logic_function(truth_table: &[(f32, f32, f32); 4]) {
     let size = 100;
     let n = 1000;
 
@@ -48,7 +48,7 @@ fn and() {
         (1.0, 0.0, 0.0),
         (1.0, 1.0, 1.0),
     ];
-    test_logic_function(&truth_table);
+    _test_logic_function(&truth_table);
 }
 
 #[test]
@@ -59,7 +59,7 @@ fn or() {
         (1.0, 0.0, 1.0),
         (1.0, 1.0, 1.0),
     ];
-    test_logic_function(&truth_table);
+    _test_logic_function(&truth_table);
 }
 
 #[test]
@@ -70,7 +70,7 @@ fn not() {
         (1.0, 0.0, 0.0),
         (1.0, 1.0, 0.0),
     ];
-    test_logic_function(&truth_table);
+    _test_logic_function(&truth_table);
 }
 
 #[test]
@@ -81,7 +81,7 @@ fn xor() {
         (1.0, 0.0, 1.0),
         (1.0, 1.0, 0.0),
     ];
-    test_logic_function(&truth_table);
+    _test_logic_function(&truth_table);
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn nand() {
         (1.0, 0.0, 1.0),
         (1.0, 1.0, 0.0),
     ];
-    test_logic_function(&truth_table);
+    _test_logic_function(&truth_table);
 }
 
 #[test]
@@ -103,7 +103,7 @@ fn nor() {
         (1.0, 0.0, 0.0),
         (1.0, 1.0, 0.0),
     ];
-    test_logic_function(&truth_table);
+    _test_logic_function(&truth_table);
 }
 
 #[test]
@@ -114,5 +114,5 @@ fn xnor() {
         (1.0, 0.0, 0.0),
         (1.0, 1.0, 1.0),
     ];
-    test_logic_function(&truth_table);
+    _test_logic_function(&truth_table);
 }

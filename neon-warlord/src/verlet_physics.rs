@@ -4,9 +4,12 @@ pub mod fixed;
 pub mod fixed_link;
 pub mod link;
 pub mod solver;
-pub mod sticky_link;
-pub mod verlet_composition;
 pub mod loose_link;
+
+#[allow(dead_code)]
+pub mod sticky_link;
+#[allow(dead_code)]
+pub mod verlet_composition;
 
 use cgmath::Zero;
 

@@ -69,7 +69,7 @@ impl PhysicsSimulationV2 {
         self.ticks += 1;
 
         self.solver
-            .update_composites(&mut self.verlet_compositions, height_map, dt);
+            ._update_composites(&mut self.verlet_compositions, height_map, dt);
     }
 
     pub fn update_device(&mut self, wgpu_renderer: &mut dyn WgpuRendererInterface) {

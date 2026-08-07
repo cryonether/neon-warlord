@@ -211,7 +211,7 @@ impl ParsedDefinition {
     }
 }
 
-
+#[allow(dead_code)]
 #[rustfmt::skip]
 pub fn get_agent_0_definition() -> [[[Node; 9]; 9]; 3] {
 

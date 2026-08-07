@@ -49,7 +49,7 @@ impl Solver {
         self.ticks += 1;
     }
 
-    pub fn update_composites(
+    pub fn _update_composites(
         &self,
         verlet_compositions: &mut [VerletComposition],
         height_map: &impl HeightMapInterface,
