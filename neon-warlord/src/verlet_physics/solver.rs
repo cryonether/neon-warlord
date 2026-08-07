@@ -4,7 +4,10 @@ use cgmath::InnerSpace;
 use forward_renderer::height_map::HeightMapInterface;
 use noise::NoiseFn;
 
-use crate::{advanced_composition::AdvancedComposition, verlet_physics::{self, Vec3, VerletObject, verlet_composition::VerletComposition}};
+use crate::{
+    advanced_composition::AdvancedComposition,
+    verlet_physics::{self, Vec3, VerletObject, verlet_composition::VerletComposition},
+};
 
 pub struct Solver {
     perlin: noise::Perlin,
@@ -99,13 +102,13 @@ impl Solver {
                 match link {
                     crate::advanced_composition::Link::Fixed(fixed_link) => {
                         fixed_link.apply(verlet_objects);
-                    },
+                    }
                     crate::advanced_composition::Link::FixedDistance(link) => {
                         link.apply(verlet_objects);
-                    },
+                    }
                     crate::advanced_composition::Link::Loose(loose_link) => {
                         loose_link.apply(verlet_objects);
-                    },
+                    }
                 }
             }
 

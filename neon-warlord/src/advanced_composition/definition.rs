@@ -12,17 +12,17 @@ pub struct Node {
 }
 
 impl Node {
-    fn f(mut self, n:usize) -> Self {
+    fn f(mut self, n: usize) -> Self {
         self.edge = EdgeKind::Fixed(n);
         self
     }
 
-    fn d(mut self, n:usize) -> Self {
+    fn d(mut self, n: usize) -> Self {
         self.edge = EdgeKind::FixedDistance(n);
         self
     }
 
-    fn l(mut self, n:usize) -> Self {
+    fn l(mut self, n: usize) -> Self {
         self.edge = EdgeKind::Loose(n);
         self
     }
@@ -42,7 +42,6 @@ pub enum NodeKind {
     SensorRelativePosition(usize),
     // Neural Network
     NeuralNetwork,
-
 }
 
 #[derive(Clone)]
@@ -63,46 +62,45 @@ const Z: Node = Node {
     edge: EdgeKind::None,
 };
 
-fn a(n:usize) -> Node {
+fn a(n: usize) -> Node {
     Node {
         id: n,
         kind: NodeKind::Regular,
         edge: EdgeKind::None,
-    }    
+    }
 }
 
-fn ml(n:usize, a:usize, b:usize) -> Node {
+fn ml(n: usize, a: usize, b: usize) -> Node {
     Node {
         id: n,
-        kind:  NodeKind::MotorLinear(a, b),
+        kind: NodeKind::MotorLinear(a, b),
         edge: EdgeKind::None,
-    }    
+    }
 }
 
-fn z(n:usize) -> Node {
+fn z(n: usize) -> Node {
     Node {
         id: n,
         kind: NodeKind::Static,
         edge: EdgeKind::None,
-    }    
+    }
 }
 
-fn srp(n:usize, a:usize) -> Node {
+fn srp(n: usize, a: usize) -> Node {
     Node {
         id: n,
-        kind:  NodeKind::SensorRelativePosition(a),
+        kind: NodeKind::SensorRelativePosition(a),
         edge: EdgeKind::None,
-    }    
+    }
 }
 
-fn n(n:usize) -> Node {
+fn n(n: usize) -> Node {
     Node {
         id: n,
         kind: NodeKind::NeuralNetwork,
         edge: EdgeKind::None,
-    }    
+    }
 }
-
 
 pub struct LocatedNode {
     pub node: Node,
@@ -115,7 +113,6 @@ pub struct ParsedDefinition {
 }
 
 impl ParsedDefinition {
-
     pub fn parse<const NR_SLICES: usize, const R: usize, const C: usize>(
         layers: &[[[Node; C]; R]; NR_SLICES],
         pos: Vec3,
@@ -132,10 +129,7 @@ impl ParsedDefinition {
 
                     let pos = Vec3::new(nr_slice as f32, r as f32, c as f32);
 
-                    let agent_node = LocatedNode{
-                        node,
-                        pos,
-                    };
+                    let agent_node = LocatedNode { node, pos };
 
                     res.push(agent_node);
                 }
@@ -147,10 +141,10 @@ impl ParsedDefinition {
         let origin = res[0].pos;
         for elem in &mut res {
             let local_pos = Vec3::new(
-                    elem.pos.z - origin.z,
-                    elem.pos.y - origin.y,
-                    -elem.pos.x - origin.x,
-                );
+                elem.pos.z - origin.z,
+                elem.pos.y - origin.y,
+                -elem.pos.x - origin.x,
+            );
 
             elem.pos = local_pos;
         }
@@ -160,10 +154,7 @@ impl ParsedDefinition {
             elem.pos = elem.pos * scale + pos;
         }
 
-        ParsedDefinition {
-            nodes: res,
-            scale,
-        }
+        ParsedDefinition { nodes: res, scale }
     }
 
     pub fn count_nr_neural_networks(&self) -> usize {
@@ -257,10 +248,10 @@ pub fn get_agent_0_definition() -> [[[Node; 9]; 9]; 3] {
 
 // Nodes:
 // Z ... None
-// a ... Regular Node 
+// a ... Regular Node
 // s ... Static Node
 
-// Links: 
+// Links:
 // .f ... Fixed position to another node
 
 #[rustfmt::skip]
@@ -317,8 +308,7 @@ pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
     [layer_0, layer_1, layer_2, layer_3]
 }
 
-pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + 'static>  {
-
+pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + 'static> {
     struct FitnessFunctionAccumulateZ {
         pub sum: f32,
     }
@@ -328,15 +318,13 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
             self.sum += inputs[2];
             self.sum
         }
-        
+
         fn clone_box(&self) -> Box<dyn FitnessFunction> {
-            Box::new(Self{sum:self.sum})
+            Box::new(Self { sum: self.sum })
         }
     }
 
-    let fitness: Box<dyn FitnessFunction> = Box::new(FitnessFunctionAccumulateZ{sum: 0.0});
+    let fitness: Box<dyn FitnessFunction> = Box::new(FitnessFunctionAccumulateZ { sum: 0.0 });
 
     fitness
 }
-    
-

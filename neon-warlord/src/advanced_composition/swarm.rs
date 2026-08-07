@@ -1,9 +1,20 @@
 //! Multiple Advanced composition together evolving neural networks
 
 use cgmath::Zero;
-use wgpu_renderer::{vertex_color_shader::{VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines}, wgpu_renderer::WgpuRendererInterface};
+use wgpu_renderer::{
+    vertex_color_shader::{
+        VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
+    },
+    wgpu_renderer::WgpuRendererInterface,
+};
 
-use crate::{advanced_composition::{AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer, definition::ParsedDefinition, neural_network::FitnessFunction}, reinforcement_learning::neat::Neat};
+use crate::{
+    advanced_composition::{
+        AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer,
+        definition::ParsedDefinition, neural_network::FitnessFunction,
+    },
+    reinforcement_learning::neat::Neat,
+};
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -22,7 +33,6 @@ pub struct Swarm {
     drawer: Vec<AdvancedCompositionDrawer>,
 
     // Some random variables
-
     phase: f32,
     omega: f32, // radians/sec
 }
@@ -30,9 +40,10 @@ pub struct Swarm {
 impl Swarm {
     pub fn new(
         wgpu_renderer: &mut dyn WgpuRendererInterface,
-        definition: &ParsedDefinition, size: usize) -> Self 
-    {
-        let radius = definition.scale/2.0;
+        definition: &ParsedDefinition,
+        size: usize,
+    ) -> Self {
+        let radius = definition.scale / 2.0;
 
         // create neural networks
         let nr_neural_networks = definition.count_nr_neural_networks();
@@ -43,8 +54,8 @@ impl Swarm {
         for _i in 0..nr_neural_networks {
             neat.push(Neat::new(
                 neural_network_inputs,
-                neural_network_outputs, 
-                size
+                neural_network_outputs,
+                size,
             ));
         }
 
@@ -62,14 +73,24 @@ impl Swarm {
         // drawer
         let mut drawer = Vec::new();
         for advanced_composition in &advanced_composition {
-            drawer.push(AdvancedCompositionDrawer::new(wgpu_renderer, advanced_composition, radius));
+            drawer.push(AdvancedCompositionDrawer::new(
+                wgpu_renderer,
+                advanced_composition,
+                radius,
+            ));
         }
 
-        Self { advanced_composition, neat, drawer, phase: 0.0, omega: 1.0 }
+        Self {
+            advanced_composition,
+            neat,
+            drawer,
+            phase: 0.0,
+            omega: 1.0,
+        }
     }
 
     pub fn update_physics(&mut self, dt: f32) {
-        // input 
+        // input
         // sensors -> neural_network inputs
         self.update_sensors();
 
@@ -94,10 +115,9 @@ impl Swarm {
 
         let size = self.drawer.len();
         for i in 0..size {
-                self.drawer[i].update(wgpu_renderer, &self.advanced_composition[i]);
+            self.drawer[i].update(wgpu_renderer, &self.advanced_composition[i]);
         }
     }
-
 
     fn update_neuron_inputs(&mut self) {
         for i in 0..self.advanced_composition.len() {
@@ -171,14 +191,11 @@ impl Swarm {
         }
     }
 
-
-
     fn update_sensors(&mut self) {
         for composition in &mut self.advanced_composition {
-            
             let mut index = 0;
             for (_i, sensor) in &mut composition.sensors.iter_mut().enumerate() {
-                match sensor{
+                match sensor {
                     super::Sensor::RelativePosition(elem) => {
                         // update sensor
                         elem.update(&composition.verlet_objects);
@@ -188,11 +205,11 @@ impl Swarm {
                         // update connected neural network
                         if !composition.neural_networks.is_empty() {
                             composition.neural_networks[0].inputs[index] = val.x;
-                            composition.neural_networks[0].inputs[index+1] = val.y;
-                            composition.neural_networks[0].inputs[index+2] = val.z;
+                            composition.neural_networks[0].inputs[index + 1] = val.y;
+                            composition.neural_networks[0].inputs[index + 2] = val.z;
                             index += 3;
                         }
-                    },
+                    }
                 }
             }
         }
@@ -221,22 +238,23 @@ impl Swarm {
 
                         // update actor
                         motor_linear.update(&mut composition.verlet_objects);
-                    },
+                    }
                 }
             }
         }
     }
-    
-    pub fn set_fitness_functions(mut self, fitness_functions: &[Box<dyn FitnessFunction>]) -> Swarm {
+
+    pub fn set_fitness_functions(
+        mut self,
+        fitness_functions: &[Box<dyn FitnessFunction>],
+    ) -> Swarm {
         for elem in &mut self.advanced_composition {
             elem.set_fitnesss_functions(fitness_functions);
         }
 
-
         self
     }
 }
-
 
 impl VertexColorShaderDraw for Swarm {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {

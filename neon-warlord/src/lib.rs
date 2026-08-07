@@ -1,5 +1,6 @@
 //! Creates the Neon-Warlord application
 
+mod advanced_composition;
 mod agents;
 mod ant_ai;
 mod ant_controller;
@@ -13,6 +14,7 @@ mod heightmap_generator;
 mod orb_controller;
 mod orb_storage;
 mod physics_simulation_v2;
+mod physics_simulation_v3;
 mod procedural_tree;
 mod reinforcement_learning;
 mod settings;
@@ -21,8 +23,6 @@ mod sun_storage;
 mod verlet_physics;
 mod worker;
 mod worker_instance;
-mod advanced_composition;
-mod physics_simulation_v3;
 
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
@@ -45,7 +45,10 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, physics_simulation_v3::PhysicsSimulationV3, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage,
+    camera_controller::CameraController, debug_overlay::DebugOverlay,
+    physics_simulation_v3::PhysicsSimulationV3, simple_physics_simulation::SimplePhysicsSimulation,
+    sun_storage::SunStorage, worker_instance::WorkerInstance,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -562,7 +565,6 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
 
             self.physics_simulation_v3.update_physics(&self.height_map);
             self.physics_simulation_v3.update_device(renderer_interface);
-
         }
         self.watch_fps.stop(watch_index);
 
@@ -754,7 +756,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     &self.physics_simulation_v3,
                 ],
                 &[
-                    &self.simple_physics_simulation, 
+                    &self.simple_physics_simulation,
                     // &self.physics_simulation,
                     &self.physics_simulation_v3,
                 ],

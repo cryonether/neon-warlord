@@ -31,14 +31,13 @@ impl NeuralNetwork {
         if let Some(fitness_function) = &mut self.fitness_function {
             self.fitness = fitness_function.calculate_fitness(&self.inputs);
         }
-
     }
 }
 
 pub trait FitnessFunction {
     fn calculate_fitness(&mut self, outputs: &[f32]) -> f32;
     fn clone_box(&self) -> Box<dyn FitnessFunction>;
-} 
+}
 
 impl Clone for Box<dyn FitnessFunction> {
     fn clone(&self) -> Self {

@@ -1,11 +1,15 @@
 //! Draws AdvancedCompositions
 
-use forward_renderer::{geometry, to_rgb};
-use wgpu_renderer::{vertex_color_shader::{self, VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines}, wgpu_renderer::WgpuRendererInterface};
 use cgmath::Rotation3;
+use forward_renderer::{geometry, to_rgb};
+use wgpu_renderer::{
+    vertex_color_shader::{
+        self, VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
+    },
+    wgpu_renderer::WgpuRendererInterface,
+};
 
 use crate::advanced_composition::AdvancedComposition;
-
 
 /// Draws AdvancedCompositions
 pub struct AdvancedCompositionDrawer {
@@ -95,7 +99,7 @@ impl AdvancedCompositionDrawer {
                     let pos_1 = composition.verlet_objects[index_1].position();
 
                     self.links_lines.set_line_position(i, pos_0, pos_1);
-                },
+                }
                 super::Link::FixedDistance(elem) => {
                     let index_0 = elem.node_id_1;
                     let index_1 = elem.node_id_2;
@@ -104,7 +108,7 @@ impl AdvancedCompositionDrawer {
                     let pos_1 = composition.verlet_objects[index_1].position();
 
                     self.links_lines.set_line_position(i, pos_0, pos_1);
-                },
+                }
                 super::Link::Loose(elem) => {
                     let index_0 = elem.node_id_1;
                     let index_1 = elem.node_id_2;
@@ -113,7 +117,7 @@ impl AdvancedCompositionDrawer {
                     let pos_1 = composition.verlet_objects[index_1].position();
 
                     self.links_lines.set_line_position(i, pos_0, pos_1);
-                },
+                }
             }
         }
 

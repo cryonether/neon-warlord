@@ -1,6 +1,5 @@
 //! A link between two objects
 
-
 use crate::verlet_physics::VerletObject;
 
 pub struct LooseLink {

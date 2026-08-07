@@ -1,10 +1,8 @@
 //! An actor free to move between two nodes
 
-
 use cgmath::InnerSpace;
 
 use crate::verlet_physics::VerletObject;
-
 
 /// An actor free to move between two nodes
 pub struct MotorLinear {
@@ -15,7 +13,6 @@ pub struct MotorLinear {
 
 impl MotorLinear {
     pub fn update(&mut self, verlet_objects: &mut [VerletObject]) {
-        
         // apply constraint
         let radius = verlet_objects[self.node_id].radius();
         let pos = verlet_objects[self.node_id].position();
@@ -33,8 +30,7 @@ impl MotorLinear {
             // left side
             new_pos = pos_b - vec_a_b_norm * 2.0 * radius;
             verlet_objects[self.node_id].set_position(new_pos);
-        }
-        else if (pos_a - pos).magnitude() < 2.0 * radius {
+        } else if (pos_a - pos).magnitude() < 2.0 * radius {
             // right side
             new_pos = pos_a + vec_a_b_norm * 2.0 * radius;
             verlet_objects[self.node_id].set_position(new_pos);
