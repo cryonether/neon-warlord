@@ -6,7 +6,7 @@ pub mod motor_linear;
 pub mod neural_network;
 pub mod sensor_relative_position;
 pub mod swarm;
-pub mod neat_drawer;
+pub mod genome_drawer;
 
 use cgmath::MetricSpace;
 

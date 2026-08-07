@@ -35,12 +35,9 @@ fn vs_main(
     // let size = 0.1 + 0.1 * instance.time;
     let size = instance.size;
 
-    let model_position = model.position;
-
     // constants
     const pi2 = radians(90.0);
     const nr_vertices_per_object = 4; // must match the used objects
-    const distance = 4.0;
     
     let object_index= vertex_index/nr_vertices_per_object;
     let time =  instance.time;
@@ -60,7 +57,7 @@ fn vs_main(
     out.color = vec4(instance.color, time);
     out.clip_position = camera.view_proj * vec4<f32>(global_position, 1.0);
     // billboards are [-0.5, 0.5]^2, uv-coords are [0, 1]^2
-    out.uv_coords = model.position.xy + 0.5;
+    out.uv_coords = model.position.xy / size + 0.5;
     return out;
 }
 
@@ -69,9 +66,20 @@ fn vs_main(
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     const pi = radians(180.);
     let centered_uv = in.uv_coords - 0.5;
-    let radius = min(2 * length(centered_uv), 1.);
+    // let radius = min(2 * length(centered_uv), 1.);
+    let radius = 2 * length(centered_uv);
     // this function is flat at 0 and 1
-    let alpha = 0.5 + 0.5 * cos(radius * pi);
+    var alpha = 0.5 + 0.5 * cos(radius * pi);
+
+    // var alpha = 0.0;
+    if(radius <= 1) {
+        alpha = 1;
+    }
+    alpha = 1.0;
+
+    if(radius > 1) {
+        discard;
+    }
 
     return vec4(in.color.xyz, in.color.w * alpha);
 }

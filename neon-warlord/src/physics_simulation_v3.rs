@@ -1,6 +1,6 @@
 //! Next iteration of the verlet physics simulation
 
-use forward_renderer::height_map::HeightMapInterface;
+use forward_renderer::{height_map::HeightMapInterface, particle_shader::ParticleShaderDraw};
 use wgpu_renderer::{
     vertex_color_shader::{
         VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
@@ -71,12 +71,19 @@ impl PhysicsSimulationV3 {
 
 impl VertexColorShaderDraw for PhysicsSimulationV3 {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        self.swarm.draw(render_pass);
+        VertexColorShaderDraw::draw(&self.swarm, render_pass);
+
     }
 }
 
 impl VertexColorShaderDrawLines for PhysicsSimulationV3 {
     fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
         self.swarm.draw_lines(render_pass);
+    }
+}
+
+impl ParticleShaderDraw for PhysicsSimulationV3 {
+    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
+        ParticleShaderDraw::draw(&self.swarm, render_pass);
     }
 }

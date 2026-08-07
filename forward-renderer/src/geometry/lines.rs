@@ -10,6 +10,8 @@ pub struct Lines {
     pub vertices: Vec<Vertex>,
     pub colors: Vec<Color>,
     pub indices: Vec<u32>,
+
+    size: usize,
 }
 
 impl Lines {
@@ -50,7 +52,12 @@ impl Lines {
             vertices,
             colors,
             indices,
+            size: n,
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.size
     }
 
     pub fn set_line_position(&mut self, index: usize, pos_0: Vec3, pos_1: Vec3) {

@@ -1,6 +1,9 @@
 //! Multiple Advanced composition together evolving neural networks
 
+use std::iter::zip;
+
 use cgmath::Zero;
+use forward_renderer::particle_shader::ParticleShaderDraw;
 use wgpu_renderer::{
     vertex_color_shader::{
         VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
@@ -10,10 +13,8 @@ use wgpu_renderer::{
 
 use crate::{
     advanced_composition::{
-        AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer,
-        definition::ParsedDefinition, neural_network::FitnessFunction,
-    },
-    reinforcement_learning::neat::Neat,
+        AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer, definition::ParsedDefinition, genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
+    }, reinforcement_learning::neat::Neat,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -23,14 +24,16 @@ pub struct Swarm {
     /// Structure
     /// 1 element per entity
     pub advanced_composition: Vec<AdvancedComposition>,
+    composition_drawer: Vec<AdvancedCompositionDrawer>,
 
     /// Reinforcement learning
     /// multiple elements per entity
-    neat: Vec<Neat>,
+    neats: Vec<Neat>,
+    neat_drawers: Vec<Vec<GenomeDrawer>>,
+
 
     /// Draw
     /// 1 element per entity
-    drawer: Vec<AdvancedCompositionDrawer>,
 
     // Some random variables
     phase: f32,
@@ -50,13 +53,25 @@ impl Swarm {
         let neural_network_inputs = definition.count_nr_neural_network_inputs();
         let neural_network_outputs = definition.count_nr_neural_network_outputs();
 
-        let mut neat = Vec::new();
+        let mut neats = Vec::new();
         for _i in 0..nr_neural_networks {
-            neat.push(Neat::new(
+            neats.push(Neat::new(
                 neural_network_inputs,
                 neural_network_outputs,
                 size,
             ));
+        }
+
+        // create neat drawers
+        let mut neat_drawers = Vec::new();
+        for neat in &neats {
+            let mut genome_drawers = Vec::new();
+            for (i, genome) in neat.genomes.iter().enumerate() {
+                let pos = Vec3::new(0.0, i as f32 * definition.scale as f32, definition.scale);
+                let genome_drawer = GenomeDrawer::new(wgpu_renderer, genome, radius, pos);
+                genome_drawers.push(genome_drawer);
+            }
+            neat_drawers.push(genome_drawers);
         }
 
         // create advanced compositions
@@ -71,9 +86,9 @@ impl Swarm {
         }
 
         // drawer
-        let mut drawer = Vec::new();
+        let mut composition_drawer = Vec::new();
         for advanced_composition in &advanced_composition {
-            drawer.push(AdvancedCompositionDrawer::new(
+            composition_drawer.push(AdvancedCompositionDrawer::new(
                 wgpu_renderer,
                 advanced_composition,
                 radius,
@@ -82,8 +97,9 @@ impl Swarm {
 
         Self {
             advanced_composition,
-            neat,
-            drawer,
+            neats,
+            neat_drawers,
+            composition_drawer,
             phase: 0.0,
             omega: 1.0,
         }
@@ -111,22 +127,30 @@ impl Swarm {
     }
 
     pub fn update_device(&mut self, wgpu_renderer: &mut dyn WgpuRendererInterface) {
-        assert!(self.drawer.len() == self.advanced_composition.len());
+        assert!(self.composition_drawer.len() == self.advanced_composition.len());
 
-        let size = self.drawer.len();
+        // update composites
+        let size = self.composition_drawer.len();
         for i in 0..size {
-            self.drawer[i].update(wgpu_renderer, &self.advanced_composition[i]);
+            self.composition_drawer[i].update(wgpu_renderer, &self.advanced_composition[i]);
+        }
+
+        // update neats
+        for (neat_drawer, neat) in zip(&mut self.neat_drawers, &self.neats) {
+            for (genome_drawer, genome) in zip(neat_drawer, &neat.genomes) {
+                genome_drawer.update(wgpu_renderer, genome);
+            }
         }
     }
 
     fn update_neuron_inputs(&mut self) {
         for i in 0..self.advanced_composition.len() {
-            for j in 0..self.neat.len() {
-                assert!(self.neat.len() == self.advanced_composition[i].neural_networks.len());
-                assert!(self.advanced_composition.len() == self.neat[j].genomes.len());
+            for j in 0..self.neats.len() {
+                assert!(self.neats.len() == self.advanced_composition[i].neural_networks.len());
+                assert!(self.advanced_composition.len() == self.neats[j].genomes.len());
 
                 let neural_network = &self.advanced_composition[i].neural_networks[j];
-                let genome = &mut self.neat[j].genomes[i];
+                let genome = &mut self.neats[j].genomes[i];
 
                 // update inputs
                 for k in 0..neural_network.inputs.len() {
@@ -138,12 +162,12 @@ impl Swarm {
 
     fn update_neuron_fitness(&mut self) {
         for i in 0..self.advanced_composition.len() {
-            for j in 0..self.neat.len() {
-                assert!(self.neat.len() == self.advanced_composition[i].neural_networks.len());
-                assert!(self.advanced_composition.len() == self.neat[j].genomes.len());
+            for j in 0..self.neats.len() {
+                assert!(self.neats.len() == self.advanced_composition[i].neural_networks.len());
+                assert!(self.advanced_composition.len() == self.neats[j].genomes.len());
 
                 let neural_network = &self.advanced_composition[i].neural_networks[j];
-                let genome = &mut self.neat[j].genomes[i];
+                let genome = &mut self.neats[j].genomes[i];
 
                 assert!(neural_network.inputs.len() == genome.sensors().len());
 
@@ -155,12 +179,12 @@ impl Swarm {
 
     fn update_neuron_outputs(&mut self) {
         for i in 0..self.advanced_composition.len() {
-            for j in 0..self.neat.len() {
-                assert!(self.neat.len() == self.advanced_composition[i].neural_networks.len());
-                assert!(self.advanced_composition.len() == self.neat[j].genomes.len());
+            for j in 0..self.neats.len() {
+                assert!(self.neats.len() == self.advanced_composition[i].neural_networks.len());
+                assert!(self.advanced_composition.len() == self.neats[j].genomes.len());
 
                 let neural_network = &mut self.advanced_composition[i].neural_networks[j];
-                let genome = &self.neat[j].genomes[i];
+                let genome = &self.neats[j].genomes[i];
 
                 assert!(neural_network.outputs.len() == genome.outputs().len());
 
@@ -176,7 +200,7 @@ impl Swarm {
     }
 
     fn evolve_neurons(&mut self) {
-        for elem in &mut self.neat {
+        for elem in &mut self.neats {
             elem.rank();
             elem.survival_selection();
             elem.evolve();
@@ -184,7 +208,7 @@ impl Swarm {
     }
 
     fn evaluate_neurons(&mut self) {
-        for elem in &mut self.neat {
+        for elem in &mut self.neats {
             for genome in &mut elem.genomes {
                 genome.evaluate();
             }
@@ -258,7 +282,7 @@ impl Swarm {
 
 impl VertexColorShaderDraw for Swarm {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        for drawer in &self.drawer {
+        for drawer in &self.composition_drawer {
             drawer.draw(render_pass);
         }
     }
@@ -266,8 +290,26 @@ impl VertexColorShaderDraw for Swarm {
 
 impl VertexColorShaderDrawLines for Swarm {
     fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        for drawer in &self.drawer {
+        // composites
+        for drawer in &self.composition_drawer {
             drawer.draw_lines(render_pass);
+        }
+
+        // neats
+        for neat_drawer in &self.neat_drawers {
+            for genome_drawer in neat_drawer {
+                genome_drawer.draw_lines(render_pass);
+            }
+        }
+    }
+}
+
+impl ParticleShaderDraw for Swarm {
+    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
+        for neat_drawer in &self.neat_drawers {
+            for genome_drawer in neat_drawer {
+                genome_drawer.draw(render_pass);
+            }
         }
     }
 }

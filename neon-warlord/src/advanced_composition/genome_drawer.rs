@@ -32,6 +32,8 @@ pub struct GenomeDrawer {
 
     nr_nodes: usize,
     nr_edges: usize,
+
+    position: Vec3,
 }
 
 impl GenomeDrawer {
@@ -39,6 +41,7 @@ impl GenomeDrawer {
         wgpu_renderer: &mut dyn WgpuRendererInterface,
         genome: &neat::Genome,
         radius: f32,
+        position: Vec3,
     ) -> Self {
         let nr_nodes = genome.nodes.len();
         let nr_edges = genome.edges.len();
@@ -48,19 +51,19 @@ impl GenomeDrawer {
         let color_positive = to_rgb("#ca6868");
         let color_edge = to_rgb("#8c6993");
 
-        let size = radius*2.0;
+        // let size = radius*2.0;
+        let size = radius;
 
         let (nodes_instances, nodes_mesh) = Self::create_nodes(
             wgpu_renderer, 
             color_zero.into(), 
             size, 
-            nr_nodes
+            nr_nodes, 
         );
 
         let (edges_lines, edges_mesh)= Self::create_edges(
             wgpu_renderer, 
             color_edge.into(), 
-            size, 
             nr_edges
         );
 
@@ -76,6 +79,7 @@ impl GenomeDrawer {
             color_edge: color_edge.into(),
             nr_nodes,
             nr_edges,
+            position,
         }
     }
 
@@ -116,10 +120,10 @@ impl GenomeDrawer {
             }
 
             let x = layer as f32 * self.size * 2.0;
-            let y = index as f32;
+            let z = index as f32 * self.size * 2.0;
             index += 1;
             
-            let pos = Vec3::new(x, y, 0.0);
+            let pos = Vec3::new(x, 0.0, z) + self.position;
             instance.position = pos.into();
 
             // color
@@ -144,7 +148,7 @@ impl GenomeDrawer {
     ) {
         // check if there is enough space
         let edges = &genome.edges;
-        if edges.len() > self.edges_lines.vertices.len() {
+        if edges.len() > self.edges_lines.len() {
             self.grow_edges(
                 wgpu_renderer,
                 edges.len() * 2);
@@ -162,7 +166,8 @@ impl GenomeDrawer {
 
         // update device
         self.nr_edges = edges.len();
-        self.edges_mesh.update_vertex_buffer(wgpu_renderer.queue(), &self.edges_lines.vertices[0..self.nr_edges*2]);
+        let size = self.nr_edges*2;
+        self.edges_mesh.update_vertex_buffer(wgpu_renderer.queue(), &self.edges_lines.vertices[0..size]);
 
     }
 
@@ -190,7 +195,6 @@ impl GenomeDrawer {
         let (edges_lines, edges_mesh) = Self::create_edges(
             wgpu_renderer, 
             self.color_edge, 
-            self.size, 
             nr_edges
         );
 
@@ -215,7 +219,7 @@ impl GenomeDrawer {
                 position: [0.0, 0.0, 0.0],
                 color: color_zero.into(),
                 time: 1.0,
-                size,
+                size: size,
             };
 
         let mut nodes_instances = Vec::with_capacity(nr_nodes);
@@ -235,7 +239,6 @@ impl GenomeDrawer {
     fn create_edges(
         wgpu_renderer: &mut dyn WgpuRendererInterface,
         color_edge: Vec3,
-        size: f32,
         nr_edges:usize,
     ) -> (geometry::Lines, vertex_color_shader::Mesh) {
         let edges_lines = geometry::Lines::new_color_fade(
@@ -269,7 +272,9 @@ impl particle_shader::ParticleShaderDraw for GenomeDrawer {
 
 impl VertexColorShaderDrawLines for GenomeDrawer {
     fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        self.edges_mesh.draw_lines_range(render_pass, self.nr_edges);
+        if self.nr_edges > 0 {
+            self.edges_mesh.draw_lines_range(render_pass, self.nr_edges*2);
+        }
     }
 }
 
