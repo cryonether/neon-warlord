@@ -9,7 +9,7 @@ pub mod neural_network;
 
 use cgmath::{InnerSpace, MetricSpace, Zero};
 
-use crate::{advanced_composition::{self, definition::{NodeKind, ParsedDefinition}, motor_linear::MotorLinear, neural_network::NeuralNetwork, sensor_relative_position::SensorRelativePosition}, reinforcement_learning::neat::Neat, verlet_physics::{self, VerletObject}};
+use crate::{advanced_composition::{self, definition::{NodeKind, ParsedDefinition}, motor_linear::MotorLinear, neural_network::{FitnessFunction, NeuralNetwork}, sensor_relative_position::SensorRelativePosition}, reinforcement_learning::neat::Neat, verlet_physics::{self, VerletObject}};
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -113,6 +113,13 @@ impl AdvancedComposition {
         }
 
         Self { neural_networks, sensors, actors, verlet_objects, links  }
+    }
+
+    pub fn set_fitnesss_functions(&mut self, fitness_functions: &[Box<dyn FitnessFunction>]) {
+        assert!(self.neural_networks.len() == fitness_functions.len());
+        for (neural_network, fitness_function) in std::iter::zip(&mut self.neural_networks, fitness_functions) {
+            neural_network.set_fitness_function(fitness_function.clone());
+        }
     }
 }
 

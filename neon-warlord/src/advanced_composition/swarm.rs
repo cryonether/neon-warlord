@@ -3,7 +3,7 @@
 use cgmath::Zero;
 use wgpu_renderer::{vertex_color_shader::{VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines}, wgpu_renderer::WgpuRendererInterface};
 
-use crate::{advanced_composition::{AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer, definition::{self, NodeKind, ParsedDefinition}}, reinforcement_learning::neat::Neat};
+use crate::{advanced_composition::{AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer, definition::{self, NodeKind, ParsedDefinition}, neural_network::FitnessFunction}, reinforcement_learning::neat::Neat};
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -20,7 +20,6 @@ pub struct Swarm {
     /// Draw
     /// 1 element per entity
     drawer: Vec<AdvancedCompositionDrawer>,
-
 
     // Some random variables
 
@@ -70,24 +69,24 @@ impl Swarm {
     }
 
     pub fn update_physics(&mut self, dt: f32) {
-        // input
+        // input 
+        // sensors -> neural_network inputs
         self.update_sensors();
 
-        // evolve
-        self.calculate_fitness();
+        // NEAT evolve
         self.update_neuron_fitness();
         self.evolve_neurons();
 
-        // update neurons
+        // NEAT calculate
         self.update_neuron_inputs();
         self.evaluate_neurons();
         self.update_neuron_outputs();
 
         // output
+        // neural_network outputs -> actors
         self.update_actors(dt);
 
-        // // physics
-        // self.update_verlet_physics();
+        // run verlet physics step
     }
 
     pub fn update_device(&mut self, wgpu_renderer: &mut dyn WgpuRendererInterface) {
@@ -115,10 +114,6 @@ impl Swarm {
                 }
             }
         }
-    }
-
-    fn calculate_fitness(&mut self) {
-        
     }
 
     fn update_neuron_fitness(&mut self) {
@@ -153,6 +148,9 @@ impl Swarm {
                 for k in 0..neural_network.outputs.len() {
                     neural_network.outputs[k] = genome.outputs()[k].value;
                 }
+
+                // update fitness
+                neural_network.calculate_fitness();
             }
         }
     }
@@ -177,15 +175,23 @@ impl Swarm {
 
     fn update_sensors(&mut self) {
         for composition in &mut self.advanced_composition {
+            
+            let mut index = 0;
             for (i, sensor) in &mut composition.sensors.iter_mut().enumerate() {
                 match sensor{
                     super::Sensor::RelativePosition(elem) => {
                         // update sensor
                         elem.update(&composition.verlet_objects);
 
-                        let _val = elem.get_val();
+                        let val = elem.get_val();
 
                         // update connected neural network
+                        if composition.neural_networks.len() > 0 {
+                            composition.neural_networks[0].inputs[index] = val.x;
+                            composition.neural_networks[0].inputs[index+1] = val.y;
+                            composition.neural_networks[0].inputs[index+2] = val.z;
+                            index += 3;
+                        }
                     },
                 }
             }
@@ -198,22 +204,36 @@ impl Swarm {
         // Keep phase small
         self.phase = self.phase.rem_euclid(std::f32::consts::TAU);
 
-        let sin = self.phase.sin();
+        let _sin = self.phase.sin();
 
-        for elem in &mut self.advanced_composition {
-            for actor in &mut elem.actors {
+        for composition in &mut self.advanced_composition {
+            let mut index = 0;
+            for actor in &mut composition.actors {
                 match actor {
                     super::Actor::MotorLinear(motor_linear) => {
                         // get output from neural network
+                        if composition.neural_networks.len() > 0 {
+                            let val = composition.neural_networks[0].outputs[index];
+                            index += 1;
+
+                            motor_linear.accelerate(val, &mut composition.verlet_objects);
+                        }
 
                         // update actor
-                        motor_linear.update(&mut elem.verlet_objects);
-
-                        motor_linear.accelerate( sin, &mut elem.verlet_objects);
+                        motor_linear.update(&mut composition.verlet_objects);
                     },
                 }
             }
         }
+    }
+    
+    pub fn set_fitness_functions(mut self, fitness_functions: &[Box<dyn FitnessFunction>]) -> Swarm {
+        for elem in &mut self.advanced_composition {
+            elem.set_fitnesss_functions(fitness_functions);
+        }
+
+
+        self
     }
 }
 

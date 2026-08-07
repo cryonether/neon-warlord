@@ -1,5 +1,7 @@
 //! Definitions for a advanced composition
 
+use crate::advanced_composition::neural_network::FitnessFunction;
+
 type Vec3 = cgmath::Vector3<f32>;
 
 #[derive(Clone)]
@@ -313,4 +315,27 @@ pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
 
     [layer_0, layer_1, layer_2, layer_3]
 }
+
+pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + 'static>  {
+
+    struct FitnessFunctionAccumulateZ {
+        pub sum: f32,
+    }
+    impl FitnessFunction for FitnessFunctionAccumulateZ {
+        fn calculate_fitness(&mut self, inputs: &[f32]) -> f32 {
+            assert!(inputs.len() == 3);
+            self.sum += inputs[2];
+            self.sum
+        }
+        
+        fn clone_box(&self) -> Box<dyn FitnessFunction> {
+            Box::new(Self{sum:self.sum})
+        }
+    }
+
+    let fitness: Box<dyn FitnessFunction> = Box::new(FitnessFunctionAccumulateZ{sum: 0.0});
+
+    fitness
+}
+    
 
