@@ -124,7 +124,7 @@ impl Solver {
     }
 
     fn apply_gravity(verlet_objects: &mut [VerletObject]) {
-        const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -10.0);
+        const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -0.1);
 
         for elem in verlet_objects {
             elem.accelerate(GRAVITY);

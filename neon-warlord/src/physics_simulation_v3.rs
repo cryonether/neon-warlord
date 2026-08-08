@@ -36,7 +36,7 @@ impl PhysicsSimulationV3 {
         let fitness_function = get_pendulum_definition_fitness_function();
         let parsed_definition = ParsedDefinition::parse(&definition, pos, scale);
 
-        let swarm = Swarm::new(wgpu_renderer, &parsed_definition, 25)
+        let swarm = Swarm::new(wgpu_renderer, &parsed_definition, 1000)
             .set_fitness_functions(&[fitness_function]);
 
         // solver

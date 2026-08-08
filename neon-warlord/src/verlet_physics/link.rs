@@ -4,6 +4,7 @@ use cgmath::InnerSpace;
 
 use crate::verlet_physics::VerletObject;
 
+#[derive(Clone)]
 pub struct Link {
     pub node_id_1: usize,
     pub node_id_2: usize,

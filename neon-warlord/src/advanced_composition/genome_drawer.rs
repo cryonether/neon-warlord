@@ -86,6 +86,8 @@ impl GenomeDrawer {
         wgpu_renderer: &mut dyn WgpuRendererInterface,
         genome: &neat::Genome,
     ) {
+        self.position = genome.world_position;
+
         self.update_nodes(wgpu_renderer, genome);
         self.update_edges(wgpu_renderer, genome);
     }

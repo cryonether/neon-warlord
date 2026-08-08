@@ -2,6 +2,7 @@
 
 use crate::verlet_physics::{Vec3, VerletObject};
 
+#[derive(Clone)]
 pub struct FixedLink {
     pub node_id_1: usize,
     pub node_id_2: usize,

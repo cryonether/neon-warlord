@@ -15,6 +15,7 @@ use cgmath::Zero;
 
 type Vec3 = cgmath::Vector3<f32>;
 
+#[derive(Clone)]
 pub struct VerletObject {
     position_current: Vec3,
     position_old: Vec3,

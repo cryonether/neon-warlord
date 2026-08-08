@@ -5,6 +5,7 @@ use cgmath::Zero;
 use crate::{advanced_composition::Vec3, verlet_physics::VerletObject};
 
 /// A sensor which tracks the position relative to another node
+#[derive(Clone)]
 pub struct SensorRelativePosition {
     pub node_id: usize,
     pub node_a_id: usize,

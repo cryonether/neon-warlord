@@ -1,7 +1,10 @@
 //! A neural network
 //!
 
+use cgmath::Zero;
+
 use crate::reinforcement_learning::neat::{self, node::NodeKind};
+type Vec3 = cgmath::Vector3<f32>;
 
 /// A neural network
 #[derive(Clone)]
@@ -14,6 +17,9 @@ pub struct Genome {
     innovation: usize,
 
     pub fitness: f32,
+
+    // Hack to save the position in the world because the structure of the application is way too complicated
+    pub world_position: Vec3,
 }
 
 impl Genome {
@@ -50,6 +56,8 @@ impl Genome {
             edges,
             innovation: 0,
             fitness: 0.0,
+
+            world_position: Vec3::zero(),
         }
     }
 

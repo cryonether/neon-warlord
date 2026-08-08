@@ -188,7 +188,9 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     // insert third column of projection matrix here
     let mod_clip_position = in.clip_position; //+ camera.proj * vec4(0.0,0.0,depth_offset,0.0);
 
-    let sphere_depth = mod_clip_position.z / mod_clip_position.w;
+    // let sphere_depth = mod_clip_position.z / mod_clip_position.w;
+
+    let sphere_depth =  in.clip_position.z;
 
     // ------------------------------------------------------------
     // Output
