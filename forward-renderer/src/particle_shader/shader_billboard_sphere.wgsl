@@ -4,6 +4,7 @@
 struct CameraUniform {
     view_pos: vec4<f32>,
     view_proj: mat4x4<f32>,
+    proj: mat4x4<f32>,
 };
 
 @group(0) @binding(0)
@@ -24,11 +25,13 @@ struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) color: vec4<f32>,
     @location(1) uv_coords: vec2<f32>,
-
+    
     // Billboard basis in world space.
     @location(2) billboard_right: vec3<f32>,
     @location(3) billboard_up: vec3<f32>,
     @location(4) billboard_forward: vec3<f32>,
+    
+    @location(5) size: f32,
 };
 
 @vertex
@@ -85,25 +88,20 @@ fn vs_main(
     out.billboard_right = sideways;
     out.billboard_up = new_up;
     out.billboard_forward = look_to;
+    out.size = size;
 
     return out;
 }
 
+struct FragmentOutput {
+    @location(0) color: vec4<f32>,
+    @builtin(frag_depth) depth: f32,
+};
 
 // Fragment shader
 @fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+fn fs_main(in: VertexOutput) -> FragmentOutput {
     const pi = radians(180.0);
-
-    // Global directional light.
-    //
-    // This is the direction the light travels.
-    // Therefore the direction from the surface toward
-    // the light is the opposite direction.
-    let light_direction =
-        normalize(vec3<f32>(-1.0, -1.0, 0.0));
-
-    let to_light = -light_direction;
 
     let centered_uv = in.uv_coords - 0.5;
 
@@ -141,6 +139,20 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         local_normal.z * in.billboard_forward
     );
 
+    // ------------------------------------------------------------
+    // Lighting
+    // ------------------------------------------------------------
+
+    // Global directional light.
+    //
+    // This is the direction the light travels.
+    // Therefore the direction from the surface toward
+    // the light is the opposite direction.
+    let light_direction =
+        normalize(vec3<f32>(-1.0, -1.0, 0.0));
+
+    let to_light = -light_direction;
+
     // Simple Lambert diffuse lighting.
     let diffuse =
         max(dot(world_normal, to_light), 0.0);
@@ -154,6 +166,11 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Optional soft edge.
     let radius = sqrt(radius_squared);
 
+
+    // ------------------------------------------------------------
+    // Alpha
+    // ------------------------------------------------------------
+
     var alpha =
         0.5 + 0.5 * cos(radius * pi);
 
@@ -162,8 +179,30 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         alpha = 1.0;
     }
 
-    return vec4<f32>(
+    // ------------------------------------------------------------
+    // Sphere depth
+    // ------------------------------------------------------------
+
+    // let sphere_depth = in.clip_position.xyz + world_normal * in.size;
+    let depth_offset = (1.0 - radius) * in.size * 0.5;
+    // insert third column of projection matrix here
+    let mod_clip_position = in.clip_position; //+ camera.proj * vec4(0.0,0.0,depth_offset,0.0);
+
+    let sphere_depth = mod_clip_position.z / mod_clip_position.w;
+
+    // ------------------------------------------------------------
+    // Output
+    // ------------------------------------------------------------
+
+    var out: FragmentOutput;
+
+    out.color = vec4<f32>(
         in.color.xyz * lighting,
         in.color.w * alpha
     );
+
+    
+    out.depth = sphere_depth;
+
+    return out;
 }

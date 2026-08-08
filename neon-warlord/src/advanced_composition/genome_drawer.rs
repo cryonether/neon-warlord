@@ -153,24 +153,32 @@ impl GenomeDrawer {
         }
 
         // update data
+        let mut nr_edges = 0;
         for (edge, instance) in std::iter::zip(&genome.edges, &mut self.edges_instances) {
+            if !edge.enabled {
+                continue;
+            }
+
             let index_from = edge.index_from;
             let index_to = edge.index_to;
             let pos_0: Vec3 = self.nodes_instances[index_from].position.into();
             let color_0: Vec3 = self.nodes_instances[index_from].color.into();
             let pos_1: Vec3 = self.nodes_instances[index_to].position.into();
+            let weight = edge.weight;
 
             instance.position_0 = pos_0.into();
             instance.position_1 = pos_1.into();
             instance.color = color_0.into();
+            instance.size = self.size * 0.1 * weight;
 
+            nr_edges += 1;
         }
 
         // update device
-        self.nr_edges = edges.len();
+        self.nr_edges = nr_edges;
         self.edges_mesh.update_instance_buffer(
             wgpu_renderer.queue(), 
-            &self.edges_instances[0..edges.len()],
+            &self.edges_instances[0..nr_edges],
         );
 
     }
