@@ -764,6 +764,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 &[&self.plasma_orbs],
                 &[&self.glows],
                 &[&self.physics_simulation_v3],
+                &[&self.physics_simulation_v3],
                 &mut self.watch_fps,
             )
         }
