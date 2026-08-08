@@ -3,7 +3,7 @@
 use std::iter::zip;
 
 use cgmath::Zero;
-use forward_renderer::particle_shader::ParticleShaderDraw;
+use forward_renderer::{particle_shader::ParticleShaderDraw, particle_shader_two_point::ParticleShaderTwoPointDraw};
 use wgpu_renderer::{
     vertex_color_shader::{
         VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
@@ -294,13 +294,6 @@ impl VertexColorShaderDrawLines for Swarm {
         for drawer in &self.composition_drawer {
             drawer.draw_lines(render_pass);
         }
-
-        // neats
-        for neat_drawer in &self.neat_drawers {
-            for genome_drawer in neat_drawer {
-                genome_drawer.draw_lines(render_pass);
-            }
-        }
     }
 }
 
@@ -308,7 +301,19 @@ impl ParticleShaderDraw for Swarm {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
         for neat_drawer in &self.neat_drawers {
             for genome_drawer in neat_drawer {
-                genome_drawer.draw(render_pass);
+                // genome_drawer.draw(render_pass);
+                ParticleShaderDraw::draw(genome_drawer, render_pass);
+
+            }
+        }
+    }
+}
+
+impl ParticleShaderTwoPointDraw for Swarm {
+    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
+        for neat_drawer in &self.neat_drawers {
+            for genome_drawer in neat_drawer {
+                ParticleShaderTwoPointDraw::draw(genome_drawer, render_pass);
             }
         }
     }

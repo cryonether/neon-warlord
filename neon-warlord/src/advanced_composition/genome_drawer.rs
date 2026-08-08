@@ -3,7 +3,7 @@
 use std::alloc::LayoutError;
 
 use cgmath::Rotation3;
-use forward_renderer::{geometry, particle_shader::{self, ParticleShaderDrawRange}, to_rgb};
+use forward_renderer::{geometry, particle_shader::{self, ParticleShaderDrawRange}, particle_shader_two_point::{self, ParticleShaderTwoPointDrawRange}, to_rgb};
 use wgpu_renderer::{
     vertex_color_shader::{
         self, VertexColorShaderDraw, vertex_color_shader_draw::{VertexColorShaderDrawLines, VertexColorShaderDrawLinesRange},
@@ -21,14 +21,13 @@ pub struct GenomeDrawer {
     nodes_instances: Vec<particle_shader::Instance>,
     nodes_mesh: particle_shader::Mesh,
 
-    edges_lines: geometry::Lines,
-    edges_mesh: vertex_color_shader::Mesh,
+    edges_instances: Vec<particle_shader_two_point::Instance>,
+    edges_mesh: particle_shader_two_point::Mesh,
 
     size: f32,
     color_negative: Vec3,
     color_zero: Vec3,
     color_positive: Vec3,
-    color_edge: Vec3,
 
     nr_nodes: usize,
     nr_edges: usize,
@@ -46,10 +45,9 @@ impl GenomeDrawer {
         let nr_nodes = genome.nodes.len();
         let nr_edges = genome.edges.len();
 
-        let color_negative = to_rgb("#6164cc");
-        let color_zero = to_rgb("#1d0b20");
-        let color_positive = to_rgb("#ca6868");
-        let color_edge = to_rgb("#8c6993");
+        let color_negative = to_rgb("#0911ff");
+        let color_zero = to_rgb("#282428");
+        let color_positive = to_rgb("#ff0d0d");
 
         // let size = radius*2.0;
         let size = radius;
@@ -61,22 +59,22 @@ impl GenomeDrawer {
             nr_nodes, 
         );
 
-        let (edges_lines, edges_mesh)= Self::create_edges(
+        let (edges_instances, edges_mesh)= Self::create_edges(
             wgpu_renderer, 
-            color_edge.into(), 
+            color_zero.into(), 
+            size*0.5,
             nr_edges
         );
 
         Self {
             nodes_mesh,
             nodes_instances,
-            edges_lines,
+            edges_instances,
             edges_mesh,
             size,
             color_negative: color_negative.into(),
             color_zero: color_zero.into(),
             color_positive: color_positive.into(),
-            color_edge: color_edge.into(),
             nr_nodes,
             nr_edges,
             position,
@@ -148,26 +146,32 @@ impl GenomeDrawer {
     ) {
         // check if there is enough space
         let edges = &genome.edges;
-        if edges.len() > self.edges_lines.len() {
+        if edges.len() > self.edges_instances.len() {
             self.grow_edges(
                 wgpu_renderer,
                 edges.len() * 2);
         }
 
         // update data
-        for (i, edge) in genome.edges.iter().enumerate() {
+        for (edge, instance) in std::iter::zip(&genome.edges, &mut self.edges_instances) {
             let index_from = edge.index_from;
             let index_to = edge.index_to;
             let pos_0: Vec3 = self.nodes_instances[index_from].position.into();
+            let color_0: Vec3 = self.nodes_instances[index_from].color.into();
             let pos_1: Vec3 = self.nodes_instances[index_to].position.into();
 
-            self.edges_lines.set_line_position(i, pos_0, pos_1);
+            instance.position_0 = pos_0.into();
+            instance.position_1 = pos_1.into();
+            instance.color = color_0.into();
+
         }
 
         // update device
         self.nr_edges = edges.len();
-        let size = self.nr_edges*2;
-        self.edges_mesh.update_vertex_buffer(wgpu_renderer.queue(), &self.edges_lines.vertices[0..size]);
+        self.edges_mesh.update_instance_buffer(
+            wgpu_renderer.queue(), 
+            &self.edges_instances[0..edges.len()],
+        );
 
     }
 
@@ -192,13 +196,14 @@ impl GenomeDrawer {
         wgpu_renderer: &mut dyn WgpuRendererInterface,
         nr_edges: usize,
     ) {
-        let (edges_lines, edges_mesh) = Self::create_edges(
+        let (edges_instances, edges_mesh) = Self::create_edges(
             wgpu_renderer, 
-            self.color_edge, 
+            self.color_zero,
+            self.size * 0.5, 
             nr_edges
         );
 
-        self.edges_lines = edges_lines;
+        self.edges_instances = edges_instances;
         self.edges_mesh = edges_mesh;
     }
 
@@ -238,26 +243,36 @@ impl GenomeDrawer {
 
     fn create_edges(
         wgpu_renderer: &mut dyn WgpuRendererInterface,
-        color_edge: Vec3,
+        color_zero: Vec3,
+        size: f32,
         nr_edges:usize,
-    ) -> (geometry::Lines, vertex_color_shader::Mesh) {
-        let edges_lines = geometry::Lines::new_color_fade(
-            nr_edges, 
-            color_edge.into(), 
-            color_edge.into()
-        );
+    ) -> (Vec<particle_shader_two_point::Instance>, particle_shader_two_point::Mesh)  {
+        let node_quad = geometry::Quad::new(size); // 4 positions
+        let mut nodes_quads = geometry::Mesh::new();
+        for _i in 0..nr_edges {
+            nodes_quads.add(&node_quad);
+        }
 
-        let edges_instances = vec![vertex_color_shader::Instance::zero()];
+        let instance = particle_shader_two_point::Instance {
+                position_0: [0.0, 0.0, 0.0],
+                position_1: [0.0, 0.0, 0.0],
+                color: color_zero.into(),
+                time: 1.0,
+                size: size,
+            };
 
-        let edges_mesh = vertex_color_shader::Mesh::new(
+        let mut edge_instances = Vec::with_capacity(nr_edges);
+        for _i in 0..nr_edges {
+            edge_instances.push(instance);
+        }
+
+        let edges_mesh = particle_shader_two_point::Mesh::from_geometry(
             wgpu_renderer.device(),
-            &edges_lines.vertices,
-            &edges_lines.colors,
-            &edges_lines.indices,
-            &edges_instances,
+            &nodes_quads,
+            &edge_instances,
         );
 
-        (edges_lines, edges_mesh)
+        (edge_instances, edges_mesh)
     }
 
 }
@@ -269,11 +284,10 @@ impl particle_shader::ParticleShaderDraw for GenomeDrawer {
     }
 }
 
-
-impl VertexColorShaderDrawLines for GenomeDrawer {
-    fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
+impl particle_shader_two_point::ParticleShaderTwoPointDraw for GenomeDrawer {
+    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
         if self.nr_edges > 0 {
-            self.edges_mesh.draw_lines_range(render_pass, self.nr_edges*2);
+            self.edges_mesh.draw_range(render_pass, self.nr_edges);
         }
     }
 }

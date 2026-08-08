@@ -90,6 +90,6 @@ impl ParticleShaderDraw for PhysicsSimulationV3 {
 
 impl ParticleShaderTwoPointDraw for PhysicsSimulationV3 {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        
+        ParticleShaderTwoPointDraw::draw(&self.swarm, render_pass);   
     }
 }
