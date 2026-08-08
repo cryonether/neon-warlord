@@ -150,7 +150,7 @@ impl AdvancedComposition {
             let node_id = neural_network.node_id;
             let pos =  self.verlet_objects[node_id].position();
             
-            neural_network.position = pos + Vec3::new(0.0, 0.0, -0.4);
+            neural_network.position = pos + Vec3::new(0.0, 0.0, -0.2);
 
             // set inputs
             let mut i = 0;

@@ -70,7 +70,7 @@ impl Neat {
 
     /// Picks the fittest survivors and replaces the bottom with it
     pub fn survival_selection(&mut self) {
-        let survival = 0.2;
+        let survival = 0.4;
 
         // get to genome
         let best = self.get_rank_0();
