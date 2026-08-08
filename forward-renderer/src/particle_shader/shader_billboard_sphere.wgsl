@@ -32,6 +32,7 @@ struct VertexOutput {
     @location(4) billboard_forward: vec3<f32>,
     
     @location(5) size: f32,
+    @location(6) clip_position_no_division: vec4<f32>,
 };
 
 @vertex
@@ -75,9 +76,10 @@ fn vs_main(
 
     out.color = vec4<f32>(instance.color, time);
 
-    out.clip_position =
+    out.clip_position_no_division =
         camera.view_proj *
         vec4<f32>(global_position, 1.0);
+    out.clip_position = out.clip_position_no_division;
 
     // Billboards are [-0.5, 0.5]^2,
     // UV coordinates are [0, 1]^2.
@@ -183,10 +185,14 @@ fn fs_main(in: VertexOutput) -> FragmentOutput {
     // Sphere depth
     // ------------------------------------------------------------
 
-    // let sphere_depth = in.clip_position.xyz + world_normal * in.size;
-    let depth_offset = (1.0 - radius) * in.size * 0.5;
+    // efficient cone geometry
+    // let depth_offset = (1.0 - radius) * in.size * 0.5;
+
+    // actual sphere version
+    let depth_offset = sphere_z * in.size * 0.5;
+    
     // insert third column of projection matrix here
-    let mod_clip_position = in.clip_position; //+ camera.proj * vec4(0.0,0.0,depth_offset,0.0);
+    let mod_clip_position = in.clip_position_no_division + camera.proj * vec4(0.0,0.0,depth_offset,0.0);
 
     let sphere_depth = mod_clip_position.z / mod_clip_position.w;
 
