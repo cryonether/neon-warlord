@@ -60,6 +60,10 @@ impl Lines {
         self.size
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn set_line_position(&mut self, index: usize, pos_0: Vec3, pos_1: Vec3) {
         if index * 2 >= self.vertices.len() {
             return;
