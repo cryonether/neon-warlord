@@ -4,7 +4,6 @@
 //! The implementation uses wgpu for rendering
 //!
 
-use crate::particle_shader::ParticleShaderDraw;
 use crate::particle_shader_two_point::ParticleShaderTwoPointDraw;
 use wgpu_renderer::vertex_color_shader::CameraUniformBuffer;
 use wgpu_renderer::vertex_color_shader::camera_bind_group_layout;

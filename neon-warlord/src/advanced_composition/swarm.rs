@@ -37,8 +37,8 @@ pub struct Swarm {
     /// 1 element per entity
 
     // Some random variables
-    phase: f32,
-    omega: f32, // radians/sec
+    // phase: f32,
+    // omega: f32, // radians/sec
 
     ticks: u64,
 }
@@ -106,8 +106,8 @@ impl Swarm {
             neats,
             neat_drawers,
             composition_drawer,
-            phase: 0.0,
-            omega: 1.0,
+            // phase: 0.0,
+            // omega: 1.0,
             ticks: 0,
         }
     }
