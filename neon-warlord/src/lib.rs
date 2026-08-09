@@ -23,6 +23,7 @@ mod sun_storage;
 mod verlet_physics;
 mod worker;
 mod worker_instance;
+mod tripple_buffer;
 
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
