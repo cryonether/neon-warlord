@@ -178,7 +178,7 @@ impl ParsedDefinition {
                 NodeKind::None => 0,
                 NodeKind::Regular => 0,
                 NodeKind::Static => 0,
-                NodeKind::MotorLinear(_, _) => 0,
+                NodeKind::MotorLinear(_, _) => 1,
                 NodeKind::SensorRelativePosition(_) => 3,
                 NodeKind::NeuralNetwork => 0,
             };
@@ -317,13 +317,14 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
     }
     impl FitnessFunction for FitnessFunctionAccumulateZ {
         fn calculate_fitness(&mut self, inputs: &[f32]) -> f32 {
-            assert!(inputs.len() == 3);
+            assert!(inputs.len() == 4);
             
-            let pos = Vec3::new(inputs[0], inputs[1], inputs[2]);
+            let linear_motor_position = inputs[0];
+            let pos = Vec3::new(inputs[1], inputs[2], inputs[3]);
             
             let distance = self.last_position.distance(pos);
 
-            self.sum += pos.z - distance;
+            self.sum += pos.z - distance + (1.0 - linear_motor_position.abs() * linear_motor_position.abs());
 
             self.last_position = pos;
 

@@ -57,6 +57,6 @@ impl MotorLinear {
     pub fn accelerate(&mut self, val: f32) {
 
 
-        self.acceleration = (val - 0.5) * 500.0;
+        self.acceleration = (val - 0.5) * 200.0;
     }
 }

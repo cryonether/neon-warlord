@@ -3,6 +3,7 @@
 pub mod advanced_composition_drawer;
 pub mod definition;
 pub mod motor_linear;
+pub mod sensor_linear;
 pub mod neural_network;
 pub mod sensor_relative_position;
 pub mod swarm;
@@ -12,12 +13,8 @@ use cgmath::MetricSpace;
 
 use crate::{
     advanced_composition::{
-        definition::{NodeKind, ParsedDefinition},
-        motor_linear::MotorLinear,
-        neural_network::{FitnessFunction, NeuralNetwork},
-        sensor_relative_position::SensorRelativePosition,
-    },
-    verlet_physics::{self, VerletObject},
+        definition::{NodeKind, ParsedDefinition}, motor_linear::MotorLinear, neural_network::{FitnessFunction, NeuralNetwork}, sensor_linear::SensorLinear, sensor_relative_position::SensorRelativePosition,
+    }, verlet_physics::{self, VerletObject},
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -61,11 +58,19 @@ impl AdvancedComposition {
                 }
                 NodeKind::MotorLinear(a, b) => {
                     let node_id = verlet_objects.len();
+                    let node_id_a = a;
+                    let node_id_b = b;
+
                     verlet_objects.push(VerletObject::new(position_current, radius));
                     actors.push(Actor::MotorLinear(MotorLinear::new(
                         node_id,
-                        a,
-                        b,
+                        node_id_a,
+                        node_id_b,
+                    )));
+                    sensors.push(Sensor::SenorLinear(SensorLinear::new(
+                        node_id, 
+                        node_id_a, 
+                        node_id_b,
                     )));
                 }
                 NodeKind::SensorRelativePosition(a) => {
@@ -167,6 +172,11 @@ impl AdvancedComposition {
                         neural_network.inputs[i+2] = val_2;
                         i += 3;
                     },
+                    Sensor::SenorLinear(sensor_linear) => {
+                        let val = sensor_linear.value();
+                        neural_network.inputs[i] = val;
+                        i += 1;
+                    },
                 }
             }
         }
@@ -201,6 +211,9 @@ impl AdvancedComposition {
                 Sensor::RelativePosition(sensor_relative_position) => {
                     sensor_relative_position.update(&self.verlet_objects);
                 },
+                Sensor::SenorLinear(sensor_linear) => {
+                    sensor_linear.update(&self.verlet_objects);
+                },
             }
         }
     }
@@ -221,6 +234,7 @@ impl AdvancedComposition {
 #[derive(Clone)]
 pub enum Sensor {
     RelativePosition(SensorRelativePosition),
+    SenorLinear(SensorLinear)
 }
 
 #[derive(Clone)]

@@ -121,7 +121,7 @@ impl Swarm {
 
         // NEAT evolve
         self.update_genome_fitness();
-        if self.ticks % 1000 == 0 {
+        if self.ticks % 3000 == 0 {
             self.evolve_genomes();
             self.advanced_composition = self.advanced_composition_original.clone();
         }
@@ -153,28 +153,6 @@ impl Swarm {
         for (neat_drawer, neat) in zip(&mut self.neat_drawers, &self.neats) {
             for (genome_drawer, genome) in zip(neat_drawer, &neat.genomes) {
                 genome_drawer.update(wgpu_renderer, genome);
-            }
-        }
-    }
-
-    fn update_genome_outputs2(&mut self) {
-        for i in 0..self.advanced_composition.len() {
-            for j in 0..self.neats.len() {
-                assert!(self.neats.len() == self.advanced_composition[i].neural_networks.len());
-                assert!(self.advanced_composition.len() == self.neats[j].genomes.len());
-
-                let neural_network = &mut self.advanced_composition[i].neural_networks[j];
-                let genome = &self.neats[j].genomes[i];
-
-                assert!(neural_network.outputs.len() == genome.outputs().len());
-
-                // update outputs
-                for k in 0..neural_network.outputs.len() {
-                    neural_network.outputs[k] = genome.outputs()[k].value;
-                }
-
-                // update fitness
-                neural_network.calculate_fitness();
             }
         }
     }

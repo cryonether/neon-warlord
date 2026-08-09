@@ -5,7 +5,7 @@
 use super::*;
 
 fn _test_logic_function(truth_table: &[(f32, f32, f32); 4]) {
-    let size = 100;
+    let size = 400;
     let n = 1000;
 
     let mut neat = Neat::new(2, 1, size);
