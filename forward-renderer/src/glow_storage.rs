@@ -64,9 +64,6 @@ impl GlowStorage {
 
 impl particle_shader::ParticleShaderDraw for GlowStorage {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        // mesh data
-        let mesh = &self.mesh;
-
-        mesh.draw(render_pass);
+        self.mesh.draw(render_pass);
     }
 }

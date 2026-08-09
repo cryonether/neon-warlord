@@ -1,5 +1,7 @@
 //! Definitions for a advanced composition
 
+use cgmath::{MetricSpace, Zero};
+
 use crate::advanced_composition::neural_network::FitnessFunction;
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -176,7 +178,7 @@ impl ParsedDefinition {
                 NodeKind::None => 0,
                 NodeKind::Regular => 0,
                 NodeKind::Static => 0,
-                NodeKind::MotorLinear(_, _) => 0,
+                NodeKind::MotorLinear(_, _) => 1,
                 NodeKind::SensorRelativePosition(_) => 3,
                 NodeKind::NeuralNetwork => 0,
             };
@@ -286,7 +288,7 @@ pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [n(4).f(1)  , Z          , Z          , Z          , Z          , Z          , srp(3, 0).d(0) , Z, Z           ],
+        [n(4).f(1)  , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
@@ -298,7 +300,7 @@ pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , srp(3, 0).d(0)          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
         [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
@@ -311,20 +313,37 @@ pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
 pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + 'static> {
     struct FitnessFunctionAccumulateZ {
         pub sum: f32,
+        pub last_position: Vec3,
     }
     impl FitnessFunction for FitnessFunctionAccumulateZ {
         fn calculate_fitness(&mut self, inputs: &[f32]) -> f32 {
-            assert!(inputs.len() == 3);
-            self.sum += inputs[2];
+            assert!(inputs.len() == 4);
+
+            let linear_motor_position = inputs[0];
+            let pos = Vec3::new(inputs[1], inputs[2], inputs[3]);
+
+            let distance = self.last_position.distance(pos);
+
+            self.sum += pos.z - distance
+                + (1.0 - linear_motor_position.abs() * linear_motor_position.abs());
+
+            self.last_position = pos;
+
             self.sum
         }
 
         fn clone_box(&self) -> Box<dyn FitnessFunction> {
-            Box::new(Self { sum: self.sum })
+            Box::new(Self {
+                sum: self.sum,
+                last_position: self.last_position,
+            })
         }
     }
 
-    let fitness: Box<dyn FitnessFunction> = Box::new(FitnessFunctionAccumulateZ { sum: 0.0 });
+    let fitness: Box<dyn FitnessFunction> = Box::new(FitnessFunctionAccumulateZ {
+        sum: 0.0,
+        last_position: Vec3::zero(),
+    });
 
     fitness
 }

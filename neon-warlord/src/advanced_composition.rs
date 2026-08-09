@@ -2,8 +2,10 @@
 
 pub mod advanced_composition_drawer;
 pub mod definition;
+pub mod genome_drawer;
 pub mod motor_linear;
 pub mod neural_network;
+pub mod sensor_linear;
 pub mod sensor_relative_position;
 pub mod swarm;
 
@@ -14,6 +16,7 @@ use crate::{
         definition::{NodeKind, ParsedDefinition},
         motor_linear::MotorLinear,
         neural_network::{FitnessFunction, NeuralNetwork},
+        sensor_linear::SensorLinear,
         sensor_relative_position::SensorRelativePosition,
     },
     verlet_physics::{self, VerletObject},
@@ -22,6 +25,7 @@ use crate::{
 type Vec3 = cgmath::Vector3<f32>;
 
 /// Advanced objects with actors and sensors using verlet physics and reinforcement learning
+#[derive(Clone)]
 pub struct AdvancedComposition {
     pub neural_networks: Vec<NeuralNetwork>,
     pub sensors: Vec<Sensor>,
@@ -59,12 +63,16 @@ impl AdvancedComposition {
                 }
                 NodeKind::MotorLinear(a, b) => {
                     let node_id = verlet_objects.len();
+                    let node_id_a = a;
+                    let node_id_b = b;
+
                     verlet_objects.push(VerletObject::new(position_current, radius));
-                    actors.push(Actor::MotorLinear(MotorLinear {
-                        node_id,
-                        node_a_id: a,
-                        node_b_id: b,
-                    }));
+                    actors.push(Actor::MotorLinear(MotorLinear::new(
+                        node_id, node_id_a, node_id_b,
+                    )));
+                    sensors.push(Sensor::SenorLinear(SensorLinear::new(
+                        node_id, node_id_a, node_id_b,
+                    )));
                 }
                 NodeKind::SensorRelativePosition(a) => {
                     let node_id = verlet_objects.len();
@@ -75,9 +83,11 @@ impl AdvancedComposition {
                     )));
                 }
                 NodeKind::NeuralNetwork => {
+                    let node_id = verlet_objects.len();
                     verlet_objects.push(VerletObject::new(position_current, radius));
 
                     neural_networks.push(NeuralNetwork::new(
+                        node_id,
                         neural_network_inputs,
                         neural_network_outputs,
                     ));
@@ -130,6 +140,7 @@ impl AdvancedComposition {
         }
     }
 
+    /// Sets the custom fitness function for each neural network
     pub fn set_fitnesss_functions(&mut self, fitness_functions: &[Box<dyn FitnessFunction>]) {
         assert!(self.neural_networks.len() == fitness_functions.len());
         for (neural_network, fitness_function) in
@@ -138,16 +149,104 @@ impl AdvancedComposition {
             neural_network.set_fitness_function(fitness_function.clone());
         }
     }
+
+    /// Sets the state of the neural network inputs based on the sensors
+    pub fn update_neural_network_inputs(&mut self) {
+        for neural_network in &mut self.neural_networks {
+            // set position
+            let node_id = neural_network.node_id;
+            let pos = self.verlet_objects[node_id].position();
+
+            neural_network.position = pos + Vec3::new(0.0, 0.0, -0.2);
+
+            // set inputs
+            let mut i = 0;
+            for sensors in &self.sensors {
+                match sensors {
+                    Sensor::RelativePosition(sensor_relative_position) => {
+                        let val = sensor_relative_position.get_val();
+                        let val_0 = val.x;
+                        let val_1 = val.y;
+                        let val_2 = val.z;
+
+                        neural_network.inputs[i] = val_0;
+                        neural_network.inputs[i + 1] = val_1;
+                        neural_network.inputs[i + 2] = val_2;
+                        i += 3;
+                    }
+                    Sensor::SenorLinear(sensor_linear) => {
+                        let val = sensor_linear.value();
+                        neural_network.inputs[i] = val;
+                        i += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Sets the state of the actors based on the neural network outputs
+    pub fn update_neural_network_outputs(&mut self) {
+        for neural_network in &self.neural_networks {
+            // set outputs
+            let mut i = 0;
+            for actor in &mut self.actors {
+                match actor {
+                    Actor::MotorLinear(motor_linear) => {
+                        let val = neural_network.outputs[i];
+
+                        motor_linear.accelerate(val);
+                        i += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Runs the custom neural network fitness function
+    fn calculate_neural_network_fitness(&mut self) {
+        for neural_network in &mut self.neural_networks {
+            neural_network.calculate_fitness();
+        }
+    }
+
+    /// Updates the internal state based on verlet physics
+    pub fn update_sensors(&mut self) {
+        for sensor in &mut self.sensors {
+            match sensor {
+                Sensor::RelativePosition(sensor_relative_position) => {
+                    sensor_relative_position.update(&self.verlet_objects);
+                }
+                Sensor::SenorLinear(sensor_linear) => {
+                    sensor_linear.update(&self.verlet_objects);
+                }
+            }
+        }
+    }
+
+    /// Updates the verlet physics of the actors
+    pub fn update_actors(&mut self) {
+        for actor in &mut self.actors {
+            match actor {
+                Actor::MotorLinear(motor_linear) => {
+                    motor_linear.update(&mut self.verlet_objects);
+                }
+            }
+        }
+    }
 }
 
+#[derive(Clone)]
 pub enum Sensor {
     RelativePosition(SensorRelativePosition),
+    SenorLinear(SensorLinear),
 }
 
+#[derive(Clone)]
 pub enum Actor {
     MotorLinear(MotorLinear),
 }
 
+#[derive(Clone)]
 pub enum Link {
     Fixed(verlet_physics::fixed_link::FixedLink),
     FixedDistance(verlet_physics::link::Link),

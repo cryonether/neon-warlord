@@ -1,6 +1,11 @@
 //! Multiple Advanced composition together evolving neural networks
 
+use std::iter::zip;
+
 use cgmath::Zero;
+use forward_renderer::{
+    particle_shader::ParticleShaderDraw, particle_shader_two_point::ParticleShaderTwoPointDraw,
+};
 use wgpu_renderer::{
     vertex_color_shader::{
         VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
@@ -11,7 +16,7 @@ use wgpu_renderer::{
 use crate::{
     advanced_composition::{
         AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer,
-        definition::ParsedDefinition, neural_network::FitnessFunction,
+        definition::ParsedDefinition, genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
     },
     reinforcement_learning::neat::Neat,
 };
@@ -23,18 +28,20 @@ pub struct Swarm {
     /// Structure
     /// 1 element per entity
     pub advanced_composition: Vec<AdvancedComposition>,
+    advanced_composition_original: Vec<AdvancedComposition>,
+    composition_drawer: Vec<AdvancedCompositionDrawer>,
 
     /// Reinforcement learning
     /// multiple elements per entity
-    neat: Vec<Neat>,
+    neats: Vec<Neat>,
+    neat_drawers: Vec<Vec<GenomeDrawer>>,
 
     /// Draw
     /// 1 element per entity
-    drawer: Vec<AdvancedCompositionDrawer>,
-
     // Some random variables
-    phase: f32,
-    omega: f32, // radians/sec
+    // phase: f32,
+    // omega: f32, // radians/sec
+    ticks: u64,
 }
 
 impl Swarm {
@@ -50,13 +57,25 @@ impl Swarm {
         let neural_network_inputs = definition.count_nr_neural_network_inputs();
         let neural_network_outputs = definition.count_nr_neural_network_outputs();
 
-        let mut neat = Vec::new();
+        let mut neats = Vec::new();
         for _i in 0..nr_neural_networks {
-            neat.push(Neat::new(
+            neats.push(Neat::new(
                 neural_network_inputs,
                 neural_network_outputs,
                 size,
             ));
+        }
+
+        // create neat drawers
+        let mut neat_drawers = Vec::new();
+        for neat in &neats {
+            let mut genome_drawers = Vec::new();
+            for (i, genome) in neat.genomes.iter().enumerate() {
+                let pos = Vec3::new(0.0, i as f32 * definition.scale, definition.scale);
+                let genome_drawer = GenomeDrawer::new(wgpu_renderer, genome, radius * 0.5, pos);
+                genome_drawers.push(genome_drawer);
+            }
+            neat_drawers.push(genome_drawers);
         }
 
         // create advanced compositions
@@ -70,10 +89,12 @@ impl Swarm {
             advanced_composition.push(AdvancedComposition::new(definition, pos, radius));
         }
 
+        let advanced_composition_original = advanced_composition.clone();
+
         // drawer
-        let mut drawer = Vec::new();
+        let mut composition_drawer = Vec::new();
         for advanced_composition in &advanced_composition {
-            drawer.push(AdvancedCompositionDrawer::new(
+            composition_drawer.push(AdvancedCompositionDrawer::new(
                 wgpu_renderer,
                 advanced_composition,
                 radius,
@@ -82,10 +103,13 @@ impl Swarm {
 
         Self {
             advanced_composition,
-            neat,
-            drawer,
-            phase: 0.0,
-            omega: 1.0,
+            advanced_composition_original,
+            neats,
+            neat_drawers,
+            composition_drawer,
+            // phase: 0.0,
+            // omega: 1.0,
+            ticks: 0,
         }
     }
 
@@ -93,154 +117,133 @@ impl Swarm {
         // input
         // sensors -> neural_network inputs
         self.update_sensors();
+        self.update_neural_network_inputs();
+        self.calculate_neural_network_fitness();
 
         // NEAT evolve
-        self.update_neuron_fitness();
-        self.evolve_neurons();
+        self.update_genome_fitness();
+        if self.ticks.is_multiple_of(3000) {
+            self.evolve_genomes();
+            self.advanced_composition = self.advanced_composition_original.clone();
+        }
 
         // NEAT calculate
-        self.update_neuron_inputs();
-        self.evaluate_neurons();
-        self.update_neuron_outputs();
+        self.update_genome_inputs();
+        self.evaluate_genomes();
+        self.update_genome_outputs();
 
         // output
         // neural_network outputs -> actors
+        self.update_neural_network_outputs();
         self.update_actors(dt);
 
         // run verlet physics step
+        self.ticks += 1
     }
 
     pub fn update_device(&mut self, wgpu_renderer: &mut dyn WgpuRendererInterface) {
-        assert!(self.drawer.len() == self.advanced_composition.len());
+        assert!(self.composition_drawer.len() == self.advanced_composition.len());
 
-        let size = self.drawer.len();
+        // update composites
+        let size = self.composition_drawer.len();
         for i in 0..size {
-            self.drawer[i].update(wgpu_renderer, &self.advanced_composition[i]);
+            self.composition_drawer[i].update(wgpu_renderer, &self.advanced_composition[i]);
         }
-    }
 
-    fn update_neuron_inputs(&mut self) {
-        for i in 0..self.advanced_composition.len() {
-            for j in 0..self.neat.len() {
-                assert!(self.neat.len() == self.advanced_composition[i].neural_networks.len());
-                assert!(self.advanced_composition.len() == self.neat[j].genomes.len());
-
-                let neural_network = &self.advanced_composition[i].neural_networks[j];
-                let genome = &mut self.neat[j].genomes[i];
-
-                // update inputs
-                for k in 0..neural_network.inputs.len() {
-                    genome.sensors()[k].value = neural_network.inputs[k];
-                }
+        // update neats
+        for (neat_drawer, neat) in zip(&mut self.neat_drawers, &self.neats) {
+            for (genome_drawer, genome) in zip(neat_drawer, &neat.genomes) {
+                genome_drawer.update(wgpu_renderer, genome);
             }
         }
     }
 
-    fn update_neuron_fitness(&mut self) {
-        for i in 0..self.advanced_composition.len() {
-            for j in 0..self.neat.len() {
-                assert!(self.neat.len() == self.advanced_composition[i].neural_networks.len());
-                assert!(self.advanced_composition.len() == self.neat[j].genomes.len());
-
-                let neural_network = &self.advanced_composition[i].neural_networks[j];
-                let genome = &mut self.neat[j].genomes[i];
-
-                assert!(neural_network.inputs.len() == genome.sensors().len());
-
-                // update fitness
-                genome.fitness = neural_network.fitness;
-            }
-        }
-    }
-
-    fn update_neuron_outputs(&mut self) {
-        for i in 0..self.advanced_composition.len() {
-            for j in 0..self.neat.len() {
-                assert!(self.neat.len() == self.advanced_composition[i].neural_networks.len());
-                assert!(self.advanced_composition.len() == self.neat[j].genomes.len());
-
-                let neural_network = &mut self.advanced_composition[i].neural_networks[j];
-                let genome = &self.neat[j].genomes[i];
-
-                assert!(neural_network.outputs.len() == genome.outputs().len());
-
-                // update outputs
-                for k in 0..neural_network.outputs.len() {
-                    neural_network.outputs[k] = genome.outputs()[k].value;
-                }
-
-                // update fitness
-                neural_network.calculate_fitness();
-            }
-        }
-    }
-
-    fn evolve_neurons(&mut self) {
-        for elem in &mut self.neat {
+    fn evolve_genomes(&mut self) {
+        for elem in &mut self.neats {
             elem.rank();
             elem.survival_selection();
             elem.evolve();
         }
     }
 
-    fn evaluate_neurons(&mut self) {
-        for elem in &mut self.neat {
+    fn evaluate_genomes(&mut self) {
+        for elem in &mut self.neats {
             for genome in &mut elem.genomes {
                 genome.evaluate();
             }
         }
     }
 
-    fn update_sensors(&mut self) {
-        for composition in &mut self.advanced_composition {
-            let mut index = 0;
-            for (_i, sensor) in &mut composition.sensors.iter_mut().enumerate() {
-                match sensor {
-                    super::Sensor::RelativePosition(elem) => {
-                        // update sensor
-                        elem.update(&composition.verlet_objects);
+    fn update_genome_inputs(&mut self) {
+        let neat = &mut self.neats[0];
 
-                        let val = elem.get_val();
+        assert!(neat.genomes.len() == self.advanced_composition.len());
+        for (genome, composition) in zip(&mut neat.genomes, &self.advanced_composition) {
+            let neural_network = &composition.neural_networks[0];
 
-                        // update connected neural network
-                        if !composition.neural_networks.is_empty() {
-                            composition.neural_networks[0].inputs[index] = val.x;
-                            composition.neural_networks[0].inputs[index + 1] = val.y;
-                            composition.neural_networks[0].inputs[index + 2] = val.z;
-                            index += 3;
-                        }
-                    }
-                }
+            assert!(genome.nr_sensors == neural_network.inputs.len());
+            for (sensor, input) in zip(genome.sensors(), &neural_network.inputs) {
+                sensor.value = *input;
+            }
+
+            genome.world_position = neural_network.position;
+        }
+    }
+
+    fn update_genome_outputs(&mut self) {
+        let neat = &mut self.neats[0];
+
+        assert!(neat.genomes.len() == self.advanced_composition.len());
+        for (genome, composition) in zip(&neat.genomes, &mut self.advanced_composition) {
+            let neural_network = &mut composition.neural_networks[0];
+
+            assert!(genome.nr_outputs == neural_network.outputs.len());
+            for (output_genome, output_neural_network) in
+                zip(genome.outputs(), &mut neural_network.outputs)
+            {
+                *output_neural_network = output_genome.value;
             }
         }
     }
 
-    fn update_actors(&mut self, dt: f32) {
-        self.phase += self.omega * dt;
+    fn update_genome_fitness(&mut self) {
+        let neat = &mut self.neats[0];
 
-        // Keep phase small
-        self.phase = self.phase.rem_euclid(std::f32::consts::TAU);
+        assert!(neat.genomes.len() == self.advanced_composition.len());
+        for (genome, composition) in zip(&mut neat.genomes, &self.advanced_composition) {
+            let neural_network = &composition.neural_networks[0];
 
-        let _sin = self.phase.sin();
+            genome.fitness = neural_network.fitness;
+        }
+    }
 
+    fn update_neural_network_inputs(&mut self) {
         for composition in &mut self.advanced_composition {
-            let mut index = 0;
-            for actor in &mut composition.actors {
-                match actor {
-                    super::Actor::MotorLinear(motor_linear) => {
-                        // get output from neural network
-                        if !composition.neural_networks.is_empty() {
-                            let val = composition.neural_networks[0].outputs[index];
-                            index += 1;
+            composition.update_neural_network_inputs();
+        }
+    }
 
-                            motor_linear.accelerate(val, &mut composition.verlet_objects);
-                        }
+    fn calculate_neural_network_fitness(&mut self) {
+        for composition in &mut self.advanced_composition {
+            composition.calculate_neural_network_fitness();
+        }
+    }
 
-                        // update actor
-                        motor_linear.update(&mut composition.verlet_objects);
-                    }
-                }
-            }
+    fn update_neural_network_outputs(&mut self) {
+        for composition in &mut self.advanced_composition {
+            composition.update_neural_network_outputs();
+        }
+    }
+
+    fn update_actors(&mut self, _dt: f32) {
+        for composition in &mut self.advanced_composition {
+            composition.update_actors();
+        }
+    }
+
+    fn update_sensors(&mut self) {
+        for composition in &mut self.advanced_composition {
+            composition.update_sensors();
         }
     }
 
@@ -258,7 +261,7 @@ impl Swarm {
 
 impl VertexColorShaderDraw for Swarm {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        for drawer in &self.drawer {
+        for drawer in &self.composition_drawer {
             drawer.draw(render_pass);
         }
     }
@@ -266,8 +269,30 @@ impl VertexColorShaderDraw for Swarm {
 
 impl VertexColorShaderDrawLines for Swarm {
     fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        for drawer in &self.drawer {
+        // composites
+        for drawer in &self.composition_drawer {
             drawer.draw_lines(render_pass);
+        }
+    }
+}
+
+impl ParticleShaderDraw for Swarm {
+    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
+        for neat_drawer in &self.neat_drawers {
+            for genome_drawer in neat_drawer {
+                // genome_drawer.draw(render_pass);
+                ParticleShaderDraw::draw(genome_drawer, render_pass);
+            }
+        }
+    }
+}
+
+impl ParticleShaderTwoPointDraw for Swarm {
+    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
+        for neat_drawer in &self.neat_drawers {
+            for genome_drawer in neat_drawer {
+                ParticleShaderTwoPointDraw::draw(genome_drawer, render_pass);
+            }
         }
     }
 }

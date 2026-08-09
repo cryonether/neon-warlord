@@ -2,8 +2,8 @@
 //!
 
 use crate::geometry::MeshInterface;
-use crate::particle_shader::ParticleShaderDraw;
-use crate::particle_shader::particle_shader_draw::ParticleShaderDrawRange;
+use crate::particle_shader_two_point::ParticleShaderTwoPointDraw;
+use crate::particle_shader_two_point::ParticleShaderTwoPointDrawRange;
 
 use super::IndexBuffer;
 use super::Instance;
@@ -81,13 +81,13 @@ impl Mesh {
     }
 }
 
-impl ParticleShaderDraw for Mesh {
+impl ParticleShaderTwoPointDraw for Mesh {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
         self.draw_range(render_pass, self.instance_buffer.size() as usize);
     }
 }
 
-impl ParticleShaderDrawRange for Mesh {
+impl ParticleShaderTwoPointDrawRange for Mesh {
     fn draw_range<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>, nr_instances: usize) {
         self.vertex_buffer.bind(render_pass);
         self.index_buffer.bind(render_pass);

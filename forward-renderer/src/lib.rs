@@ -9,6 +9,7 @@ pub mod glow_storage;
 pub mod height_map;
 pub mod lod_heightmap_shader;
 pub mod particle_shader;
+pub mod particle_shader_two_point;
 pub mod particle_storage;
 mod performance_monitor;
 pub mod plasma_orb_storage;

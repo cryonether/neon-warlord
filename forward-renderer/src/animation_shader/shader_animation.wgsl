@@ -6,6 +6,7 @@ const MAX_JOINT_WEIGHTS: u32 = 4u;
 struct CameraUniform {
     view_pos: vec4<f32>,
     view_proj: mat4x4<f32>,
+    proj: mat4x4<f32>,
 };
 
 struct JointUniform {

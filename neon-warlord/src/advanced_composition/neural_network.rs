@@ -1,7 +1,15 @@
 //! Representing a neural network
+//!
+
+use cgmath::Zero;
+type Vec3 = cgmath::Vector3<f32>;
 
 /// Representing a neural network
+#[derive(Clone)]
 pub struct NeuralNetwork {
+    pub node_id: usize,
+    pub position: Vec3,
+
     pub inputs: Vec<f32>,
     pub outputs: Vec<f32>,
     pub fitness: f32,
@@ -10,15 +18,20 @@ pub struct NeuralNetwork {
 }
 
 impl NeuralNetwork {
-    pub fn new(inputs: usize, outputs: usize) -> Self {
+    pub fn new(node_id: usize, inputs: usize, outputs: usize) -> Self {
         let inputs = vec![0.0; inputs];
         let outputs = vec![0.0; outputs];
         let fitness = 0.0;
+        let position = Vec3::zero();
 
         Self {
+            node_id,
+            position,
+
             inputs,
             outputs,
             fitness,
+
             fitness_function: None,
         }
     }

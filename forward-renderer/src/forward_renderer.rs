@@ -3,7 +3,8 @@
 
 use crate::animation_shader::AnimationShaderDraw;
 use crate::particle_shader::{ParticleKind, ParticleShaderDraw};
-use crate::{animation_shader, particle_shader};
+use crate::particle_shader_two_point::ParticleShaderTwoPointDraw;
+use crate::{animation_shader, particle_shader, particle_shader_two_point};
 // use crate::animated_object_storage::AnimatedObjectStorage;
 // use crate::deferred_color_shader::entity_buffer::MousePosition;
 // use crate::deferred_color_shader::{self, DeferredShaderDraw, EntityBuffer, GBuffer};
@@ -69,6 +70,8 @@ pub struct ForwardRenderer {
     pipeline_particle: particle_shader::PipelineParticle,
     pipeline_plasma: particle_shader::PipelineParticle,
     pipeline_glow: particle_shader::PipelineParticle,
+    pipeline_billboard_sphere: particle_shader::PipelineParticle,
+    pipeline_rectangle: particle_shader_two_point::PipelineParticleTwoPoint,
 
     // post_processing_bind_group_layout: fxaa_shader::PostProcessingTextureBindGroupLayout,
     // post_processing_texture: fxaa_shader::PostProcessingTexture,
@@ -240,6 +243,20 @@ impl ForwardRenderer {
             ParticleKind::Glow,
         );
 
+        let pipeline_billboard_sphere = particle_shader::PipelineParticle::new(
+            wgpu_renderer.device(),
+            &camera_bind_group_layout,
+            surface_format,
+            ParticleKind::BillboardSphere,
+        );
+
+        let pipeline_rectangle = particle_shader_two_point::PipelineParticleTwoPoint::new(
+            wgpu_renderer.device(),
+            &camera_bind_group_layout,
+            surface_format,
+            particle_shader_two_point::ParticleKind::BillboardRectangle,
+        );
+
         // // pipeline fxaa
         // let post_processing_bind_group_layout =
         //     fxaa_shader::PostProcessingTextureBindGroupLayout::new(wgpu_renderer.device());
@@ -337,6 +354,8 @@ impl ForwardRenderer {
             pipeline_particle,
             pipeline_plasma,
             pipeline_glow,
+            pipeline_billboard_sphere,
+            pipeline_rectangle,
 
             // post_processing_bind_group_layout,
             // post_processing_texture,
@@ -582,6 +601,8 @@ impl ForwardRenderer {
         particles: &[&dyn ParticleShaderDraw],
         plasmas: &[&dyn ParticleShaderDraw],
         glow: &[&dyn ParticleShaderDraw],
+        particles_bilboard_sphere: &[&dyn ParticleShaderDraw],
+        particles_rectangle: &[&dyn ParticleShaderTwoPointDraw],
         // performance_monitors: &[&mut PerformanceMonitor<{ super::WATCH_POINTS_SIZE }>],
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -656,6 +677,18 @@ impl ForwardRenderer {
             self.pipeline_glow
                 .draw(&mut render_pass, &self.camera_uniform_buffer, *elem);
         }
+        for elem in particles_bilboard_sphere {
+            self.pipeline_billboard_sphere.draw(
+                &mut render_pass,
+                &self.camera_uniform_buffer,
+                *elem,
+            );
+        }
+
+        for elem in particles_rectangle {
+            self.pipeline_rectangle
+                .draw(&mut render_pass, &self.camera_uniform_buffer, *elem);
+        }
 
         // gui lines
         for elem in gui_elements {
@@ -697,6 +730,8 @@ impl ForwardRenderer {
         particles: &[&dyn ParticleShaderDraw],
         plasmas: &[&dyn ParticleShaderDraw],
         glow: &[&dyn ParticleShaderDraw],
+        particles_bilboard_sphere: &[&dyn ParticleShaderDraw],
+        particles_rectangle: &[&dyn ParticleShaderTwoPointDraw],
         watch_fps: &mut watch::Watch<10>,
     ) -> Result<(), RenderError> {
         let mut watch_index = 5;
@@ -804,6 +839,8 @@ impl ForwardRenderer {
             particles,
             plasmas,
             glow,
+            particles_bilboard_sphere,
+            particles_rectangle,
         );
 
         watch_fps.stop(watch_index);

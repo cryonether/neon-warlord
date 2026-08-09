@@ -5,13 +5,25 @@ use cgmath::InnerSpace;
 use crate::verlet_physics::VerletObject;
 
 /// An actor free to move between two nodes
+#[derive(Clone)]
 pub struct MotorLinear {
     pub node_id: usize,
     pub node_a_id: usize,
     pub node_b_id: usize,
+
+    acceleration: f32,
 }
 
 impl MotorLinear {
+    pub fn new(node_id: usize, node_a_id: usize, node_b_id: usize) -> Self {
+        Self {
+            node_id,
+            node_a_id,
+            node_b_id,
+            acceleration: 0.0,
+        }
+    }
+
     pub fn update(&mut self, verlet_objects: &mut [VerletObject]) {
         // apply constraint
         let radius = verlet_objects[self.node_id].radius();
@@ -40,16 +52,13 @@ impl MotorLinear {
         }
 
         verlet_objects[self.node_id].set_position(new_pos);
+
+        // apply acceleration
+        let acceleration = vec_a_b * self.acceleration;
+        verlet_objects[self.node_id].accelerate(acceleration);
     }
 
-    pub fn accelerate(&mut self, val: f32, verlet_objects: &mut [VerletObject]) {
-        let pos_a = verlet_objects[self.node_a_id].position();
-        let pos_b = verlet_objects[self.node_b_id].position();
-
-        let vec_a_b = (pos_b - pos_a).normalize();
-
-        let acceleration = vec_a_b * val;
-
-        verlet_objects[self.node_id].accelerate(acceleration);
+    pub fn accelerate(&mut self, val: f32) {
+        self.acceleration = (val - 0.5) * 200.0;
     }
 }

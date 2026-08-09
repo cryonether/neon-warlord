@@ -4,7 +4,7 @@
 //! The implementation uses wgpu for rendering
 //!
 
-use crate::particle_shader::ParticleShaderDraw;
+use crate::particle_shader_two_point::ParticleShaderTwoPointDraw;
 use wgpu_renderer::vertex_color_shader::CameraUniformBuffer;
 use wgpu_renderer::vertex_color_shader::camera_bind_group_layout;
 use wgpu_renderer::wgpu_renderer::depth_texture::DepthTexture;
@@ -13,18 +13,15 @@ use super::Instance;
 use super::Vertex;
 
 /// A general purpose shader using vertices, colors and an instance matrix
-pub struct PipelineParticle {
+pub struct PipelineParticleTwoPoint {
     render_pipeline: wgpu::RenderPipeline,
 }
 
 pub enum ParticleKind {
-    FloatToTheMiddle,
-    Plasma,
-    Glow,
-    BillboardSphere,
+    BillboardRectangle,
 }
 
-impl PipelineParticle {
+impl PipelineParticleTwoPoint {
     pub fn new(
         device: &wgpu::Device,
         camera_bind_group_layout: &camera_bind_group_layout::CameraBindGroupLayout,
@@ -37,25 +34,22 @@ impl PipelineParticle {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(match particle_kind {
-                ParticleKind::Plasma => include_str!("shader_plasma.wgsl").into(),
-                ParticleKind::FloatToTheMiddle => include_str!("shader_particle.wgsl").into(),
-                ParticleKind::Glow => include_str!("shader_glow.wgsl").into(),
-                ParticleKind::BillboardSphere => {
-                    include_str!("shader_billboard_sphere.wgsl").into()
+                ParticleKind::BillboardRectangle => {
+                    include_str!("shader_billboard_rectangle.wgsl").into()
                 }
             }),
         });
 
-        // PipelineParticle
+        // PipelineParticleTwoPoint
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render PipelineParticle Layout"),
+                label: Some("Render PipelineParticleTwoPoint Layout"),
                 bind_group_layouts: &[Some(camera_bind_group_layout.get())],
                 immediate_size: 0,
             });
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render PipelineParticle"),
+            label: Some("Render PipelineParticleTwoPoint"),
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
@@ -78,6 +72,7 @@ impl PipelineParticle {
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw, // counter-clockwise direction
                 cull_mode: Some(wgpu::Face::Back),
+                // cull_mode: None,
                 // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
                 polygon_mode: wgpu::PolygonMode::Fill,
                 // Requires Features::DEPTH_CLIP_CONTROL
@@ -88,10 +83,7 @@ impl PipelineParticle {
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DepthTexture::DEPTH_FORMAT,
                 depth_write_enabled: match particle_kind {
-                    ParticleKind::FloatToTheMiddle => Some(false),
-                    ParticleKind::Plasma => Some(true),
-                    ParticleKind::Glow => Some(false),
-                    ParticleKind::BillboardSphere => Some(true),
+                    ParticleKind::BillboardRectangle => Some(true),
                 },
                 depth_compare: Some(wgpu::CompareFunction::Less),
                 stencil: wgpu::StencilState::default(),
@@ -117,7 +109,7 @@ impl PipelineParticle {
         &self,
         render_pass: &mut wgpu::RenderPass<'a>,
         camera: &'a CameraUniformBuffer,
-        mesh: &'a dyn ParticleShaderDraw,
+        mesh: &'a dyn ParticleShaderTwoPointDraw,
     ) {
         render_pass.set_pipeline(&self.render_pipeline);
         camera.bind(render_pass);
