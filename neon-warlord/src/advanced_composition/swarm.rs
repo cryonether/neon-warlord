@@ -232,7 +232,7 @@ impl Swarm {
         }
     }
 
-    fn update_actors(&mut self, dt: f32) {
+    fn update_actors(&mut self, _dt: f32) {
         for composition in &mut self.advanced_composition {
             composition.update_actors();
         }

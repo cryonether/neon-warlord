@@ -1,16 +1,10 @@
 //! Draws a Neat network
 
-use std::alloc::LayoutError;
 
-use cgmath::Rotation3;
 use forward_renderer::{geometry, particle_shader::{self, ParticleShaderDrawRange}, particle_shader_two_point::{self, ParticleShaderTwoPointDrawRange}, to_rgb};
-use wgpu_renderer::{
-    vertex_color_shader::{
-        self, VertexColorShaderDraw, vertex_color_shader_draw::{VertexColorShaderDrawLines},
-    }, wgpu_renderer::WgpuRendererInterface,
-};
+use wgpu_renderer::wgpu_renderer::WgpuRendererInterface;
 
-use crate::{advanced_composition::AdvancedComposition, reinforcement_learning::neat::{self, Neat}};
+use crate::reinforcement_learning::neat::{self};
 use cgmath::VectorSpace;
 
 type Vec3 = cgmath::Vector3<f32>;

@@ -1,6 +1,6 @@
 //! An actor free to move between two nodes
 
-use cgmath::{InnerSpace, MetricSpace};
+use cgmath::InnerSpace;
 
 use crate::verlet_physics::VerletObject;
 type Vec3 = cgmath::Vector3<f32>;
