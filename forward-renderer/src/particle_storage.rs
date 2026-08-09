@@ -76,6 +76,6 @@ impl ParticleStorage {
 
 impl particle_shader::ParticleShaderDraw for ParticleStorage {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        &self.mesh.draw(render_pass);
+        self.mesh.draw(render_pass);
     }
 }

@@ -6,7 +6,7 @@ use cgmath::Rotation3;
 use forward_renderer::{geometry, particle_shader::{self, ParticleShaderDrawRange}, particle_shader_two_point::{self, ParticleShaderTwoPointDrawRange}, to_rgb};
 use wgpu_renderer::{
     vertex_color_shader::{
-        self, VertexColorShaderDraw, vertex_color_shader_draw::{VertexColorShaderDrawLines, VertexColorShaderDrawLinesRange},
+        self, VertexColorShaderDraw, vertex_color_shader_draw::{VertexColorShaderDrawLines},
     }, wgpu_renderer::WgpuRendererInterface,
 };
 

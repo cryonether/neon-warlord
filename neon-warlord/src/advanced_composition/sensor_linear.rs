@@ -22,7 +22,6 @@ impl SensorLinear {
     }
     
     pub fn update(&mut self, verlet_objects: &[VerletObject]) {
-        // apply constraint
         let pos: cgmath::Vector3<f32> = verlet_objects[self.node_id].position();
         let pos_a: cgmath::Vector3<f32> = verlet_objects[self.node_a_id].position();
         let pos_b: cgmath::Vector3<f32> = verlet_objects[self.node_b_id].position();

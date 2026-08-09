@@ -139,6 +139,7 @@ impl AdvancedComposition {
         }
     }
 
+    /// Sets the custom fitness function for each neural network
     pub fn set_fitnesss_functions(&mut self, fitness_functions: &[Box<dyn FitnessFunction>]) {
         assert!(self.neural_networks.len() == fitness_functions.len());
         for (neural_network, fitness_function) in
@@ -148,7 +149,7 @@ impl AdvancedComposition {
         }
     }
 
-
+    /// Sets the state of the neural network inputs based on the sensors
     pub fn update_neural_network_inputs(&mut self) {
         for neural_network in &mut self.neural_networks {
             // set position
@@ -182,6 +183,7 @@ impl AdvancedComposition {
         }
     }
 
+    /// Sets the state of the actors based on the neural network outputs
     pub fn update_neural_network_outputs(&mut self) {
         for neural_network in &self.neural_networks {
             // set outputs
@@ -199,12 +201,14 @@ impl AdvancedComposition {
         }
     }
 
+    /// Runs the custom neural network fitness function
     fn calculate_neural_network_fitness(&mut self) {
         for neural_network in &mut self.neural_networks {
             neural_network.calculate_fitness();
         }
     }
 
+    /// Updates the internal state based on verlet physics
     pub fn update_sensors(&mut self) {
         for sensor in &mut self.sensors {
             match sensor {
@@ -218,6 +222,7 @@ impl AdvancedComposition {
         }
     }
 
+    /// Updates the verlet physics of the actors
     pub fn update_actors(&mut self) {
         for actor in &mut self.actors {
             match actor {
