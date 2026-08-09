@@ -228,7 +228,7 @@ impl GenomeDrawer {
                 position: [0.0, 0.0, 0.0],
                 color: color_zero.into(),
                 time: 1.0,
-                size: size,
+                size,
             };
 
         let mut nodes_instances = Vec::with_capacity(nr_nodes);
@@ -262,7 +262,7 @@ impl GenomeDrawer {
                 position_1: [0.0, 0.0, 0.0],
                 color: color_zero.into(),
                 time: 1.0,
-                size: size,
+                size,
             };
 
         let mut edge_instances = Vec::with_capacity(nr_edges);

@@ -70,7 +70,7 @@ impl Swarm {
         for neat in &neats {
             let mut genome_drawers = Vec::new();
             for (i, genome) in neat.genomes.iter().enumerate() {
-                let pos = Vec3::new(0.0, i as f32 * definition.scale as f32, definition.scale);
+                let pos = Vec3::new(0.0, i as f32 * definition.scale, definition.scale);
                 let genome_drawer = GenomeDrawer::new(wgpu_renderer, genome, radius* 0.5, pos);
                 genome_drawers.push(genome_drawer);
             }
@@ -121,7 +121,7 @@ impl Swarm {
 
         // NEAT evolve
         self.update_genome_fitness();
-        if self.ticks % 3000 == 0 {
+        if self.ticks.is_multiple_of(3000) {
             self.evolve_genomes();
             self.advanced_composition = self.advanced_composition_original.clone();
         }
