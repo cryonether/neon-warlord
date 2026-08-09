@@ -1,14 +1,17 @@
 //! Draws a Neat network
 
-
-use forward_renderer::{geometry, particle_shader::{self, ParticleShaderDrawRange}, particle_shader_two_point::{self, ParticleShaderTwoPointDrawRange}, to_rgb};
+use forward_renderer::{
+    geometry,
+    particle_shader::{self, ParticleShaderDrawRange},
+    particle_shader_two_point::{self, ParticleShaderTwoPointDrawRange},
+    to_rgb,
+};
 use wgpu_renderer::wgpu_renderer::WgpuRendererInterface;
 
 use crate::reinforcement_learning::neat::{self};
 use cgmath::VectorSpace;
 
 type Vec3 = cgmath::Vector3<f32>;
-
 
 /// Draws AdvancedCompositions
 pub struct GenomeDrawer {
@@ -46,19 +49,11 @@ impl GenomeDrawer {
         // let size = radius*2.0;
         let size = radius;
 
-        let (nodes_instances, nodes_mesh) = Self::create_nodes(
-            wgpu_renderer, 
-            color_zero.into(), 
-            size, 
-            nr_nodes, 
-        );
+        let (nodes_instances, nodes_mesh) =
+            Self::create_nodes(wgpu_renderer, color_zero.into(), size, nr_nodes);
 
-        let (edges_instances, edges_mesh)= Self::create_edges(
-            wgpu_renderer, 
-            color_zero.into(), 
-            size*0.5,
-            nr_edges
-        );
+        let (edges_instances, edges_mesh) =
+            Self::create_edges(wgpu_renderer, color_zero.into(), size * 0.5, nr_edges);
 
         Self {
             nodes_mesh,
@@ -75,11 +70,7 @@ impl GenomeDrawer {
         }
     }
 
-    pub fn update(
-        &mut self,
-        wgpu_renderer: &mut dyn WgpuRendererInterface,
-        genome: &neat::Genome,
-    ) {
+    pub fn update(&mut self, wgpu_renderer: &mut dyn WgpuRendererInterface, genome: &neat::Genome) {
         self.position = genome.world_position;
 
         self.update_nodes(wgpu_renderer, genome);
@@ -94,20 +85,16 @@ impl GenomeDrawer {
         // check if there is enough space
         let nodes = &genome.nodes;
         if nodes.len() > self.nodes_instances.len() {
-            self.grow_nodes(
-                wgpu_renderer,
-                nodes.len() * 2
-            );
+            self.grow_nodes(wgpu_renderer, nodes.len() * 2);
         }
 
         // update data
         let mut previous_layer = 0;
         let mut index = 0;
         for (node, instance) in std::iter::zip(&genome.nodes, &mut self.nodes_instances) {
-            
             // position
             let layer = node.layer;
-            
+
             if layer > previous_layer {
                 previous_layer = layer;
                 index = 0;
@@ -116,24 +103,26 @@ impl GenomeDrawer {
             let x = layer as f32 * self.size * 2.0;
             let z = index as f32 * self.size * 2.0;
             index += 1;
-            
+
             let pos = Vec3::new(x, 0.0, z) + self.position;
             instance.position = pos.into();
 
             // color
             let value = node.value;
-            let color = gradient(value, self.color_negative, self.color_zero, self.color_positive);
+            let color = gradient(
+                value,
+                self.color_negative,
+                self.color_zero,
+                self.color_positive,
+            );
             instance.color = color.into();
         }
 
         // update device
         self.nr_nodes = nodes.len();
-        self.nodes_mesh.update_instance_buffer(
-            wgpu_renderer.queue(), 
-            &self.nodes_instances[0..nodes.len()],
-        );
+        self.nodes_mesh
+            .update_instance_buffer(wgpu_renderer.queue(), &self.nodes_instances[0..nodes.len()]);
     }
-
 
     fn update_edges(
         &mut self,
@@ -143,9 +132,7 @@ impl GenomeDrawer {
         // check if there is enough space
         let edges = &genome.edges;
         if edges.len() > self.edges_instances.len() {
-            self.grow_edges(
-                wgpu_renderer,
-                edges.len() * 2);
+            self.grow_edges(wgpu_renderer, edges.len() * 2);
         }
 
         // update data
@@ -172,40 +159,21 @@ impl GenomeDrawer {
 
         // update device
         self.nr_edges = nr_edges;
-        self.edges_mesh.update_instance_buffer(
-            wgpu_renderer.queue(), 
-            &self.edges_instances[0..nr_edges],
-        );
-
+        self.edges_mesh
+            .update_instance_buffer(wgpu_renderer.queue(), &self.edges_instances[0..nr_edges]);
     }
 
-    fn grow_nodes(
-        &mut self,
-        wgpu_renderer: &mut dyn WgpuRendererInterface,
-        nr_nodes: usize,
-    ) {
-        let (nodes_instances, nodes_mesh) = Self::create_nodes(
-            wgpu_renderer, 
-            self.color_zero, 
-            self.size, 
-            nr_nodes
-        );
+    fn grow_nodes(&mut self, wgpu_renderer: &mut dyn WgpuRendererInterface, nr_nodes: usize) {
+        let (nodes_instances, nodes_mesh) =
+            Self::create_nodes(wgpu_renderer, self.color_zero, self.size, nr_nodes);
 
         self.nodes_instances = nodes_instances;
         self.nodes_mesh = nodes_mesh;
     }
 
-    fn grow_edges(
-        &mut self,
-        wgpu_renderer: &mut dyn WgpuRendererInterface,
-        nr_edges: usize,
-    ) {
-        let (edges_instances, edges_mesh) = Self::create_edges(
-            wgpu_renderer, 
-            self.color_zero,
-            self.size * 0.5, 
-            nr_edges
-        );
+    fn grow_edges(&mut self, wgpu_renderer: &mut dyn WgpuRendererInterface, nr_edges: usize) {
+        let (edges_instances, edges_mesh) =
+            Self::create_edges(wgpu_renderer, self.color_zero, self.size * 0.5, nr_edges);
 
         self.edges_instances = edges_instances;
         self.edges_mesh = edges_mesh;
@@ -215,9 +183,8 @@ impl GenomeDrawer {
         wgpu_renderer: &mut dyn WgpuRendererInterface,
         color_zero: Vec3,
         size: f32,
-        nr_nodes:usize,
-    ) -> (Vec<particle_shader::Instance>, particle_shader::Mesh) 
-    {
+        nr_nodes: usize,
+    ) -> (Vec<particle_shader::Instance>, particle_shader::Mesh) {
         let node_quad = geometry::Quad::new(size); // 4 positions
         let mut nodes_quads = geometry::Mesh::new();
         for _i in 0..nr_nodes {
@@ -225,11 +192,11 @@ impl GenomeDrawer {
         }
 
         let instance = particle_shader::Instance {
-                position: [0.0, 0.0, 0.0],
-                color: color_zero.into(),
-                time: 1.0,
-                size,
-            };
+            position: [0.0, 0.0, 0.0],
+            color: color_zero.into(),
+            time: 1.0,
+            size,
+        };
 
         let mut nodes_instances = Vec::with_capacity(nr_nodes);
         for _i in 0..nr_nodes {
@@ -249,8 +216,11 @@ impl GenomeDrawer {
         wgpu_renderer: &mut dyn WgpuRendererInterface,
         color_zero: Vec3,
         size: f32,
-        nr_edges:usize,
-    ) -> (Vec<particle_shader_two_point::Instance>, particle_shader_two_point::Mesh)  {
+        nr_edges: usize,
+    ) -> (
+        Vec<particle_shader_two_point::Instance>,
+        particle_shader_two_point::Mesh,
+    ) {
         let node_quad = geometry::Quad::new(size); // 4 positions
         let mut nodes_quads = geometry::Mesh::new();
         for _i in 0..nr_edges {
@@ -258,12 +228,12 @@ impl GenomeDrawer {
         }
 
         let instance = particle_shader_two_point::Instance {
-                position_0: [0.0, 0.0, 0.0],
-                position_1: [0.0, 0.0, 0.0],
-                color: color_zero.into(),
-                time: 1.0,
-                size,
-            };
+            position_0: [0.0, 0.0, 0.0],
+            position_1: [0.0, 0.0, 0.0],
+            color: color_zero.into(),
+            time: 1.0,
+            size,
+        };
 
         let mut edge_instances = Vec::with_capacity(nr_edges);
         for _i in 0..nr_edges {
@@ -278,9 +248,7 @@ impl GenomeDrawer {
 
         (edge_instances, edges_mesh)
     }
-
 }
-
 
 impl particle_shader::ParticleShaderDraw for GenomeDrawer {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
@@ -296,13 +264,7 @@ impl particle_shader_two_point::ParticleShaderTwoPointDraw for GenomeDrawer {
     }
 }
 
-
-fn gradient(
-    t: f32,
-    negative: Vec3,
-    zero: Vec3,
-    positive: Vec3,
-) -> Vec3 {
+fn gradient(t: f32, negative: Vec3, zero: Vec3, positive: Vec3) -> Vec3 {
     let t = t.clamp(-1.0, 1.0);
 
     if t < 0.0 {

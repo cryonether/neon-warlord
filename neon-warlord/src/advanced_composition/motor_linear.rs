@@ -16,9 +16,14 @@ pub struct MotorLinear {
 
 impl MotorLinear {
     pub fn new(node_id: usize, node_a_id: usize, node_b_id: usize) -> Self {
-        Self { node_id, node_a_id, node_b_id, acceleration:0.0 }
+        Self {
+            node_id,
+            node_a_id,
+            node_b_id,
+            acceleration: 0.0,
+        }
     }
-    
+
     pub fn update(&mut self, verlet_objects: &mut [VerletObject]) {
         // apply constraint
         let radius = verlet_objects[self.node_id].radius();
@@ -53,10 +58,7 @@ impl MotorLinear {
         verlet_objects[self.node_id].accelerate(acceleration);
     }
 
-
     pub fn accelerate(&mut self, val: f32) {
-
-
         self.acceleration = (val - 0.5) * 200.0;
     }
 }

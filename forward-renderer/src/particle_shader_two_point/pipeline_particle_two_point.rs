@@ -34,7 +34,9 @@ impl PipelineParticleTwoPoint {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(match particle_kind {
-                ParticleKind::BillboardRectangle => include_str!("shader_billboard_rectangle.wgsl").into(),
+                ParticleKind::BillboardRectangle => {
+                    include_str!("shader_billboard_rectangle.wgsl").into()
+                }
             }),
         });
 

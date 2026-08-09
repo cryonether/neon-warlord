@@ -3,7 +3,9 @@
 use std::iter::zip;
 
 use cgmath::Zero;
-use forward_renderer::{particle_shader::ParticleShaderDraw, particle_shader_two_point::ParticleShaderTwoPointDraw};
+use forward_renderer::{
+    particle_shader::ParticleShaderDraw, particle_shader_two_point::ParticleShaderTwoPointDraw,
+};
 use wgpu_renderer::{
     vertex_color_shader::{
         VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
@@ -13,8 +15,10 @@ use wgpu_renderer::{
 
 use crate::{
     advanced_composition::{
-        AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer, definition::ParsedDefinition, genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
-    }, reinforcement_learning::neat::Neat,
+        AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer,
+        definition::ParsedDefinition, genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
+    },
+    reinforcement_learning::neat::Neat,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -32,14 +36,11 @@ pub struct Swarm {
     neats: Vec<Neat>,
     neat_drawers: Vec<Vec<GenomeDrawer>>,
 
-
     /// Draw
     /// 1 element per entity
-
     // Some random variables
     // phase: f32,
     // omega: f32, // radians/sec
-
     ticks: u64,
 }
 
@@ -71,7 +72,7 @@ impl Swarm {
             let mut genome_drawers = Vec::new();
             for (i, genome) in neat.genomes.iter().enumerate() {
                 let pos = Vec3::new(0.0, i as f32 * definition.scale, definition.scale);
-                let genome_drawer = GenomeDrawer::new(wgpu_renderer, genome, radius* 0.5, pos);
+                let genome_drawer = GenomeDrawer::new(wgpu_renderer, genome, radius * 0.5, pos);
                 genome_drawers.push(genome_drawer);
             }
             neat_drawers.push(genome_drawers);
@@ -197,7 +198,9 @@ impl Swarm {
             let neural_network = &mut composition.neural_networks[0];
 
             assert!(genome.nr_outputs == neural_network.outputs.len());
-            for (output_genome, output_neural_network) in zip(genome.outputs(), &mut neural_network.outputs) {
+            for (output_genome, output_neural_network) in
+                zip(genome.outputs(), &mut neural_network.outputs)
+            {
                 *output_neural_network = output_genome.value;
             }
         }
@@ -279,7 +282,6 @@ impl ParticleShaderDraw for Swarm {
             for genome_drawer in neat_drawer {
                 // genome_drawer.draw(render_pass);
                 ParticleShaderDraw::draw(genome_drawer, render_pass);
-
             }
         }
     }

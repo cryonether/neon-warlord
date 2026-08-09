@@ -40,7 +40,9 @@ impl PipelineParticle {
                 ParticleKind::Plasma => include_str!("shader_plasma.wgsl").into(),
                 ParticleKind::FloatToTheMiddle => include_str!("shader_particle.wgsl").into(),
                 ParticleKind::Glow => include_str!("shader_glow.wgsl").into(),
-                ParticleKind::BillboardSphere => include_str!("shader_billboard_sphere.wgsl").into(),
+                ParticleKind::BillboardSphere => {
+                    include_str!("shader_billboard_sphere.wgsl").into()
+                }
             }),
         });
 

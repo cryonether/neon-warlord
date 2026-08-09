@@ -1,5 +1,5 @@
 //! Representing a neural network
-//! 
+//!
 
 use cgmath::Zero;
 type Vec3 = cgmath::Vector3<f32>;

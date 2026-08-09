@@ -93,10 +93,6 @@ impl ParticleShaderTwoPointDrawRange for Mesh {
         self.index_buffer.bind(render_pass);
         self.instance_buffer.bind(render_pass);
 
-        render_pass.draw_indexed(
-            0..self.index_buffer.size(),
-            0,
-            0..nr_instances as u32,
-        );
+        render_pass.draw_indexed(0..self.index_buffer.size(), 0, 0..nr_instances as u32);
     }
 }

@@ -318,13 +318,14 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
     impl FitnessFunction for FitnessFunctionAccumulateZ {
         fn calculate_fitness(&mut self, inputs: &[f32]) -> f32 {
             assert!(inputs.len() == 4);
-            
+
             let linear_motor_position = inputs[0];
             let pos = Vec3::new(inputs[1], inputs[2], inputs[3]);
-            
+
             let distance = self.last_position.distance(pos);
 
-            self.sum += pos.z - distance + (1.0 - linear_motor_position.abs() * linear_motor_position.abs());
+            self.sum += pos.z - distance
+                + (1.0 - linear_motor_position.abs() * linear_motor_position.abs());
 
             self.last_position = pos;
 
@@ -332,11 +333,17 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
         }
 
         fn clone_box(&self) -> Box<dyn FitnessFunction> {
-            Box::new(Self { sum: self.sum, last_position: self.last_position })
+            Box::new(Self {
+                sum: self.sum,
+                last_position: self.last_position,
+            })
         }
     }
 
-    let fitness: Box<dyn FitnessFunction> = Box::new(FitnessFunctionAccumulateZ { sum: 0.0, last_position: Vec3::zero() });
+    let fitness: Box<dyn FitnessFunction> = Box::new(FitnessFunctionAccumulateZ {
+        sum: 0.0,
+        last_position: Vec3::zero(),
+    });
 
     fitness
 }

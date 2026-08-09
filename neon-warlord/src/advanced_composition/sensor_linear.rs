@@ -18,9 +18,14 @@ pub struct SensorLinear {
 
 impl SensorLinear {
     pub fn new(node_id: usize, node_a_id: usize, node_b_id: usize) -> Self {
-        Self { node_id, node_a_id, node_b_id, value:0.0 }
+        Self {
+            node_id,
+            node_a_id,
+            node_b_id,
+            value: 0.0,
+        }
     }
-    
+
     pub fn update(&mut self, verlet_objects: &[VerletObject]) {
         let pos: cgmath::Vector3<f32> = verlet_objects[self.node_id].position();
         let pos_a: cgmath::Vector3<f32> = verlet_objects[self.node_a_id].position();
@@ -41,7 +46,6 @@ impl SensorLinear {
     }
 }
 
-
 #[test]
 fn test_0() {
     let pos = Vec3::new(0.0, 0.0, 0.0);
@@ -52,7 +56,6 @@ fn test_0() {
 
     assert_eq!(res, 0.0);
 }
-
 
 #[test]
 fn test_1() {

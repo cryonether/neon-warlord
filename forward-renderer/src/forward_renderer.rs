@@ -249,12 +249,12 @@ impl ForwardRenderer {
             surface_format,
             ParticleKind::BillboardSphere,
         );
-        
+
         let pipeline_rectangle = particle_shader_two_point::PipelineParticleTwoPoint::new(
             wgpu_renderer.device(),
             &camera_bind_group_layout,
             surface_format,
-            particle_shader_two_point::ParticleKind::BillboardRectangle
+            particle_shader_two_point::ParticleKind::BillboardRectangle,
         );
 
         // // pipeline fxaa
@@ -602,7 +602,7 @@ impl ForwardRenderer {
         plasmas: &[&dyn ParticleShaderDraw],
         glow: &[&dyn ParticleShaderDraw],
         particles_bilboard_sphere: &[&dyn ParticleShaderDraw],
-        particles_rectangle:  &[&dyn ParticleShaderTwoPointDraw],
+        particles_rectangle: &[&dyn ParticleShaderTwoPointDraw],
         // performance_monitors: &[&mut PerformanceMonitor<{ super::WATCH_POINTS_SIZE }>],
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -678,8 +678,11 @@ impl ForwardRenderer {
                 .draw(&mut render_pass, &self.camera_uniform_buffer, *elem);
         }
         for elem in particles_bilboard_sphere {
-            self.pipeline_billboard_sphere
-                .draw(&mut render_pass, &self.camera_uniform_buffer, *elem);
+            self.pipeline_billboard_sphere.draw(
+                &mut render_pass,
+                &self.camera_uniform_buffer,
+                *elem,
+            );
         }
 
         for elem in particles_rectangle {
@@ -728,7 +731,7 @@ impl ForwardRenderer {
         plasmas: &[&dyn ParticleShaderDraw],
         glow: &[&dyn ParticleShaderDraw],
         particles_bilboard_sphere: &[&dyn ParticleShaderDraw],
-        particles_rectangle:  &[&dyn ParticleShaderTwoPointDraw],
+        particles_rectangle: &[&dyn ParticleShaderTwoPointDraw],
         watch_fps: &mut watch::Watch<10>,
     ) -> Result<(), RenderError> {
         let mut watch_index = 5;
