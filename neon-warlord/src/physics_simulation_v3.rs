@@ -43,8 +43,8 @@ impl PhysicsSimulationV3 {
         let fitness_function = get_pendulum_definition_fitness_function();
         let parsed_definition = ParsedDefinition::parse(&definition, pos, scale);
 
-        let swarm_size = 1000;
-        // let swarm_size = 40000;
+        // let swarm_size = 1000;
+        let swarm_size = 40000;
         let swarm =
             Swarm::new(&parsed_definition, swarm_size).set_fitness_functions(&[fitness_function]);
 
@@ -74,17 +74,17 @@ impl PhysicsSimulationV3 {
         let dt = 1.0 / 60.0;
         self.ticks += 1;
 
-        self.watch_ups.start(0, "swarm.update_physics");
+        self.watch_ups.start("swarm.update_physics");
         self.swarm.update_physics(dt);
-        self.watch_ups.stop(0);
+        self.watch_ups.stop();
 
-        self.watch_ups.start(1, "Solver");
+        self.watch_ups.start( "Solver");
         self.solver.update_advanced_composites(
             &mut self.swarm.advanced_composition,
             height_map,
             dt,
         );
-        self.watch_ups.stop(1);
+        self.watch_ups.stop();
 
         // ups
         let now = instant::Instant::now();
@@ -97,9 +97,9 @@ impl PhysicsSimulationV3 {
         let data = self.producer.buffer();
         data.clear();
 
-        self.watch_ups.start(2, "swarm.update_drawer");
+        self.watch_ups.start("swarm.update_drawer");
         self.swarm.update_drawer(data);
-        self.watch_ups.stop(2);
+        self.watch_ups.stop();
 
         data.ups = self.ups.get();
         self.watch_ups.update();

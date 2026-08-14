@@ -454,7 +454,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
     ) {
         let time_stamp = Instant::now();
 
-        self.watch_fps.stop(WATCH_POINTS_SIZE - 1);
+        self.watch_fps.stop();
         self.watch_fps.update();
         let watch_fps_data = self.watch_fps.get_viewer_data();
 
@@ -464,8 +464,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
         self.renderer.update(renderer_interface, dt);
 
         // Worker
-        let mut watch_index = 0;
-        self.watch_fps.start(watch_index, "Update Worker");
+        self.watch_fps.start("Update Worker");
         {
             let messages = self.worker.receive();
             for message in messages.try_iter() {
@@ -556,7 +555,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             self.worker.update(dt);
         }
         let _worker = self.worker.send();
-        self.watch_fps.stop(watch_index);
+        self.watch_fps.stop();
 
         // Calculate current Snapshot
         for (i, elem) in self.ant_positions.iter().enumerate() {
@@ -574,8 +573,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
         // self.ants.set_position(0, ant.pos, ant.look_at);
 
         // Particles
-        watch_index += 1;
-        self.watch_fps.start(watch_index, "Update Particles");
+        self.watch_fps.start("Update Particles");
         {
             // self.particles.update(renderer_interface, dt);
             // self.plasma_orbs.update(renderer_interface, dt);
@@ -608,11 +606,10 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 );
             }
         }
-        self.watch_fps.stop(watch_index);
+        self.watch_fps.stop();
 
         // Animations
-        watch_index += 1;
-        self.watch_fps.start(watch_index, "Update Animations");
+        self.watch_fps.start("Update Animations");
         {
             self.ants.animated_object_storage.update_animations(&dt);
 
@@ -620,7 +617,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 .animated_object_storage
                 .update_device_data(renderer_interface);
         }
-        self.watch_fps.stop(watch_index);
+        self.watch_fps.stop();
 
         // Terrain
         // watch_index += 1;
@@ -640,8 +637,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
         // self.watch_fps.stop(watch_index);
 
         // Debug utilities
-        watch_index += 1;
-        self.watch_fps.start(watch_index, "Update Debug");
+        self.watch_fps.start("Update Debug");
         {
             self.fps.update(dt);
 
@@ -698,7 +694,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 &watch_fps_data,
             );
         }
-        self.watch_fps.stop(watch_index);
+        self.watch_fps.stop();
     }
 
     fn input(&mut self, event: &winit::event::WindowEvent) -> bool {
@@ -809,7 +805,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             )
         }
         self.watch_fps
-            .start(WATCH_POINTS_SIZE - 1, "Wait for Window Event");
+            .start("Wait for Window Event");
 
         res
     }

@@ -139,7 +139,6 @@ impl Worker {
         self.watch_ups.update();
         let watch_ups_data = self.watch_ups.get_viewer_data();
         let _ = main.send(WorkerMessage::UpdateWatchPoints(Box::new(watch_ups_data)));
-        let mut watch_index = 0;
 
         // update ups
         self.ups.update(dt);
@@ -147,7 +146,7 @@ impl Worker {
 
         // Process messages
         let mut terrain_detail = Vec::new();
-        self.watch_ups.start(watch_index, "Messages");
+        self.watch_ups.start("Messages");
         {
             for message in messages.try_iter() {
                 match message {
@@ -158,22 +157,20 @@ impl Worker {
                 }
             }
         }
-        self.watch_ups.stop(watch_index);
+        self.watch_ups.stop();
 
         // Terrain
-        watch_index += 1;
-        self.watch_ups.start(watch_index, "Update Terrain");
+        self.watch_ups.start("Update Terrain");
         {
             for elem in terrain_detail {
                 let terrain_part = self.terrain_generator.generate(&elem);
                 let _ = main.send(WorkerMessage::TerrainData(Box::new(terrain_part)));
             }
         }
-        self.watch_ups.stop(watch_index);
+        self.watch_ups.stop();
 
         // Ant
-        watch_index += 1;
-        self.watch_ups.start(watch_index, "Update Ant");
+        self.watch_ups.start("Update Ant");
         {
             let ant_state = &mut self.ant_state;
             let game_board = &mut self.game_board;
@@ -195,6 +192,6 @@ impl Worker {
                 ant_actions: actions,
             }));
         }
-        self.watch_ups.stop(watch_index);
+        self.watch_ups.stop();
     }
 }
