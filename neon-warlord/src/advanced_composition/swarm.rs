@@ -253,7 +253,7 @@ impl Swarm {
 
     pub fn set_fitness_functions(
         mut self,
-        fitness_functions: &[Box<dyn FitnessFunction>],
+        fitness_functions: &[Box<dyn FitnessFunction + Send>],
     ) -> Swarm {
         for elem in &mut self.advanced_composition {
             elem.set_fitnesss_functions(fitness_functions);

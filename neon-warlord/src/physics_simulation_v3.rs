@@ -17,7 +17,7 @@ use crate::{
             ParsedDefinition, get_pendulum_definition, get_pendulum_definition_fitness_function,
         },
         swarm::Swarm,
-    }, physics_simulation_v3_drawer::DrawerObjects, triple_buffer, verlet_physics::solver::Solver,
+    }, physics_simulation_v3_drawer::DrawerObjects, triple_buffer, verlet_physics::solver::Solver, worker_thread,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -93,3 +93,19 @@ impl PhysicsSimulationV3 {
 //         self.swarm.draw_lines(render_pass);
 //     }
 // }
+
+
+
+pub struct PhysicSimThread<T> {
+    pub sim: PhysicsSimulationV3,
+    pub height_map: T,
+}
+
+impl<T> worker_thread::Update for PhysicSimThread<T>
+where T: HeightMapInterface
+{
+    fn update(&mut self) {
+        self.sim.update_physics(&self.height_map);
+        self.sim.update_drawer();
+    }
+}

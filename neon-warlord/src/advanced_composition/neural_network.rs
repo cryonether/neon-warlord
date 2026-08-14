@@ -14,7 +14,7 @@ pub struct NeuralNetwork {
     pub outputs: Vec<f32>,
     pub fitness: f32,
 
-    pub fitness_function: Option<Box<dyn FitnessFunction>>,
+    pub fitness_function: Option<Box<dyn FitnessFunction + Send>>,
 }
 
 impl NeuralNetwork {
@@ -36,7 +36,7 @@ impl NeuralNetwork {
         }
     }
 
-    pub fn set_fitness_function(&mut self, fitness_function: Box<dyn FitnessFunction>) {
+    pub fn set_fitness_function(&mut self, fitness_function: Box<dyn FitnessFunction + Send>) {
         self.fitness_function = Some(fitness_function);
     }
 
@@ -49,10 +49,10 @@ impl NeuralNetwork {
 
 pub trait FitnessFunction {
     fn calculate_fitness(&mut self, outputs: &[f32]) -> f32;
-    fn clone_box(&self) -> Box<dyn FitnessFunction>;
+    fn clone_box(&self) -> Box<dyn FitnessFunction + Send>;
 }
 
-impl Clone for Box<dyn FitnessFunction> {
+impl Clone for Box<dyn FitnessFunction + Send> {
     fn clone(&self) -> Self {
         self.clone_box()
     }

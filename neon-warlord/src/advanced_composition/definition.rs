@@ -310,7 +310,7 @@ pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
     [layer_0, layer_1, layer_2, layer_3]
 }
 
-pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + 'static> {
+pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + 'static + Send> {
     struct FitnessFunctionAccumulateZ {
         pub sum: f32,
         pub last_position: Vec3,
@@ -332,7 +332,7 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
             self.sum
         }
 
-        fn clone_box(&self) -> Box<dyn FitnessFunction> {
+        fn clone_box(&self) -> Box<dyn FitnessFunction + Send> {
             Box::new(Self {
                 sum: self.sum,
                 last_position: self.last_position,
@@ -340,7 +340,7 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
         }
     }
 
-    let fitness: Box<dyn FitnessFunction> = Box::new(FitnessFunctionAccumulateZ {
+    let fitness: Box<dyn FitnessFunction + Send> = Box::new(FitnessFunctionAccumulateZ {
         sum: 0.0,
         last_position: Vec3::zero(),
     });

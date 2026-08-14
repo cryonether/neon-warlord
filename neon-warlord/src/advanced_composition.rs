@@ -141,7 +141,7 @@ impl AdvancedComposition {
     }
 
     /// Sets the custom fitness function for each neural network
-    pub fn set_fitnesss_functions(&mut self, fitness_functions: &[Box<dyn FitnessFunction>]) {
+    pub fn set_fitnesss_functions(&mut self, fitness_functions: &[Box<dyn FitnessFunction + Send>]) {
         assert!(self.neural_networks.len() == fitness_functions.len());
         for (neural_network, fitness_function) in
             std::iter::zip(&mut self.neural_networks, fitness_functions)
