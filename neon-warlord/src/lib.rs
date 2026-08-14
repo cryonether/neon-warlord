@@ -66,8 +66,8 @@ struct CameraSettings {
     sensitivity_scroll: f32,
 }
 
-const HEIGHT_MAP_INNER_WIDTH: usize = 32;
-const HEIGHT_MAP_INNER_HEIGHT: usize = 32;
+const HEIGHT_MAP_INNER_WIDTH: usize = 128;
+const HEIGHT_MAP_INNER_HEIGHT: usize = 128;
 
 const HEIGHT_MAP_TILE_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH + 2;
 const HEIGHT_MAP_TILE_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT + 2;
@@ -142,6 +142,8 @@ struct NeonWarlord {
     // physics_simulation_v3: PhysicsSimulationV3,
     physics_simulation_v3_drawer: PhysicsSimulationV3Drawer,
     physics_simulation_v3_thread: WorkerThread<PhysicSimThread<HeightMapType>>,
+    physics_simulation_consumer: triple_buffer::Consumer<physics_simulation_v3_drawer::DrawerObjects>,
+
     // Worker
     worker: WorkerInstance,
     ant_positions: [AntPosition; 1],
@@ -301,7 +303,7 @@ impl NeonWarlord {
         let (producer, consumer) = triple_buffer::create(
             physics_simulation_v3_drawer::DrawerObjects::new()
         );
-        let physics_simulation_v3_drawer = PhysicsSimulationV3Drawer::new(renderer_interface, consumer);
+        let physics_simulation_v3_drawer = PhysicsSimulationV3Drawer::new(renderer_interface);
 
         let physics_simulation_v3_thread = 
             WorkerThread::spawn(physics_simulation_v3::PhysicSimThread{
@@ -352,6 +354,7 @@ impl NeonWarlord {
             // physics_simulation_v3,
             physics_simulation_v3_drawer,
             physics_simulation_v3_thread,
+            physics_simulation_consumer:consumer,
         }
     }
 }
@@ -467,11 +470,11 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     }
                     // ##########################################################
                     worker::WorkerMessage::UpdateWatchPoints(watch_ups_data) => {
-                        self.performance_monitor_ups.update_from_data(
-                            renderer_interface,
-                            &self.font,
-                            &watch_ups_data,
-                        );
+                        // self.performance_monitor_ups.update_from_data(
+                        //     renderer_interface,
+                        //     &self.font,
+                        //     &watch_ups_data,
+                        // );
                     }
                     // ##########################################################
                     worker::WorkerMessage::TerrainData(_terrain_part) => {
@@ -579,10 +582,22 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
 
             // self.physics_simulation_v3.update_physics(&self.height_map);
             // self.physics_simulation_v3.update_drawer();
-            self.physics_simulation_v3_thread.update();
 
-            let ups = &mut self.ups;
-            self.physics_simulation_v3_drawer.update(renderer_interface, ups);
+            
+            {
+                // Physics simulation
+
+                self.physics_simulation_v3_thread.update();
+
+                let consumer = &mut self.physics_simulation_consumer;
+                consumer.acquire_latest();
+                let data = consumer.buffer();
+
+                self.physics_simulation_v3_drawer.update(renderer_interface, data);
+
+                self.ups = data.ups;
+                self.performance_monitor_ups.update_from_data(renderer_interface, &self.font, &data.watch_ups);
+            }
         }
         self.watch_fps.stop(watch_index);
 

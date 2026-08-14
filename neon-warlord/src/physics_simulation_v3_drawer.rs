@@ -2,13 +2,11 @@
 
 use forward_renderer::{geometry, particle_shader::{self, ParticleShaderDrawRange}, particle_shader_two_point::{self, ParticleShaderTwoPointDrawRange}};
 use wgpu_renderer::wgpu_renderer::WgpuRendererInterface;
+use wgpu_renderer::performance_monitor::watch::{self};
 
-use crate::triple_buffer;
 
 
 pub struct PhysicsSimulationV3Drawer{
-    consumer: triple_buffer::Consumer<DrawerObjects>,
-
     genome_nodes_mesh: particle_shader::Mesh,
     genome_edges_mesh: particle_shader_two_point::Mesh,
 
@@ -23,7 +21,6 @@ pub struct PhysicsSimulationV3Drawer{
 impl PhysicsSimulationV3Drawer {
     pub fn new(
         wgpu_renderer: &mut dyn WgpuRendererInterface,
-        consumer: triple_buffer::Consumer<DrawerObjects>
     ) -> Self {
 
         // Genome nodes
@@ -63,7 +60,6 @@ impl PhysicsSimulationV3Drawer {
         );
 
         Self { 
-            consumer,
             genome_nodes_mesh,
             genome_edges_mesh,
             verlet_object_nodes_mesh,
@@ -77,15 +73,12 @@ impl PhysicsSimulationV3Drawer {
 
     pub fn update(&mut self, 
         wgpu_renderer: &mut dyn WgpuRendererInterface,
-        ups: &mut u32,
+        consumer: &DrawerObjects,
     ) {
-        self.consumer.acquire_latest();
-        let data = self.consumer.buffer();
-        *ups = data.ups;
 
         // Genome nodes
         {
-            let instances = &data.genome_nodes;
+            let instances = &consumer.genome_nodes;
             let mesh = &mut self.genome_nodes_mesh;
             self.nr_genome_nodes = instances.len();
             if mesh.max_instances() < instances.len() {
@@ -102,7 +95,7 @@ impl PhysicsSimulationV3Drawer {
         
         // Genome edges
         {
-            let instances = &data.genome_edges;
+            let instances = &consumer.genome_edges;
             let mesh = &mut self.genome_edges_mesh;
             self.nr_genome_edges = instances.len();
             if mesh.max_instances() < instances.len() {
@@ -119,7 +112,7 @@ impl PhysicsSimulationV3Drawer {
 
         // Verlet object nodes
         {
-            let instances = &data.verlet_object_nodes;
+            let instances = &consumer.verlet_object_nodes;
             let mesh = &mut self.verlet_object_nodes_mesh;
             self.nr_verlet_object_nodes = instances.len();
             if mesh.max_instances() < instances.len() {
@@ -136,7 +129,7 @@ impl PhysicsSimulationV3Drawer {
 
         // Verlet object edges
         {
-            let instances = &data.verlet_object_edges;
+            let instances = &consumer.verlet_object_edges;
             let mesh = &mut self.verlet_object_edges_mesh;
             self.nr_verlet_object_edges = instances.len();
             if mesh.max_instances() < instances.len() {
@@ -175,6 +168,7 @@ impl particle_shader_two_point::ParticleShaderTwoPointDraw for PhysicsSimulation
     }
 }
 
+pub const WATCH_POINTS_SIZE: usize = 10;
 
 #[derive(Clone)]
 pub struct DrawerObjects{
@@ -185,6 +179,7 @@ pub struct DrawerObjects{
     pub verlet_object_edges: Vec<particle_shader_two_point::Instance>,
 
     pub ups: u32,
+    pub watch_ups: watch::WatchViewerData<WATCH_POINTS_SIZE>,
 }
 
 impl DrawerObjects {
@@ -201,12 +196,15 @@ impl DrawerObjects {
         let verlet_object_nodes = Vec::new();
         let verlet_object_edges = Vec::new();
 
+        let watch_ups = watch::WatchViewerData::new();
+
         Self {
             genome_nodes,
             genome_edges,
             verlet_object_nodes,
             verlet_object_edges,
-            ups: 0
+            ups: 0,
+            watch_ups,
         }
     }
 } 

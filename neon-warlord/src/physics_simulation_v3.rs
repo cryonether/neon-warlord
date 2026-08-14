@@ -1,14 +1,7 @@
 //! Next iteration of the verlet physics simulation
 
-use forward_renderer::{
-    height_map::HeightMapInterface, particle_shader::ParticleShaderDraw,
-    particle_shader_two_point::ParticleShaderTwoPointDraw,
-};
-use wgpu_renderer::{
-    performance_monitor::Fps, vertex_color_shader::{
-        VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
-    }, wgpu_renderer::WgpuRendererInterface,
-};
+use forward_renderer::height_map::HeightMapInterface;
+use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
 use crate::{
     advanced_composition::{
@@ -21,6 +14,9 @@ use crate::{
 
 type Vec3 = cgmath::Vector3<f32>;
 
+pub const WATCH_POINTS_SIZE: usize = 10;
+
+
 pub struct PhysicsSimulationV3 {
     producer: triple_buffer::Producer<DrawerObjects>,
 
@@ -32,6 +28,7 @@ pub struct PhysicsSimulationV3 {
     // Debug
     ups: Fps,
     last_render_time: instant::Instant,
+    watch_ups: Watch<WATCH_POINTS_SIZE>,
 }
 
 impl PhysicsSimulationV3 {
@@ -45,7 +42,9 @@ impl PhysicsSimulationV3 {
         let fitness_function = get_pendulum_definition_fitness_function();
         let parsed_definition = ParsedDefinition::parse(&definition, pos, scale);
 
-        let swarm = Swarm::new(&parsed_definition, 1000)
+        let swarm_size = 1000;
+        // let swarm_size = 40000;
+        let swarm = Swarm::new(&parsed_definition, swarm_size)
             .set_fitness_functions(&[fitness_function]);
 
         // solver
@@ -53,6 +52,7 @@ impl PhysicsSimulationV3 {
 
         // Debug
         let ups = Fps::new();
+        let watch_ups = Watch::new();
 
         Self {
             producer,
@@ -63,6 +63,7 @@ impl PhysicsSimulationV3 {
 
             ups,
             last_render_time: instant::Instant::now(),
+            watch_ups,
         }
     }
 
@@ -72,45 +73,41 @@ impl PhysicsSimulationV3 {
         let dt = 1.0 / 60.0;
         self.ticks += 1;
 
-        self.swarm.update_physics(dt);
+        self.watch_ups.start(0, "swarm.update_physics");
+            self.swarm.update_physics(dt);
+        self.watch_ups.stop(0);
 
-        self.solver.update_advanced_composites(
-            &mut self.swarm.advanced_composition,
-            height_map,
-            dt,
-        );
+        self.watch_ups.start(1, "Solver");
+            self.solver.update_advanced_composites(
+                &mut self.swarm.advanced_composition,
+                height_map,
+                dt,
+            );
+        self.watch_ups.stop(1);
 
         // ups
         let now = instant::Instant::now();
         let dt = now - self.last_render_time;
         self.last_render_time = now;
         self.ups.update(dt);
-    }
-
-    pub fn update_drawer(&mut self) {
-        let data = self.producer.buffer();
-        data.clear();
-
+        }
+        
+        pub fn update_drawer(&mut self) {
+            // self.watch_ups.start(2, "update_drawer");
+            let data = self.producer.buffer();
+            data.clear();
+            
+        self.watch_ups.start(2, "swarm.update_drawer");
         self.swarm.update_drawer(data);
+        self.watch_ups.stop(2);
+            
         data.ups = self.ups.get(); 
-
+        self.watch_ups.update();
+        data.watch_ups = self.watch_ups.get_viewer_data();
+        
         self.producer.publish();
     }
 }
-
-// impl VertexColorShaderDraw for PhysicsSimulationV3 {
-//     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-//         VertexColorShaderDraw::draw(&self.swarm, render_pass);
-//     }
-// }
-
-// impl VertexColorShaderDrawLines for PhysicsSimulationV3 {
-//     fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-//         self.swarm.draw_lines(render_pass);
-//     }
-// }
-
-
 
 pub struct PhysicSimThread<T> {
     pub sim: PhysicsSimulationV3,
