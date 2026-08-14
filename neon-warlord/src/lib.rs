@@ -15,14 +15,17 @@ mod orb_controller;
 mod orb_storage;
 mod physics_simulation_v2;
 mod physics_simulation_v3;
+mod physics_simulation_v3_drawer;
 mod procedural_tree;
 mod reinforcement_learning;
 mod settings;
 mod simple_physics_simulation;
 mod sun_storage;
+mod triple_buffer;
 mod verlet_physics;
 mod worker;
 mod worker_instance;
+mod worker_thread;
 
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
@@ -45,10 +48,17 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage,
-    camera_controller::CameraController, debug_overlay::DebugOverlay,
-    physics_simulation_v3::PhysicsSimulationV3, simple_physics_simulation::SimplePhysicsSimulation,
-    sun_storage::SunStorage, worker_instance::WorkerInstance,
+    ant_controller::AntPosition,
+    ant_generator::AntGenerator,
+    ant_storage::AntStorage,
+    camera_controller::CameraController,
+    debug_overlay::DebugOverlay,
+    physics_simulation_v3::{PhysicSimThread, PhysicsSimulationV3},
+    physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
+    simple_physics_simulation::SimplePhysicsSimulation,
+    sun_storage::SunStorage,
+    worker_instance::WorkerInstance,
+    worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -64,8 +74,8 @@ struct CameraSettings {
     sensitivity_scroll: f32,
 }
 
-const HEIGHT_MAP_INNER_WIDTH: usize = 32;
-const HEIGHT_MAP_INNER_HEIGHT: usize = 32;
+const HEIGHT_MAP_INNER_WIDTH: usize = 128;
+const HEIGHT_MAP_INNER_HEIGHT: usize = 128;
 
 const HEIGHT_MAP_TILE_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH + 2;
 const HEIGHT_MAP_TILE_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT + 2;
@@ -75,6 +85,13 @@ const HEIGHT_MAP_NR_TILES_Y: usize = 4;
 
 const HEIGHT_MAP_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH * HEIGHT_MAP_NR_TILES_X;
 const HEIGHT_MAP_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT * HEIGHT_MAP_NR_TILES_Y;
+
+type HeightMapType = forward_renderer::height_map::HeightMap<
+    HEIGHT_MAP_WIDTH,
+    HEIGHT_MAP_HEIGHT,
+    HEIGHT_MAP_TILE_WIDTH,
+    HEIGHT_MAP_TILE_HEIGHT,
+>;
 
 struct NeonWarlord {
     _settings: settings::Settings,
@@ -107,12 +124,7 @@ struct NeonWarlord {
 
     // Terrain
     // terrain: TerrainStorage,
-    height_map: forward_renderer::height_map::HeightMap<
-        HEIGHT_MAP_WIDTH,
-        HEIGHT_MAP_HEIGHT,
-        HEIGHT_MAP_TILE_WIDTH,
-        HEIGHT_MAP_TILE_HEIGHT,
-    >,
+    _height_map: HeightMapType,
     height_map_drawer: HeightMapDrawer,
 
     // Ants
@@ -135,7 +147,11 @@ struct NeonWarlord {
 
     // agent physics simulation
     // physics_simulation: PhysicsSimulationV2,
-    physics_simulation_v3: PhysicsSimulationV3,
+    // physics_simulation_v3: PhysicsSimulationV3,
+    physics_simulation_v3_drawer: PhysicsSimulationV3Drawer,
+    physics_simulation_v3_thread: WorkerThread<PhysicSimThread<HeightMapType>>,
+    physics_simulation_consumer:
+        triple_buffer::Consumer<physics_simulation_v3_drawer::DrawerObjects>,
 
     // Worker
     worker: WorkerInstance,
@@ -229,12 +245,7 @@ impl NeonWarlord {
         //     include_bytes!("../res/tile.png"),
         // );
 
-        let mut height_map: forward_renderer::height_map::HeightMap<
-            HEIGHT_MAP_WIDTH,
-            HEIGHT_MAP_HEIGHT,
-            HEIGHT_MAP_TILE_WIDTH,
-            HEIGHT_MAP_TILE_HEIGHT,
-        > = forward_renderer::height_map::HeightMap::new();
+        let mut _height_map: HeightMapType = forward_renderer::height_map::HeightMap::new();
 
         let mut data = Vec::new();
         for _i in 0..HEIGHT_MAP_INNER_HEIGHT * HEIGHT_MAP_INNER_WIDTH {
@@ -254,11 +265,11 @@ impl NeonWarlord {
         // height_map.set_tile(0, 2, &data);
         // height_map.set_tile(2, 0, &data);
 
-        height_map.set_tile(0, 3, &data);
-        height_map.set_tile(0, 0, &data);
+        _height_map.set_tile(0, 3, &data);
+        _height_map.set_tile(0, 0, &data);
 
-        height_map.set_tile(3, 3, &data);
-        height_map.set_tile(3, 0, &data);
+        _height_map.set_tile(3, 3, &data);
+        _height_map.set_tile(3, 0, &data);
 
         let height_map_inner_width = HEIGHT_MAP_INNER_WIDTH;
         let height_map_inner_height = HEIGHT_MAP_INNER_WIDTH;
@@ -277,7 +288,7 @@ impl NeonWarlord {
         height_map_drawer.update(
             renderer_interface,
             &renderer.heightmap_bind_group_layout,
-            &height_map,
+            &_height_map,
         );
 
         // sun
@@ -296,7 +307,16 @@ impl NeonWarlord {
         // physics_simulation.create_agent_0(renderer_interface);
         // physics_simulation.create_pendulum(renderer_interface);
 
-        let physics_simulation_v3 = PhysicsSimulationV3::new(renderer_interface);
+        // Physics Simulation
+        let (producer, consumer) =
+            triple_buffer::create(physics_simulation_v3_drawer::DrawerObjects::new());
+        let physics_simulation_v3_drawer = PhysicsSimulationV3Drawer::new(renderer_interface);
+
+        let physics_simulation_v3_thread =
+            WorkerThread::spawn(physics_simulation_v3::PhysicSimThread {
+                height_map: _height_map.clone(),
+                sim: PhysicsSimulationV3::new(producer),
+            });
 
         // Worker
         let worker = WorkerInstance::new();
@@ -317,7 +337,7 @@ impl NeonWarlord {
             fps,
             debug_overlay,
             // terrain,
-            height_map,
+            _height_map,
             height_map_drawer,
             // terrain_generator,
             ants,
@@ -337,7 +357,10 @@ impl NeonWarlord {
             ant_positions,
             simple_physics_simulation,
             // physics_simulation,
-            physics_simulation_v3,
+            // physics_simulation_v3,
+            physics_simulation_v3_drawer,
+            physics_simulation_v3_thread,
+            physics_simulation_consumer: consumer,
         }
     }
 }
@@ -448,16 +471,16 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             for message in messages.try_iter() {
                 match message {
                     // ##########################################################
-                    worker::WorkerMessage::Ups(ups) => {
-                        self.ups = ups;
+                    worker::WorkerMessage::Ups(_ups) => {
+                        // self.ups = ups;
                     }
                     // ##########################################################
-                    worker::WorkerMessage::UpdateWatchPoints(watch_ups_data) => {
-                        self.performance_monitor_ups.update_from_data(
-                            renderer_interface,
-                            &self.font,
-                            &watch_ups_data,
-                        );
+                    worker::WorkerMessage::UpdateWatchPoints(_watch_ups_data) => {
+                        // self.performance_monitor_ups.update_from_data(
+                        //     renderer_interface,
+                        //     &self.font,
+                        //     &watch_ups_data,
+                        // );
                     }
                     // ##########################################################
                     worker::WorkerMessage::TerrainData(_terrain_part) => {
@@ -563,8 +586,27 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             // self.physics_simulation.update_physics(&self.height_map);
             // self.physics_simulation.update_device(renderer_interface);
 
-            self.physics_simulation_v3.update_physics(&self.height_map);
-            self.physics_simulation_v3.update_device(renderer_interface);
+            // self.physics_simulation_v3.update_physics(&self.height_map);
+            // self.physics_simulation_v3.update_drawer();
+
+            {
+                // Physics simulation
+                self.physics_simulation_v3_thread.update();
+
+                let consumer = &mut self.physics_simulation_consumer;
+                consumer.acquire_latest();
+                let data = consumer.buffer();
+
+                self.physics_simulation_v3_drawer
+                    .update(renderer_interface, data);
+
+                self.ups = data.ups;
+                self.performance_monitor_ups.update_from_data(
+                    renderer_interface,
+                    &self.font,
+                    &data.watch_ups,
+                );
+            }
         }
         self.watch_fps.stop(watch_index);
 
@@ -753,18 +795,16 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     &self.sun,
                     &self.simple_physics_simulation,
                     // &self.physics_simulation,
-                    &self.physics_simulation_v3,
                 ],
                 &[
                     &self.simple_physics_simulation,
                     // &self.physics_simulation,
-                    &self.physics_simulation_v3,
                 ],
                 &[&self.particles],
                 &[&self.plasma_orbs],
                 &[&self.glows],
-                &[&self.physics_simulation_v3],
-                &[&self.physics_simulation_v3],
+                &[&self.physics_simulation_v3_drawer],
+                &[&self.physics_simulation_v3_drawer],
                 &mut self.watch_fps,
             )
         }

@@ -3,21 +3,13 @@
 use std::iter::zip;
 
 use cgmath::Zero;
-use forward_renderer::{
-    particle_shader::ParticleShaderDraw, particle_shader_two_point::ParticleShaderTwoPointDraw,
-};
-use wgpu_renderer::{
-    vertex_color_shader::{
-        VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
-    },
-    wgpu_renderer::WgpuRendererInterface,
-};
 
 use crate::{
     advanced_composition::{
         AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer,
         definition::ParsedDefinition, genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
     },
+    physics_simulation_v3_drawer::DrawerObjects,
     reinforcement_learning::neat::Neat,
 };
 
@@ -45,11 +37,7 @@ pub struct Swarm {
 }
 
 impl Swarm {
-    pub fn new(
-        wgpu_renderer: &mut dyn WgpuRendererInterface,
-        definition: &ParsedDefinition,
-        size: usize,
-    ) -> Self {
+    pub fn new(definition: &ParsedDefinition, size: usize) -> Self {
         let radius = definition.scale / 2.0;
 
         // create neural networks
@@ -72,7 +60,7 @@ impl Swarm {
             let mut genome_drawers = Vec::new();
             for (i, genome) in neat.genomes.iter().enumerate() {
                 let pos = Vec3::new(0.0, i as f32 * definition.scale, definition.scale);
-                let genome_drawer = GenomeDrawer::new(wgpu_renderer, genome, radius * 0.5, pos);
+                let genome_drawer = GenomeDrawer::new(genome, radius * 0.5, pos);
                 genome_drawers.push(genome_drawer);
             }
             neat_drawers.push(genome_drawers);
@@ -94,11 +82,7 @@ impl Swarm {
         // drawer
         let mut composition_drawer = Vec::new();
         for advanced_composition in &advanced_composition {
-            composition_drawer.push(AdvancedCompositionDrawer::new(
-                wgpu_renderer,
-                advanced_composition,
-                radius,
-            ));
+            composition_drawer.push(AdvancedCompositionDrawer::new(advanced_composition, radius));
         }
 
         Self {
@@ -141,19 +125,27 @@ impl Swarm {
         self.ticks += 1
     }
 
-    pub fn update_device(&mut self, wgpu_renderer: &mut dyn WgpuRendererInterface) {
+    pub fn update_drawer(&mut self, producer: &mut DrawerObjects) {
         assert!(self.composition_drawer.len() == self.advanced_composition.len());
 
         // update composites
         let size = self.composition_drawer.len();
         for i in 0..size {
-            self.composition_drawer[i].update(wgpu_renderer, &self.advanced_composition[i]);
+            self.composition_drawer[i].update(
+                &self.advanced_composition[i],
+                &mut producer.verlet_object_nodes,
+                &mut producer.verlet_object_edges,
+            );
         }
 
         // update neats
         for (neat_drawer, neat) in zip(&mut self.neat_drawers, &self.neats) {
             for (genome_drawer, genome) in zip(neat_drawer, &neat.genomes) {
-                genome_drawer.update(wgpu_renderer, genome);
+                genome_drawer.update(
+                    genome,
+                    &mut producer.genome_nodes,
+                    &mut producer.genome_edges,
+                );
             }
         }
     }
@@ -249,50 +241,12 @@ impl Swarm {
 
     pub fn set_fitness_functions(
         mut self,
-        fitness_functions: &[Box<dyn FitnessFunction>],
+        fitness_functions: &[Box<dyn FitnessFunction + Send>],
     ) -> Swarm {
         for elem in &mut self.advanced_composition {
             elem.set_fitnesss_functions(fitness_functions);
         }
 
         self
-    }
-}
-
-impl VertexColorShaderDraw for Swarm {
-    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        for drawer in &self.composition_drawer {
-            drawer.draw(render_pass);
-        }
-    }
-}
-
-impl VertexColorShaderDrawLines for Swarm {
-    fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        // composites
-        for drawer in &self.composition_drawer {
-            drawer.draw_lines(render_pass);
-        }
-    }
-}
-
-impl ParticleShaderDraw for Swarm {
-    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        for neat_drawer in &self.neat_drawers {
-            for genome_drawer in neat_drawer {
-                // genome_drawer.draw(render_pass);
-                ParticleShaderDraw::draw(genome_drawer, render_pass);
-            }
-        }
-    }
-}
-
-impl ParticleShaderTwoPointDraw for Swarm {
-    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        for neat_drawer in &self.neat_drawers {
-            for genome_drawer in neat_drawer {
-                ParticleShaderTwoPointDraw::draw(genome_drawer, render_pass);
-            }
-        }
     }
 }

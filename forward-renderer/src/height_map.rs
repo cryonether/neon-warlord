@@ -4,6 +4,7 @@ pub mod height_map_drawer;
 
 type Vec3 = cgmath::Vector3<f32>;
 
+#[derive(Clone)]
 pub struct HeightMap<
     const WIDTH: usize,
     const HEIGHT: usize,
