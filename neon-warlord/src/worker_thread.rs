@@ -19,6 +19,7 @@ where
     /// Or just saves the object on wasm
     pub fn spawn(func_obj: T) -> Self {
         #[allow(unused_mut)]
+        #[allow(unused)]
         let mut single_threaded = false;
         #[cfg(target_arch = "wasm32")]
         {
