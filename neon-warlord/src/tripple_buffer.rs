@@ -1,12 +1,14 @@
-//! Tripple buffer synchronization
+//! Triple buffer synchronization
+
+
 use std::cell::UnsafeCell;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
 
-struct TrippleBuffer<T> {
-    buffers: [UnsafeCell<Vec<T>>; 3],
+struct TripleBuffer<T> {
+    buffers: [UnsafeCell<T>; 3],
 
     // Index of the buffer currently in the middle.
     middle: AtomicUsize,
@@ -16,27 +18,29 @@ struct TrippleBuffer<T> {
 
 // We guarantee that producer and consumer never access
 // the same buffer simultaneously.
-unsafe impl<T: Send> Send for TrippleBuffer<T> {}
-unsafe impl<T: Send> Sync for TrippleBuffer<T> {}
+unsafe impl<T: Send> Send for TripleBuffer<T> {}
+unsafe impl<T: Send> Sync for TripleBuffer<T> {}
 
 pub struct Producer<T> {
-    inner: Arc<TrippleBuffer<T>>,
+    inner: Arc<TripleBuffer<T>>,
     back: usize,
 }
 
 pub struct Consumer<T> {
-    inner: Arc<TrippleBuffer<T>>,
+    inner: Arc<TripleBuffer<T>>,
     front: usize,
     count: usize,
 }
 
-impl<T> TrippleBuffer<T> {
-    pub fn create() -> (Producer<T>, Consumer<T>) {
-        let inner = Arc::new(TrippleBuffer {
+impl<T> TripleBuffer<T> {
+    pub fn create(data: T) -> (Producer<T>, Consumer<T>) 
+    where T: Clone
+    {
+        let inner = Arc::new(TripleBuffer {
             buffers: [
-                UnsafeCell::new(Vec::new()),
-                UnsafeCell::new(Vec::new()),
-                UnsafeCell::new(Vec::new()),
+                UnsafeCell::new(data.clone()),
+                UnsafeCell::new(data.clone()),
+                UnsafeCell::new(data),
             ],
             middle: AtomicUsize::new(1),
             count: AtomicUsize::new(0),
@@ -56,7 +60,7 @@ impl<T> TrippleBuffer<T> {
         (producer, consumer)
     }
 
-    fn buffer(&self, index: usize) -> &mut Vec<T> {
+    fn buffer(&self, index: usize) -> &mut T {
         // SAFETY:
         // The triple-buffer protocol guarantees exclusive ownership
         // of the buffer represented by `index`.
@@ -65,7 +69,7 @@ impl<T> TrippleBuffer<T> {
 }
 
 impl<T> Producer<T> {
-    pub fn buffer(&mut self) -> &mut Vec<T> {
+    pub fn buffer(&mut self) -> &mut T {
         self.inner.buffer(self.back)
     }
 
@@ -84,11 +88,11 @@ impl<T> Producer<T> {
 }
 
 impl<T> Consumer<T> {
-    pub fn buffer(&self) -> &Vec<T> {
+    pub fn buffer(&self) -> &T {
         self.inner.buffer(self.front)
     }
 
-    pub fn buffer_mut(&mut self) -> &mut Vec<T> {
+    pub fn buffer_mut(&mut self) -> &mut T {
         self.inner.buffer(self.front)
     }
 
