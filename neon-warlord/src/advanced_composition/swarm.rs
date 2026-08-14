@@ -3,21 +3,12 @@
 use std::iter::zip;
 
 use cgmath::Zero;
-use forward_renderer::{
-    particle_shader::ParticleShaderDraw, particle_shader_two_point::ParticleShaderTwoPointDraw,
-};
-use wgpu_renderer::{
-    vertex_color_shader::{
-        VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
-    },
-    wgpu_renderer::WgpuRendererInterface,
-};
 
 use crate::{
     advanced_composition::{
         AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer,
         definition::ParsedDefinition, genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
-    }, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::neat::Neat, triple_buffer,
+    }, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::neat::Neat,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -263,19 +254,3 @@ impl Swarm {
     }
 }
 
-// impl VertexColorShaderDraw for Swarm {
-//     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-//         for drawer in &self.composition_drawer {
-//             drawer.draw(render_pass);
-//         }
-//     }
-// }
-
-// impl VertexColorShaderDrawLines for Swarm {
-//     fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-//         // composites
-//         for drawer in &self.composition_drawer {
-//             drawer.draw_lines(render_pass);
-//         }
-//     }
-// }

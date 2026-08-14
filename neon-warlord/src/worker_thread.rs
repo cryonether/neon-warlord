@@ -1,7 +1,8 @@
-//! Creates a thread or using a single threaded update function on wasm
+//! Creates a thread or uses a single threaded update function on wasm
 
-use std::thread::{Builder, JoinHandle};
+use std::thread::JoinHandle;
 
+/// Creates a thread or uses a single threaded update function on wasm
 pub struct WorkerThread<T> 
 where
     T: Update,
@@ -14,6 +15,8 @@ where
     T: Update,
     T: Send + 'static,
 {
+    /// Spawns a new thread, executing the update function from T
+    /// Or just saves the object on wasm
     pub fn spawn(func_obj: T) -> Self
     {   
         #[allow(unused_mut)]
@@ -41,6 +44,7 @@ where
         }
     }
 
+    /// Runs the thread on wasm
     pub fn update(&mut self) {
         match &mut self.thread{
             Thread::SingleThread(single_thread_handle) => {
@@ -53,6 +57,7 @@ where
     }
 }
 
+/// Helper to distinguish between single and multithreaded run
 enum Thread<T>
 where
     T: Update,
@@ -61,6 +66,7 @@ where
     MultiThread(JoinHandle<()>),
 }
 
+/// Holds an object for single threaded execution
 struct SingleThreadHandle<T> 
 where
     T: Update,

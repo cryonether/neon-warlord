@@ -2,11 +2,10 @@
 
 use forward_renderer::{
     geometry,
-    particle_shader::{self, ParticleShaderDrawRange},
-    particle_shader_two_point::{self, ParticleShaderTwoPointDrawRange},
+    particle_shader::{self},
+    particle_shader_two_point::{self},
     to_rgb,
 };
-use wgpu_renderer::wgpu_renderer::WgpuRendererInterface;
 
 use crate::reinforcement_learning::neat::{self};
 use cgmath::VectorSpace;

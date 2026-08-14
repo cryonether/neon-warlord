@@ -1,12 +1,19 @@
 //! Triple buffer synchronization
 
-
 use std::cell::UnsafeCell;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
 
+/// Triple buffer synchronization  
+/// 
+/// Details:  
+///     Uses three shared buffers using UnsafeCell, front, middle and back.
+///     The producer atomically swaps middle and back.
+///     The consumer atomically swaps middle and front.
+///     -> Producer and consumer never access the same buffer simultaneously.
+///     -> No data races.
 struct TripleBuffer<T> {
     buffers: [UnsafeCell<T>; 3],
 
@@ -21,11 +28,13 @@ struct TripleBuffer<T> {
 unsafe impl<T: Send> Send for TripleBuffer<T> {}
 unsafe impl<T: Send> Sync for TripleBuffer<T> {}
 
+/// Adds data into the Triple Buffer
 pub struct Producer<T> {
     inner: Arc<TripleBuffer<T>>,
     back: usize,
 }
 
+/// Gets data from the Triple Buffer
 pub struct Consumer<T> {
     inner: Arc<TripleBuffer<T>>,
     front: usize,
@@ -65,7 +74,7 @@ impl<T> Consumer<T> {
         self.inner.buffer(self.front)
     }
 
-    pub fn buffer_mut(&mut self) -> &mut T {
+    pub fn _buffer_mut(&mut self) -> &mut T {
         self.inner.buffer(self.front)
     }
 
@@ -86,6 +95,7 @@ impl<T> Consumer<T> {
     }
 }
 
+/// Creates a new Triple Buffer consumer producer pair
 pub fn create<T>(data: T) -> (Producer<T>, Consumer<T>) 
 where T: Clone
 {

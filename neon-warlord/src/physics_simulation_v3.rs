@@ -90,12 +90,11 @@ impl PhysicsSimulationV3 {
         let dt = now - self.last_render_time;
         self.last_render_time = now;
         self.ups.update(dt);
-        }
+    }
         
-        pub fn update_drawer(&mut self) {
-            // self.watch_ups.start(2, "update_drawer");
-            let data = self.producer.buffer();
-            data.clear();
+    pub fn update_drawer(&mut self) {
+        let data = self.producer.buffer();
+        data.clear();
             
         self.watch_ups.start(2, "swarm.update_drawer");
         self.swarm.update_drawer(data);

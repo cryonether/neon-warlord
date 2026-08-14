@@ -27,8 +27,6 @@ mod triple_buffer;
 mod physics_simulation_v3_drawer;
 mod worker_thread;
 
-use std::thread;
-
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
     height_map::height_map_drawer::HeightMapDrawer, particle_storage::ParticleStorage,
@@ -116,7 +114,7 @@ struct NeonWarlord {
 
     // Terrain
     // terrain: TerrainStorage,
-    height_map: HeightMapType,
+    _height_map: HeightMapType,
     height_map_drawer: HeightMapDrawer,
 
     // Ants
@@ -236,9 +234,7 @@ impl NeonWarlord {
         //     include_bytes!("../res/tile.png"),
         // );
 
- 
-
-        let mut height_map: HeightMapType = forward_renderer::height_map::HeightMap::new();
+        let mut _height_map: HeightMapType = forward_renderer::height_map::HeightMap::new();
 
         let mut data = Vec::new();
         for _i in 0..HEIGHT_MAP_INNER_HEIGHT * HEIGHT_MAP_INNER_WIDTH {
@@ -258,11 +254,11 @@ impl NeonWarlord {
         // height_map.set_tile(0, 2, &data);
         // height_map.set_tile(2, 0, &data);
 
-        height_map.set_tile(0, 3, &data);
-        height_map.set_tile(0, 0, &data);
+        _height_map.set_tile(0, 3, &data);
+        _height_map.set_tile(0, 0, &data);
 
-        height_map.set_tile(3, 3, &data);
-        height_map.set_tile(3, 0, &data);
+        _height_map.set_tile(3, 3, &data);
+        _height_map.set_tile(3, 0, &data);
 
         let height_map_inner_width = HEIGHT_MAP_INNER_WIDTH;
         let height_map_inner_height = HEIGHT_MAP_INNER_WIDTH;
@@ -281,7 +277,7 @@ impl NeonWarlord {
         height_map_drawer.update(
             renderer_interface,
             &renderer.heightmap_bind_group_layout,
-            &height_map,
+            &_height_map,
         );
 
         // sun
@@ -300,6 +296,7 @@ impl NeonWarlord {
         // physics_simulation.create_agent_0(renderer_interface);
         // physics_simulation.create_pendulum(renderer_interface);
 
+        // Physics Simulation
         let (producer, consumer) = triple_buffer::create(
             physics_simulation_v3_drawer::DrawerObjects::new()
         );
@@ -307,10 +304,9 @@ impl NeonWarlord {
 
         let physics_simulation_v3_thread = 
             WorkerThread::spawn(physics_simulation_v3::PhysicSimThread{
-                height_map:height_map.clone(),
+                height_map:_height_map.clone(),
                 sim: PhysicsSimulationV3::new(producer),
             });
-
 
         // Worker
         let worker = WorkerInstance::new();
@@ -331,7 +327,7 @@ impl NeonWarlord {
             fps,
             debug_overlay,
             // terrain,
-            height_map,
+            _height_map,
             height_map_drawer,
             // terrain_generator,
             ants,
@@ -465,11 +461,11 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             for message in messages.try_iter() {
                 match message {
                     // ##########################################################
-                    worker::WorkerMessage::Ups(ups) => {
+                    worker::WorkerMessage::Ups(_ups) => {
                         // self.ups = ups;
                     }
                     // ##########################################################
-                    worker::WorkerMessage::UpdateWatchPoints(watch_ups_data) => {
+                    worker::WorkerMessage::UpdateWatchPoints(_watch_ups_data) => {
                         // self.performance_monitor_ups.update_from_data(
                         //     renderer_interface,
                         //     &self.font,
@@ -586,7 +582,6 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             
             {
                 // Physics simulation
-
                 self.physics_simulation_v3_thread.update();
 
                 let consumer = &mut self.physics_simulation_consumer;
@@ -786,12 +781,10 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     &self.sun,
                     &self.simple_physics_simulation,
                     // &self.physics_simulation,
-                    // &self.physics_simulation_v3,
                 ],
                 &[
                     &self.simple_physics_simulation,
                     // &self.physics_simulation,
-                    // &self.physics_simulation_v3,
                 ],
                 &[&self.particles],
                 &[&self.plasma_orbs],
