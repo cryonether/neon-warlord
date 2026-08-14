@@ -24,6 +24,8 @@ pub struct AdvancedCompositionDrawer {
 
     nr_nodes: usize,
     nr_edges: usize,
+
+    radius: f32,
 }
 
 impl AdvancedCompositionDrawer {
@@ -34,8 +36,8 @@ impl AdvancedCompositionDrawer {
         let nr_nodes = composition.verlet_objects.len();
         let nr_edges = composition.links.len();
 
-        let nodes_color_0: Vec3 = to_rgb("#d8b0e8").into();
-        let nodes_color_1: Vec3 = to_rgb("#300c36").into();
+        let nodes_color_0: Vec3 = to_rgb("#ce51ff").into();
+        let nodes_color_1: Vec3 = to_rgb("#a72ebc").into();
         let links_color_0: Vec3 = to_rgb("#131922").into();
         let links_color_1: Vec3 = to_rgb("#2d2e27").into();
 
@@ -90,6 +92,7 @@ impl AdvancedCompositionDrawer {
             links_color_1,
             nr_nodes,
             nr_edges,
+            radius,
         }
     }
 
@@ -107,6 +110,9 @@ impl AdvancedCompositionDrawer {
             let verlet_object = &composition.verlet_objects[i];
 
             instance.position = verlet_object.position().into();
+            instance.color = self.nodes_color_0.into();
+            instance.size = self.radius * 2.0;
+            instance.time = 1.0;
         }
 
         for (i, link) in composition.links.iter().enumerate() {
@@ -118,9 +124,12 @@ impl AdvancedCompositionDrawer {
                     let pos_0 = composition.verlet_objects[index_0].position();
                     let pos_1 = composition.verlet_objects[index_1].position();
 
-                    // self.edges_instances.set_line_position(i, pos_0, pos_1);
-                    self.edges_instances[i].position_0 = pos_0.into();
-                    self.edges_instances[i].position_1 = pos_1.into();
+                    let instance = &mut self.edges_instances[i];
+                    instance.position_0 = pos_0.into();
+                    instance.position_1 = pos_1.into();
+                    instance.color = self.links_color_0.into();
+                    instance.size = self.radius * 0.1;
+                    instance.time = 1.0;
                 }
                 super::Link::FixedDistance(elem) => {
                     let index_0 = elem.node_id_1;
@@ -129,9 +138,12 @@ impl AdvancedCompositionDrawer {
                     let pos_0 = composition.verlet_objects[index_0].position();
                     let pos_1 = composition.verlet_objects[index_1].position();
 
-                    // self.edges_instances.set_line_position(i, pos_0, pos_1);
-                    self.edges_instances[i].position_0 = pos_0.into();
-                    self.edges_instances[i].position_1 = pos_1.into();
+                    let instance = &mut self.edges_instances[i];
+                    instance.position_0 = pos_0.into();
+                    instance.position_1 = pos_1.into();
+                    instance.color = self.links_color_0.into();
+                    instance.size = self.radius * 0.1;
+                    instance.time = 1.0;
                 }
                 super::Link::Loose(elem) => {
                     let index_0 = elem.node_id_1;
@@ -140,9 +152,12 @@ impl AdvancedCompositionDrawer {
                     let pos_0 = composition.verlet_objects[index_0].position();
                     let pos_1 = composition.verlet_objects[index_1].position();
 
-                    // self.edges_instances.set_line_position(i, pos_0, pos_1);
-                    self.edges_instances[i].position_0 = pos_0.into();
-                    self.edges_instances[i].position_1 = pos_1.into();
+                    let instance = &mut self.edges_instances[i];
+                    instance.position_0 = pos_0.into();
+                    instance.position_1 = pos_1.into();
+                    instance.color = self.links_color_0.into();
+                    instance.size = self.radius * 0.1;
+                    instance.time = 1.0;
                 }
             }
         }
@@ -172,3 +187,17 @@ impl AdvancedCompositionDrawer {
 //         self.links_mesh.draw(render_pass);
 //     }
 // }
+
+
+
+fn gradient(t: f32, negative: Vec3, zero: Vec3, positive: Vec3) -> Vec3 {
+    let t = t.clamp(-1.0, 1.0);
+
+    if t < 0.0 {
+        // Map [-1, 0] -> [0, 1]
+        cgmath::VectorSpace::lerp(negative, zero, t + 1.0)
+    } else {
+        // Map [0, 1] -> [0, 1]
+        cgmath::VectorSpace::lerp(zero, positive, t)
+    }
+}

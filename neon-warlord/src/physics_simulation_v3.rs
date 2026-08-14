@@ -76,7 +76,7 @@ impl PhysicsSimulationV3 {
         let data = self.producer.buffer();
         data.clear();
 
-        self.swarm.update_device(data);
+        self.swarm.update_drawer(data);
 
         self.producer.publish();
     }

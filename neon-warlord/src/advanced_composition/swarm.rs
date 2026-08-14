@@ -138,7 +138,7 @@ impl Swarm {
         self.ticks += 1
     }
 
-    pub fn update_device(&mut self, producer: &mut DrawerObjects) {
+    pub fn update_drawer(&mut self, producer: &mut DrawerObjects) {
         assert!(self.composition_drawer.len() == self.advanced_composition.len());
 
         // update composites

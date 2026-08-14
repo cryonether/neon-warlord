@@ -168,7 +168,7 @@ impl particle_shader_two_point::ParticleShaderTwoPointDraw for PhysicsSimulation
             self.genome_edges_mesh.draw_range(render_pass, self.nr_genome_edges);
         }
         if self.nr_verlet_object_edges > 0 {
-            // self.verlet_object_nodes_mesh.draw_range(render_pass, self.nr_verlet_object_edges);
+            self.verlet_object_edges_mesh.draw_range(render_pass, self.nr_verlet_object_edges);
         }
     }
 }
