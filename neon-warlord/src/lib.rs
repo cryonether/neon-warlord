@@ -463,7 +463,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 match message {
                     // ##########################################################
                     worker::WorkerMessage::Ups(ups) => {
-                        self.ups = ups;
+                        // self.ups = ups;
                     }
                     // ##########################################################
                     worker::WorkerMessage::UpdateWatchPoints(watch_ups_data) => {
@@ -580,7 +580,9 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             // self.physics_simulation_v3.update_physics(&self.height_map);
             // self.physics_simulation_v3.update_drawer();
             self.physics_simulation_v3_thread.update();
-            self.physics_simulation_v3_drawer.update(renderer_interface);
+
+            let ups = &mut self.ups;
+            self.physics_simulation_v3_drawer.update(renderer_interface, ups);
         }
         self.watch_fps.stop(watch_index);
 

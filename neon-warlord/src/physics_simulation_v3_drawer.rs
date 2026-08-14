@@ -77,9 +77,11 @@ impl PhysicsSimulationV3Drawer {
 
     pub fn update(&mut self, 
         wgpu_renderer: &mut dyn WgpuRendererInterface,
+        ups: &mut u32,
     ) {
         self.consumer.acquire_latest();
         let data = self.consumer.buffer();
+        *ups = data.ups;
 
         // Genome nodes
         {
@@ -181,6 +183,8 @@ pub struct DrawerObjects{
 
     pub verlet_object_nodes: Vec<particle_shader::Instance>,
     pub verlet_object_edges: Vec<particle_shader_two_point::Instance>,
+
+    pub ups: u32,
 }
 
 impl DrawerObjects {
@@ -202,6 +206,7 @@ impl DrawerObjects {
             genome_edges,
             verlet_object_nodes,
             verlet_object_edges,
+            ups: 0
         }
     }
 } 

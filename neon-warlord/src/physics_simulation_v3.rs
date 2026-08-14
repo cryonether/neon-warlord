@@ -5,10 +5,9 @@ use forward_renderer::{
     particle_shader_two_point::ParticleShaderTwoPointDraw,
 };
 use wgpu_renderer::{
-    vertex_color_shader::{
+    performance_monitor::Fps, vertex_color_shader::{
         VertexColorShaderDraw, vertex_color_shader_draw::VertexColorShaderDrawLines,
-    },
-    wgpu_renderer::WgpuRendererInterface,
+    }, wgpu_renderer::WgpuRendererInterface,
 };
 
 use crate::{
@@ -29,6 +28,10 @@ pub struct PhysicsSimulationV3 {
     swarm: Swarm,
     solver: Solver,
     ticks: u64,
+
+    // Debug
+    ups: Fps,
+    last_render_time: instant::Instant,
 }
 
 impl PhysicsSimulationV3 {
@@ -48,12 +51,18 @@ impl PhysicsSimulationV3 {
         // solver
         let solver = Solver::new();
 
+        // Debug
+        let ups = Fps::new();
+
         Self {
             producer,
         
             swarm,
             solver,
             ticks: 0,
+
+            ups,
+            last_render_time: instant::Instant::now(),
         }
     }
 
@@ -70,6 +79,12 @@ impl PhysicsSimulationV3 {
             height_map,
             dt,
         );
+
+        // ups
+        let now = instant::Instant::now();
+        let dt = now - self.last_render_time;
+        self.last_render_time = now;
+        self.ups.update(dt);
     }
 
     pub fn update_drawer(&mut self) {
@@ -77,6 +92,7 @@ impl PhysicsSimulationV3 {
         data.clear();
 
         self.swarm.update_drawer(data);
+        data.ups = self.ups.get(); 
 
         self.producer.publish();
     }
