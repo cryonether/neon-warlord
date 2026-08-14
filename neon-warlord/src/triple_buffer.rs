@@ -33,33 +33,6 @@ pub struct Consumer<T> {
 }
 
 impl<T> TripleBuffer<T> {
-    pub fn create(data: T) -> (Producer<T>, Consumer<T>) 
-    where T: Clone
-    {
-        let inner = Arc::new(TripleBuffer {
-            buffers: [
-                UnsafeCell::new(data.clone()),
-                UnsafeCell::new(data.clone()),
-                UnsafeCell::new(data),
-            ],
-            middle: AtomicUsize::new(1),
-            count: AtomicUsize::new(0),
-        });
-
-        let producer = Producer {
-            inner: inner.clone(),
-            back: 0,
-        };
-
-        let consumer = Consumer {
-            inner,
-            front: 2,
-            count: 0,
-        };
-
-        (producer, consumer)
-    }
-
     fn buffer(&self, index: usize) -> &mut T {
         // SAFETY:
         // The triple-buffer protocol guarantees exclusive ownership
@@ -111,4 +84,31 @@ impl<T> Consumer<T> {
             .middle
             .swap(self.front, Ordering::AcqRel);
     }
+}
+
+pub fn create<T>(data: T) -> (Producer<T>, Consumer<T>) 
+where T: Clone
+{
+    let inner = Arc::new(TripleBuffer {
+        buffers: [
+            UnsafeCell::new(data.clone()),
+            UnsafeCell::new(data.clone()),
+            UnsafeCell::new(data),
+        ],
+        middle: AtomicUsize::new(1),
+        count: AtomicUsize::new(0),
+    });
+
+    let producer = Producer {
+        inner: inner.clone(),
+        back: 0,
+    };
+
+    let consumer = Consumer {
+        inner,
+        front: 2,
+        count: 0,
+    };
+
+    (producer, consumer)
 }

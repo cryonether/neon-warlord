@@ -17,13 +17,14 @@ use crate::{
             ParsedDefinition, get_pendulum_definition, get_pendulum_definition_fitness_function,
         },
         swarm::Swarm,
-    },
-    verlet_physics::solver::Solver,
+    }, physics_simulation_v3_drawer::DrawerObjects, triple_buffer, verlet_physics::solver::Solver,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
 
 pub struct PhysicsSimulationV3 {
+    producer: triple_buffer::Producer<DrawerObjects>,
+
     // Physics
     swarm: Swarm,
     solver: Solver,
@@ -31,7 +32,9 @@ pub struct PhysicsSimulationV3 {
 }
 
 impl PhysicsSimulationV3 {
-    pub fn new(wgpu_renderer: &mut dyn WgpuRendererInterface) -> Self {
+    pub fn new(
+        producer: triple_buffer::Producer<DrawerObjects>
+    ) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
         let scale = 0.1;
@@ -39,13 +42,15 @@ impl PhysicsSimulationV3 {
         let fitness_function = get_pendulum_definition_fitness_function();
         let parsed_definition = ParsedDefinition::parse(&definition, pos, scale);
 
-        let swarm = Swarm::new(wgpu_renderer, &parsed_definition, 1000)
+        let swarm = Swarm::new(&parsed_definition, 1000)
             .set_fitness_functions(&[fitness_function]);
 
         // solver
         let solver = Solver::new();
 
         Self {
+            producer,
+        
             swarm,
             solver,
             ticks: 0,
@@ -67,31 +72,24 @@ impl PhysicsSimulationV3 {
         );
     }
 
-    pub fn update_device(&mut self, wgpu_renderer: &mut dyn WgpuRendererInterface) {
-        self.swarm.update_device(wgpu_renderer);
+    pub fn update_drawer(&mut self) {
+        let data = self.producer.buffer();
+        data.clear();
+
+        self.swarm.update_device(data);
+
+        self.producer.publish();
     }
 }
 
-impl VertexColorShaderDraw for PhysicsSimulationV3 {
-    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        VertexColorShaderDraw::draw(&self.swarm, render_pass);
-    }
-}
+// impl VertexColorShaderDraw for PhysicsSimulationV3 {
+//     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
+//         VertexColorShaderDraw::draw(&self.swarm, render_pass);
+//     }
+// }
 
-impl VertexColorShaderDrawLines for PhysicsSimulationV3 {
-    fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        self.swarm.draw_lines(render_pass);
-    }
-}
-
-impl ParticleShaderDraw for PhysicsSimulationV3 {
-    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        ParticleShaderDraw::draw(&self.swarm, render_pass);
-    }
-}
-
-impl ParticleShaderTwoPointDraw for PhysicsSimulationV3 {
-    fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        ParticleShaderTwoPointDraw::draw(&self.swarm, render_pass);
-    }
-}
+// impl VertexColorShaderDrawLines for PhysicsSimulationV3 {
+//     fn draw_lines<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
+//         self.swarm.draw_lines(render_pass);
+//     }
+// }
