@@ -1,12 +1,14 @@
 //! Draws Objects from the physics simulation
 
-use forward_renderer::{geometry, particle_shader::{self, ParticleShaderDrawRange}, particle_shader_two_point::{self, ParticleShaderTwoPointDrawRange}};
-use wgpu_renderer::wgpu_renderer::WgpuRendererInterface;
+use forward_renderer::{
+    geometry,
+    particle_shader::{self, ParticleShaderDrawRange},
+    particle_shader_two_point::{self, ParticleShaderTwoPointDrawRange},
+};
 use wgpu_renderer::performance_monitor::watch::{self};
+use wgpu_renderer::wgpu_renderer::WgpuRendererInterface;
 
-
-
-pub struct PhysicsSimulationV3Drawer{
+pub struct PhysicsSimulationV3Drawer {
     genome_nodes_mesh: particle_shader::Mesh,
     genome_edges_mesh: particle_shader_two_point::Mesh,
 
@@ -19,18 +21,12 @@ pub struct PhysicsSimulationV3Drawer{
 }
 
 impl PhysicsSimulationV3Drawer {
-    pub fn new(
-        wgpu_renderer: &mut dyn WgpuRendererInterface,
-    ) -> Self {
-
+    pub fn new(wgpu_renderer: &mut dyn WgpuRendererInterface) -> Self {
         // Genome nodes
         let genome_node_size = 1.0;
         let genome_node_quad = geometry::Quad::new(genome_node_size); // 4 positions
-        let genome_nodes_mesh = particle_shader::Mesh::from_geometry(
-            wgpu_renderer.device(),
-            &genome_node_quad,
-            &[],
-        );
+        let genome_nodes_mesh =
+            particle_shader::Mesh::from_geometry(wgpu_renderer.device(), &genome_node_quad, &[]);
 
         // Genome edges
         let genome_edge_size = 1.0;
@@ -59,7 +55,7 @@ impl PhysicsSimulationV3Drawer {
             &[],
         );
 
-        Self { 
+        Self {
             genome_nodes_mesh,
             genome_edges_mesh,
             verlet_object_nodes_mesh,
@@ -68,21 +64,21 @@ impl PhysicsSimulationV3Drawer {
             nr_verlet_object_nodes: 0,
             nr_genome_edges: 0,
             nr_verlet_object_edges: 0,
-         }
+        }
     }
 
-    pub fn update(&mut self, 
+    pub fn update(
+        &mut self,
         wgpu_renderer: &mut dyn WgpuRendererInterface,
         consumer: &DrawerObjects,
     ) {
-
         // Genome nodes
         {
             let instances = &consumer.genome_nodes;
             let mesh = &mut self.genome_nodes_mesh;
             self.nr_genome_nodes = instances.len();
             if mesh.max_instances() < instances.len() {
-                let new_len = instances.len()*2;
+                let new_len = instances.len() * 2;
 
                 let mut new_instances = Vec::with_capacity(new_len);
                 for _i in 0..new_len {
@@ -92,14 +88,14 @@ impl PhysicsSimulationV3Drawer {
             }
             mesh.update_instance_buffer(wgpu_renderer.queue(), instances);
         }
-        
+
         // Genome edges
         {
             let instances = &consumer.genome_edges;
             let mesh = &mut self.genome_edges_mesh;
             self.nr_genome_edges = instances.len();
             if mesh.max_instances() < instances.len() {
-                let new_len = instances.len()*2;
+                let new_len = instances.len() * 2;
 
                 let mut new_instances = Vec::with_capacity(new_len);
                 for _i in 0..new_len {
@@ -116,7 +112,7 @@ impl PhysicsSimulationV3Drawer {
             let mesh = &mut self.verlet_object_nodes_mesh;
             self.nr_verlet_object_nodes = instances.len();
             if mesh.max_instances() < instances.len() {
-                let new_len = instances.len()*2;
+                let new_len = instances.len() * 2;
 
                 let mut new_instances = Vec::with_capacity(new_len);
                 for _i in 0..new_len {
@@ -133,7 +129,7 @@ impl PhysicsSimulationV3Drawer {
             let mesh = &mut self.verlet_object_edges_mesh;
             self.nr_verlet_object_edges = instances.len();
             if mesh.max_instances() < instances.len() {
-                let new_len = instances.len()*2;
+                let new_len = instances.len() * 2;
 
                 let mut new_instances = Vec::with_capacity(new_len);
                 for _i in 0..new_len {
@@ -149,10 +145,12 @@ impl PhysicsSimulationV3Drawer {
 impl particle_shader::ParticleShaderDraw for PhysicsSimulationV3Drawer {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
         if self.nr_genome_nodes > 0 {
-            self.genome_nodes_mesh.draw_range(render_pass, self.nr_genome_nodes);
+            self.genome_nodes_mesh
+                .draw_range(render_pass, self.nr_genome_nodes);
         }
         if self.nr_verlet_object_nodes > 0 {
-            self.verlet_object_nodes_mesh.draw_range(render_pass, self.nr_verlet_object_nodes);
+            self.verlet_object_nodes_mesh
+                .draw_range(render_pass, self.nr_verlet_object_nodes);
         }
     }
 }
@@ -160,10 +158,12 @@ impl particle_shader::ParticleShaderDraw for PhysicsSimulationV3Drawer {
 impl particle_shader_two_point::ParticleShaderTwoPointDraw for PhysicsSimulationV3Drawer {
     fn draw<'a>(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
         if self.nr_genome_edges > 0 {
-            self.genome_edges_mesh.draw_range(render_pass, self.nr_genome_edges);
+            self.genome_edges_mesh
+                .draw_range(render_pass, self.nr_genome_edges);
         }
         if self.nr_verlet_object_edges > 0 {
-            self.verlet_object_edges_mesh.draw_range(render_pass, self.nr_verlet_object_edges);
+            self.verlet_object_edges_mesh
+                .draw_range(render_pass, self.nr_verlet_object_edges);
         }
     }
 }
@@ -171,7 +171,7 @@ impl particle_shader_two_point::ParticleShaderTwoPointDraw for PhysicsSimulation
 pub const WATCH_POINTS_SIZE: usize = 10;
 
 #[derive(Clone)]
-pub struct DrawerObjects{
+pub struct DrawerObjects {
     pub genome_nodes: Vec<particle_shader::Instance>,
     pub genome_edges: Vec<particle_shader_two_point::Instance>,
 
@@ -189,7 +189,7 @@ impl DrawerObjects {
         self.verlet_object_nodes.clear();
         self.verlet_object_edges.clear();
     }
-    
+
     pub fn new() -> Self {
         let genome_nodes = Vec::new();
         let genome_edges = Vec::new();
@@ -207,4 +207,4 @@ impl DrawerObjects {
             watch_ups,
         }
     }
-} 
+}

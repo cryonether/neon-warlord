@@ -30,11 +30,7 @@ pub struct GenomeDrawer {
 }
 
 impl GenomeDrawer {
-    pub fn new(
-        genome: &neat::Genome,
-        radius: f32,
-        position: Vec3,
-    ) -> Self {
+    pub fn new(genome: &neat::Genome, radius: f32, position: Vec3) -> Self {
         let nr_nodes = genome.nodes.len();
         let nr_edges = genome.edges.len();
 
@@ -45,11 +41,9 @@ impl GenomeDrawer {
         // let size = radius*2.0;
         let size = radius;
 
-        let nodes_instances =
-            Self::create_nodes(color_zero.into(), size, nr_nodes);
+        let nodes_instances = Self::create_nodes(color_zero.into(), size, nr_nodes);
 
-        let edges_instances =
-            Self::create_edges(color_zero.into(), size * 0.5, nr_edges);
+        let edges_instances = Self::create_edges(color_zero.into(), size * 0.5, nr_edges);
 
         Self {
             nodes_instances,
@@ -64,7 +58,8 @@ impl GenomeDrawer {
         }
     }
 
-    pub fn update(&mut self, 
+    pub fn update(
+        &mut self,
         genome: &neat::Genome,
         producer_nodes: &mut Vec<particle_shader::Instance>,
         producer_edges: &mut Vec<particle_shader_two_point::Instance>,
@@ -160,15 +155,13 @@ impl GenomeDrawer {
     }
 
     fn grow_nodes(&mut self, nr_nodes: usize) {
-        let nodes_instances =
-            Self::create_nodes(self.color_zero, self.size, nr_nodes);
+        let nodes_instances = Self::create_nodes(self.color_zero, self.size, nr_nodes);
 
         self.nodes_instances = nodes_instances;
     }
 
     fn grow_edges(&mut self, nr_edges: usize) {
-        let edges_instances =
-            Self::create_edges(self.color_zero, self.size * 0.5, nr_edges);
+        let edges_instances = Self::create_edges(self.color_zero, self.size * 0.5, nr_edges);
 
         self.edges_instances = edges_instances;
     }
@@ -203,9 +196,7 @@ impl GenomeDrawer {
         color_zero: Vec3,
         size: f32,
         nr_edges: usize,
-    ) -> 
-        Vec<particle_shader_two_point::Instance>
-     {
+    ) -> Vec<particle_shader_two_point::Instance> {
         let node_quad = geometry::Quad::new(size); // 4 positions
         let mut nodes_quads = geometry::Mesh::new();
         for _i in 0..nr_edges {
@@ -228,7 +219,6 @@ impl GenomeDrawer {
         edge_instances
     }
 }
-
 
 fn gradient(t: f32, negative: Vec3, zero: Vec3, positive: Vec3) -> Vec3 {
     let t = t.clamp(-1.0, 1.0);

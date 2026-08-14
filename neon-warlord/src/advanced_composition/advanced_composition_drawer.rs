@@ -22,10 +22,7 @@ pub struct AdvancedCompositionDrawer {
 }
 
 impl AdvancedCompositionDrawer {
-    pub fn new(
-        composition: &AdvancedComposition,
-        radius: f32,
-    ) -> Self {
+    pub fn new(composition: &AdvancedComposition, radius: f32) -> Self {
         let _nr_nodes = composition.verlet_objects.len();
         let _nr_edges = composition.links.len();
 

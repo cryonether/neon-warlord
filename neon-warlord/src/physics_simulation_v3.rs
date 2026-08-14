@@ -9,13 +9,16 @@ use crate::{
             ParsedDefinition, get_pendulum_definition, get_pendulum_definition_fitness_function,
         },
         swarm::Swarm,
-    }, physics_simulation_v3_drawer::DrawerObjects, triple_buffer, verlet_physics::solver::Solver, worker_thread,
+    },
+    physics_simulation_v3_drawer::DrawerObjects,
+    triple_buffer,
+    verlet_physics::solver::Solver,
+    worker_thread,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
 
 pub const WATCH_POINTS_SIZE: usize = 10;
-
 
 pub struct PhysicsSimulationV3 {
     producer: triple_buffer::Producer<DrawerObjects>,
@@ -32,9 +35,7 @@ pub struct PhysicsSimulationV3 {
 }
 
 impl PhysicsSimulationV3 {
-    pub fn new(
-        producer: triple_buffer::Producer<DrawerObjects>
-    ) -> Self {
+    pub fn new(producer: triple_buffer::Producer<DrawerObjects>) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
         let scale = 0.1;
@@ -44,8 +45,8 @@ impl PhysicsSimulationV3 {
 
         let swarm_size = 1000;
         // let swarm_size = 40000;
-        let swarm = Swarm::new(&parsed_definition, swarm_size)
-            .set_fitness_functions(&[fitness_function]);
+        let swarm =
+            Swarm::new(&parsed_definition, swarm_size).set_fitness_functions(&[fitness_function]);
 
         // solver
         let solver = Solver::new();
@@ -56,7 +57,7 @@ impl PhysicsSimulationV3 {
 
         Self {
             producer,
-        
+
             swarm,
             solver,
             ticks: 0,
@@ -74,15 +75,15 @@ impl PhysicsSimulationV3 {
         self.ticks += 1;
 
         self.watch_ups.start(0, "swarm.update_physics");
-            self.swarm.update_physics(dt);
+        self.swarm.update_physics(dt);
         self.watch_ups.stop(0);
 
         self.watch_ups.start(1, "Solver");
-            self.solver.update_advanced_composites(
-                &mut self.swarm.advanced_composition,
-                height_map,
-                dt,
-            );
+        self.solver.update_advanced_composites(
+            &mut self.swarm.advanced_composition,
+            height_map,
+            dt,
+        );
         self.watch_ups.stop(1);
 
         // ups
@@ -91,19 +92,19 @@ impl PhysicsSimulationV3 {
         self.last_render_time = now;
         self.ups.update(dt);
     }
-        
+
     pub fn update_drawer(&mut self) {
         let data = self.producer.buffer();
         data.clear();
-            
+
         self.watch_ups.start(2, "swarm.update_drawer");
         self.swarm.update_drawer(data);
         self.watch_ups.stop(2);
-            
-        data.ups = self.ups.get(); 
+
+        data.ups = self.ups.get();
         self.watch_ups.update();
         data.watch_ups = self.watch_ups.get_viewer_data();
-        
+
         self.producer.publish();
     }
 }
@@ -114,7 +115,8 @@ pub struct PhysicSimThread<T> {
 }
 
 impl<T> worker_thread::Update for PhysicSimThread<T>
-where T: HeightMapInterface
+where
+    T: HeightMapInterface,
 {
     fn update(&mut self) {
         self.sim.update_physics(&self.height_map);

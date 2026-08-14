@@ -79,11 +79,11 @@ impl Mesh {
             0..self.instance_buffer.size(),
         );
     }
-    
+
     pub fn max_instances(&self) -> usize {
         self.instance_buffer.len()
     }
-    
+
     pub fn resize_instance_buffer(&mut self, device: &wgpu::Device, instances: &[Instance]) {
         self.instance_buffer = InstanceBuffer::new(device, instances);
     }

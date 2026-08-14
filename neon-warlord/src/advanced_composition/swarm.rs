@@ -8,7 +8,9 @@ use crate::{
     advanced_composition::{
         AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer,
         definition::ParsedDefinition, genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
-    }, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::neat::Neat,
+    },
+    physics_simulation_v3_drawer::DrawerObjects,
+    reinforcement_learning::neat::Neat,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -35,10 +37,7 @@ pub struct Swarm {
 }
 
 impl Swarm {
-    pub fn new(
-        definition: &ParsedDefinition,
-        size: usize,
-    ) -> Self {
+    pub fn new(definition: &ParsedDefinition, size: usize) -> Self {
         let radius = definition.scale / 2.0;
 
         // create neural networks
@@ -83,10 +82,7 @@ impl Swarm {
         // drawer
         let mut composition_drawer = Vec::new();
         for advanced_composition in &advanced_composition {
-            composition_drawer.push(AdvancedCompositionDrawer::new(
-                advanced_composition,
-                radius,
-            ));
+            composition_drawer.push(AdvancedCompositionDrawer::new(advanced_composition, radius));
         }
 
         Self {
@@ -137,7 +133,7 @@ impl Swarm {
         for i in 0..size {
             self.composition_drawer[i].update(
                 &self.advanced_composition[i],
-                &mut producer.verlet_object_nodes, 
+                &mut producer.verlet_object_nodes,
                 &mut producer.verlet_object_edges,
             );
         }
@@ -145,8 +141,9 @@ impl Swarm {
         // update neats
         for (neat_drawer, neat) in zip(&mut self.neat_drawers, &self.neats) {
             for (genome_drawer, genome) in zip(neat_drawer, &neat.genomes) {
-                genome_drawer.update(genome, 
-                    &mut producer.genome_nodes, 
+                genome_drawer.update(
+                    genome,
+                    &mut producer.genome_nodes,
                     &mut producer.genome_edges,
                 );
             }
@@ -253,4 +250,3 @@ impl Swarm {
         self
     }
 }
-

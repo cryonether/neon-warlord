@@ -15,16 +15,16 @@ mod orb_controller;
 mod orb_storage;
 mod physics_simulation_v2;
 mod physics_simulation_v3;
+mod physics_simulation_v3_drawer;
 mod procedural_tree;
 mod reinforcement_learning;
 mod settings;
 mod simple_physics_simulation;
 mod sun_storage;
+mod triple_buffer;
 mod verlet_physics;
 mod worker;
 mod worker_instance;
-mod triple_buffer;
-mod physics_simulation_v3_drawer;
 mod worker_thread;
 
 use forward_renderer::{
@@ -48,7 +48,17 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, physics_simulation_v3::{PhysicSimThread, PhysicsSimulationV3}, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
+    ant_controller::AntPosition,
+    ant_generator::AntGenerator,
+    ant_storage::AntStorage,
+    camera_controller::CameraController,
+    debug_overlay::DebugOverlay,
+    physics_simulation_v3::{PhysicSimThread, PhysicsSimulationV3},
+    physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
+    simple_physics_simulation::SimplePhysicsSimulation,
+    sun_storage::SunStorage,
+    worker_instance::WorkerInstance,
+    worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -140,7 +150,8 @@ struct NeonWarlord {
     // physics_simulation_v3: PhysicsSimulationV3,
     physics_simulation_v3_drawer: PhysicsSimulationV3Drawer,
     physics_simulation_v3_thread: WorkerThread<PhysicSimThread<HeightMapType>>,
-    physics_simulation_consumer: triple_buffer::Consumer<physics_simulation_v3_drawer::DrawerObjects>,
+    physics_simulation_consumer:
+        triple_buffer::Consumer<physics_simulation_v3_drawer::DrawerObjects>,
 
     // Worker
     worker: WorkerInstance,
@@ -297,14 +308,13 @@ impl NeonWarlord {
         // physics_simulation.create_pendulum(renderer_interface);
 
         // Physics Simulation
-        let (producer, consumer) = triple_buffer::create(
-            physics_simulation_v3_drawer::DrawerObjects::new()
-        );
+        let (producer, consumer) =
+            triple_buffer::create(physics_simulation_v3_drawer::DrawerObjects::new());
         let physics_simulation_v3_drawer = PhysicsSimulationV3Drawer::new(renderer_interface);
 
-        let physics_simulation_v3_thread = 
-            WorkerThread::spawn(physics_simulation_v3::PhysicSimThread{
-                height_map:_height_map.clone(),
+        let physics_simulation_v3_thread =
+            WorkerThread::spawn(physics_simulation_v3::PhysicSimThread {
+                height_map: _height_map.clone(),
                 sim: PhysicsSimulationV3::new(producer),
             });
 
@@ -350,7 +360,7 @@ impl NeonWarlord {
             // physics_simulation_v3,
             physics_simulation_v3_drawer,
             physics_simulation_v3_thread,
-            physics_simulation_consumer:consumer,
+            physics_simulation_consumer: consumer,
         }
     }
 }
@@ -579,7 +589,6 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             // self.physics_simulation_v3.update_physics(&self.height_map);
             // self.physics_simulation_v3.update_drawer();
 
-            
             {
                 // Physics simulation
                 self.physics_simulation_v3_thread.update();
@@ -588,10 +597,15 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 consumer.acquire_latest();
                 let data = consumer.buffer();
 
-                self.physics_simulation_v3_drawer.update(renderer_interface, data);
+                self.physics_simulation_v3_drawer
+                    .update(renderer_interface, data);
 
                 self.ups = data.ups;
-                self.performance_monitor_ups.update_from_data(renderer_interface, &self.font, &data.watch_ups);
+                self.performance_monitor_ups.update_from_data(
+                    renderer_interface,
+                    &self.font,
+                    &data.watch_ups,
+                );
             }
         }
         self.watch_fps.stop(watch_index);
