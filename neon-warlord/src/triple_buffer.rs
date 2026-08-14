@@ -42,6 +42,7 @@ pub struct Consumer<T> {
 }
 
 impl<T> TripleBuffer<T> {
+    #[allow(clippy::mut_from_ref)]
     fn buffer(&self, index: usize) -> &mut T {
         // SAFETY:
         // The triple-buffer protocol guarantees exclusive ownership
