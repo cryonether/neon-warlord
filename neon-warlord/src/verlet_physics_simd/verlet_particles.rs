@@ -161,7 +161,7 @@ impl VerletParticles {
             let acc_x_ = f32x16::from(&*acc_x);
             let acc_y_ = f32x16::from(&*acc_y);
             let acc_z_ = f32x16::from(&*acc_z);
-            let inv_mass_ = f32x16::from(&*inv_mass);
+            let inv_mass_ = f32x16::from(inv_mass);
 
             // Static particles have inv_mass == 0.
             let movable_ = inv_mass_.simd_gt(zero_).select(one_, zero_);
