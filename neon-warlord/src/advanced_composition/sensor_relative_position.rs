@@ -2,7 +2,7 @@
 
 use cgmath::Zero;
 
-use crate::{verlet_physics::VerletObject, verlet_physics_simd::verlet_particles::VerletParticles};
+use crate::verlet_physics_simd::verlet_particles::VerletParticles;
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -23,16 +23,6 @@ impl SensorRelativePosition {
             val: Vec3::zero(),
         }
     }
-
-    pub fn update(&mut self, verlet_objects: &[VerletObject]) {
-        // apply constraint
-        let pos = verlet_objects[self.node_id].position();
-        let pos_a = verlet_objects[self.node_a_id].position();
-
-        let vec_a_s = pos - pos_a;
-        self.val = vec_a_s;
-    }
-
 
     pub fn update_simd(&mut self, verlet_particles: &VerletParticles) {
         // apply constraint
