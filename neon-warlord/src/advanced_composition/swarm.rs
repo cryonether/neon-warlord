@@ -118,9 +118,10 @@ impl Swarm {
         self.ticks += 1
     }
 
-    pub fn update_drawer(&mut self, producer: &mut DrawerObjects) {
+    pub fn update_drawer(&mut self, producer: &mut DrawerObjects, watch_ups: &mut Watch<10>) {
 
         // update composites
+        watch_ups.start("draw composition");
         self.composition_drawer.update(
             &self.advanced_composition,
             &mut producer.verlet_object_nodes,
@@ -128,6 +129,7 @@ impl Swarm {
         );
 
         // update neats
+        watch_ups.start("draw genomes");
         for (genome_drawer, genome) in zip(&mut self.genome_drawers, &self.neat.genomes) {
             genome_drawer.update(
                 genome,

@@ -60,37 +60,37 @@ impl AdvancedCompositionDrawer {
         producer_nodes: &mut Vec<particle_shader::Instance>,
         producer_edges: &mut Vec<particle_shader_two_point::Instance>,
     ) {
-        // let particles_len = std::cmp::min(self.nodes_instances.len(), composition.verlet_physics.particles.len());
         let particles = &composition.verlet_physics.particles;
         let constrains = &composition.verlet_physics.distance_constraints;
 
-        // copy from physics to model
-        for i in 0..particles.len() {
-            let instance = &mut self.nodes_instances[i];
-
-            instance.position = particles.position(i).into();
-            instance.color = self.nodes_color_0.into();
-            instance.size = self.radius * 2.0;
-            instance.time = 1.0;
+        for (&x, &y, &z, &radius) in itertools::izip!(
+            &particles.x, 
+            &particles.y,
+            &particles.z,
+            &particles.radius
+        ) {
+            producer_nodes.push(particle_shader::Instance { 
+                position: [x, y, z], 
+                color: self.nodes_color_0.into(), 
+                time: 1.0, 
+                size: radius * 2.0 
+            });
         }
 
-        for i in 0..constrains.len() {
-            let index_0 = constrains.a[i];
-            let index_1 = constrains.b[i];
-            let pos_0 = particles.position(index_0 as usize);
-            let pos_1 = particles.position(index_1 as usize);
+        for (&a, &b) in itertools::izip!(
+            &constrains.a,
+            &constrains.b,
+        ) {
+            let pos_0 = particles.position(a as usize);
+            let pos_1 = particles.position(b as usize);
 
-            let instance = &mut self.edges_instances[i];
-            instance.position_0 = pos_0.into();
-            instance.position_1 = pos_1.into();
-            instance.color = self.links_color_0.into();
-            instance.size = self.radius * 0.1;
-            instance.time = 1.0;
+            producer_edges.push(particle_shader_two_point::Instance { 
+                position_0: pos_0.into(), 
+                position_1: pos_1.into(), 
+                color: self.links_color_0.into(), 
+                time: 1.0, 
+                size: self.radius * 0.1,
+            });
         }
-
-        // copy from model to device
-
-        producer_nodes.extend_from_slice(&self.nodes_instances);
-        producer_edges.extend_from_slice(&self.edges_instances);
     }
 }

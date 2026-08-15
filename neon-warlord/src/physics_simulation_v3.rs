@@ -25,7 +25,6 @@ pub struct PhysicsSimulationV3 {
 
     // Physics
     swarm: Swarm,
-    solver: Solver,
     ticks: u64,
 
     // Debug
@@ -49,9 +48,6 @@ impl PhysicsSimulationV3 {
         let swarm =
             Swarm::new(&parsed_definition, swarm_size).set_fitness_functions(&[fitness_function]);
 
-        // solver
-        let solver = Solver::new();
-
         // Debug
         let ups = Fps::new();
         let watch_ups = Watch::new();
@@ -60,7 +56,6 @@ impl PhysicsSimulationV3 {
             producer,
 
             swarm,
-            solver,
             ticks: 0,
 
             ups,
@@ -76,8 +71,7 @@ impl PhysicsSimulationV3 {
         self.ticks += 1;
 
         // self.watch_ups.start("swarm.update_physics");
-        self.swarm.update_physics(dt,
-        &mut self.watch_ups,);
+        self.swarm.update_physics(dt, &mut self.watch_ups);
         self.watch_ups.stop();
 
         self.watch_ups.start( "Solver");
@@ -101,8 +95,8 @@ impl PhysicsSimulationV3 {
         let data = self.producer.buffer();
         data.clear();
 
-        self.watch_ups.start("swarm.update_drawer");
-        self.swarm.update_drawer(data);
+        // self.watch_ups.start("swarm.update_drawer");
+        self.swarm.update_drawer(data, &mut self.watch_ups);
         self.watch_ups.stop();
 
         data.ups = self.ups.get();
