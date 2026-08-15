@@ -12,7 +12,6 @@ use crate::{
     },
     physics_simulation_v3_drawer::DrawerObjects,
     triple_buffer,
-    verlet_physics::solver::Solver,
     worker_thread,
 };
 
@@ -66,7 +65,7 @@ impl PhysicsSimulationV3 {
 
     // Update
 
-    pub fn update_physics(&mut self, height_map: &impl HeightMapInterface) {
+    pub fn update_physics(&mut self, _height_map: &impl HeightMapInterface) {
         let dt = 1.0 / 60.0;
         self.ticks += 1;
 

@@ -3,7 +3,6 @@
 use cgmath::InnerSpace;
 use forward_renderer::height_map::HeightMapInterface;
 use noise::NoiseFn;
-use wgpu_renderer::performance_monitor::watch::Watch;
 
 use crate::{
     verlet_physics::{self, Vec3, VerletObject, verlet_composition::VerletComposition},

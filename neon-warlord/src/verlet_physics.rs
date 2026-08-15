@@ -3,7 +3,6 @@
 pub mod fixed;
 pub mod fixed_link;
 pub mod link;
-pub mod loose_link;
 pub mod solver;
 
 #[allow(dead_code)]

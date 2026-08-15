@@ -2,7 +2,7 @@
 
 use cgmath::InnerSpace;
 
-use crate::{verlet_physics::VerletObject, verlet_physics_simd::verlet_particles::VerletParticles};
+use crate::verlet_physics_simd::verlet_particles::VerletParticles;
 type Vec3 = cgmath::Vector3<f32>;
 
 /// An actor free to move between two nodes
