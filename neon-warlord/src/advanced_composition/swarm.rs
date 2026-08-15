@@ -26,8 +26,8 @@ pub struct Swarm {
 
     /// Reinforcement learning
     /// multiple elements per entity
-    neats: Vec<Neat>,
-    neat_drawers: Vec<Vec<GenomeDrawer>>,
+    neat: Neat,
+    genome_drawers: Vec<GenomeDrawer>,
 
     /// Draw
     /// 1 element per entity
@@ -42,29 +42,22 @@ impl Swarm {
         let radius = definition.scale / 2.0;
 
         // create neural networks
-        let nr_neural_networks = definition.count_nr_neural_networks();
+        let _nr_neural_networks = definition.count_nr_neural_networks();
         let neural_network_inputs = definition.count_nr_neural_network_inputs();
         let neural_network_outputs = definition.count_nr_neural_network_outputs();
 
-        let mut neats = Vec::new();
-        for _i in 0..nr_neural_networks {
-            neats.push(Neat::new(
-                neural_network_inputs,
-                neural_network_outputs,
-                size,
-            ));
-        }
+        let neat =  Neat::new(
+            neural_network_inputs,
+            neural_network_outputs,
+            size,
+        );
 
         // create neat drawers
-        let mut neat_drawers = Vec::new();
-        for neat in &neats {
-            let mut genome_drawers = Vec::new();
-            for (i, genome) in neat.genomes.iter().enumerate() {
-                let pos = Vec3::new(0.0, i as f32 * definition.scale, definition.scale);
-                let genome_drawer = GenomeDrawer::new(genome, radius * 0.5, pos);
-                genome_drawers.push(genome_drawer);
-            }
-            neat_drawers.push(genome_drawers);
+        let mut genome_drawers = Vec::new();
+        for (i, genome) in neat.genomes.iter().enumerate() {
+            let pos = Vec3::new(0.0, i as f32 * definition.scale, definition.scale);
+            let genome_drawer = GenomeDrawer::new(genome, radius * 0.5, pos);
+            genome_drawers.push(genome_drawer);
         }
 
         // create advanced compositions
@@ -89,8 +82,8 @@ impl Swarm {
         Self {
             advanced_composition,
             advanced_composition_original,
-            neats,
-            neat_drawers,
+            neat,
+            genome_drawers,
             composition_drawer,
             // phase: 0.0,
             // omega: 1.0,
@@ -144,35 +137,29 @@ impl Swarm {
         }
 
         // update neats
-        for (neat_drawer, neat) in zip(&mut self.neat_drawers, &self.neats) {
-            for (genome_drawer, genome) in zip(neat_drawer, &neat.genomes) {
-                genome_drawer.update(
-                    genome,
-                    &mut producer.genome_nodes,
-                    &mut producer.genome_edges,
-                );
-            }
+        for (genome_drawer, genome) in zip(&mut self.genome_drawers, &self.neat.genomes) {
+            genome_drawer.update(
+                genome,
+                &mut producer.genome_nodes,
+                &mut producer.genome_edges,
+            );
         }
     }
 
     fn evolve_genomes(&mut self) {
-        for elem in &mut self.neats {
-            elem.rank();
-            elem.survival_selection();
-            elem.evolve();
-        }
+        self.neat.rank();
+        self.neat.survival_selection();
+        self.neat.evolve();
     }
 
     fn evaluate_genomes(&mut self) {
-        for elem in &mut self.neats {
-            for genome in &mut elem.genomes {
-                genome.evaluate();
-            }
+        for genome in &mut self.neat.genomes {
+            genome.evaluate();
         }
     }
 
     fn update_genome_inputs(&mut self) {
-        let neat = &mut self.neats[0];
+        let neat = &mut self.neat;
 
         assert!(neat.genomes.len() == self.advanced_composition.len());
         for (genome, composition) in zip(&mut neat.genomes, &self.advanced_composition) {
@@ -188,7 +175,7 @@ impl Swarm {
     }
 
     fn update_genome_outputs(&mut self) {
-        let neat = &mut self.neats[0];
+        let neat = &mut self.neat;
 
         assert!(neat.genomes.len() == self.advanced_composition.len());
         for (genome, composition) in zip(&neat.genomes, &mut self.advanced_composition) {
@@ -204,7 +191,7 @@ impl Swarm {
     }
 
     fn update_genome_fitness(&mut self) {
-        let neat = &mut self.neats[0];
+        let neat = &mut self.neat;
 
         assert!(neat.genomes.len() == self.advanced_composition.len());
         for (genome, composition) in zip(&mut neat.genomes, &self.advanced_composition) {

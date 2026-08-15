@@ -1,6 +1,7 @@
 //! Creates the Neon-Warlord application
 
 mod advanced_composition;
+mod advanced_composition_simd;
 mod agents;
 mod ant_ai;
 mod ant_controller;
@@ -23,6 +24,7 @@ mod simple_physics_simulation;
 mod sun_storage;
 mod triple_buffer;
 mod verlet_physics;
+mod verlet_physics_simd;
 mod worker;
 mod worker_instance;
 mod worker_thread;
