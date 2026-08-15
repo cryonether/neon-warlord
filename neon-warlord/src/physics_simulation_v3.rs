@@ -74,15 +74,17 @@ impl PhysicsSimulationV3 {
         let dt = 1.0 / 60.0;
         self.ticks += 1;
 
-        self.watch_ups.start("swarm.update_physics");
-        self.swarm.update_physics(dt);
+        // self.watch_ups.start("swarm.update_physics");
+        self.swarm.update_physics(dt,
+        &mut self.watch_ups,);
         self.watch_ups.stop();
 
-        self.watch_ups.start( "Solver");
+        // self.watch_ups.start( "Solver");
         self.solver.update_advanced_composites(
             &mut self.swarm.advanced_composition,
             height_map,
             dt,
+            &mut self.watch_ups,
         );
         self.watch_ups.stop();
 

@@ -3,6 +3,7 @@
 use cgmath::InnerSpace;
 use forward_renderer::height_map::HeightMapInterface;
 use noise::NoiseFn;
+use wgpu_renderer::performance_monitor::watch::Watch;
 
 use crate::{
     advanced_composition::AdvancedComposition,
@@ -89,31 +90,39 @@ impl Solver {
         verlet_compositions: &mut [AdvancedComposition],
         height_map: &impl HeightMapInterface,
         dt: f32,
+        watch_ups: &mut Watch<10>,
     ) {
-        for composition in verlet_compositions {
-            let verlet_objects = &mut composition.verlet_objects;
 
-            // gravity
-            Self::apply_gravity(verlet_objects);
-            Self::apply_map_constraint(verlet_objects, height_map);
+        watch_ups.start("solver apply_gravity");
+        for composition in &mut *verlet_compositions {
+             Self::apply_gravity(&mut composition.verlet_objects);
+        }
 
-            // links
+        // watch_ups.start("solver apply_map_constraint");
+        // for composition in &mut *verlet_compositions {
+        //      Self::apply_map_constraint(&mut composition.verlet_objects, height_map)
+        // }
+
+        watch_ups.start("solver links");
+        for composition in &mut *verlet_compositions {
             for link in &composition.links {
                 match link {
                     crate::advanced_composition::Link::Fixed(fixed_link) => {
-                        fixed_link.apply(verlet_objects);
+                        fixed_link.apply(&mut composition.verlet_objects);
                     }
                     crate::advanced_composition::Link::FixedDistance(link) => {
-                        link.apply(verlet_objects);
+                        link.apply(&mut composition.verlet_objects);
                     }
                     crate::advanced_composition::Link::Loose(loose_link) => {
-                        loose_link.apply(verlet_objects);
+                        loose_link.apply(&mut composition.verlet_objects);
                     }
                 }
             }
+        }
 
-            // physics equation
-            Self::update_positions(verlet_objects, dt);
+        watch_ups.start("solver update_position");
+        for composition in &mut *verlet_compositions {
+              Self::update_positions(&mut composition.verlet_objects, dt)
         }
     }
 

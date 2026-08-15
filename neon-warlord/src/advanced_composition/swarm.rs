@@ -3,6 +3,7 @@
 use std::iter::zip;
 
 use cgmath::Zero;
+use wgpu_renderer::performance_monitor::watch::Watch;
 
 use crate::{
     advanced_composition::{
@@ -97,14 +98,16 @@ impl Swarm {
         }
     }
 
-    pub fn update_physics(&mut self, dt: f32) {
+    pub fn update_physics(&mut self, dt: f32, watch_ups: &mut Watch<10>) {
         // input
         // sensors -> neural_network inputs
+        watch_ups.start("swarm input");
         self.update_sensors();
         self.update_neural_network_inputs();
         self.calculate_neural_network_fitness();
 
         // NEAT evolve
+        watch_ups.start("swarm evolve");
         self.update_genome_fitness();
         if self.ticks.is_multiple_of(3000) {
             self.evolve_genomes();
@@ -112,12 +115,14 @@ impl Swarm {
         }
 
         // NEAT calculate
+        watch_ups.start("swarm neat");
         self.update_genome_inputs();
         self.evaluate_genomes();
         self.update_genome_outputs();
 
         // output
         // neural_network outputs -> actors
+        watch_ups.start("swarm output");
         self.update_neural_network_outputs();
         self.update_actors(dt);
 
