@@ -215,7 +215,7 @@ impl DistanceConstraints {
         self.rest_y.push(rest.y);
         self.rest_z.push(rest.z);
         self.stiffness.push(stiffness);
-        self.constrain_kind.push(ConstraintKind::Distance);
+        self.constrain_kind.push(ConstraintKind::Position);
 
         index
     }

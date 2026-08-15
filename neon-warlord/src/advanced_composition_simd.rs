@@ -30,11 +30,11 @@ pub struct AdvancedCompositionSimd {
 
 #[derive(Clone)]
 struct CompositeObjects {
-    index_neural_network: usize,
-    range_sensors: std::ops::Range<usize>,
-    range_actors: std::ops::Range<usize>,
-    range_particles: std::ops::Range<usize>,
-    range_distance_constraints: std::ops::Range<usize>,
+    pub index_neural_network: usize,
+    pub range_sensors: std::ops::Range<usize>,
+    pub range_actors: std::ops::Range<usize>,
+    pub range_particles: std::ops::Range<usize>,
+    pub range_distance_constraints: std::ops::Range<usize>,
 }
 
 impl AdvancedCompositionSimd {
@@ -87,7 +87,6 @@ impl AdvancedCompositionSimd {
                     range_particles_end += 1;
                 }
                 NodeKind::Static => {
-                    let mass = 0.0;
                     self.verlet_physics.push_particle(position_current, radius, 0.0);
                     range_particles_end += 1;
                 }
@@ -198,17 +197,17 @@ impl AdvancedCompositionSimd {
         &mut self,
         fitness_functions: &[Box<dyn FitnessFunction + Send>],
     ) {
-        assert!(self.neural_networks.len() == fitness_functions.len());
-        for (neural_network, fitness_function) in
-            std::iter::zip(&mut self.neural_networks, fitness_functions)
-        {
-            neural_network.set_fitness_function(fitness_function.clone());
+        assert!(fitness_functions.len() == 1);
+        for neural_network in &mut self.neural_networks {
+            neural_network.set_fitness_function(fitness_functions[0].clone());
         }
     }
 
     /// Sets the state of the neural network inputs based on the sensors
     pub fn update_neural_network_inputs(&mut self) {
-        for neural_network in &mut self.neural_networks {
+        for object in &self.objects{
+            let neural_network = &mut self.neural_networks[object.index_neural_network];
+
             // set position
             let node_id = neural_network.node_id;
             let pos = self.verlet_physics.get_particle_position(node_id);
@@ -216,24 +215,24 @@ impl AdvancedCompositionSimd {
             neural_network.position = pos + Vec3::new(0.0, 0.0, -0.2);
 
             // set inputs
-            let mut i = 0;
-            for sensors in &self.sensors {
-                match sensors {
+            let mut k = 0;
+            for sensor in &self.sensors[object.range_sensors.clone()] {
+                match sensor {
                     Sensor::RelativePosition(sensor_relative_position) => {
                         let val = sensor_relative_position.get_val();
                         let val_0 = val.x;
                         let val_1 = val.y;
                         let val_2 = val.z;
 
-                        neural_network.inputs[i] = val_0;
-                        neural_network.inputs[i + 1] = val_1;
-                        neural_network.inputs[i + 2] = val_2;
-                        i += 3;
+                        neural_network.inputs[k] = val_0;
+                        neural_network.inputs[k + 1] = val_1;
+                        neural_network.inputs[k + 2] = val_2;
+                        k += 3;
                     }
                     Sensor::SenorLinear(sensor_linear) => {
                         let val = sensor_linear.value();
-                        neural_network.inputs[i] = val;
-                        i += 1;
+                        neural_network.inputs[k] = val;
+                        k += 1;
                     }
                 }
             }
@@ -242,10 +241,12 @@ impl AdvancedCompositionSimd {
 
     /// Sets the state of the actors based on the neural network outputs
     pub fn update_neural_network_outputs(&mut self) {
-        for neural_network in &self.neural_networks {
+        for object in &self.objects {
+            let neural_network = &self.neural_networks[object.index_neural_network];
+
             // set outputs
             let mut i = 0;
-            for actor in &mut self.actors {
+            for actor in &mut self.actors[object.range_actors.clone()] {
                 match actor {
                     Actor::MotorLinear(motor_linear) => {
                         let val = neural_network.outputs[i];

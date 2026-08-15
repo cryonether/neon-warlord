@@ -148,6 +148,7 @@ impl VerletParticles {
         let gravity_y_ = f32x16::splat(gravity.y);
         let gravity_z_ = f32x16::splat(gravity.z);
         let zero_ = f32x16::splat(0.0);
+        let one_ = f32x16::splat(1.0);
 
         for (acc_x, acc_y, acc_z, inv_mass) in itertools::izip!(
             self.acc_x.chunks_exact_mut(LANES),
@@ -161,7 +162,7 @@ impl VerletParticles {
             let inv_mass_ = f32x16::from(&*inv_mass);
 
             // Static particles have inv_mass == 0.
-            let movable_ = inv_mass_.simd_gt(zero_);
+            let movable_ = inv_mass_.simd_gt(zero_).select(one_, zero_);
 
             let new_acc_x = acc_x_ + gravity_x_ * movable_;
             let new_acc_y = acc_y_ + gravity_y_ * movable_;
@@ -174,7 +175,7 @@ impl VerletParticles {
 
         // Scalar remainder.
         let len = self.len();
-        let remainder_start = len - (len % LANES);
+        let remainder_start = 0;
         for (acc_x, acc_y, acc_z, &inv_mass) in itertools::izip!(
             self.acc_x[remainder_start..].iter_mut(),
             self.acc_y[remainder_start..].iter_mut(),
@@ -227,7 +228,13 @@ impl VerletParticles {
         self.acc_y.push(0.0);
         self.acc_z.push(0.0);
 
-        self.inv_mass.push(1.0 / mass);
+        if mass == 0.0 {
+            self.inv_mass.push(0.0);
+        }
+        else {
+            self.inv_mass.push(1.0 / mass);
+        }
+
         self.radius.push(radius);
 
         index
