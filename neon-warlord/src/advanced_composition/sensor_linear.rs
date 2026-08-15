@@ -2,7 +2,7 @@
 
 use cgmath::InnerSpace;
 
-use crate::verlet_physics::VerletObject;
+use crate::verlet_physics_simd::verlet_particles::VerletParticles;
 type Vec3 = cgmath::Vector3<f32>;
 
 /// An actor free to move between two nodes
@@ -26,10 +26,10 @@ impl SensorLinear {
         }
     }
 
-    pub fn update(&mut self, verlet_objects: &[VerletObject]) {
-        let pos: cgmath::Vector3<f32> = verlet_objects[self.node_id].position();
-        let pos_a: cgmath::Vector3<f32> = verlet_objects[self.node_a_id].position();
-        let pos_b: cgmath::Vector3<f32> = verlet_objects[self.node_b_id].position();
+    pub fn update_simd(&mut self, verlet_particles: &VerletParticles) {
+        let pos: cgmath::Vector3<f32> = verlet_particles.position(self.node_id);
+        let pos_a: cgmath::Vector3<f32> = verlet_particles.position(self.node_a_id);
+        let pos_b: cgmath::Vector3<f32> = verlet_particles.position(self.node_b_id);
 
         self.value = Self::calculate(&pos, &pos_a, &pos_b);
     }

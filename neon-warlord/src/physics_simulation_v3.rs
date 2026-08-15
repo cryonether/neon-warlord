@@ -11,9 +11,7 @@ use crate::{
         swarm::Swarm,
     },
     physics_simulation_v3_drawer::DrawerObjects,
-    triple_buffer,
-    verlet_physics::solver::Solver,
-    worker_thread,
+    triple_buffer, worker_thread,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -25,7 +23,6 @@ pub struct PhysicsSimulationV3 {
 
     // Physics
     swarm: Swarm,
-    solver: Solver,
     ticks: u64,
 
     // Debug
@@ -43,13 +40,11 @@ impl PhysicsSimulationV3 {
         let fitness_function = get_pendulum_definition_fitness_function();
         let parsed_definition = ParsedDefinition::parse(&definition, pos, scale);
 
-        let swarm_size = 1000;
-        // let swarm_size = 40000;
+        let swarm_size = 1_000;
+        // let swarm_size = 100_000;
+        // let swarm_size = 9;
         let swarm =
             Swarm::new(&parsed_definition, swarm_size).set_fitness_functions(&[fitness_function]);
-
-        // solver
-        let solver = Solver::new();
 
         // Debug
         let ups = Fps::new();
@@ -59,7 +54,6 @@ impl PhysicsSimulationV3 {
             producer,
 
             swarm,
-            solver,
             ticks: 0,
 
             ups,
@@ -70,21 +64,16 @@ impl PhysicsSimulationV3 {
 
     // Update
 
-    pub fn update_physics(&mut self, height_map: &impl HeightMapInterface) {
+    pub fn update_physics(&mut self, _height_map: &impl HeightMapInterface) {
         let dt = 1.0 / 60.0;
         self.ticks += 1;
 
-        self.watch_ups.start(0, "swarm.update_physics");
-        self.swarm.update_physics(dt);
-        self.watch_ups.stop(0);
+        self.swarm.update_physics(dt, &mut self.watch_ups);
+        self.watch_ups.stop();
 
-        self.watch_ups.start(1, "Solver");
-        self.solver.update_advanced_composites(
-            &mut self.swarm.advanced_composition,
-            height_map,
-            dt,
-        );
-        self.watch_ups.stop(1);
+        self.watch_ups.start("Solver");
+        self.swarm.advanced_composition.verlet_physics.update(dt);
+        self.watch_ups.stop();
 
         // ups
         let now = instant::Instant::now();
@@ -97,9 +86,8 @@ impl PhysicsSimulationV3 {
         let data = self.producer.buffer();
         data.clear();
 
-        self.watch_ups.start(2, "swarm.update_drawer");
-        self.swarm.update_drawer(data);
-        self.watch_ups.stop(2);
+        self.swarm.update_drawer(data, &mut self.watch_ups);
+        self.watch_ups.stop();
 
         data.ups = self.ups.get();
         self.watch_ups.update();

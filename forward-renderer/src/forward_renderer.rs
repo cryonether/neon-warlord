@@ -734,8 +734,7 @@ impl ForwardRenderer {
         particles_rectangle: &[&dyn ParticleShaderTwoPointDraw],
         watch_fps: &mut watch::Watch<10>,
     ) -> Result<(), RenderError> {
-        let mut watch_index = 5;
-        watch_fps.start(watch_index, "Get frame");
+        watch_fps.start("Get frame");
 
         let output = renderer_interface.get_current_texture();
         let surface_texture = match output {
@@ -810,13 +809,12 @@ impl ForwardRenderer {
                     label: Some("Render Encoder"),
                 });
 
-        watch_fps.stop(watch_index);
+        watch_fps.stop();
 
         // if self.settings.enable_fxaa {
         //     self.render_fxaa(&view, &mut encoder, ambient_light_quad);
         // }
-        watch_index += 1;
-        watch_fps.start(watch_index, "Draw Calls");
+        watch_fps.start("Draw Calls");
 
         self.render_shadow_map(
             &view,
@@ -843,19 +841,17 @@ impl ForwardRenderer {
             particles_rectangle,
         );
 
-        watch_fps.stop(watch_index);
+        watch_fps.stop();
 
-        watch_index += 1;
-        watch_fps.start(watch_index, "Present Surface");
+        watch_fps.start("Present Surface");
         renderer_interface
             .queue()
             .submit(std::iter::once(encoder.finish()));
         renderer_interface.pre_present_notify();
         renderer_interface.queue().present(surface_texture);
-        watch_fps.stop(watch_index);
+        watch_fps.stop();
 
-        watch_index += 1;
-        watch_fps.start(watch_index, "Wait Render Loop Finish");
+        watch_fps.start("Wait Render Loop Finish");
 
         // wait to see how high the gpu load is
         if self.settings.wait_for_render_loop_to_finish {
@@ -866,7 +862,7 @@ impl ForwardRenderer {
         } else {
             let _res = renderer_interface.device().poll(wgpu::PollType::Poll);
         }
-        watch_fps.stop(watch_index);
+        watch_fps.stop();
 
         Ok(())
     }

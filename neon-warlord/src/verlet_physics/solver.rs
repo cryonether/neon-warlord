@@ -4,10 +4,7 @@ use cgmath::InnerSpace;
 use forward_renderer::height_map::HeightMapInterface;
 use noise::NoiseFn;
 
-use crate::{
-    advanced_composition::AdvancedComposition,
-    verlet_physics::{self, Vec3, VerletObject, verlet_composition::VerletComposition},
-};
+use crate::verlet_physics::{self, Vec3, VerletObject, verlet_composition::VerletComposition};
 
 pub struct Solver {
     perlin: noise::Perlin,
@@ -77,39 +74,6 @@ impl Solver {
             }
             for elem in &composition.sticky_links {
                 elem.apply(verlet_objects);
-            }
-
-            // physics equation
-            Self::update_positions(verlet_objects, dt);
-        }
-    }
-
-    pub fn update_advanced_composites(
-        &self,
-        verlet_compositions: &mut [AdvancedComposition],
-        height_map: &impl HeightMapInterface,
-        dt: f32,
-    ) {
-        for composition in verlet_compositions {
-            let verlet_objects = &mut composition.verlet_objects;
-
-            // gravity
-            Self::apply_gravity(verlet_objects);
-            Self::apply_map_constraint(verlet_objects, height_map);
-
-            // links
-            for link in &composition.links {
-                match link {
-                    crate::advanced_composition::Link::Fixed(fixed_link) => {
-                        fixed_link.apply(verlet_objects);
-                    }
-                    crate::advanced_composition::Link::FixedDistance(link) => {
-                        link.apply(verlet_objects);
-                    }
-                    crate::advanced_composition::Link::Loose(loose_link) => {
-                        loose_link.apply(verlet_objects);
-                    }
-                }
             }
 
             // physics equation

@@ -2,7 +2,9 @@
 
 use cgmath::Zero;
 
-use crate::{advanced_composition::Vec3, verlet_physics::VerletObject};
+use crate::verlet_physics_simd::verlet_particles::VerletParticles;
+
+type Vec3 = cgmath::Vector3<f32>;
 
 /// A sensor which tracks the position relative to another node
 #[derive(Clone)]
@@ -22,10 +24,10 @@ impl SensorRelativePosition {
         }
     }
 
-    pub fn update(&mut self, verlet_objects: &[VerletObject]) {
+    pub fn update_simd(&mut self, verlet_particles: &VerletParticles) {
         // apply constraint
-        let pos = verlet_objects[self.node_id].position();
-        let pos_a = verlet_objects[self.node_a_id].position();
+        let pos = verlet_particles.position(self.node_id);
+        let pos_a = verlet_particles.position(self.node_a_id);
 
         let vec_a_s = pos - pos_a;
         self.val = vec_a_s;
