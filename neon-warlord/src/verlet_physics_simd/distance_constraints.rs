@@ -2,7 +2,7 @@
 
 use crate::verlet_physics_simd::{Vec3, verlet_particles::VerletParticles};
 
-
+/// Forces between two particles
 #[derive(Clone)]
 pub struct DistanceConstraints {
     /// Particle index for endpoint A.
@@ -18,11 +18,8 @@ pub struct DistanceConstraints {
     stiffness: Vec<f32>,
 
     // The algorithm to apply the constraint
-    pub constrain_kind: Vec<ConstraintKind>,
+    constrain_kind: Vec<ConstraintKind>,
 }
-
-
-const LANES: usize = 16;
 
 impl DistanceConstraints {
     pub fn new() -> Self {

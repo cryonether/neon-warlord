@@ -1,6 +1,5 @@
 //! Advanced objects with actors and sensors using verlet physics and reinforcement learning
 
-
 use cgmath::MetricSpace;
 
 use crate::{
@@ -10,8 +9,7 @@ use crate::{
         neural_network::{FitnessFunction, NeuralNetwork},
         sensor_linear::SensorLinear,
         sensor_relative_position::SensorRelativePosition,
-    },
-    verlet_physics::{self, VerletObject}, verlet_physics_simd::VerletPhysicsSimd,
+    }, verlet_physics_simd::VerletPhysicsSimd,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -25,16 +23,8 @@ pub struct AdvancedCompositionSimd {
 
     pub verlet_physics: VerletPhysicsSimd,
 
-    pub objects: Vec<CompositeObjects>,
-}
-
-#[derive(Clone)]
-struct CompositeObjects {
-    pub index_neural_network: usize,
-    pub range_sensors: std::ops::Range<usize>,
-    pub range_actors: std::ops::Range<usize>,
-    pub range_particles: std::ops::Range<usize>,
-    pub range_distance_constraints: std::ops::Range<usize>,
+    // Tracks the indices for every distinct object
+    objects: Vec<CompositeObjects>,
 }
 
 impl AdvancedCompositionSimd {
@@ -185,8 +175,8 @@ impl AdvancedCompositionSimd {
             index_neural_network,
             range_sensors: range_sensors_start..range_sensors_end,
             range_actors: range_actors_start..range_actors_end,
-            range_particles: range_particles_start..range_particles_end,
-            range_distance_constraints: range_distance_constraints_start..range_distance_constraints_end,
+            _range_particles: range_particles_start..range_particles_end,
+            _range_distance_constraints: range_distance_constraints_start..range_distance_constraints_end,
         });
 
         index
@@ -297,6 +287,15 @@ impl AdvancedCompositionSimd {
 }
 
 #[derive(Clone)]
+struct CompositeObjects {
+    pub index_neural_network: usize,
+    pub range_sensors: std::ops::Range<usize>,
+    pub range_actors: std::ops::Range<usize>,
+    pub _range_particles: std::ops::Range<usize>,
+    pub _range_distance_constraints: std::ops::Range<usize>,
+}
+
+#[derive(Clone)]
 pub enum Sensor {
     RelativePosition(SensorRelativePosition),
     SenorLinear(SensorLinear),
@@ -305,11 +304,4 @@ pub enum Sensor {
 #[derive(Clone)]
 pub enum Actor {
     MotorLinear(MotorLinear),
-}
-
-#[derive(Clone)]
-pub enum Link {
-    Fixed(verlet_physics::fixed_link::FixedLink),
-    FixedDistance(verlet_physics::link::Link),
-    Loose(verlet_physics::loose_link::LooseLink),
 }

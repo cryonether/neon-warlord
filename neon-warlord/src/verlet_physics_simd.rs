@@ -3,13 +3,11 @@
 pub mod verlet_particles;
 pub mod distance_constraints;
 
-use wide::f32x16;
-
 use crate::verlet_physics_simd::{distance_constraints::DistanceConstraints, verlet_particles::VerletParticles};
 
 type Vec3 = cgmath::Vector3<f32>;
 
-
+/// Verlet physics with SIMD optimizations
 #[derive(Clone)]
 pub struct VerletPhysicsSimd {
     pub particles: VerletParticles,

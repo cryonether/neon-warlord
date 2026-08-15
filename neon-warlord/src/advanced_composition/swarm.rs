@@ -7,7 +7,7 @@ use wgpu_renderer::performance_monitor::watch::Watch;
 
 use crate::{
     advanced_composition::{
-        AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer,
+        advanced_composition_drawer::AdvancedCompositionDrawer,
         definition::ParsedDefinition, genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
     }, advanced_composition_simd::AdvancedCompositionSimd, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::neat::Neat
 };
@@ -72,7 +72,7 @@ impl Swarm {
         let advanced_composition_original = advanced_composition.clone();
 
         // drawer
-        let mut composition_drawer = AdvancedCompositionDrawer::new(&advanced_composition, radius);
+        let composition_drawer = AdvancedCompositionDrawer::new(&advanced_composition, radius);
 
         Self {
             advanced_composition,

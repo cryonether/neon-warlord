@@ -4,6 +4,7 @@ use wide::f32x16;
 
 use crate::verlet_physics_simd::Vec3;
 
+/// Verlet physics particles
 #[derive(Clone)]
 pub struct VerletParticles {
     pub x: Vec<f32>,
@@ -56,6 +57,7 @@ impl VerletParticles {
 
     }
 
+    /// Integrates one single step
     pub fn integrate(&mut self, dt: f32) {
         self.assert_bounds_invariants();
 
@@ -174,8 +176,8 @@ impl VerletParticles {
         }
 
         // Scalar remainder.
-        let len = self.len();
-        let remainder_start = 0;
+        let remainder_start = self.len() - (self.len() % LANES);
+
         for (acc_x, acc_y, acc_z, &inv_mass) in itertools::izip!(
             self.acc_x[remainder_start..].iter_mut(),
             self.acc_y[remainder_start..].iter_mut(),

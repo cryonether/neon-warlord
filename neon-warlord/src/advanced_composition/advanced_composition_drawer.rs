@@ -2,14 +2,12 @@
 
 use forward_renderer::{particle_shader, particle_shader_two_point, to_rgb};
 
-use crate::{advanced_composition::{AdvancedComposition, Vec3}, advanced_composition_simd::AdvancedCompositionSimd};
+use crate::{advanced_composition_simd::AdvancedCompositionSimd};
+
+type Vec3 = cgmath::Vector3<f32>;
 
 /// Draws AdvancedCompositions
 pub struct AdvancedCompositionDrawer {
-    nodes_instances: Vec<particle_shader::Instance>,
-
-    edges_instances: Vec<particle_shader_two_point::Instance>,
-
     nodes_color_0: Vec3,
     _nodes_color_1: Vec3,
     links_color_0: Vec3,
@@ -31,19 +29,7 @@ impl AdvancedCompositionDrawer {
         let links_color_0: Vec3 = to_rgb("#131922").into();
         let _links_color_1: Vec3 = to_rgb("#2d2e27").into();
 
-        let mut nodes_instances = Vec::with_capacity(_nr_nodes);
-        for _i in 0.._nr_nodes {
-            nodes_instances.push(particle_shader::Instance::new());
-        }
-
-        let mut edges_instances = Vec::with_capacity(_nr_edges);
-        for _i in 0.._nr_edges {
-            edges_instances.push(particle_shader_two_point::Instance::new());
-        }
-
         Self {
-            nodes_instances,
-            edges_instances,
             nodes_color_0,
             _nodes_color_1,
             links_color_0,

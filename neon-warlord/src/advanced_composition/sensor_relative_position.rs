@@ -2,7 +2,9 @@
 
 use cgmath::Zero;
 
-use crate::{advanced_composition::Vec3, verlet_physics::VerletObject, verlet_physics_simd::verlet_particles::VerletParticles};
+use crate::{verlet_physics::VerletObject, verlet_physics_simd::verlet_particles::VerletParticles};
+
+type Vec3 = cgmath::Vector3<f32>;
 
 /// A sensor which tracks the position relative to another node
 #[derive(Clone)]

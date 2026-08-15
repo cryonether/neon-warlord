@@ -6,7 +6,6 @@ use noise::NoiseFn;
 use wgpu_renderer::performance_monitor::watch::Watch;
 
 use crate::{
-    advanced_composition::AdvancedComposition,
     verlet_physics::{self, Vec3, VerletObject, verlet_composition::VerletComposition},
 };
 
@@ -82,47 +81,6 @@ impl Solver {
 
             // physics equation
             Self::update_positions(verlet_objects, dt);
-        }
-    }
-
-    pub fn update_advanced_composites(
-        &self,
-        verlet_compositions: &mut [AdvancedComposition],
-        height_map: &impl HeightMapInterface,
-        dt: f32,
-        watch_ups: &mut Watch<10>,
-    ) {
-
-        watch_ups.start("solver apply_gravity");
-        for composition in &mut *verlet_compositions {
-             Self::apply_gravity(&mut composition.verlet_objects);
-        }
-
-        // watch_ups.start("solver apply_map_constraint");
-        // for composition in &mut *verlet_compositions {
-        //      Self::apply_map_constraint(&mut composition.verlet_objects, height_map)
-        // }
-
-        watch_ups.start("solver links");
-        for composition in &mut *verlet_compositions {
-            for link in &composition.links {
-                match link {
-                    crate::advanced_composition::Link::Fixed(fixed_link) => {
-                        fixed_link.apply(&mut composition.verlet_objects);
-                    }
-                    crate::advanced_composition::Link::FixedDistance(link) => {
-                        link.apply(&mut composition.verlet_objects);
-                    }
-                    crate::advanced_composition::Link::Loose(loose_link) => {
-                        loose_link.apply(&mut composition.verlet_objects);
-                    }
-                }
-            }
-        }
-
-        watch_ups.start("solver update_position");
-        for composition in &mut *verlet_compositions {
-              Self::update_positions(&mut composition.verlet_objects, dt)
         }
     }
 
