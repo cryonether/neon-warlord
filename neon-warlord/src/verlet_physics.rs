@@ -79,4 +79,3 @@ impl VerletObject {
         self.position_old = self.position_current - velocity;
     }
 }
-

@@ -11,8 +11,7 @@ use crate::{
         swarm::Swarm,
     },
     physics_simulation_v3_drawer::DrawerObjects,
-    triple_buffer,
-    worker_thread,
+    triple_buffer, worker_thread,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -72,7 +71,7 @@ impl PhysicsSimulationV3 {
         self.swarm.update_physics(dt, &mut self.watch_ups);
         self.watch_ups.stop();
 
-        self.watch_ups.start( "Solver");
+        self.watch_ups.start("Solver");
         self.swarm.advanced_composition.verlet_physics.update(dt);
         self.watch_ups.stop();
 

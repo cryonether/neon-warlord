@@ -31,7 +31,7 @@ impl DistanceConstraints {
         let stiffness = Vec::new();
         let constrain_kind = Vec::new();
 
-        Self{
+        Self {
             a,
             b,
             rest_x,
@@ -46,19 +46,38 @@ impl DistanceConstraints {
         self.assert_bounds_invariants();
 
         for (a, b, rest_x, rest_y, rest_z, stiffness, constraint_kind) in itertools::izip!(
-            &self.a, &self.b, &self.rest_x, &self.rest_y, &self.rest_z, &self.stiffness, &self.constrain_kind
-        ) 
-        {
-            match constraint_kind{
+            &self.a,
+            &self.b,
+            &self.rest_x,
+            &self.rest_y,
+            &self.rest_z,
+            &self.stiffness,
+            &self.constrain_kind
+        ) {
+            match constraint_kind {
                 ConstraintKind::Distance => {
-                    Self::solve_one_distance(*a as usize, *b as usize, *rest_x, *stiffness, particles);
-                },
+                    Self::solve_one_distance(
+                        *a as usize,
+                        *b as usize,
+                        *rest_x,
+                        *stiffness,
+                        particles,
+                    );
+                }
                 ConstraintKind::Position => {
-                    Self::solve_one_distance_position(*a as usize, *b as usize, *rest_x, *rest_y, *rest_z, *stiffness, particles);
-                },
+                    Self::solve_one_distance_position(
+                        *a as usize,
+                        *b as usize,
+                        *rest_x,
+                        *rest_y,
+                        *rest_z,
+                        *stiffness,
+                        particles,
+                    );
+                }
                 ConstraintKind::None => {
                     // nothing to do
-                },
+                }
             }
         }
     }
@@ -69,8 +88,7 @@ impl DistanceConstraints {
         rest: f32,
         stiffness: f32,
         particles: &mut VerletParticles,
-    )
-    {
+    ) {
         let dx = particles.x[b] - particles.x[a];
         let dy = particles.y[b] - particles.y[a];
         let dz = particles.z[b] - particles.z[a];
@@ -82,7 +100,6 @@ impl DistanceConstraints {
         }
 
         let dist = dist_sq.sqrt();
-
 
         let error = (dist - rest) / dist;
         let correction = error * stiffness;
@@ -175,7 +192,8 @@ impl DistanceConstraints {
         self.a.len()
     }
 
-    pub fn push_constraint_distance(&mut self,
+    pub fn push_constraint_distance(
+        &mut self,
         a: usize,
         b: usize,
         rest: f32,
@@ -196,7 +214,8 @@ impl DistanceConstraints {
         index
     }
 
-    pub fn push_constraint_position(&mut self,
+    pub fn push_constraint_position(
+        &mut self,
         a: usize,
         b: usize,
         rest: Vec3,
@@ -217,10 +236,7 @@ impl DistanceConstraints {
         index
     }
 
-    pub fn push_constraint_none(&mut self,
-        a: usize,
-        b: usize,
-    ) -> usize {
+    pub fn push_constraint_none(&mut self, a: usize, b: usize) -> usize {
         self.assert_bounds_invariants();
 
         let index = self.len();

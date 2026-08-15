@@ -9,7 +9,8 @@ use crate::{
         neural_network::{FitnessFunction, NeuralNetwork},
         sensor_linear::SensorLinear,
         sensor_relative_position::SensorRelativePosition,
-    }, verlet_physics_simd::VerletPhysicsSimd,
+    },
+    verlet_physics_simd::VerletPhysicsSimd,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -73,20 +74,22 @@ impl AdvancedCompositionSimd {
             match elem.node.kind {
                 NodeKind::None => {}
                 NodeKind::Regular => {
-                    self.verlet_physics.push_particle(position_current, radius, 1.0);
+                    self.verlet_physics
+                        .push_particle(position_current, radius, 1.0);
                     range_particles_end += 1;
                 }
                 NodeKind::Static => {
-                    self.verlet_physics.push_particle(position_current, radius, 0.0);
+                    self.verlet_physics
+                        .push_particle(position_current, radius, 0.0);
                     range_particles_end += 1;
                 }
                 NodeKind::MotorLinear(a, b) => {
                     let node_id_a = range_particles_start + a;
                     let node_id_b = range_particles_start + b;
 
-                    self.verlet_physics.push_particle(position_current, radius, 1.0);
+                    self.verlet_physics
+                        .push_particle(position_current, radius, 1.0);
                     range_particles_end += 1;
-                    
 
                     self.actors.push(Actor::MotorLinear(MotorLinear::new(
                         node_id, node_id_a, node_id_b,
@@ -101,16 +104,19 @@ impl AdvancedCompositionSimd {
                 NodeKind::SensorRelativePosition(a) => {
                     let node_id_a = range_particles_start + a;
 
-                    self.verlet_physics.push_particle(position_current, radius, 1.0);
+                    self.verlet_physics
+                        .push_particle(position_current, radius, 1.0);
                     range_particles_end += 1;
 
-                    self.sensors.push(Sensor::RelativePosition(SensorRelativePosition::new(
-                        node_id, node_id_a,
-                    )));
+                    self.sensors
+                        .push(Sensor::RelativePosition(SensorRelativePosition::new(
+                            node_id, node_id_a,
+                        )));
                     range_sensors_end += 1;
                 }
                 NodeKind::NeuralNetwork => {
-                    self.verlet_physics.push_particle(position_current, radius, 1.0);
+                    self.verlet_physics
+                        .push_particle(position_current, radius, 1.0);
                     range_particles_end += 1;
 
                     self.neural_networks.push(NeuralNetwork::new(
@@ -132,61 +138,49 @@ impl AdvancedCompositionSimd {
                     // nothing to do
                 }
                 definition::EdgeKind::Fixed(target) => {
-                    let node_id_1 =  range_particles_start + target;
+                    let node_id_1 = range_particles_start + target;
                     let pos_1 = self.verlet_physics.get_particle_position(node_id_1);
 
                     let rest = pos_1 - pos_0;
 
-                    self.verlet_physics.push_constraint_position(
-                        node_id_0, 
-                        node_id_1, 
-                        rest,
-                        0.8,
-                    );
+                    self.verlet_physics
+                        .push_constraint_position(node_id_0, node_id_1, rest, 0.8);
                     range_distance_constraints_end += 1;
                 }
                 definition::EdgeKind::FixedDistance(target) => {
-                    let node_id_1 =  range_particles_start + target;
+                    let node_id_1 = range_particles_start + target;
                     let pos_1 = self.verlet_physics.get_particle_position(node_id_1);
 
                     let rest = pos_0.distance(pos_1);
 
-                    self.verlet_physics.push_constraint_distance(
-                        node_id_0, 
-                        node_id_1, 
-                        rest,
-                        0.8,
-                    );
+                    self.verlet_physics
+                        .push_constraint_distance(node_id_0, node_id_1, rest, 0.8);
                     range_distance_constraints_end += 1;
                 }
                 definition::EdgeKind::Loose(target) => {
-                    let node_id_1 =  range_particles_start + target;
+                    let node_id_1 = range_particles_start + target;
 
-                    self.verlet_physics.push_constraint_none(
-                        node_id_0, 
-                        node_id_1, 
-                    );
+                    self.verlet_physics
+                        .push_constraint_none(node_id_0, node_id_1);
                     range_distance_constraints_end += 1;
                 }
             }
         }
 
-        self.objects.push(CompositeObjects{
+        self.objects.push(CompositeObjects {
             index_neural_network,
             range_sensors: range_sensors_start..range_sensors_end,
             range_actors: range_actors_start..range_actors_end,
             _range_particles: range_particles_start..range_particles_end,
-            _range_distance_constraints: range_distance_constraints_start..range_distance_constraints_end,
+            _range_distance_constraints: range_distance_constraints_start
+                ..range_distance_constraints_end,
         });
 
         index
     }
 
     /// Sets the custom fitness function for each neural network
-    pub fn set_fitness_functions(
-        &mut self,
-        fitness_functions: &[Box<dyn FitnessFunction + Send>],
-    ) {
+    pub fn set_fitness_functions(&mut self, fitness_functions: &[Box<dyn FitnessFunction + Send>]) {
         assert!(fitness_functions.len() == 1);
         for neural_network in &mut self.neural_networks {
             neural_network.set_fitness_function(fitness_functions[0].clone());
@@ -195,7 +189,7 @@ impl AdvancedCompositionSimd {
 
     /// Sets the state of the neural network inputs based on the sensors
     pub fn update_neural_network_inputs(&mut self) {
-        for object in &self.objects{
+        for object in &self.objects {
             let neural_network = &mut self.neural_networks[object.index_neural_network];
 
             // set position

@@ -2,7 +2,7 @@
 
 use forward_renderer::{particle_shader, particle_shader_two_point, to_rgb};
 
-use crate::{advanced_composition_simd::AdvancedCompositionSimd};
+use crate::advanced_composition_simd::AdvancedCompositionSimd;
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -49,32 +49,26 @@ impl AdvancedCompositionDrawer {
         let particles = &composition.verlet_physics.particles;
         let constrains = &composition.verlet_physics.distance_constraints;
 
-        for (&x, &y, &z, &radius) in itertools::izip!(
-            &particles.x, 
-            &particles.y,
-            &particles.z,
-            &particles.radius
-        ) {
-            producer_nodes.push(particle_shader::Instance { 
-                position: [x, y, z], 
-                color: self.nodes_color_0.into(), 
-                time: 1.0, 
-                size: radius * 2.0 
+        for (&x, &y, &z, &radius) in
+            itertools::izip!(&particles.x, &particles.y, &particles.z, &particles.radius)
+        {
+            producer_nodes.push(particle_shader::Instance {
+                position: [x, y, z],
+                color: self.nodes_color_0.into(),
+                time: 1.0,
+                size: radius * 2.0,
             });
         }
 
-        for (&a, &b) in itertools::izip!(
-            &constrains.a,
-            &constrains.b,
-        ) {
+        for (&a, &b) in itertools::izip!(&constrains.a, &constrains.b,) {
             let pos_0 = particles.position(a as usize);
             let pos_1 = particles.position(b as usize);
 
-            producer_edges.push(particle_shader_two_point::Instance { 
-                position_0: pos_0.into(), 
-                position_1: pos_1.into(), 
-                color: self.links_color_0.into(), 
-                time: 1.0, 
+            producer_edges.push(particle_shader_two_point::Instance {
+                position_0: pos_0.into(),
+                position_1: pos_1.into(),
+                color: self.links_color_0.into(),
+                time: 1.0,
                 size: self.radius * 0.1,
             });
         }

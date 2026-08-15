@@ -7,9 +7,12 @@ use wgpu_renderer::performance_monitor::watch::Watch;
 
 use crate::{
     advanced_composition::{
-        advanced_composition_drawer::AdvancedCompositionDrawer,
-        definition::ParsedDefinition, genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
-    }, advanced_composition_simd::AdvancedCompositionSimd, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::neat::Neat
+        advanced_composition_drawer::AdvancedCompositionDrawer, definition::ParsedDefinition,
+        genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
+    },
+    advanced_composition_simd::AdvancedCompositionSimd,
+    physics_simulation_v3_drawer::DrawerObjects,
+    reinforcement_learning::neat::Neat,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -44,11 +47,7 @@ impl Swarm {
         let neural_network_inputs = definition.count_nr_neural_network_inputs();
         let neural_network_outputs = definition.count_nr_neural_network_outputs();
 
-        let neat =  Neat::new(
-            neural_network_inputs,
-            neural_network_outputs,
-            size,
-        );
+        let neat = Neat::new(neural_network_inputs, neural_network_outputs, size);
 
         // create neat drawers
         let mut genome_drawers = Vec::new();
@@ -119,7 +118,6 @@ impl Swarm {
     }
 
     pub fn update_drawer(&mut self, producer: &mut DrawerObjects, watch_ups: &mut Watch<10>) {
-
         // update composites
         watch_ups.start("draw composition");
         self.composition_drawer.update(
@@ -172,10 +170,10 @@ impl Swarm {
         let neat = &mut self.neat;
 
         assert!(neat.genomes.len() == self.advanced_composition.len());
-        for i in 0.. neat.genomes.len() {
+        for i in 0..neat.genomes.len() {
             let neural_network = &mut self.advanced_composition.neural_networks[i];
             let genome = &neat.genomes[i];
-            
+
             assert!(genome.nr_outputs == neural_network.outputs.len());
             for (output_genome, output_neural_network) in
                 zip(genome.outputs(), &mut neural_network.outputs)
@@ -189,10 +187,10 @@ impl Swarm {
         let neat = &mut self.neat;
 
         assert!(neat.genomes.len() == self.advanced_composition.len());
-        for i in 0.. neat.genomes.len() {
+        for i in 0..neat.genomes.len() {
             let neural_network = &self.advanced_composition.neural_networks[i];
             let genome = &mut neat.genomes[i];
-            
+
             genome.fitness = neural_network.fitness;
         }
     }
@@ -221,7 +219,8 @@ impl Swarm {
         mut self,
         fitness_functions: &[Box<dyn FitnessFunction + Send>],
     ) -> Swarm {
-        self.advanced_composition.set_fitness_functions(fitness_functions);
+        self.advanced_composition
+            .set_fitness_functions(fitness_functions);
 
         self
     }

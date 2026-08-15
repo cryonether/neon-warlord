@@ -26,9 +26,7 @@ pub struct VerletParticles {
 const LANES: usize = 16;
 
 impl VerletParticles {
-
     pub fn new() -> Self {
-
         let x = Vec::new();
         let y = Vec::new();
         let z = Vec::new();
@@ -54,7 +52,6 @@ impl VerletParticles {
             inv_mass,
             radius,
         }
-
     }
 
     /// Integrates one single step
@@ -63,7 +60,7 @@ impl VerletParticles {
 
         let dt2_ = f32x16::splat(dt * dt);
 
-        for(x, y, z, prev_x, prev_y, prev_z, acc_x, acc_y, acc_z) in itertools::izip!(
+        for (x, y, z, prev_x, prev_y, prev_z, acc_x, acc_y, acc_z) in itertools::izip!(
             self.x.chunks_exact_mut(LANES),
             self.y.chunks_exact_mut(LANES),
             self.z.chunks_exact_mut(LANES),
@@ -105,7 +102,6 @@ impl VerletParticles {
             acc_y.fill(0.0);
             acc_z.fill(0.0);
         }
-
 
         // Scalar remainder.
         let remainder_start = self.len() - (self.len() % LANES);
@@ -232,8 +228,7 @@ impl VerletParticles {
 
         if mass == 0.0 {
             self.inv_mass.push(0.0);
-        }
-        else {
+        } else {
             self.inv_mass.push(1.0 / mass);
         }
 
@@ -241,7 +236,7 @@ impl VerletParticles {
 
         index
     }
-    
+
     pub fn position(&self, index: usize) -> Vec3 {
         let x = self.x[index];
         let y = self.y[index];
@@ -260,5 +255,4 @@ impl VerletParticles {
         self.acc_y[index] = acc.y;
         self.acc_z[index] = acc.z;
     }
-
 }

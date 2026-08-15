@@ -806,8 +806,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 &mut self.watch_fps,
             )
         }
-        self.watch_fps
-            .start("Wait for Window Event");
+        self.watch_fps.start("Wait for Window Event");
 
         res
     }
