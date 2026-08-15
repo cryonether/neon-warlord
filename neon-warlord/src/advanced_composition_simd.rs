@@ -54,7 +54,7 @@ impl AdvancedCompositionSimd {
         }
     }
 
-    fn push(&mut self, definition: &ParsedDefinition, pos: Vec3, radius: f32) -> usize {
+    pub fn push(&mut self, definition: &ParsedDefinition, pos: Vec3, radius: f32) -> usize {
         let neural_network_inputs = definition.count_nr_neural_network_inputs();
         let neural_network_outputs = definition.count_nr_neural_network_outputs();
 
@@ -194,7 +194,7 @@ impl AdvancedCompositionSimd {
     }
 
     /// Sets the custom fitness function for each neural network
-    pub fn set_fitnesss_functions(
+    pub fn set_fitness_functions(
         &mut self,
         fitness_functions: &[Box<dyn FitnessFunction + Send>],
     ) {
@@ -259,7 +259,7 @@ impl AdvancedCompositionSimd {
     }
 
     /// Runs the custom neural network fitness function
-    fn calculate_neural_network_fitness(&mut self) {
+    pub fn calculate_neural_network_fitness(&mut self) {
         for neural_network in &mut self.neural_networks {
             neural_network.calculate_fitness();
         }
@@ -288,6 +288,10 @@ impl AdvancedCompositionSimd {
                 }
             }
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.objects.len()
     }
 }
 

@@ -2,7 +2,7 @@
 
 use forward_renderer::{particle_shader, particle_shader_two_point, to_rgb};
 
-use crate::advanced_composition::{AdvancedComposition, Vec3};
+use crate::{advanced_composition::{AdvancedComposition, Vec3}, advanced_composition_simd::AdvancedCompositionSimd};
 
 /// Draws AdvancedCompositions
 pub struct AdvancedCompositionDrawer {
@@ -22,9 +22,9 @@ pub struct AdvancedCompositionDrawer {
 }
 
 impl AdvancedCompositionDrawer {
-    pub fn new(composition: &AdvancedComposition, radius: f32) -> Self {
-        let _nr_nodes = composition.verlet_objects.len();
-        let _nr_edges = composition.links.len();
+    pub fn new(composition: &AdvancedCompositionSimd, radius: f32) -> Self {
+        let _nr_nodes = composition.verlet_physics.particles.len();
+        let _nr_edges = composition.verlet_physics.distance_constraints.len();
 
         let nodes_color_0: Vec3 = to_rgb("#ce51ff").into();
         let _nodes_color_1: Vec3 = to_rgb("#a72ebc").into();
@@ -56,68 +56,36 @@ impl AdvancedCompositionDrawer {
 
     pub fn update(
         &mut self,
-        composition: &AdvancedComposition,
+        composition: &AdvancedCompositionSimd,
         producer_nodes: &mut Vec<particle_shader::Instance>,
         producer_edges: &mut Vec<particle_shader_two_point::Instance>,
     ) {
-        let size = std::cmp::min(self.nodes_instances.len(), composition.verlet_objects.len());
+        // let particles_len = std::cmp::min(self.nodes_instances.len(), composition.verlet_physics.particles.len());
+        let particles = &composition.verlet_physics.particles;
+        let constrains = &composition.verlet_physics.distance_constraints;
 
         // copy from physics to model
-        for i in 0..size {
+        for i in 0..particles.len() {
             let instance = &mut self.nodes_instances[i];
-            let verlet_object = &composition.verlet_objects[i];
 
-            instance.position = verlet_object.position().into();
+            instance.position = particles.position(i).into();
             instance.color = self.nodes_color_0.into();
             instance.size = self.radius * 2.0;
             instance.time = 1.0;
         }
 
-        for (i, link) in composition.links.iter().enumerate() {
-            match link {
-                super::Link::Fixed(elem) => {
-                    let index_0 = elem.node_id_1;
-                    let index_1 = elem.node_id_2;
+        for i in 0..constrains.len() {
+            let index_0 = constrains.a[i];
+            let index_1 = constrains.b[i];
+            let pos_0 = particles.position(index_0 as usize);
+            let pos_1 = particles.position(index_1 as usize);
 
-                    let pos_0 = composition.verlet_objects[index_0].position();
-                    let pos_1 = composition.verlet_objects[index_1].position();
-
-                    let instance = &mut self.edges_instances[i];
-                    instance.position_0 = pos_0.into();
-                    instance.position_1 = pos_1.into();
-                    instance.color = self.links_color_0.into();
-                    instance.size = self.radius * 0.1;
-                    instance.time = 1.0;
-                }
-                super::Link::FixedDistance(elem) => {
-                    let index_0 = elem.node_id_1;
-                    let index_1 = elem.node_id_2;
-
-                    let pos_0 = composition.verlet_objects[index_0].position();
-                    let pos_1 = composition.verlet_objects[index_1].position();
-
-                    let instance = &mut self.edges_instances[i];
-                    instance.position_0 = pos_0.into();
-                    instance.position_1 = pos_1.into();
-                    instance.color = self.links_color_0.into();
-                    instance.size = self.radius * 0.1;
-                    instance.time = 1.0;
-                }
-                super::Link::Loose(elem) => {
-                    let index_0 = elem.node_id_1;
-                    let index_1 = elem.node_id_2;
-
-                    let pos_0 = composition.verlet_objects[index_0].position();
-                    let pos_1 = composition.verlet_objects[index_1].position();
-
-                    let instance = &mut self.edges_instances[i];
-                    instance.position_0 = pos_0.into();
-                    instance.position_1 = pos_1.into();
-                    instance.color = self.links_color_0.into();
-                    instance.size = self.radius * 0.1;
-                    instance.time = 1.0;
-                }
-            }
+            let instance = &mut self.edges_instances[i];
+            instance.position_0 = pos_0.into();
+            instance.position_1 = pos_1.into();
+            instance.color = self.links_color_0.into();
+            instance.size = self.radius * 0.1;
+            instance.time = 1.0;
         }
 
         // copy from model to device

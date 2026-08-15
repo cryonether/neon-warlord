@@ -9,9 +9,7 @@ use crate::{
     advanced_composition::{
         AdvancedComposition, advanced_composition_drawer::AdvancedCompositionDrawer,
         definition::ParsedDefinition, genome_drawer::GenomeDrawer, neural_network::FitnessFunction,
-    },
-    physics_simulation_v3_drawer::DrawerObjects,
-    reinforcement_learning::neat::Neat,
+    }, advanced_composition_simd::AdvancedCompositionSimd, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::neat::Neat
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -20,9 +18,9 @@ type Vec3 = cgmath::Vector3<f32>;
 pub struct Swarm {
     /// Structure
     /// 1 element per entity
-    pub advanced_composition: Vec<AdvancedComposition>,
-    advanced_composition_original: Vec<AdvancedComposition>,
-    composition_drawer: Vec<AdvancedCompositionDrawer>,
+    pub advanced_composition: AdvancedCompositionSimd,
+    advanced_composition_original: AdvancedCompositionSimd,
+    composition_drawer: AdvancedCompositionDrawer,
 
     /// Reinforcement learning
     /// multiple elements per entity
@@ -62,22 +60,19 @@ impl Swarm {
 
         // create advanced compositions
         let pos = Vec3::zero();
-        let mut advanced_composition = Vec::new();
+        let mut advanced_composition = AdvancedCompositionSimd::new();
 
         let a = f32::sqrt(size as f32) as usize;
         for i in 0..size {
             let pos = pos + Vec3::new((i % a) as f32, (i / a) as f32, 0.0);
 
-            advanced_composition.push(AdvancedComposition::new(definition, pos, radius));
+            advanced_composition.push(definition, pos, radius);
         }
 
         let advanced_composition_original = advanced_composition.clone();
 
         // drawer
-        let mut composition_drawer = Vec::new();
-        for advanced_composition in &advanced_composition {
-            composition_drawer.push(AdvancedCompositionDrawer::new(advanced_composition, radius));
-        }
+        let mut composition_drawer = AdvancedCompositionDrawer::new(&advanced_composition, radius);
 
         Self {
             advanced_composition,
@@ -124,17 +119,13 @@ impl Swarm {
     }
 
     pub fn update_drawer(&mut self, producer: &mut DrawerObjects) {
-        assert!(self.composition_drawer.len() == self.advanced_composition.len());
 
         // update composites
-        let size = self.composition_drawer.len();
-        for i in 0..size {
-            self.composition_drawer[i].update(
-                &self.advanced_composition[i],
-                &mut producer.verlet_object_nodes,
-                &mut producer.verlet_object_edges,
-            );
-        }
+        self.composition_drawer.update(
+            &self.advanced_composition,
+            &mut producer.verlet_object_nodes,
+            &mut producer.verlet_object_edges,
+        );
 
         // update neats
         for (genome_drawer, genome) in zip(&mut self.genome_drawers, &self.neat.genomes) {
@@ -162,8 +153,9 @@ impl Swarm {
         let neat = &mut self.neat;
 
         assert!(neat.genomes.len() == self.advanced_composition.len());
-        for (genome, composition) in zip(&mut neat.genomes, &self.advanced_composition) {
-            let neural_network = &composition.neural_networks[0];
+        for i in 0..neat.genomes.len() {
+            let neural_network = &self.advanced_composition.neural_networks[i];
+            let genome = &mut neat.genomes[i];
 
             assert!(genome.nr_sensors == neural_network.inputs.len());
             for (sensor, input) in zip(genome.sensors(), &neural_network.inputs) {
@@ -178,9 +170,10 @@ impl Swarm {
         let neat = &mut self.neat;
 
         assert!(neat.genomes.len() == self.advanced_composition.len());
-        for (genome, composition) in zip(&neat.genomes, &mut self.advanced_composition) {
-            let neural_network = &mut composition.neural_networks[0];
-
+        for i in 0.. neat.genomes.len() {
+            let neural_network = &mut self.advanced_composition.neural_networks[i];
+            let genome = &neat.genomes[i];
+            
             assert!(genome.nr_outputs == neural_network.outputs.len());
             for (output_genome, output_neural_network) in
                 zip(genome.outputs(), &mut neural_network.outputs)
@@ -194,50 +187,39 @@ impl Swarm {
         let neat = &mut self.neat;
 
         assert!(neat.genomes.len() == self.advanced_composition.len());
-        for (genome, composition) in zip(&mut neat.genomes, &self.advanced_composition) {
-            let neural_network = &composition.neural_networks[0];
-
+        for i in 0.. neat.genomes.len() {
+            let neural_network = &self.advanced_composition.neural_networks[i];
+            let genome = &mut neat.genomes[i];
+            
             genome.fitness = neural_network.fitness;
         }
     }
 
     fn update_neural_network_inputs(&mut self) {
-        for composition in &mut self.advanced_composition {
-            composition.update_neural_network_inputs();
-        }
+        self.advanced_composition.update_neural_network_inputs();
     }
 
     fn calculate_neural_network_fitness(&mut self) {
-        for composition in &mut self.advanced_composition {
-            composition.calculate_neural_network_fitness();
-        }
+        self.advanced_composition.calculate_neural_network_fitness();
     }
 
     fn update_neural_network_outputs(&mut self) {
-        for composition in &mut self.advanced_composition {
-            composition.update_neural_network_outputs();
-        }
+        self.advanced_composition.update_neural_network_outputs();
     }
 
     fn update_actors(&mut self, _dt: f32) {
-        for composition in &mut self.advanced_composition {
-            composition.update_actors();
-        }
+        self.advanced_composition.update_actors();
     }
 
     fn update_sensors(&mut self) {
-        for composition in &mut self.advanced_composition {
-            composition.update_sensors();
-        }
+        self.advanced_composition.update_sensors();
     }
 
     pub fn set_fitness_functions(
         mut self,
         fitness_functions: &[Box<dyn FitnessFunction + Send>],
     ) -> Swarm {
-        for elem in &mut self.advanced_composition {
-            elem.set_fitnesss_functions(fitness_functions);
-        }
+        self.advanced_composition.set_fitness_functions(fitness_functions);
 
         self
     }

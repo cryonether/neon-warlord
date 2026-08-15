@@ -6,9 +6,9 @@ use crate::verlet_physics_simd::{Vec3, verlet_particles::VerletParticles};
 #[derive(Clone)]
 pub struct DistanceConstraints {
     /// Particle index for endpoint A.
-    a: Vec<u32>,
+    pub a: Vec<u32>,
     /// Particle index for endpoint B.
-    b: Vec<u32>,
+    pub b: Vec<u32>,
 
     /// Rest distance.
     rest_x: Vec<f32>,
@@ -18,7 +18,7 @@ pub struct DistanceConstraints {
     stiffness: Vec<f32>,
 
     // The algorithm to apply the constraint
-    constrain_kind: Vec<ConstraintKind>,
+    pub constrain_kind: Vec<ConstraintKind>,
 }
 
 

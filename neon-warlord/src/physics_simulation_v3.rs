@@ -79,13 +79,14 @@ impl PhysicsSimulationV3 {
         &mut self.watch_ups,);
         self.watch_ups.stop();
 
-        // self.watch_ups.start( "Solver");
-        self.solver.update_advanced_composites(
-            &mut self.swarm.advanced_composition,
-            height_map,
-            dt,
-            &mut self.watch_ups,
-        );
+        self.watch_ups.start( "Solver");
+        self.swarm.advanced_composition.verlet_physics.update(dt);
+        // self.solver.update_advanced_composites(
+        //     &mut self.swarm.advanced_composition,
+        //     height_map,
+        //     dt,
+        //     &mut self.watch_ups,
+        // );
         self.watch_ups.stop();
 
         // ups
