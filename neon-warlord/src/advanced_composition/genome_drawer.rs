@@ -137,14 +137,21 @@ impl GenomeDrawer {
             let index_from = edge.index_from;
             let index_to = edge.index_to;
             let pos_0: Vec3 = self.nodes_instances[index_from].position.into();
-            let color_0: Vec3 = self.nodes_instances[index_from].color.into();
+            let _color_0: Vec3 = self.nodes_instances[index_from].color.into();
             let pos_1: Vec3 = self.nodes_instances[index_to].position.into();
             let weight = edge.weight;
 
+           let color = gradient(
+                weight,
+                self.color_negative,
+                self.color_zero,
+                self.color_positive,
+            );
+
             instance.position_0 = pos_0.into();
             instance.position_1 = pos_1.into();
-            instance.color = color_0.into();
-            instance.size = self.size * 0.1 * weight;
+            instance.color = color.into();
+            instance.size = self.size * 0.1;
 
             nr_edges += 1;
         }

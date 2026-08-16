@@ -63,7 +63,7 @@ impl Swarm {
 
         let a = f32::sqrt(size as f32) as usize;
         for i in 0..size {
-            let pos = pos + Vec3::new((i % a) as f32, (i / a) as f32, 0.0);
+            let pos = pos + Vec3::new((i % a) as f32 * 2.0, (i / a) as f32, 0.0);
 
             advanced_composition.push(definition, pos, radius);
         }

@@ -28,6 +28,7 @@ mod verlet_physics_simd;
 mod worker;
 mod worker_instance;
 mod worker_thread;
+mod swarm_logic_unit;
 
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
