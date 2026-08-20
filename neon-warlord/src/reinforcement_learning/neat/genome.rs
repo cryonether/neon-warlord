@@ -210,8 +210,8 @@ impl Genome {
                 index_edge += 1;
             }
 
-            let value = sum + self.nodes[i].bias;
-            // let value = sum;
+            // let value = sum + self.nodes[i].bias;
+            let value = sum;
             self.nodes[i].value = Self::_activation_sigmoid(value)
         }
     }

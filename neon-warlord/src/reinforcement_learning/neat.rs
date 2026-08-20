@@ -93,9 +93,11 @@ impl Neat {
     pub fn evolve(&mut self) {
         for genome in &mut self.genomes {
             let val = self.rng.f32();
-            if val < 0.005 {
-                Self::add_layer(genome, &mut self.rng);
-            } else if val < 0.03 {
+            // if val < 0.005 {
+            //     Self::add_layer(genome, &mut self.rng);
+            // } else 
+            
+            if val < 0.03 {
                 Self::add_node(genome, &mut self.rng);
             } else if val < 0.08 {
                 Self::add_edge(genome, &mut self.rng);
@@ -158,12 +160,16 @@ impl Neat {
         let layer_node_1 = node_1.layer;
         let id_node_0 = node_0.id;
         let id_node_1 = node_1.id;
-        if layer_node_0 + 1 >= layer_node_1 {
+        if layer_node_0 + 1 == layer_node_1 {
             // no layer available to insert the node
+            genome.add_layer(layer_node_0+1);
+        }
+        else if layer_node_0 + 1 >= layer_node_1 {
             return;
         }
 
         // deactivate current edge
+        let edge = &mut genome.edges[index_edge];
         let edge_weight = edge.weight;
         edge.enabled = false;
 

@@ -40,7 +40,7 @@ impl PhysicsSimulationV3 {
         let fitness_function = get_pendulum_definition_fitness_function();
         let parsed_definition = ParsedDefinition::parse(&definition, pos, scale);
 
-        let swarm_size = 1_000;
+        let swarm_size = 10_000;
         // let swarm_size = 100_000;
         // let swarm_size = 9;
         let swarm =

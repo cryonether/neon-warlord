@@ -196,27 +196,38 @@ impl AdvancedCompositionSimd {
             let node_id = neural_network.node_id;
             let pos = self.verlet_physics.get_particle_position(node_id);
 
-            neural_network.position = pos + Vec3::new(0.0, 0.0, -0.2);
+            neural_network.position = pos + Vec3::new(0.0, 0.0, -0.6);
 
             // set inputs
             let mut k = 0;
             for sensor in &self.sensors[object.range_sensors.clone()] {
                 match sensor {
                     Sensor::RelativePosition(sensor_relative_position) => {
-                        let val = sensor_relative_position.get_val();
-                        let val_0 = val.x;
-                        let val_1 = val.y;
-                        let val_2 = val.z;
+                        let pos = sensor_relative_position.get_position_vec();
+                        let val_0 = pos.x;
+                        let val_1 = pos.y;
+                        let val_2 = pos.z;
+
+                        let velocity = sensor_relative_position.get_velocity_vec();
+                        let val_3 = velocity.x;
+                        let val_4 = velocity.y;
+                        let val_5 = velocity.z;
 
                         neural_network.inputs[k] = val_0;
                         neural_network.inputs[k + 1] = val_1;
                         neural_network.inputs[k + 2] = val_2;
-                        k += 3;
+
+                        neural_network.inputs[k + 3] = val_3;
+                        neural_network.inputs[k + 4] = val_4;
+                        neural_network.inputs[k + 5] = val_5;
+                        k += 6;
                     }
                     Sensor::SenorLinear(sensor_linear) => {
-                        let val = sensor_linear.value();
-                        neural_network.inputs[k] = val;
-                        k += 1;
+                        let pos = sensor_linear.position();
+                        let velocity = sensor_linear.velocity();
+                        neural_network.inputs[k] = pos;
+                        neural_network.inputs[k + 1] = velocity;
+                        k += 2;
                     }
                 }
             }
@@ -251,11 +262,11 @@ impl AdvancedCompositionSimd {
     }
 
     /// Updates the internal state based on verlet physics
-    pub fn update_sensors(&mut self) {
+    pub fn update_sensors(&mut self, dt: f32) {
         for sensor in &mut self.sensors {
             match sensor {
                 Sensor::RelativePosition(sensor_relative_position) => {
-                    sensor_relative_position.update_simd(&self.verlet_physics.particles);
+                    sensor_relative_position.update_simd(&self.verlet_physics.particles, dt);
                 }
                 Sensor::SenorLinear(sensor_linear) => {
                     sensor_linear.update_simd(&self.verlet_physics.particles);

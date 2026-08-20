@@ -89,7 +89,7 @@ impl Swarm {
         // input
         // sensors -> neural_network inputs
         watch_ups.start("swarm input");
-        self.update_sensors();
+        self.update_sensors(dt);
         self.update_neural_network_inputs();
         self.calculate_neural_network_fitness();
 
@@ -211,8 +211,8 @@ impl Swarm {
         self.advanced_composition.update_actors();
     }
 
-    fn update_sensors(&mut self) {
-        self.advanced_composition.update_sensors();
+    fn update_sensors(&mut self, dt: f32) {
+        self.advanced_composition.update_sensors(dt);
     }
 
     pub fn set_fitness_functions(
@@ -221,6 +221,7 @@ impl Swarm {
     ) -> Swarm {
         self.advanced_composition
             .set_fitness_functions(fitness_functions);
+        self.advanced_composition_original.set_fitness_functions(fitness_functions);
 
         self
     }

@@ -13,7 +13,9 @@ pub struct SensorLinear {
     pub node_b_id: usize,
 
     // value between -1 to 1
-    value: f32,
+    position_previous: f32,
+    position: f32,
+    velocity: f32,
 }
 
 impl SensorLinear {
@@ -22,7 +24,9 @@ impl SensorLinear {
             node_id,
             node_a_id,
             node_b_id,
-            value: 0.0,
+            position_previous: 0.0,
+            position: 0.0,
+            velocity: 0.0,
         }
     }
 
@@ -31,7 +35,10 @@ impl SensorLinear {
         let pos_a: cgmath::Vector3<f32> = verlet_particles.position(self.node_a_id);
         let pos_b: cgmath::Vector3<f32> = verlet_particles.position(self.node_b_id);
 
-        self.value = Self::calculate(&pos, &pos_a, &pos_b);
+        self.position_previous = self.position;
+        self.position = Self::calculate(&pos, &pos_a, &pos_b);
+        self.velocity = self.position - self.position_previous;
+
     }
 
     fn calculate(pos: &Vec3, pos_a: &Vec3, pos_b: &Vec3) -> f32 {
@@ -41,8 +48,12 @@ impl SensorLinear {
         t * 2.0 - 1.0
     }
 
-    pub fn value(&self) -> f32 {
-        self.value
+    pub fn position(&self) -> f32 {
+        self.position
+    }
+
+    pub fn velocity(&self) -> f32 {
+        self.velocity
     }
 }
 
