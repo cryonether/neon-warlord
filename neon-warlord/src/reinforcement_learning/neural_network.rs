@@ -170,6 +170,7 @@ impl NeuralNetwork {
                     Self::to_2x4(self.x);
 
         // bias gradients
+        
         self.db_3 = Self::_derivative_re_lu(self.z_3);
 
         self.db_2 = Self::_derivative_re_lu(self.z_3) * 
