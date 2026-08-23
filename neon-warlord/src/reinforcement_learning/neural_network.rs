@@ -43,6 +43,10 @@ struct NeuralNetwork {
     dw_2: RowVec4,
     dw_3: RowVec2,
 
+    db_0: RowVec2,
+    db_1: RowVec2,
+    db_2: RowVec2,
+    db_3: f32,
 }
 
 impl NeuralNetwork {
@@ -80,6 +84,11 @@ impl NeuralNetwork {
         let dw_2 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
         let dw_3 = RowVec2::new(0.0, 0.0);
 
+        let db_0 = RowVec2::new(0.0, 0.0);
+        let db_1 = RowVec2::new(0.0, 0.0);
+        let db_2 = RowVec2::new(0.0, 0.0);
+        let db_3 = 0.0;
+
         Self {
 
             // forward
@@ -113,6 +122,11 @@ impl NeuralNetwork {
             dw_1,
             dw_2,
             dw_3,
+
+            db_0,
+            db_1,
+            db_2,
+            db_3,
         }
     }
 
@@ -135,6 +149,8 @@ impl NeuralNetwork {
 
     fn backward(&mut self) 
     {
+        // weight gradients
+
         self.dw_3 = Self::_derivative_re_lu(self.z_3) * 
                     Self::to_1x2(self.a_2);
 
@@ -153,7 +169,20 @@ impl NeuralNetwork {
                     self.w_1 * Self::_derivative_re_lu_vec2(self.z_0) *
                     Self::to_2x4(self.x);
 
-        // todo: bias gradients
+        // bias gradients
+        self.db_3 = Self::_derivative_re_lu(self.z_3);
+
+        self.db_2 = Self::_derivative_re_lu(self.z_3) * 
+                    self.w_3 * Self::_derivative_re_lu_vec2(self.z_2);
+
+        self.db_1 = Self::_derivative_re_lu(self.z_3) * 
+                    self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+                    self.w_2 * Self::_derivative_re_lu_vec2(self.z_1);
+
+        self.db_0 = Self::_derivative_re_lu(self.z_3) * 
+                    self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+                    self.w_2 * Self::_derivative_re_lu_vec2(self.z_1) *
+                    self.w_1 * Self::_derivative_re_lu_vec2(self.z_0);
 
         // todo: Loss function
     }
@@ -238,6 +267,12 @@ impl std::fmt::Display for NeuralNetwork {
         println!("dw_1: {:?}", self.dw_1);
         println!("dw_2: {:?}", self.dw_2);
         println!("dw_3: {:?}", self.dw_3);
+        println!("");
+
+        println!("db_0: {:?}", self.db_0);
+        println!("db_1: {:?}", self.db_1);
+        println!("db_2: {:?}", self.db_2);
+        println!("db_3: {:?}", self.db_3);
         println!("");
 
         write!(f, "}}")
