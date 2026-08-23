@@ -133,14 +133,12 @@ fn compare_with_dfdx() {
     println!("w_1: {:?}", model.1.0.weight.array());
     println!("w_2: {:?}", model.2.0.weight.array());
     println!("w_3: {:?}", model.3.0.weight.array());
-
     println!();
 
     println!("b_0: {:?}", model.0.0.bias.array());
     println!("b_1: {:?}", model.1.0.bias.array());
     println!("b_2: {:?}", model.2.0.bias.array());
     println!("b_3: {:?}", model.3.0.bias.array());
-
     println!();
 
     println!("z_0: {:?}", z_0.array());

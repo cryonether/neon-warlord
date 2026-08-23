@@ -7,7 +7,7 @@ type Model = (
     (Linear<2, 2>, ReLU),
     (Linear<2, 2>, ReLU),
     (Linear<2, 2>, ReLU),
-    (Linear<2, 1>, ReLU),
+    (Linear<2, 1>),
 );
 
 #[test]
@@ -20,10 +20,17 @@ fn dfdx_and() {
         [1.0, 1.0],
     ];
 
+    // let y_data = [
+    //     [0.0],
+    //     [0.0],
+    //     [0.0],
+    //     [1.0],
+    // ];
+
     let y_data = [
         [0.0],
-        [0.0],
-        [0.0],
+        [1.0],
+        [1.0],
         [1.0],
     ];
 
@@ -79,8 +86,8 @@ fn dfdx_and() {
     let dw_2 = grads.get(&model.2.0.weight);
     let db_2 = grads.get(&model.2.0.bias);
 
-    let dw_3 = grads.get(&model.3.0.weight);
-    let db_3 = grads.get(&model.3.0.bias);
+    let dw_3 = grads.get(&model.3.weight);
+    let db_3 = grads.get(&model.3.bias);
 
     model.0.0.weight = model.0.0.weight.clone() - dw_0 * LEARNING_RATE;
     model.0.0.bias   = model.0.0.bias.clone()   - db_0 * LEARNING_RATE;
@@ -91,8 +98,8 @@ fn dfdx_and() {
     model.2.0.weight = model.2.0.weight.clone() - dw_2 * LEARNING_RATE;
     model.2.0.bias   = model.2.0.bias.clone()   - db_2 * LEARNING_RATE;
 
-    model.3.0.weight = model.3.0.weight.clone() - dw_3 * LEARNING_RATE;
-    model.3.0.bias   = model.3.0.bias.clone()   - db_3 * LEARNING_RATE;
+    model.3.weight = model.3.weight.clone() - dw_3 * LEARNING_RATE;
+    model.3.bias   = model.3.bias.clone()   - db_3 * LEARNING_RATE;
 
 
     // second forward pass
@@ -162,8 +169,8 @@ fn dfdx_and() {
         let dw_2 = grads.get(&model.2.0.weight);
         let db_2 = grads.get(&model.2.0.bias);
 
-        let dw_3 = grads.get(&model.3.0.weight);
-        let db_3 = grads.get(&model.3.0.bias);
+        let dw_3 = grads.get(&model.3.weight);
+        let db_3 = grads.get(&model.3.bias);
 
         model.0.0.weight = model.0.0.weight.clone()
             - dw_0 * LEARNING_RATE;
@@ -183,10 +190,10 @@ fn dfdx_and() {
         model.2.0.bias = model.2.0.bias.clone()
             - db_2 * LEARNING_RATE;
 
-        model.3.0.weight = model.3.0.weight.clone()
+        model.3.weight = model.3.weight.clone()
             - dw_3 * LEARNING_RATE;
 
-        model.3.0.bias = model.3.0.bias.clone()
+        model.3.bias = model.3.bias.clone()
             - db_3 * LEARNING_RATE;
 
     }
