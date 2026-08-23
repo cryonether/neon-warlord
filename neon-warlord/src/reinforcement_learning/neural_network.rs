@@ -1,5 +1,7 @@
 //! A universal function approximator
 
+pub mod neural_network_epoch;
+
 #[cfg(test)]
 mod tests;
 
@@ -12,21 +14,21 @@ type RowVec2 = nalgebra::RowVector2<f32>;
 type RowVec4 = nalgebra::RowVector4<f32>;
 
 #[derive(Debug, Clone)]
-struct NeuralNetwork {
+pub struct NeuralNetwork {
 
     // forward
 
-    x: Vec2,
+    pub x: Vec2,
 
-    w_0: Mat2,
-    w_1: Mat2,
-    w_2: Mat2,
-    w_3: RowVec2,
+    pub w_0: Mat2,
+    pub w_1: Mat2,
+    pub w_2: Mat2,
+    pub w_3: RowVec2,
 
-    b_0: Vec2,
-    b_1: Vec2,
-    b_2: Vec2,
-    b_3: f32,
+    pub b_0: Vec2,
+    pub b_1: Vec2,
+    pub b_2: Vec2,
+    pub b_3: f32,
 
     z_0: Vec2,
     z_1: Vec2,
@@ -37,23 +39,23 @@ struct NeuralNetwork {
     a_1: Vec2,
     a_2: Vec2,
 
-    y: f32,
+    pub y: f32,
 
     // backward
 
-    dw_0: RowVec4,
-    dw_1: RowVec4,
-    dw_2: RowVec4,
-    dw_3: RowVec2,
+    dy_dw0: RowVec4,
+    dy_dw1: RowVec4,
+    dy_dw2: RowVec4,
+    dy_dw3: RowVec2,
 
-    db_0: RowVec2,
-    db_1: RowVec2,
-    db_2: RowVec2,
-    db_3: f32,
+    dy_db0: RowVec2,
+    dy_db1: RowVec2,
+    dy_db2: RowVec2,
+    dy_db3: f32,
 }
 
 impl NeuralNetwork {
-    fn new() -> Self {
+    pub fn new() -> Self {
 
         // forward
 
@@ -82,15 +84,15 @@ impl NeuralNetwork {
 
         // backward
 
-        let dw_0 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
-        let dw_1 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
-        let dw_2 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
-        let dw_3 = RowVec2::new(0.0, 0.0);
+        let dy_dw0 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
+        let dy_dw1 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
+        let dy_dw2 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
+        let dy_dw3 = RowVec2::new(0.0, 0.0);
 
-        let db_0 = RowVec2::new(0.0, 0.0);
-        let db_1 = RowVec2::new(0.0, 0.0);
-        let db_2 = RowVec2::new(0.0, 0.0);
-        let db_3 = 0.0;
+        let dy_db0 = RowVec2::new(0.0, 0.0);
+        let dy_db1 = RowVec2::new(0.0, 0.0);
+        let dy_db2 = RowVec2::new(0.0, 0.0);
+        let dy_db3 = 0.0;
 
         Self {
 
@@ -121,19 +123,19 @@ impl NeuralNetwork {
 
             // backward
 
-            dw_0,
-            dw_1,
-            dw_2,
-            dw_3,
+            dy_dw0,
+            dy_dw1,
+            dy_dw2,
+            dy_dw3,
 
-            db_0,
-            db_1,
-            db_2,
-            db_3,
+            dy_db0,
+            dy_db1,
+            dy_db2,
+            dy_db3,
         }
     }
 
-    fn forward(&mut self) 
+    pub fn forward(&mut self) 
     {
         self.z_0 = self.w_0 * self.x + self.b_0;
         self.a_0 = Self::_activation_re_lu_vec2(self.z_0);
@@ -144,51 +146,39 @@ impl NeuralNetwork {
         self.z_2 = self.w_2 * self.a_1 + self.b_2;
         self.a_2 = Self::_activation_re_lu_vec2(self.z_2);
 
-        self.z_3 = (self.w_3 * self.a_2)[(0, 0)] + self.b_3;
-        self.y = Self::_activation_re_lu(self.z_3); 
-
-        // todo: Loss function
+        self.y = (self.w_3 * self.a_2)[(0, 0)] + self.b_3;
     }
 
-    fn backward(&mut self) 
+    pub fn backward(&mut self) 
     {
         // weight gradients
 
-        self.dw_3 = Self::_derivative_re_lu(self.z_3) * 
-                    Self::to_1x2(self.a_2);
+        self.dy_dw3 = Self::to_1x2(self.a_2);
 
-        self.dw_2 = Self::_derivative_re_lu(self.z_3) * 
-                    self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+        self.dy_dw2 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
                     Self::to_2x4(self.a_1);
 
-        self.dw_1 = Self::_derivative_re_lu(self.z_3) * 
-                    self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+        self.dy_dw1 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
                     self.w_2 * Self::_derivative_re_lu_vec2(self.z_1) *
                     Self::to_2x4(self.a_0);
 
-        self.dw_0 = Self::_derivative_re_lu(self.z_3) * 
-                    self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+        self.dy_dw0 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
                     self.w_2 * Self::_derivative_re_lu_vec2(self.z_1) *
                     self.w_1 * Self::_derivative_re_lu_vec2(self.z_0) *
                     Self::to_2x4(self.x);
 
         // bias gradients
 
-        self.db_3 = Self::_derivative_re_lu(self.z_3);
+        self.dy_db3 = 1.0;
 
-        self.db_2 = Self::_derivative_re_lu(self.z_3) * 
-                    self.w_3 * Self::_derivative_re_lu_vec2(self.z_2);
+        self.dy_db2 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2);
 
-        self.db_1 = Self::_derivative_re_lu(self.z_3) * 
-                    self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+        self.dy_db1 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
                     self.w_2 * Self::_derivative_re_lu_vec2(self.z_1);
 
-        self.db_0 = Self::_derivative_re_lu(self.z_3) * 
-                    self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+        self.dy_db0 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
                     self.w_2 * Self::_derivative_re_lu_vec2(self.z_1) *
                     self.w_1 * Self::_derivative_re_lu_vec2(self.z_0);
-
-        // todo: Loss function
     }
 
     fn to_2x4(val: Vec2) -> nalgebra::Matrix2x4<f32> {
@@ -267,16 +257,16 @@ impl std::fmt::Display for NeuralNetwork {
         println!("y: {:?}", self.y);
         println!("");
 
-        println!("dw_0: {:?}", self.dw_0);
-        println!("dw_1: {:?}", self.dw_1);
-        println!("dw_2: {:?}", self.dw_2);
-        println!("dw_3: {:?}", self.dw_3);
+        println!("dw_0: {:?}", self.dy_dw0);
+        println!("dw_1: {:?}", self.dy_dw1);
+        println!("dw_2: {:?}", self.dy_dw2);
+        println!("dw_3: {:?}", self.dy_dw3);
         println!("");
 
-        println!("db_0: {:?}", self.db_0);
-        println!("db_1: {:?}", self.db_1);
-        println!("db_2: {:?}", self.db_2);
-        println!("db_3: {:?}", self.db_3);
+        println!("db_0: {:?}", self.dy_db0);
+        println!("db_1: {:?}", self.dy_db1);
+        println!("db_2: {:?}", self.dy_db2);
+        println!("db_3: {:?}", self.dy_db3);
         println!("");
 
         write!(f, "}}")

@@ -20,7 +20,7 @@ fn evaluate_zeros() {
 
     println!("nn: {:}", nn);
     assert_eq!(nn.y, 0.0);
-    assert_eq!(nn.dw_0[0], 0.0);
+    assert_eq!(nn.dy_dw0[0], 0.0);
 }
 
 #[test]
@@ -41,7 +41,7 @@ fn evaluate_minus_one() {
 
     println!("nn: {:}", nn);
     assert_eq!(nn.y, 0.0);
-    assert_eq!(nn.dw_0[0], 0.0);
+    assert_eq!(nn.dy_dw0[0], 0.0);
 }
 
 #[test]
@@ -87,7 +87,7 @@ fn compare_with_dfdx() {
         (Linear<2, 2>, ReLU),
         (Linear<2, 2>, ReLU),
         (Linear<2, 2>, ReLU),
-        (Linear<2, 1>, ReLU),
+        (Linear<2, 1>),
     );
 
     let dev = Cpu::default();
@@ -102,8 +102,8 @@ fn compare_with_dfdx() {
     model.2.0.weight = dev.ones();
     model.2.0.bias   = dev.ones();
 
-    model.3.0.weight = dev.ones();
-    model.3.0.bias   = dev.ones();
+    model.3.weight = dev.ones();
+    model.3.bias   = dev.ones();
 
     let x: Tensor<Rank2<1, 2>, f32, Cpu> =
     dev.tensor([[1.0, 2.0]]);
@@ -122,8 +122,8 @@ fn compare_with_dfdx() {
     let z_2 = model.2.0.forward(a_1.clone());
     let a_2 = model.2.1.forward(z_2.clone());
 
-    let z_3 = model.3.0.forward(a_2.clone());
-    let y = model.3.1.forward(z_3.clone());
+    let y = model.3.forward(a_2.clone());
+    // let y = model.3.forward(z_3.clone());
 
     println!("x:   {:?}", x.array());
 
@@ -132,19 +132,19 @@ fn compare_with_dfdx() {
     println!("w_0: {:?}", model.0.0.weight.array());
     println!("w_1: {:?}", model.1.0.weight.array());
     println!("w_2: {:?}", model.2.0.weight.array());
-    println!("w_3: {:?}", model.3.0.weight.array());
+    println!("w_3: {:?}", model.3.weight.array());
     println!();
 
     println!("b_0: {:?}", model.0.0.bias.array());
     println!("b_1: {:?}", model.1.0.bias.array());
     println!("b_2: {:?}", model.2.0.bias.array());
-    println!("b_3: {:?}", model.3.0.bias.array());
+    println!("b_3: {:?}", model.3.bias.array());
     println!();
 
     println!("z_0: {:?}", z_0.array());
     println!("z_1: {:?}", z_1.array());
     println!("z_2: {:?}", z_2.array());
-    println!("z_3: {:?}", z_3.array());
+    // println!("z_3: {:?}", z_3.array());
 
     println!();
 
@@ -181,7 +181,7 @@ fn compare_with_dfdx() {
     println!("dw_0: {:?}", grads.get(&model.0.0.weight).array());
     println!("dw_1: {:?}", grads.get(&model.1.0.weight).array());
     println!("dw_2: {:?}", grads.get(&model.2.0.weight).array());
-    println!("dw_3: {:?}", grads.get(&model.3.0.weight).array());
+    println!("dw_3: {:?}", grads.get(&model.3.weight).array());
 
     println!("");
 
@@ -189,5 +189,5 @@ fn compare_with_dfdx() {
     println!("db_0: {:?}", grads.get(&model.0.0.bias).array());
     println!("db_1: {:?}", grads.get(&model.1.0.bias).array());
     println!("db_2: {:?}", grads.get(&model.2.0.bias).array());
-    println!("db_3: {:?}", grads.get(&model.3.0.bias).array());
+    println!("db_3: {:?}", grads.get(&model.3.bias).array());
 }
