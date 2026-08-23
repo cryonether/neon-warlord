@@ -314,6 +314,7 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
     struct FitnessFunctionAccumulateZ {
         pub sum: f32,
         pub last_position: Vec3,
+        pub max_position_z: f32,
     }
     impl FitnessFunction for FitnessFunctionAccumulateZ {
         fn calculate_fitness(&mut self, inputs: &[f32]) -> f32 {
@@ -324,9 +325,21 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
             let pos = Vec3::new(inputs[2], inputs[3], inputs[4]);
             let volocity = Vec3::new(inputs[5], inputs[6], inputs[7]);
 
-            self.sum += (1.0 + pos.z) * (1.0 + pos.z) - 0.1 * linear_motor_velocity.abs() - 0.4 * volocity.magnitude() * volocity.magnitude() - 0.4 * linear_motor_position.abs() * linear_motor_position.abs();
+            if linear_motor_position.abs() > 0.8 {
+                self.sum -= 100_000.0;
+            }
+
+            // if self.max_position_z > 0.9 && pos.z < 0.9 {
+            //     self.sum += 100_000.0;
+            // }
+
+            self.sum += (1.0 + pos.z) * (1.0 + pos.z) 
+                - 0.1 * volocity.magnitude() * volocity.magnitude();
+                // - 0.1 * linear_motor_velocity.abs() * linear_motor_velocity.abs() 
+                // - 0.4 * linear_motor_position.abs() * linear_motor_position.abs();
 
             self.last_position = pos;
+            self.max_position_z = self.max_position_z.max(pos.z);
 
             self.sum
         }
@@ -335,6 +348,7 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
             Box::new(Self {
                 sum: self.sum,
                 last_position: self.last_position,
+                max_position_z: self.max_position_z,
             })
         }
     }
@@ -342,6 +356,7 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
     let fitness: Box<dyn FitnessFunction + Send> = Box::new(FitnessFunctionAccumulateZ {
         sum: 0.0,
         last_position: Vec3::zero(),
+        max_position_z: 0.0,
     });
 
     fitness

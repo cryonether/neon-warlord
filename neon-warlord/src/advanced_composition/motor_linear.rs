@@ -1,6 +1,6 @@
 //! An actor free to move between two nodes
 
-use cgmath::InnerSpace;
+use cgmath::{InnerSpace, num_traits::clamp};
 
 use crate::verlet_physics_simd::verlet_particles::VerletParticles;
 
@@ -12,6 +12,8 @@ pub struct MotorLinear {
     pub node_b_id: usize,
 
     acceleration: f32,
+
+    init: bool,
 }
 
 impl MotorLinear {
@@ -21,6 +23,7 @@ impl MotorLinear {
             node_a_id,
             node_b_id,
             acceleration: 0.0,
+            init: false,
         }
     }
 
@@ -58,7 +61,14 @@ impl MotorLinear {
         verlet_particles.accelerate(self.node_id, acceleration);
     }
 
-    pub fn accelerate(&mut self, val: f32) {
-        self.acceleration = (val - 0.5) * 200.0;
+    pub fn accelerate(&mut self, mut val: f32) {
+        // if !self.init {
+        //     self.init = true;
+        //     val = fastrand::f32();
+        // }
+
+        val = val.clamp(0.0, 1.0);
+
+        self.acceleration = (val - 0.5) * 10.0;
     }
 }
