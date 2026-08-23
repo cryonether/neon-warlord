@@ -7,15 +7,43 @@
 use crate::reinforcement_learning::neural_network::{Mat2, NeuralNetwork, RowVec2, RowVec4, Vec2};
 
 pub struct NeuralNetworkEpoch {
-    model: NeuralNetwork,
+    pub model: NeuralNetwork,
+
+    pub loss: f32
 }
 
 impl NeuralNetworkEpoch {
-    pub fn new( history: Vec<NeuralNetwork>) -> Self {
+    pub fn new() -> Self {
 
-        let model = NeuralNetwork::new();
+        let mut model = NeuralNetwork::new();
 
-        Self { model }
+        let mut rng = fastrand::Rng::with_seed(fastrand::u64(..));
+        // let mut rand = || (rng.f32() * 2.0 - 1.0);
+
+        // Kaiming/He-style initialization
+        let fan_in: f32 = 2.0; // fan_in is the number of inputs to the neuron/filter.
+        let bound = 1.0 / (fan_in).sqrt();
+        let mut rand = || (rng.f32() * 2.0 - 1.0) * bound;
+        
+        model.w_0 = Mat2::new(rand(), rand(), rand(), rand());
+        model.w_1 = Mat2::new(rand(), rand(), rand(), rand());
+        model.w_2 = Mat2::new(rand(), rand(), rand(), rand());
+        model.w_3 = RowVec2::new(rand(), rand());
+
+        model.b_0 = Vec2::new(rand(), rand());
+        model.b_1 = Vec2::new(rand(), rand());
+        model.b_2 = Vec2::new(rand(), rand());
+        model.b_3 =  rand();
+
+        // model.b_0 = Vec2::zeros();
+        // model.b_1 = Vec2::zeros();
+        // model.b_2 = Vec2::zeros();
+        // model.b_3 =  0.0;
+
+        Self { 
+            model,
+            loss: 0.0,
+        }
     }
 
     pub fn learn(&mut self, input: [[f32; 2]; 4], output: [[f32; 1]; 4]) -> [f32; 4]
@@ -23,10 +51,12 @@ impl NeuralNetworkEpoch {
         let mut history = Vec::new();
         
         // prediction
+        let mut res = Vec::new();
         for elem in input {
             
             self.model.x = elem.into();
             self.model.forward();
+            res.push(self.model.y);
             
             history.push(self.model.clone());
         }
@@ -48,6 +78,7 @@ impl NeuralNetworkEpoch {
         }
 
         let loss = sum / size;
+        self.loss = loss;
 
         // gradients
 
@@ -104,7 +135,7 @@ impl NeuralNetworkEpoch {
         self.model.b_3 -= d_loss_db3 * LEARNING_RATE;
         
 
-        [0.0, 0.0, 0.0, 0.0]
+        [res[0], res[1], res[2], res[3]]
     }
 
     fn to_2x2(val: RowVec4) -> Mat2 {

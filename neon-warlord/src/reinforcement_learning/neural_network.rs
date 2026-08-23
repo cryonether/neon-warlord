@@ -8,6 +8,9 @@ mod tests;
 #[cfg(test)]
 mod tests_logic_functions;
 
+#[cfg(test)]
+mod tests_supervised_model;
+
 type Vec2 = nalgebra::Vector2<f32>;
 type Mat2 = nalgebra::Matrix2<f32>;
 type RowVec2 = nalgebra::RowVector2<f32>;
@@ -212,6 +215,13 @@ impl NeuralNetwork {
 
     fn _activation_re_lu(value: f32) -> f32 {
         value.max(0.0)
+
+        // // leaky relu
+        // if value > 0.0 {
+        //     value
+        // } else {
+        //     0.01 * value
+        // }
     }
 
     fn _derivative_re_lu(value: f32) -> f32 {
@@ -220,6 +230,13 @@ impl NeuralNetwork {
         } else {
             0.0
         }
+
+        // // leaky relu
+        // if value > 0.0 {
+        //     1.0
+        // } else {
+        //     0.01
+        // }
     }
 }
 

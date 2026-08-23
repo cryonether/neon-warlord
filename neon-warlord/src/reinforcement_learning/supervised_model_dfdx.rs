@@ -19,7 +19,7 @@ pub struct SupervisedModelDfDx {
         (modules::Linear<2, 2, f32, Cpu>, ReLU), 
         (modules::Linear<2, 2, f32, Cpu>, ReLU), 
         (modules::Linear<2, 2, f32, Cpu>, ReLU), 
-        modules::Linear<2, 1, f32, Cpu>
+         modules::Linear<2, 1, f32, Cpu>
     ),
 
     pub loss: f32,
