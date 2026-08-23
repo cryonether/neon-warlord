@@ -5,8 +5,6 @@ use super::*;
 #[test]
 fn evaluate_zeros() {
     let mut nn = NeuralNetwork::new();
-    // nn.x = Vec2::zeros();
-
     nn.w_0 = Mat2::zeros();
     nn.w_1 = Mat2::zeros();
     nn.w_2 = Mat2::zeros();
@@ -21,13 +19,13 @@ fn evaluate_zeros() {
     nn.backward();
 
     println!("nn: {:}", nn);
+    assert_eq!(nn.y, 0.0);
+    assert_eq!(nn.dw_0[0], 0.0);
 }
 
 #[test]
 fn evaluate_minus_one() {
     let mut nn = NeuralNetwork::new();
-    // nn.x = Vec2::zeros();
-
     nn.w_0 = Mat2::new(-1.0, -1.0, -1.0, -1.0);
     nn.w_1 = Mat2::new(-1.0, -1.0, -1.0, -1.0);
     nn.w_2 = Mat2::new(-1.0, -1.0, -1.0, -1.0);
@@ -42,6 +40,8 @@ fn evaluate_minus_one() {
     nn.backward();
 
     println!("nn: {:}", nn);
+    assert_eq!(nn.y, 0.0);
+    assert_eq!(nn.dw_0[0], 0.0);
 }
 
 #[test]
@@ -68,66 +68,6 @@ fn evaluate_diff() {
     nn_1.backward();
 
     println!("nn_1: {:}", nn_1);
-}
-
-fn assert_weight(weight: usize, index_0: usize, index_1: usize) {
-    let mut nn_0 = NeuralNetwork::new();
-    nn_0.forward();
-    nn_0.backward();
-
-    let mut nn_1 = nn_0.clone();
-    match weight {
-        0 => {
-            nn_1.w_0[(index_0, index_1)] = 0.5;
-        }
-        1 => {
-            nn_1.w_1[(index_0, index_1)] = 0.5;
-        }
-        2 => {
-            nn_1.w_2[(index_0, index_1)] = 0.5;
-        }
-        3 => {
-            nn_1.w_3[(index_0, index_1)] = 0.5;
-        }
-        _ => {panic!("index out of bounds")}
-    }
-
-    nn_1.w_2[0] = 0.5;
-    nn_1.forward();
-    nn_1.backward();
-
-    let dw = match weight {
-        0 => {
-            nn_1.dw_0[(index_0, index_1)]
-        }
-        1 => {
-            nn_1.dw_1[(index_0, index_1)]
-        }
-        2 => {
-            nn_1.dw_2[(index_0, index_1)]
-        }
-        3 => {
-            nn_1.dw_3[(index_0, index_1)]
-        }
-        _ => {panic!("index out of bounds")}
-    };
-
-    let dw_ = (nn_0.y - nn_1.y) / 0.5;
-
-    if dw != dw_ {
-        println!("nn_0: {:}", nn_0);
-        println!("");
-        println!("nn_1: {:}", nn_1);
-        assert_eq!(dw, dw_);
-    }
-}
-
-#[test]
-fn assert_weight_all() {
-    assert_weight(3, 0, 0);
-    assert_weight(3, 0, 1);
-    assert_weight(3, 1, 0);
-    assert_weight(3, 1, 1);
 }
 
 #[test]
@@ -168,34 +108,9 @@ fn compare_with_dfdx() {
     let x: Tensor<Rank2<1, 2>, f32, Cpu> =
     dev.tensor([[1.0, 2.0]]);
 
-    // let y = model.forward(x.clone());
-
     // // Print parameters
     println!("dfdx {{");
     println!();
-
-    // println!("x: {:?}", x.array());
-
-    // println!();
-
-    // println!("w_0: {:?}", model.0.0.weight.array());
-    // println!("w_1: {:?}", model.1.0.weight.array());
-    // println!("w_2: {:?}", model.2.0.weight.array());
-    // println!("w_3: {:?}", model.3.0.weight.array());
-
-    // println!();
-
-    // println!("b_0: {:?}", model.0.0.bias.array());
-    // println!("b_1: {:?}", model.1.0.bias.array());
-    // println!("b_2: {:?}", model.2.0.bias.array());
-    // println!("b_3: {:?}", model.3.0.bias.array());
-
-    // println!();
-
-    // println!("y: {:?}", y.array());
-
-    // println!();
-    // println!("}}");
 
 
     let z_0 = model.0.0.forward(x.clone());

@@ -3,6 +3,9 @@
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod tests_logic_functions;
+
 type Vec2 = nalgebra::Vector2<f32>;
 type Mat2 = nalgebra::Matrix2<f32>;
 type RowVec2 = nalgebra::RowVector2<f32>;
@@ -170,7 +173,7 @@ impl NeuralNetwork {
                     Self::to_2x4(self.x);
 
         // bias gradients
-        
+
         self.db_3 = Self::_derivative_re_lu(self.z_3);
 
         self.db_2 = Self::_derivative_re_lu(self.z_3) * 
