@@ -88,14 +88,8 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         for (w, b, a, z) in izip!(self.w, self.b, &mut self.a, &mut self.z) 
         {
             // z = W * a + b
-            let b_ = f32x16::from(b);
-            let mut z_ = f32x16::splat(0.0);
-            for w in w {
-                let w_ = f32x16::from(w);
-                
-                z_ += w_ * input_;
-            }
-            z_ += b_;
+            let mut z_ = Self::mul_16x16_16x1(&w, input_);
+            z_ += f32x16::from(b);
 
             // a = f(z)
             let a_ = Self::activation_re_lu_f32x16(z_);
@@ -172,18 +166,33 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }
     }
 
+
+        #[inline]
+    fn mul_16x16_16x1(a: &[[f32;16]], b: f32x16) -> f32x16{
+        let mut out_ = f32x16::splat(0.0);
+
+        for &a in a {
+            let a_ = f32x16::from(a);
+            
+            out_ += a_ * b;
+        }
+
+        out_.into()
+    }
+
+
     #[inline]
     fn mul_1x16_16x16(a: f32x16, b: &[[f32;16]]) -> f32x16{
-        let mut out = f32x16::splat(0.0);
+        let mut out_ = f32x16::splat(0.0);
 
         for (&a, &b) in zip(a.as_array(), b){
             let a_ = f32x16::splat(a);
             let b_ = f32x16::from(b);
 
-            out += a_ * b_;
+            out_ += a_ * b_;
         }
 
-        out.into()
+        out_.into()
     }
 
     #[inline]
