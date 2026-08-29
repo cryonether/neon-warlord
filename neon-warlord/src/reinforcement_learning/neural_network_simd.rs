@@ -121,21 +121,15 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
 
         for w in &mut model.w {
             for w in w {
-                for w in w {
-                    *w = 0.1;
-                }
+                w.fill(0.1);
             }
         }
 
         for b in &mut model.b {
-            for b in b {
-                *b = 0.1;
-            }
+            b.fill(0.1);
         }
 
-        for w in &mut model.w_y {
-            *w = 0.1;
-        }
+        model.w_y.fill(0.1);
 
         model.b_y = 0.1;
 
