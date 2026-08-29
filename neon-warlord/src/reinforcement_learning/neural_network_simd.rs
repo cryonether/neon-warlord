@@ -117,19 +117,39 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
 
     pub fn backward(&mut self) {
 
-        let z_iter = self.z.iter().rev(); 
+        let mut z_iter = self.z.iter().rev(); 
         let mut a_iter = self.a.iter().rev().chain([&self.x]); 
         let w_iter = self.w.iter().rev();
-        let delta_iter = self.delta.iter_mut().rev();
-        let dy_db_iter = self.dy_db.iter_mut().rev();
-        let dy_dw_iter = self.dy_dw.iter_mut().rev();
+        let mut delta_iter = self.delta.iter_mut().rev();
+        let mut dy_db_iter = self.dy_db.iter_mut().rev();
+        let mut dy_dw_iter = self.dy_dw.iter_mut().rev();
 
         // last element
         self.dy_db_y = 1.0;
         self.dy_dw_y = *a_iter.next().unwrap();
 
+        // last element -1
+        let &z = z_iter.next().unwrap();
+        let &a = a_iter.next().unwrap();
+        let w = self.w_y;
+        let delta = delta_iter.next().unwrap();
+        let dy_db = dy_db_iter.next().unwrap();
+        let dy_dw = dy_dw_iter.next().unwrap();
+        let mut delta_previous_;
+        {
+            let dz_ = Self::derivative_re_lu_f32x16(f32x16::from(z));
+            let delta_ = f32x16::from(w) * dz_;
+
+            delta_previous_ = delta_;
+
+            let dy_dw_ = Self::mul_delta_a(delta_, f32x16::from(a));
+
+            *delta = delta_.into();
+            *dy_db = delta_.into();
+            *dy_dw = dy_dw_.into();
+        }
+
         // other elements
-        let mut delta_previous_ = f32x16::splat(1.0);
         for (&z, &a, w, delta, dy_db, dy_dw) in izip!(
             z_iter,
             a_iter,
@@ -139,15 +159,12 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
             dy_dw_iter,
         ) {
             let delta_ = Self::mul_1x16_16x16(delta_previous_, w);
-            let a_ = f32x16::from(a);
-            let z_ = f32x16::from(z);
-            let dz_ = Self::derivative_re_lu_f32x16(z_);
-           
+            let dz_ = Self::derivative_re_lu_f32x16(f32x16::from(z));
             let delta_ = delta_ * dz_;
 
             delta_previous_ = delta_;
 
-            let dy_dw_ = Self::mul_delta_a(delta_, a_);
+            let dy_dw_ = Self::mul_delta_a(delta_, f32x16::from(a));
 
             *delta = delta_.into();
             *dy_db = delta_.into();
