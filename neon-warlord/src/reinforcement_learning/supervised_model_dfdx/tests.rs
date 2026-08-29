@@ -95,6 +95,7 @@ fn dfdx_nand() {
 fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4])
 {
     let mut model = SupervisedModelDfDx::new();
+    // model.print();
 
 
     let mut y_pred = [0.0, 0.0, 0.0, 0.0];
@@ -111,6 +112,8 @@ fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4])
             );
         }
     }
+
+    // model.print();
 
     assert_f32_eq(y_pred[0], y_data[0][0], 0.1);
     assert_f32_eq(y_pred[1], y_data[1][0], 0.1);

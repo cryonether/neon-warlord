@@ -10,7 +10,7 @@ use super::NeuralNetworkSimd;
 use super::LANES;
 
 pub struct EpochSimd<const SIZE: usize> {
-    model: NeuralNetworkSimd<SIZE>,
+    pub model: NeuralNetworkSimd<SIZE>,
 
     pub loss: f32,
 }
@@ -61,6 +61,7 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
             sum += diff * diff;
         }
         let loss = sum / n;
+        self.loss = loss;
 
         // accumulate gradients
         let mut gradients_loss_sum: GradientsSimd<SIZE> = GradientsSimd::new();

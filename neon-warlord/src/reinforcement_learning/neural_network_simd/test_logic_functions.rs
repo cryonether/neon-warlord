@@ -1,6 +1,6 @@
 //! Tries to approximate logic function
 
-use crate::reinforcement_learning::neural_network::neural_network_epoch::NeuralNetworkEpoch;
+use crate::reinforcement_learning::{neural_network::neural_network_epoch::NeuralNetworkEpoch, neural_network_simd::epoch::EpochSimd};
 
 use super::*;
 
@@ -96,10 +96,9 @@ fn model_nand() {
 
 fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4])
 {
-    let mut model = NeuralNetworkEpoch::new();
+    let mut model: EpochSimd<3> = EpochSimd::new();
 
-    println!("model: {}", model.model);
-
+    // println!("model: {}", model.model);
 
     let mut y_pred = [0.0, 0.0, 0.0, 0.0];
 
@@ -116,7 +115,7 @@ fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4])
         }
     }
 
-    println!("model: {}", model.model);
+    // println!("model: {}", model.model);
 
     assert_f32_eq(y_pred[0], y_data[0][0], 0.1);
     assert_f32_eq(y_pred[1], y_data[1][0], 0.1);

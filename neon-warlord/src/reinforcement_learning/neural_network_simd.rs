@@ -4,7 +4,10 @@ pub mod gradients;
 pub mod epoch;
 
 #[cfg(test)]
-mod tests;
+mod test_neural_network_simd;
+
+#[cfg(test)]
+mod test_logic_functions;
 
 use std::iter::zip;
 
@@ -114,6 +117,33 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         model
     }
 
+
+    pub fn new_zero_one() -> Self {
+        let mut model = Self::new();
+
+        for w in &mut model.w {
+            for w in w {
+                for w in w {
+                    *w = 0.1;
+                }
+            }
+        }
+
+        for b in &mut model.b {
+            for b in b {
+                *b = 0.1;
+            }
+        }
+
+        for w in &mut model.w_y {
+            *w = 0.1;
+        }
+
+        model.b_y = 0.1;
+
+        model
+    }
+
     pub fn forward(&mut self) -> f32 {
         let mut input_ = f32x16::from(self.x);
 
@@ -206,6 +236,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
 
         // w
         for (w, dw) in zip(&mut self.w, gradients.dy_dw, ) {
+            // println!("dw {:?}", dw);
             for (w, dw) in zip(w, dw) {
                 let res = f32x16::from(*w) - f32x16::from(dw);
                 *w = res.into();
@@ -214,6 +245,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
 
         // b
         for (b, db) in zip(&mut self.b, gradients.dy_db, ) {
+            // println!("db {:?}", db);
             let res = f32x16::from(*b) - f32x16::from(db);
             *b = res.into();
         }
@@ -229,17 +261,32 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
     }
 
 
-    #[inline]
-    fn mul_16x16_16x1(a: &[[f32;16]], b: f32x16) -> f32x16{
-        let mut out_ = f32x16::splat(0.0);
+    // #[inline]
+    // fn mul_16x16_16x1(a: &[[f32;16]], b: f32x16) -> f32x16{
+    //     let mut out_ = f32x16::splat(0.0);
 
-        for &a in a {
-            let a_ = f32x16::from(a);
+    //     for &a in a {
+    //         let a_ = f32x16::from(a);
             
-            out_ += a_ * b;
+    //         out_ += a_ * b;
+    //     }
+
+    //     out_.into()
+    // }
+
+    #[inline]
+    fn mul_16x16_16x1(a: &[[f32; 16]], b: f32x16) -> f32x16 {
+        let mut out = [0.0f32; 16];
+
+        for (out, row) in zip(&mut out, a) {
+            let row = f32x16::from(*row);
+            let product = row * b;
+
+            // horizontal sum of product
+            *out = product.reduce_add();
         }
 
-        out_.into()
+        f32x16::from(out)
     }
 
 
