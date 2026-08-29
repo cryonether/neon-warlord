@@ -141,7 +141,7 @@ impl GenomeDrawer {
             let pos_1: Vec3 = self.nodes_instances[index_to].position.into();
             let weight = edge.weight;
 
-           let color = gradient(
+            let color = gradient(
                 weight,
                 self.color_negative,
                 self.color_zero,

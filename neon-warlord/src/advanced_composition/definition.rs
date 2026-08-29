@@ -333,10 +333,10 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
             //     self.sum += 100_000.0;
             // }
 
-            self.sum += (1.0 + pos.z) * (1.0 + pos.z) 
-                - 0.1 * volocity.magnitude() * volocity.magnitude();
-                // - 0.1 * linear_motor_velocity.abs() * linear_motor_velocity.abs() 
-                // - 0.4 * linear_motor_position.abs() * linear_motor_position.abs();
+            self.sum +=
+                (1.0 + pos.z) * (1.0 + pos.z) - 0.1 * volocity.magnitude() * volocity.magnitude();
+            // - 0.1 * linear_motor_velocity.abs() * linear_motor_velocity.abs()
+            // - 0.4 * linear_motor_position.abs() * linear_motor_position.abs();
 
             self.last_position = pos;
             self.max_position_z = self.max_position_z.max(pos.z);

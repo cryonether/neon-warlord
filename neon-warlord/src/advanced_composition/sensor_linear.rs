@@ -38,7 +38,6 @@ impl SensorLinear {
         self.position_previous = self.position;
         self.position = Self::calculate(&pos, &pos_a, &pos_b);
         self.velocity = self.position - self.position_previous;
-
     }
 
     fn calculate(pos: &Vec3, pos_a: &Vec3, pos_b: &Vec3) -> f32 {

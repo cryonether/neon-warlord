@@ -1,7 +1,7 @@
 //! A universal function approximator efficiently implemented using simd
 
-pub mod gradients;
 pub mod epoch;
+pub mod gradients;
 
 #[cfg(test)]
 mod test_neural_network_simd;
@@ -40,7 +40,6 @@ pub struct NeuralNetworkSimd<const SIZE: usize> {
     z: [[f32; LANES]; SIZE],
 
     // back propagation
-
     dy_dw: [[[f32; LANES]; LANES]; SIZE],
     dy_db: [[f32; LANES]; SIZE],
 
@@ -61,7 +60,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
 
         let a = [[0.0; LANES]; SIZE];
         let z = [[0.0; LANES]; SIZE];
-        
+
         let dy_dw = [[[0.0; LANES]; LANES]; SIZE];
         let dy_db = [[0.0; LANES]; SIZE];
 
@@ -117,7 +116,6 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         model
     }
 
-
     pub fn new_zero_one() -> Self {
         let mut model = Self::new();
 
@@ -147,8 +145,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
     pub fn forward(&mut self) -> f32 {
         let mut input_ = f32x16::from(self.x);
 
-        for (w, b, a, z) in izip!(self.w, self.b, &mut self.a, &mut self.z) 
-        {
+        for (w, b, a, z) in izip!(self.w, self.b, &mut self.a, &mut self.z) {
             // z = W * a + b
             let mut z_ = Self::mul_16x16_16x1(&w, input_);
             z_ += f32x16::from(b);
@@ -166,7 +163,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         let mut y = 0.0;
         for (&input, w) in zip(input_.as_array(), self.w_y) {
             y += w * input;
-        }   
+        }
         y += self.b_y;
         self.y = y;
 
@@ -174,9 +171,8 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
     }
 
     pub fn backward(&mut self) -> GradientsSimd<SIZE> {
-
-        let mut z_iter = self.z.iter().rev(); 
-        let mut a_iter = self.a.iter().rev().chain([&self.x]); 
+        let mut z_iter = self.z.iter().rev();
+        let mut a_iter = self.a.iter().rev().chain([&self.x]);
         let w_iter = self.w.iter().rev();
         let mut dy_db_iter = self.dy_db.iter_mut().rev();
         let mut dy_dw_iter = self.dy_dw.iter_mut().rev();
@@ -205,13 +201,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }
 
         // other elements
-        for (&z, &a, w, dy_db, dy_dw) in izip!(
-            z_iter,
-            a_iter,
-            w_iter,
-            dy_db_iter,
-            dy_dw_iter,
-        ) {
+        for (&z, &a, w, dy_db, dy_dw) in izip!(z_iter, a_iter, w_iter, dy_db_iter, dy_dw_iter,) {
             let delta_ = Self::mul_1x16_16x16(delta_previous_, w);
             let dz_ = Self::derivative_re_lu_f32x16(f32x16::from(z));
             let delta_ = delta_ * dz_;
@@ -233,9 +223,8 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
     }
 
     fn subtract_gradients(&mut self, gradients: &GradientsSimd<SIZE>) {
-
         // w
-        for (w, dw) in zip(&mut self.w, gradients.dy_dw, ) {
+        for (w, dw) in zip(&mut self.w, gradients.dy_dw) {
             // println!("dw {:?}", dw);
             for (w, dw) in zip(w, dw) {
                 let res = f32x16::from(*w) - f32x16::from(dw);
@@ -244,7 +233,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }
 
         // b
-        for (b, db) in zip(&mut self.b, gradients.dy_db, ) {
+        for (b, db) in zip(&mut self.b, gradients.dy_db) {
             // println!("db {:?}", db);
             let res = f32x16::from(*b) - f32x16::from(db);
             *b = res.into();
@@ -260,14 +249,13 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         self.b_y -= gradients.dy_db_y;
     }
 
-
     // #[inline]
     // fn mul_16x16_16x1(a: &[[f32;16]], b: f32x16) -> f32x16{
     //     let mut out_ = f32x16::splat(0.0);
 
     //     for &a in a {
     //         let a_ = f32x16::from(a);
-            
+
     //         out_ += a_ * b;
     //     }
 
@@ -289,12 +277,11 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         f32x16::from(out)
     }
 
-
     #[inline]
-    fn mul_1x16_16x16(a: f32x16, b: &[[f32;16]]) -> f32x16{
+    fn mul_1x16_16x16(a: f32x16, b: &[[f32; 16]]) -> f32x16 {
         let mut out_ = f32x16::splat(0.0);
 
-        for (&a, &b) in zip(a.as_array(), b){
+        for (&a, &b) in zip(a.as_array(), b) {
             let a_ = f32x16::splat(a);
             let b_ = f32x16::from(b);
 
@@ -327,10 +314,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
     fn derivative_re_lu_f32x16(x: f32x16) -> f32x16 {
         // 1 where x > 0, otherwise 0.
         x.simd_gt(f32x16::splat(0.0))
-            .select(
-                f32x16::splat(1.0),
-                f32x16::splat(0.0),
-            )
+            .select(f32x16::splat(1.0), f32x16::splat(0.0))
     }
 
     fn activation_re_lu(value: f32) -> f32 {
@@ -340,21 +324,18 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
     fn derivative_re_lu(value: f32) -> f32 {
         if value > 0.0 { 1.0 } else { 0.0 }
     }
-    
-
 }
 
-impl<const SIZE: usize>  std::fmt::Display for NeuralNetworkSimd<SIZE> {
+impl<const SIZE: usize> std::fmt::Display for NeuralNetworkSimd<SIZE> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "NeuralNetworkSimd {{")?;
-        
+
         writeln!(f, "x: {:?}", self.x)?;
         writeln!(f)?;
 
         for (i, w) in self.w.iter().enumerate() {
             for (j, w) in w.iter().enumerate() {
                 writeln!(f, "w_{}_{:02}: {:?}", i, j, w)?;
-
             }
         }
         writeln!(f)?;
@@ -380,7 +361,6 @@ impl<const SIZE: usize>  std::fmt::Display for NeuralNetworkSimd<SIZE> {
         for (i, dy_dw) in self.dy_dw.iter().enumerate() {
             for (j, dy_dw) in dy_dw.iter().enumerate() {
                 writeln!(f, "dy_dw_{}_{:02}: {:?}", i, j, dy_dw)?;
-
             }
         }
         writeln!(f, "dy_dw_y: {:?}", self.dy_dw_y)?;
@@ -395,4 +375,3 @@ impl<const SIZE: usize>  std::fmt::Display for NeuralNetworkSimd<SIZE> {
         write!(f, "}}")
     }
 }
-

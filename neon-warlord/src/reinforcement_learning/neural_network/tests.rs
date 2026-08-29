@@ -72,7 +72,6 @@ fn evaluate_diff() {
 
 #[test]
 fn compare_with_dfdx() {
-
     let mut nn = NeuralNetwork::new();
     nn.x[1] = 2.0;
     nn.forward();
@@ -94,24 +93,22 @@ fn compare_with_dfdx() {
     let mut model = dev.build_module::<Model, f32>();
 
     model.0.0.weight = dev.ones();
-    model.0.0.bias   = dev.ones();
+    model.0.0.bias = dev.ones();
 
     model.1.0.weight = dev.ones();
-    model.1.0.bias   = dev.ones();
+    model.1.0.bias = dev.ones();
 
     model.2.0.weight = dev.ones();
-    model.2.0.bias   = dev.ones();
+    model.2.0.bias = dev.ones();
 
     model.3.weight = dev.ones();
-    model.3.bias   = dev.ones();
+    model.3.bias = dev.ones();
 
-    let x: Tensor<Rank2<1, 2>, f32, Cpu> =
-    dev.tensor([[1.0, 2.0]]);
+    let x: Tensor<Rank2<1, 2>, f32, Cpu> = dev.tensor([[1.0, 2.0]]);
 
     // // Print parameters
     // println!("dfdx {{");
     // println!();
-
 
     let z_0 = model.0.0.forward(x.clone());
     let a_0 = model.0.1.forward(z_0.clone());
@@ -159,7 +156,6 @@ fn compare_with_dfdx() {
     // println!();
     // println!("}}");
 
-
     // Scalar loss.
     //
     // For a simple comparison with your implementation,
@@ -172,7 +168,6 @@ fn compare_with_dfdx() {
     let loss = y.sum();
 
     _grads = loss.backward();
-
 
     // Backward
     // grads = loss.backward();

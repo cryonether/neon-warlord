@@ -2,7 +2,7 @@
 
 use crate::reinforcement_learning::neural_network_simd::epoch::EpochSimd;
 
-
+#[rustfmt::skip]
 #[test]
 fn model_and() {
     predict_logic(
@@ -21,6 +21,7 @@ fn model_and() {
     )
 }
 
+#[rustfmt::skip]
 #[test]
 fn model_or() {
     predict_logic(
@@ -39,6 +40,7 @@ fn model_or() {
     )
 }
 
+#[rustfmt::skip]
 #[test]
 fn model_not() {
     predict_logic(
@@ -57,6 +59,7 @@ fn model_not() {
     )
 }
 
+#[rustfmt::skip]
 #[test]
 fn model_x0r() {
     predict_logic(
@@ -75,6 +78,7 @@ fn model_x0r() {
     )
 }
 
+#[rustfmt::skip]
 #[test]
 fn model_nand() {
     predict_logic(
@@ -93,8 +97,7 @@ fn model_nand() {
     )
 }
 
-fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4])
-{
+fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4]) {
     let mut model: EpochSimd<3> = EpochSimd::new();
 
     // println!("model: {}", model.model);
@@ -105,7 +108,7 @@ fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4])
         y_pred = model.learn(x_data, y_data);
 
         if epoch % 10 == 0 {
-            // println!("epoch: {}, target: {:?}, prediction: {:?}, loss: {}", 
+            // println!("epoch: {}, target: {:?}, prediction: {:?}, loss: {}",
             //     epoch,
             //     y_data,
             //     y_pred,
@@ -121,7 +124,6 @@ fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4])
     assert_f32_eq(y_pred[2], y_data[2][0], 0.1);
     assert_f32_eq(y_pred[3], y_data[3][0], 0.1);
 }
-
 
 fn assert_f32_eq(a: f32, b: f32, epsilon: f32) {
     assert!(

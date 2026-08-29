@@ -221,7 +221,8 @@ impl Swarm {
     ) -> Swarm {
         self.advanced_composition
             .set_fitness_functions(fitness_functions);
-        self.advanced_composition_original.set_fitness_functions(fitness_functions);
+        self.advanced_composition_original
+            .set_fitness_functions(fitness_functions);
 
         self
     }

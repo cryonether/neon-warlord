@@ -7,7 +7,7 @@ use wide::f32x16;
 
 use super::LANES;
 
-pub struct GradientsSimd<const SIZE: usize>  {
+pub struct GradientsSimd<const SIZE: usize> {
     pub dy_dw: [[[f32; LANES]; LANES]; SIZE],
     pub dy_db: [[f32; LANES]; SIZE],
 
@@ -16,7 +16,6 @@ pub struct GradientsSimd<const SIZE: usize>  {
 }
 
 impl<const SIZE: usize> GradientsSimd<SIZE> {
-
     pub fn new() -> Self {
         let dy_dw = [[[0.0; LANES]; LANES]; SIZE];
         let dy_db = [[0.0; LANES]; SIZE];
@@ -37,19 +36,17 @@ impl<const SIZE: usize> GradientsSimd<SIZE> {
         let mut res = Self::new();
 
         let val_ = f32x16::splat(val);
-        
+
         // dy_dw
         for (x, y) in zip(self.dy_dw, &mut res.dy_dw) {
-            for (x, y) in zip(x, y) 
-            {
+            for (x, y) in zip(x, y) {
                 let y_ = f32x16::from(x) * val_;
-                *y = y_.into(); 
+                *y = y_.into();
             }
         }
 
         // dy_db
-        for (x, y) in zip(self.dy_db, &mut res.dy_db) 
-        {
+        for (x, y) in zip(self.dy_db, &mut res.dy_db) {
             let y_ = f32x16::from(x) * val_;
             *y = y_.into();
         }
@@ -66,7 +63,6 @@ impl<const SIZE: usize> GradientsSimd<SIZE> {
         res.dy_db_y = self.dy_db_y * val;
 
         res
-
     }
 
     #[inline]
@@ -75,17 +71,16 @@ impl<const SIZE: usize> GradientsSimd<SIZE> {
 
         // dy_dw
         for (a, b, y) in izip!(self.dy_dw, other.dy_dw, &mut res.dy_dw) {
-            for (a, b, y) in izip!(a, b, y) 
-            {
+            for (a, b, y) in izip!(a, b, y) {
                 let y_ = f32x16::from(a) + f32x16::from(b);
-                *y = y_.into(); 
+                *y = y_.into();
             }
         }
 
         // dy_db
         for (a, b, y) in izip!(self.dy_db, other.dy_db, &mut res.dy_db) {
             let y_ = f32x16::from(a) + f32x16::from(b);
-            *y = y_.into(); 
+            *y = y_.into();
         }
 
         // dy_dw_y
@@ -94,14 +89,13 @@ impl<const SIZE: usize> GradientsSimd<SIZE> {
         let y = &mut res.dy_dw_y;
         {
             let y_ = f32x16::from(a) + f32x16::from(b);
-            *y = y_.into(); 
+            *y = y_.into();
         }
 
         // dy_db_y
         res.dy_db_y = self.dy_db_y + other.dy_db_y;
 
         res
-
     }
 
     #[inline]
@@ -110,17 +104,16 @@ impl<const SIZE: usize> GradientsSimd<SIZE> {
 
         // dy_dw
         for (a, b, y) in izip!(self.dy_dw, other.dy_dw, &mut res.dy_dw) {
-            for (a, b, y) in izip!(a, b, y) 
-            {
+            for (a, b, y) in izip!(a, b, y) {
                 let y_ = f32x16::from(a) - f32x16::from(b);
-                *y = y_.into(); 
+                *y = y_.into();
             }
         }
 
         // dy_db
         for (a, b, y) in izip!(self.dy_db, other.dy_db, &mut res.dy_db) {
             let y_ = f32x16::from(a) - f32x16::from(b);
-            *y = y_.into(); 
+            *y = y_.into();
         }
 
         // dy_dw_y
@@ -129,18 +122,15 @@ impl<const SIZE: usize> GradientsSimd<SIZE> {
         let y = &mut res.dy_dw_y;
         {
             let y_ = f32x16::from(a) - f32x16::from(b);
-            *y = y_.into(); 
+            *y = y_.into();
         }
 
         // dy_db_y
         res.dy_db_y = self.dy_db_y - other.dy_db_y;
 
         res
-
     }
-
 }
-
 
 impl<const SIZE: usize> std::ops::Add for GradientsSimd<SIZE> {
     type Output = Self;
@@ -170,7 +160,6 @@ impl<const SIZE: usize> std::ops::Mul<f32> for &GradientsSimd<SIZE> {
 }
 
 impl<const SIZE: usize> std::ops::AddAssign for GradientsSimd<SIZE> {
-    
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         *self = GradientsSimd::add(self, &rhs)
@@ -178,7 +167,6 @@ impl<const SIZE: usize> std::ops::AddAssign for GradientsSimd<SIZE> {
 }
 
 impl<const SIZE: usize> std::ops::SubAssign for GradientsSimd<SIZE> {
-    
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         *self = GradientsSimd::sub(self, &rhs)

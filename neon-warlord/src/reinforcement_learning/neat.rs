@@ -95,8 +95,8 @@ impl Neat {
             let val = self.rng.f32();
             // if val < 0.005 {
             //     Self::add_layer(genome, &mut self.rng);
-            // } else 
-            
+            // } else
+
             if val < 0.03 {
                 Self::add_node(genome, &mut self.rng);
             } else if val < 0.08 {
@@ -162,9 +162,8 @@ impl Neat {
         let id_node_1 = node_1.id;
         if layer_node_0 + 1 == layer_node_1 {
             // no layer available to insert the node
-            genome.add_layer(layer_node_0+1);
-        }
-        else if layer_node_0 + 1 >= layer_node_1 {
+            genome.add_layer(layer_node_0 + 1);
+        } else if layer_node_0 + 1 >= layer_node_1 {
             return;
         }
 

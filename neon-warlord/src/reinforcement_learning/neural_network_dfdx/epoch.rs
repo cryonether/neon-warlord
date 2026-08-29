@@ -1,6 +1,3 @@
-
-
-
 use dfdx::prelude::*;
 
 type Model = (
@@ -11,10 +8,10 @@ type Model = (
 );
 
 type ModelType = (
-    (modules::Linear<16, 16, f32, Cpu>, ReLU), 
-    (modules::Linear<16, 16, f32, Cpu>, ReLU), 
-    (modules::Linear<16, 16, f32, Cpu>, ReLU), 
-        modules::Linear<16, 1, f32, Cpu>
+    (modules::Linear<16, 16, f32, Cpu>, ReLU),
+    (modules::Linear<16, 16, f32, Cpu>, ReLU),
+    (modules::Linear<16, 16, f32, Cpu>, ReLU),
+    modules::Linear<16, 1, f32, Cpu>,
 );
 
 pub struct EpochDfDx {
@@ -49,23 +46,87 @@ impl EpochDfDx {
         // model.2.0.bias = dev.zeros();
         // model.3.bias   = dev.zeros();
 
-
-        
-
-        Self { 
+        Self {
             dev,
             model,
             loss: 1.0,
         }
     }
 
-    pub fn learn(&mut self, input: [[f32; 2]; 4], output: [[f32; 1]; 4]) -> [f32; 4]
-    {
-        let x: [[f32; 16];4] = [
-            [input[0][0], input[0][1], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            [input[1][0], input[1][1], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            [input[2][0], input[2][1], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            [input[3][0], input[3][1], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    pub fn learn(&mut self, input: [[f32; 2]; 4], output: [[f32; 1]; 4]) -> [f32; 4] {
+        let x: [[f32; 16]; 4] = [
+            [
+                input[0][0],
+                input[0][1],
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ],
+            [
+                input[1][0],
+                input[1][1],
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ],
+            [
+                input[2][0],
+                input[2][1],
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ],
+            [
+                input[3][0],
+                input[3][1],
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ],
         ];
 
         // prediction
@@ -90,8 +151,7 @@ impl EpochDfDx {
         [res[0], res[1], res[2], res[3]]
     }
 
-    fn optimize(&mut self, grads: &Gradients<f32, Cpu>)
-    {
+    fn optimize(&mut self, grads: &Gradients<f32, Cpu>) {
         let model = &mut self.model;
 
         // optimizer
@@ -121,23 +181,22 @@ impl EpochDfDx {
         // println!("dw_3: {:?}", dw_3.as_vec());
         // println!("###");
 
-
         // println!("db_0: {:?}", db_0.as_vec());
         // println!("db_1: {:?}", db_1.as_vec());
         // println!("db_2: {:?}", db_2.as_vec());
         // println!("db_3: {:?}", db_3.as_vec());
 
         model.0.0.weight = model.0.0.weight.clone() - dw_0 * LEARNING_RATE;
-        model.0.0.bias   = model.0.0.bias.clone()   - db_0 * LEARNING_RATE;
+        model.0.0.bias = model.0.0.bias.clone() - db_0 * LEARNING_RATE;
 
         model.1.0.weight = model.1.0.weight.clone() - dw_1 * LEARNING_RATE;
-        model.1.0.bias   = model.1.0.bias.clone()   - db_1 * LEARNING_RATE;
+        model.1.0.bias = model.1.0.bias.clone() - db_1 * LEARNING_RATE;
 
         model.2.0.weight = model.2.0.weight.clone() - dw_2 * LEARNING_RATE;
-        model.2.0.bias   = model.2.0.bias.clone()   - db_2 * LEARNING_RATE;
+        model.2.0.bias = model.2.0.bias.clone() - db_2 * LEARNING_RATE;
 
         model.3.weight = model.3.weight.clone() - dw_3 * LEARNING_RATE;
-        model.3.bias   = model.3.bias.clone()   - db_3 * LEARNING_RATE;
+        model.3.bias = model.3.bias.clone() - db_3 * LEARNING_RATE;
     }
 
     pub fn print(&self) {
@@ -161,6 +220,5 @@ impl EpochDfDx {
         println!("b_2: {:?}", self.model.2.0.bias.array());
         println!("b_3: {:?}", self.model.3.bias.array());
         println!();
-
     }
 }

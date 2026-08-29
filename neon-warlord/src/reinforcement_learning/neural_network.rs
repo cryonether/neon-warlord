@@ -12,9 +12,7 @@ type RowVec4 = nalgebra::RowVector4<f32>;
 
 #[derive(Debug, Clone)]
 pub struct NeuralNetwork {
-
     // forward
-
     pub x: Vec2,
 
     pub w_0: Mat2,
@@ -39,7 +37,6 @@ pub struct NeuralNetwork {
     pub y: f32,
 
     // backward
-
     pub dy_dw0: RowVec4,
     dy_dw1: RowVec4,
     dy_dw2: RowVec4,
@@ -53,7 +50,6 @@ pub struct NeuralNetwork {
 
 impl NeuralNetwork {
     pub fn new() -> Self {
-
         // forward
 
         let x = Vec2::new(1.0, 1.0);
@@ -92,9 +88,7 @@ impl NeuralNetwork {
         let dy_db3 = 0.0;
 
         Self {
-
             // forward
-
             x,
 
             w_0,
@@ -106,7 +100,7 @@ impl NeuralNetwork {
             b_1,
             b_2,
             b_3,
-            
+
             z_0,
             z_1,
             z_2,
@@ -119,7 +113,6 @@ impl NeuralNetwork {
             y,
 
             // backward
-
             dy_dw0,
             dy_dw1,
             dy_dw2,
@@ -132,6 +125,7 @@ impl NeuralNetwork {
         }
     }
 
+    #[rustfmt::skip]
     pub fn forward(&mut self) 
     {
         self.z_0 = self.w_0 * self.x + self.b_0;
@@ -146,6 +140,7 @@ impl NeuralNetwork {
         self.y = (self.w_3 * self.a_2)[(0, 0)] + self.b_3;
     }
 
+    #[rustfmt::skip]
     pub fn backward(&mut self) 
     {
         // weight gradients
@@ -178,6 +173,7 @@ impl NeuralNetwork {
                     self.w_1 * Self::_derivative_re_lu_vec2(self.z_0);
     }
 
+    #[rustfmt::skip]
     fn to_2x4(val: Vec2) -> nalgebra::Matrix2x4<f32> {
         nalgebra::Matrix2x4::new(
             val.x, val.y, 0.0, 0.0,
@@ -192,9 +188,9 @@ impl NeuralNetwork {
     // activation re_lu
 
     fn _activation_re_lu_vec2(value: Vec2) -> Vec2 {
-       Vec2::new(
-            Self::_activation_re_lu(value.x), 
-            Self::_activation_re_lu(value.y), 
+        Vec2::new(
+            Self::_activation_re_lu(value.x),
+            Self::_activation_re_lu(value.y),
         )
     }
 
@@ -203,7 +199,7 @@ impl NeuralNetwork {
             Self::_derivative_re_lu(value.x),
             0.0,
             0.0,
-            Self::_derivative_re_lu(value.y)
+            Self::_derivative_re_lu(value.y),
         )
     }
 
@@ -219,11 +215,7 @@ impl NeuralNetwork {
     }
 
     fn _derivative_re_lu(value: f32) -> f32 {
-        if value > 0.0 {
-            1.0
-        } else {
-            0.0
-        }
+        if value > 0.0 { 1.0 } else { 0.0 }
 
         // // leaky relu
         // if value > 0.0 {
@@ -234,51 +226,50 @@ impl NeuralNetwork {
     }
 }
 
-
 impl std::fmt::Display for NeuralNetwork {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "NeuralNetwork {{")?;
-        
+
         writeln!(f, "x: {:?}", self.x)?;
-        writeln!(f, )?;
+        writeln!(f,)?;
 
         writeln!(f, "w_0: {:?}", self.w_0)?;
         writeln!(f, "w_1: {:?}", self.w_1)?;
         writeln!(f, "w_2: {:?}", self.w_2)?;
         writeln!(f, "w_3: {:?}", self.w_3)?;
-        writeln!(f, )?;
+        writeln!(f,)?;
 
         writeln!(f, "b_0: {:?}", self.b_0)?;
         writeln!(f, "b_1: {:?}", self.b_1)?;
         writeln!(f, "b_2: {:?}", self.b_2)?;
         writeln!(f, "b_3: {:?}", self.b_3)?;
-        writeln!(f, )?;
+        writeln!(f,)?;
 
         writeln!(f, "z_0: {:?}", self.z_0)?;
         writeln!(f, "z_1: {:?}", self.z_1)?;
         writeln!(f, "z_2: {:?}", self.z_2)?;
         writeln!(f, "z_3: {:?}", self.z_3)?;
-        writeln!(f, )?;
+        writeln!(f,)?;
 
         writeln!(f, "a_0: {:?}", self.a_0)?;
         writeln!(f, "a_1: {:?}", self.a_1)?;
         writeln!(f, "a_2: {:?}", self.a_2)?;
-        writeln!(f, )?;
+        writeln!(f,)?;
 
         writeln!(f, "y: {:?}", self.y)?;
-        writeln!(f, )?;
+        writeln!(f,)?;
 
         writeln!(f, "dw_0: {:?}", self.dy_dw0)?;
         writeln!(f, "dw_1: {:?}", self.dy_dw1)?;
         writeln!(f, "dw_2: {:?}", self.dy_dw2)?;
         writeln!(f, "dw_3: {:?}", self.dy_dw3)?;
-        writeln!(f, )?;
+        writeln!(f,)?;
 
         writeln!(f, "db_0: {:?}", self.dy_db0)?;
         writeln!(f, "db_1: {:?}", self.dy_db1)?;
         writeln!(f, "db_2: {:?}", self.dy_db2)?;
         writeln!(f, "db_3: {:?}", self.dy_db3)?;
-        writeln!(f, )?;
+        writeln!(f,)?;
 
         write!(f, "}}")
     }

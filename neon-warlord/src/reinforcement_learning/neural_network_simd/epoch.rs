@@ -1,6 +1,5 @@
 //! An epoch of the neural network
 
-
 use itertools::izip;
 
 use crate::reinforcement_learning::neural_network_simd::gradients::GradientsSimd;
@@ -18,14 +17,10 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         let model = NeuralNetworkSimd::new_rand();
         let loss = 0.0;
 
-        Self {
-            model,
-            loss,
-        }
+        Self { model, loss }
     }
 
-    pub fn learn(&mut self, input: [[f32; 2]; 4], output: [[f32; 1]; 4]) -> [f32; 4]
-    {
+    pub fn learn(&mut self, input: [[f32; 2]; 4], output: [[f32; 1]; 4]) -> [f32; 4] {
         let mut y_pred = Vec::new();
         let mut history = Vec::new();
 
@@ -63,13 +58,12 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
 
         // accumulate gradients
         let mut gradients_loss_sum: GradientsSimd<SIZE> = GradientsSimd::new();
-        
 
         // Derivative loss function
         // derivative mean square error
-        // ∂L           2    
+        // ∂L           2
         // --------- = --- * (y_pred_i − y_i)
-        // ∂L_pred_i    N   
+        // ∂L_pred_i    N
         for (y_pred, output, gradients) in izip!(&y_pred, output, history) {
             let y = output[0];
 
@@ -84,8 +78,9 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         /// plain gradient descent
         /// w_new = w_old - eta * dw
         const LEARNING_RATE: f32 = 0.1;
-        self.model.subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
+        self.model
+            .subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
 
-       [y_pred[0], y_pred[1], y_pred[2], y_pred[3]]
+        [y_pred[0], y_pred[1], y_pred[2], y_pred[3]]
     }
 }
