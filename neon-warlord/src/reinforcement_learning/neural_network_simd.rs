@@ -167,7 +167,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
     }
 
 
-        #[inline]
+    #[inline]
     fn mul_16x16_16x1(a: &[[f32;16]], b: f32x16) -> f32x16{
         let mut out_ = f32x16::splat(0.0);
 
