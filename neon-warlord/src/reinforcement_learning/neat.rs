@@ -126,8 +126,8 @@ impl Neat {
     }
 
     /// Adds an additional layer
-    fn add_layer(genome: &mut Genome, rng: &mut Rng) {
-        let nr_layers = genome.layers() + 1;
+    fn _add_layer(genome: &mut Genome, rng: &mut Rng) {
+        let nr_layers = genome._layers() + 1;
         let layer_index = rng.usize(0..nr_layers);
 
         genome.add_layer(layer_index);

@@ -1,6 +1,6 @@
 //! Definitions for a advanced composition
 
-use cgmath::{InnerSpace, MetricSpace, Zero};
+use cgmath::{InnerSpace, Zero};
 
 use crate::advanced_composition::neural_network::FitnessFunction;
 
@@ -321,7 +321,7 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
             assert!(inputs.len() == 8);
 
             let linear_motor_position = inputs[0];
-            let linear_motor_velocity = inputs[1];
+            let _linear_motor_velocity = inputs[1];
             let pos = Vec3::new(inputs[2], inputs[3], inputs[4]);
             let volocity = Vec3::new(inputs[5], inputs[6], inputs[7]);
 

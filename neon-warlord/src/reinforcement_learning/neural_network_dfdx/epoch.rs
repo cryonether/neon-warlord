@@ -7,7 +7,7 @@ type Model = (
     (Linear<16, 16>, ReLU),
     (Linear<16, 16>, ReLU),
     (Linear<16, 16>, ReLU),
-    (Linear<16, 1>),
+    Linear<16, 1>,
 );
 
 pub struct EpochDfDx {
@@ -27,7 +27,7 @@ impl EpochDfDx {
     pub fn new() -> Self {
         // let dev = Cpu::default();
         let dev = Cpu::seed_from_u64(fastrand::u64(..));
-        let mut model = dev.build_module::<Model, f32>();
+        let model = dev.build_module::<Model, f32>();
         // let grads = model.alloc_grads();
 
         // model.0.0.weight = dev.ones() * 0.1;

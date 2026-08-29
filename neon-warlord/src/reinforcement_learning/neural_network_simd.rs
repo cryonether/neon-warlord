@@ -327,7 +327,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
     fn derivative_re_lu_f32x16(x: f32x16) -> f32x16 {
         // 1 where x > 0, otherwise 0.
         x.simd_gt(f32x16::splat(0.0))
-            .blend(
+            .select(
                 f32x16::splat(1.0),
                 f32x16::splat(0.0),
             )

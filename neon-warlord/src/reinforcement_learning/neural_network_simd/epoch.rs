@@ -1,13 +1,11 @@
 //! An epoch of the neural network
 
-use std::iter::zip;
 
 use itertools::izip;
 
 use crate::reinforcement_learning::neural_network_simd::gradients::GradientsSimd;
 
 use super::NeuralNetworkSimd;
-use super::LANES;
 
 pub struct EpochSimd<const SIZE: usize> {
     pub model: NeuralNetworkSimd<SIZE>,

@@ -28,7 +28,7 @@ impl SensorRelativePosition {
         }
     }
 
-    pub fn update_simd(&mut self, verlet_particles: &VerletParticles, dt: f32) {
+    pub fn update_simd(&mut self, verlet_particles: &VerletParticles, _dt: f32) {
         // apply constraint
         let pos = verlet_particles.position(self.node_id);
         let pos_a = verlet_particles.position(self.node_a_id);
