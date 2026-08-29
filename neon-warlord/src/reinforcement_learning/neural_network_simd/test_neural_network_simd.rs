@@ -63,8 +63,8 @@ fn compare() {
     nn_1.forward();
     nn_1.backward();
 
-    println!("nn_0: {:}", nn_0);
-    println!("nn_1: {:}", nn_1);
+    // println!("nn_0: {:}", nn_0);
+    // println!("nn_1: {:}", nn_1);
 
     assert_eq!(nn_0.y, nn_1.y);
 
@@ -102,20 +102,20 @@ fn compare_dfdx() {
     model.3.weight = dev.ones() * 0.1;
     model.3.bias   = dev.ones() * 0.1;
 
-    let mut grads: Gradients<f32, Cpu> = model.alloc_grads();
+    let mut _grads: Gradients<f32, Cpu> = model.alloc_grads();
 
     let x: Tensor<Rank2<1, 16>, f32, Cpu> = dev.tensor([[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]]);
-    let y = model.forward_mut(x.traced(grads));
-    println!("y: {:?}", y.as_vec());
+    let y = model.forward_mut(x.traced(_grads));
+    // println!("y: {:?}", y.as_vec());
     let loss = y.sum();
 
-    grads = loss.backward();
+    _grads = loss.backward();
     
-    println!("nn_1: {:}", nn_1);
+    // println!("nn_1: {:}", nn_1);
 
-    println!("nn_2:");
-    print_model(&model);
-    print_grads(&model, &grads);
+    // println!("nn_2:");
+    // print_model(&model);
+    // print_grads(&model, &grads);
 }
 
 fn print_model(model: &ModelType) {

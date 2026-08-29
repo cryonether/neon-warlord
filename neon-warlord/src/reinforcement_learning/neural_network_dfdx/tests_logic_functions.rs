@@ -2,7 +2,6 @@
 
 use crate::reinforcement_learning::neural_network_dfdx::epoch::EpochDfDx;
 
-use super::*;
 
 #[test]
 fn dfdx_and() {
@@ -106,12 +105,12 @@ fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4])
         y_pred = model.learn(x_data, y_data);
 
         if epoch % 10 == 0 {
-            println!("epoch: {}, target: {:?}, prediction: {:?}, loss: {}", 
-                epoch,
-                y_data,
-                y_pred,
-                model.loss,
-            );
+            // println!("epoch: {}, target: {:?}, prediction: {:?}, loss: {}", 
+            //     epoch,
+            //     y_data,
+            //     y_pred,
+            //     model.loss,
+            // );
         }
     }
 

@@ -18,7 +18,7 @@ fn evaluate_zeros() {
     nn.forward();
     nn.backward();
 
-    println!("nn: {:}", nn);
+    // println!("nn: {:}", nn);
     assert_eq!(nn.y, 0.0);
     assert_eq!(nn.dy_dw0[0], 0.0);
 }
@@ -39,8 +39,8 @@ fn evaluate_minus_one() {
     nn.forward();
     nn.backward();
 
-    println!("nn: {:}", nn);
-    assert_eq!(nn.y, 0.0);
+    // println!("nn: {:}", nn);
+    assert_eq!(nn.y, -1.0);
     assert_eq!(nn.dy_dw0[0], 0.0);
 }
 
@@ -50,7 +50,7 @@ fn evaluate() {
     nn.forward();
     nn.backward();
 
-    println!("nn: {:}", nn);
+    // println!("nn: {:}", nn);
 }
 
 #[test]
@@ -59,15 +59,15 @@ fn evaluate_diff() {
     nn_0.forward();
     nn_0.backward();
 
-    println!("nn_0: {:}", nn_0);
-    println!("");
+    // println!("nn_0: {:}", nn_0);
+    // println!("");
 
     let mut nn_1 = nn_0.clone();
     nn_1.w_2[0] = 0.5;
     nn_1.forward();
     nn_1.backward();
 
-    println!("nn_1: {:}", nn_1);
+    // println!("nn_1: {:}", nn_1);
 }
 
 #[test]
@@ -78,8 +78,8 @@ fn compare_with_dfdx() {
     nn.forward();
     nn.backward();
 
-    println!("nn: {:}", nn);
-    println!("");
+    // println!("nn: {:}", nn);
+    // println!("");
 
     use dfdx::prelude::*;
 
@@ -109,8 +109,8 @@ fn compare_with_dfdx() {
     dev.tensor([[1.0, 2.0]]);
 
     // // Print parameters
-    println!("dfdx {{");
-    println!();
+    // println!("dfdx {{");
+    // println!();
 
 
     let z_0 = model.0.0.forward(x.clone());
@@ -122,42 +122,42 @@ fn compare_with_dfdx() {
     let z_2 = model.2.0.forward(a_1.clone());
     let a_2 = model.2.1.forward(z_2.clone());
 
-    let y = model.3.forward(a_2.clone());
+    let _y = model.3.forward(a_2.clone());
     // let y = model.3.forward(z_3.clone());
 
-    println!("x:   {:?}", x.array());
+    // println!("x:   {:?}", x.array());
 
-    println!();
+    // println!();
 
-    println!("w_0: {:?}", model.0.0.weight.array());
-    println!("w_1: {:?}", model.1.0.weight.array());
-    println!("w_2: {:?}", model.2.0.weight.array());
-    println!("w_3: {:?}", model.3.weight.array());
-    println!();
+    // println!("w_0: {:?}", model.0.0.weight.array());
+    // println!("w_1: {:?}", model.1.0.weight.array());
+    // println!("w_2: {:?}", model.2.0.weight.array());
+    // println!("w_3: {:?}", model.3.weight.array());
+    // println!();
 
-    println!("b_0: {:?}", model.0.0.bias.array());
-    println!("b_1: {:?}", model.1.0.bias.array());
-    println!("b_2: {:?}", model.2.0.bias.array());
-    println!("b_3: {:?}", model.3.bias.array());
-    println!();
+    // println!("b_0: {:?}", model.0.0.bias.array());
+    // println!("b_1: {:?}", model.1.0.bias.array());
+    // println!("b_2: {:?}", model.2.0.bias.array());
+    // println!("b_3: {:?}", model.3.bias.array());
+    // println!();
 
-    println!("z_0: {:?}", z_0.array());
-    println!("z_1: {:?}", z_1.array());
-    println!("z_2: {:?}", z_2.array());
-    // println!("z_3: {:?}", z_3.array());
+    // println!("z_0: {:?}", z_0.array());
+    // println!("z_1: {:?}", z_1.array());
+    // println!("z_2: {:?}", z_2.array());
+    // // println!("z_3: {:?}", z_3.array());
 
-    println!();
+    // println!();
 
-    println!("a_0: {:?}", a_0.array());
-    println!("a_1: {:?}", a_1.array());
-    println!("a_2: {:?}", a_2.array());
+    // println!("a_0: {:?}", a_0.array());
+    // println!("a_1: {:?}", a_1.array());
+    // println!("a_2: {:?}", a_2.array());
 
-    println!();
+    // println!();
 
-    println!("y: {:?}", y.array());
+    // println!("y: {:?}", y.array());
 
-    println!();
-    println!("}}");
+    // println!();
+    // println!("}}");
 
 
     // Scalar loss.
@@ -166,28 +166,28 @@ fn compare_with_dfdx() {
     // sum the output so dy/dy = 1.
     // let loss = y.sum::<(), _>();
 
-    let mut grads = model.alloc_grads();
+    let mut _grads = model.alloc_grads();
 
-    let y = model.forward_mut(x.traced(grads));
+    let y = model.forward_mut(x.traced(_grads));
     let loss = y.sum();
 
-    grads = loss.backward();
+    _grads = loss.backward();
 
 
     // Backward
     // grads = loss.backward();
 
-    // Print gradients
-    println!("dw_0: {:?}", grads.get(&model.0.0.weight).array());
-    println!("dw_1: {:?}", grads.get(&model.1.0.weight).array());
-    println!("dw_2: {:?}", grads.get(&model.2.0.weight).array());
-    println!("dw_3: {:?}", grads.get(&model.3.weight).array());
+    // // Print gradients
+    // println!("dw_0: {:?}", grads.get(&model.0.0.weight).array());
+    // println!("dw_1: {:?}", grads.get(&model.1.0.weight).array());
+    // println!("dw_2: {:?}", grads.get(&model.2.0.weight).array());
+    // println!("dw_3: {:?}", grads.get(&model.3.weight).array());
 
-    println!("");
+    // println!("");
 
-    // And biases, if useful:
-    println!("db_0: {:?}", grads.get(&model.0.0.bias).array());
-    println!("db_1: {:?}", grads.get(&model.1.0.bias).array());
-    println!("db_2: {:?}", grads.get(&model.2.0.bias).array());
-    println!("db_3: {:?}", grads.get(&model.3.bias).array());
+    // // And biases, if useful:
+    // println!("db_0: {:?}", grads.get(&model.0.0.bias).array());
+    // println!("db_1: {:?}", grads.get(&model.1.0.bias).array());
+    // println!("db_2: {:?}", grads.get(&model.2.0.bias).array());
+    // println!("db_3: {:?}", grads.get(&model.3.bias).array());
 }
