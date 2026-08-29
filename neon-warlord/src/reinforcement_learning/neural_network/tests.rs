@@ -87,7 +87,7 @@ fn compare_with_dfdx() {
         (Linear<2, 2>, ReLU),
         (Linear<2, 2>, ReLU),
         (Linear<2, 2>, ReLU),
-        (Linear<2, 1>),
+        Linear<2, 1>,
     );
 
     let dev = Cpu::default();
