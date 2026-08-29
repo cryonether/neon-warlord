@@ -126,7 +126,7 @@ impl NeuralNetwork {
     }
 
     #[rustfmt::skip]
-    pub fn forward(&mut self) 
+    pub fn forward(&mut self)
     {
         self.z_0 = self.w_0 * self.x + self.b_0;
         self.a_0 = Self::_activation_re_lu_vec2(self.z_0);
@@ -141,7 +141,7 @@ impl NeuralNetwork {
     }
 
     #[rustfmt::skip]
-    pub fn backward(&mut self) 
+    pub fn backward(&mut self)
     {
         // weight gradients
 
