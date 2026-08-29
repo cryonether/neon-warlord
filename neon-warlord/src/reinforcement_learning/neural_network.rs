@@ -1,6 +1,6 @@
 //! A universal function approximator
 
-pub mod neural_network_epoch;
+pub mod epoch;
 
 #[cfg(test)]
 mod tests;

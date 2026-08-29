@@ -1,6 +1,6 @@
 //! Tries to approximate logic function
 
-use crate::reinforcement_learning::{neural_network::neural_network_epoch::NeuralNetworkEpoch, neural_network_simd::epoch::EpochSimd};
+use crate::reinforcement_learning::{neural_network::epoch::NeuralNetworkEpoch, neural_network_simd::epoch::EpochSimd};
 
 use super::*;
 

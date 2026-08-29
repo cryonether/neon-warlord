@@ -1,5 +1,7 @@
 //! Tries to approximate logic function
 
+use crate::reinforcement_learning::neural_network_epoch_dfdx::epoch::EpochDfDx;
+
 use super::*;
 
 #[test]
@@ -94,9 +96,9 @@ fn dfdx_nand() {
 
 fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4])
 {
-    let mut model = SupervisedModelDfDx::new();
-    // model.print();
+    let mut model = EpochDfDx::new();
 
+    // model.print();
 
     let mut y_pred = [0.0, 0.0, 0.0, 0.0];
 

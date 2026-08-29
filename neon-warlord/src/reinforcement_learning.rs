@@ -6,4 +6,4 @@ pub mod dqn;
 pub mod neural_network;
 pub mod neural_network_simd;
 pub mod supervised_model;
-pub mod supervised_model_dfdx;
+pub mod neural_network_epoch_dfdx;

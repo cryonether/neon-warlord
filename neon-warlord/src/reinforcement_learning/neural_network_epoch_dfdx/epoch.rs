@@ -1,7 +1,5 @@
-//! Supervised learning of an universal function approximator using dfdx
 
-#[cfg(test)]
-mod tests;
+
 
 use dfdx::prelude::*;
 
@@ -12,7 +10,7 @@ type Model = (
     (Linear<16, 1>),
 );
 
-pub struct SupervisedModelDfDx {
+pub struct EpochDfDx {
     dev: Cpu,
 
     model: (
@@ -25,7 +23,7 @@ pub struct SupervisedModelDfDx {
     pub loss: f32,
 }
 
-impl SupervisedModelDfDx {
+impl EpochDfDx {
     pub fn new() -> Self {
         // let dev = Cpu::default();
         let dev = Cpu::seed_from_u64(fastrand::u64(..));
