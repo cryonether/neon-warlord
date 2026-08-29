@@ -46,12 +46,12 @@ pub struct NeuralNetwork {
 
     // backward
 
-    dy_dw0: RowVec4,
+    pub dy_dw0: RowVec4,
     dy_dw1: RowVec4,
     dy_dw2: RowVec4,
     dy_dw3: RowVec2,
 
-    dy_db0: RowVec2,
+    pub dy_db0: RowVec2,
     dy_db1: RowVec2,
     dy_db2: RowVec2,
     dy_db3: f32,

@@ -48,4 +48,14 @@ fn compare() {
 
     println!("nn_0: {:}", nn_0);
     println!("nn_1: {:}", nn_1);
+
+    assert_eq!(nn_0.y, nn_1.y);
+    
+    assert_eq!(nn_0.dy_db0[0], nn_1.dy_db[0][0]);
+    assert_eq!(nn_0.dy_db0[1], nn_1.dy_db[0][1]);
+
+    assert_eq!(nn_0.dy_dw0[0], nn_1.dy_dw[0][0][0]);
+    assert_eq!(nn_0.dy_dw0[1], nn_1.dy_dw[0][0][1]);
+    assert_eq!(nn_0.dy_dw0[2], nn_1.dy_dw[0][1][0]);
+    assert_eq!(nn_0.dy_dw0[3], nn_1.dy_dw[0][1][1]);
 }
