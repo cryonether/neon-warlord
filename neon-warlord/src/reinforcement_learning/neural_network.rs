@@ -239,46 +239,46 @@ impl std::fmt::Display for NeuralNetwork {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "NeuralNetwork {{")?;
         
-        println!("x: {:?}", self.x);
-        println!("");
+        writeln!(f, "x: {:?}", self.x)?;
+        writeln!(f, )?;
 
-        println!("w_0: {:?}", self.w_0);
-        println!("w_1: {:?}", self.w_1);
-        println!("w_2: {:?}", self.w_2);
-        println!("w_3: {:?}", self.w_3);
-        println!("");
+        writeln!(f, "w_0: {:?}", self.w_0)?;
+        writeln!(f, "w_1: {:?}", self.w_1)?;
+        writeln!(f, "w_2: {:?}", self.w_2)?;
+        writeln!(f, "w_3: {:?}", self.w_3)?;
+        writeln!(f, )?;
 
-        println!("b_0: {:?}", self.b_0);
-        println!("b_1: {:?}", self.b_1);
-        println!("b_2: {:?}", self.b_2);
-        println!("b_3: {:?}", self.b_3);
-        println!("");
+        writeln!(f, "b_0: {:?}", self.b_0)?;
+        writeln!(f, "b_1: {:?}", self.b_1)?;
+        writeln!(f, "b_2: {:?}", self.b_2)?;
+        writeln!(f, "b_3: {:?}", self.b_3)?;
+        writeln!(f, )?;
 
-        println!("z_0: {:?}", self.z_0);
-        println!("z_1: {:?}", self.z_1);
-        println!("z_2: {:?}", self.z_2);
-        println!("z_3: {:?}", self.z_3);
-        println!("");
+        writeln!(f, "z_0: {:?}", self.z_0)?;
+        writeln!(f, "z_1: {:?}", self.z_1)?;
+        writeln!(f, "z_2: {:?}", self.z_2)?;
+        writeln!(f, "z_3: {:?}", self.z_3)?;
+        writeln!(f, )?;
 
-        println!("a_0: {:?}", self.a_0);
-        println!("a_1: {:?}", self.a_1);
-        println!("a_2: {:?}", self.a_2);
-        println!("");
+        writeln!(f, "a_0: {:?}", self.a_0)?;
+        writeln!(f, "a_1: {:?}", self.a_1)?;
+        writeln!(f, "a_2: {:?}", self.a_2)?;
+        writeln!(f, )?;
 
-        println!("y: {:?}", self.y);
-        println!("");
+        writeln!(f, "y: {:?}", self.y)?;
+        writeln!(f, )?;
 
-        println!("dw_0: {:?}", self.dy_dw0);
-        println!("dw_1: {:?}", self.dy_dw1);
-        println!("dw_2: {:?}", self.dy_dw2);
-        println!("dw_3: {:?}", self.dy_dw3);
-        println!("");
+        writeln!(f, "dw_0: {:?}", self.dy_dw0)?;
+        writeln!(f, "dw_1: {:?}", self.dy_dw1)?;
+        writeln!(f, "dw_2: {:?}", self.dy_dw2)?;
+        writeln!(f, "dw_3: {:?}", self.dy_dw3)?;
+        writeln!(f, )?;
 
-        println!("db_0: {:?}", self.dy_db0);
-        println!("db_1: {:?}", self.dy_db1);
-        println!("db_2: {:?}", self.dy_db2);
-        println!("db_3: {:?}", self.dy_db3);
-        println!("");
+        writeln!(f, "db_0: {:?}", self.dy_db0)?;
+        writeln!(f, "db_1: {:?}", self.dy_db1)?;
+        writeln!(f, "db_2: {:?}", self.dy_db2)?;
+        writeln!(f, "db_3: {:?}", self.dy_db3)?;
+        writeln!(f, )?;
 
         write!(f, "}}")
     }

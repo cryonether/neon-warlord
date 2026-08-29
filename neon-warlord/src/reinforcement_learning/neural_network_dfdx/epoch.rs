@@ -10,15 +10,17 @@ type Model = (
     Linear<16, 1>,
 );
 
+type ModelType = (
+    (modules::Linear<16, 16, f32, Cpu>, ReLU), 
+    (modules::Linear<16, 16, f32, Cpu>, ReLU), 
+    (modules::Linear<16, 16, f32, Cpu>, ReLU), 
+        modules::Linear<16, 1, f32, Cpu>
+);
+
 pub struct EpochDfDx {
     dev: Cpu,
 
-    model: (
-        (modules::Linear<16, 16, f32, Cpu>, ReLU), 
-        (modules::Linear<16, 16, f32, Cpu>, ReLU), 
-        (modules::Linear<16, 16, f32, Cpu>, ReLU), 
-         modules::Linear<16, 1, f32, Cpu>
-    ),
+    model: ModelType,
 
     pub loss: f32,
 }
@@ -48,13 +50,13 @@ impl EpochDfDx {
         // model.3.bias   = dev.zeros();
 
 
-        let res = Self { 
+        
+
+        Self { 
             dev,
             model,
             loss: 1.0,
-        };
-
-        res
+        }
     }
 
     pub fn learn(&mut self, input: [[f32; 2]; 4], output: [[f32; 1]; 4]) -> [f32; 4]

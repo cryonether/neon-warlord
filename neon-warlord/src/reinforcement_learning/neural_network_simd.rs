@@ -201,7 +201,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
             let dy_dw_ = Self::mul_delta_a(delta_, f32x16::from(a));
 
             *dy_db = delta_.into();
-            *dy_dw = dy_dw_.into();
+            *dy_dw = dy_dw_;
         }
 
         // other elements
@@ -221,7 +221,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
             let dy_dw_ = Self::mul_delta_a(delta_, f32x16::from(a));
 
             *dy_db = delta_.into();
-            *dy_dw = dy_dw_.into();
+            *dy_dw = dy_dw_;
         }
 
         GradientsSimd {
@@ -257,7 +257,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }
 
         // b_y
-        self.b_y = self.b_y - gradients.dy_db_y;
+        self.b_y -= gradients.dy_db_y;
     }
 
 
@@ -301,7 +301,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
             out_ += a_ * b_;
         }
 
-        out_.into()
+        out_
     }
 
     #[inline]
@@ -349,7 +349,7 @@ impl<const SIZE: usize>  std::fmt::Display for NeuralNetworkSimd<SIZE> {
         writeln!(f, "NeuralNetworkSimd {{")?;
         
         writeln!(f, "x: {:?}", self.x)?;
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         for (i, w) in self.w.iter().enumerate() {
             for (j, w) in w.iter().enumerate() {
@@ -357,25 +357,25 @@ impl<const SIZE: usize>  std::fmt::Display for NeuralNetworkSimd<SIZE> {
 
             }
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         for (i, b) in self.b.iter().enumerate() {
             writeln!(f, "b_{}: {:?}", i, b)?;
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         for (i, z) in self.z.iter().enumerate() {
             writeln!(f, "z_{}: {:?}", i, z)?;
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         for (i, a) in self.a.iter().enumerate() {
             writeln!(f, "a_{}: {:?}", i, a)?;
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         writeln!(f, "y: {:?}", self.y)?;
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         for (i, dy_dw) in self.dy_dw.iter().enumerate() {
             for (j, dy_dw) in dy_dw.iter().enumerate() {
@@ -384,13 +384,13 @@ impl<const SIZE: usize>  std::fmt::Display for NeuralNetworkSimd<SIZE> {
             }
         }
         writeln!(f, "dy_dw_y: {:?}", self.dy_dw_y)?;
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         for (i, dy_db) in self.dy_db.iter().enumerate() {
             writeln!(f, "dy_db_{}: {:?}", i, dy_db)?;
         }
         writeln!(f, "dy_db_y: {:?}", self.dy_db_y)?;
-        writeln!(f, "")?;
+        writeln!(f)?;
 
         write!(f, "}}")
     }

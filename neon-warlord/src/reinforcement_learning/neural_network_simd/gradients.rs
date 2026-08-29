@@ -173,7 +173,7 @@ impl<const SIZE: usize> std::ops::AddAssign for GradientsSimd<SIZE> {
     
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
-        *self = GradientsSimd::add(&self, &rhs)
+        *self = GradientsSimd::add(self, &rhs)
     }
 }
 
@@ -181,6 +181,6 @@ impl<const SIZE: usize> std::ops::SubAssign for GradientsSimd<SIZE> {
     
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
-        *self = GradientsSimd::sub(&self, &rhs)
+        *self = GradientsSimd::sub(self, &rhs)
     }
 }
