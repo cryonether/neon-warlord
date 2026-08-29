@@ -3,7 +3,9 @@
 pub mod neat;
 pub mod ppo;
 pub mod dqn;
+#[allow(dead_code)]
 pub mod neural_network;
+#[allow(dead_code)]
 pub mod neural_network_simd;
-pub mod supervised_model;
-pub mod neural_network_epoch_dfdx;
+#[allow(dead_code)]
+pub mod neural_network_dfdx;

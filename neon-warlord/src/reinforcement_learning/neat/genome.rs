@@ -212,7 +212,7 @@ impl Genome {
 
             let value = sum + self.nodes[i].bias;
             // let value = sum;
-            self.nodes[i].value = Self::_activation_re_lu(value)
+            self.nodes[i].value = Self::_activation_sigmoid(value)
         }
     }
 

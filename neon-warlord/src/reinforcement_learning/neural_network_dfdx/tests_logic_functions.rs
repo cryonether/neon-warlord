@@ -1,6 +1,6 @@
 //! Tries to approximate logic function
 
-use crate::reinforcement_learning::neural_network_epoch_dfdx::epoch::EpochDfDx;
+use crate::reinforcement_learning::neural_network_dfdx::epoch::EpochDfDx;
 
 use super::*;
 

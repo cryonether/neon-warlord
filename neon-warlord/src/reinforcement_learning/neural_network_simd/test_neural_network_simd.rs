@@ -10,7 +10,7 @@ type Model = (
     (Linear<16, 16>, ReLU),
     (Linear<16, 16>, ReLU),
     (Linear<16, 16>, ReLU),
-    (Linear<16, 1>),
+    Linear<16, 1>,
 );
 
 type ModelType = (

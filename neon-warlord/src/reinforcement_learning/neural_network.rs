@@ -8,8 +8,6 @@ mod tests;
 #[cfg(test)]
 mod tests_logic_functions;
 
-
-
 type Vec2 = nalgebra::Vector2<f32>;
 type Mat2 = nalgebra::Matrix2<f32>;
 type RowVec2 = nalgebra::RowVector2<f32>;
@@ -288,30 +286,3 @@ impl std::fmt::Display for NeuralNetwork {
         write!(f, "}}")
     }
 }
-
-
-    // activation x²
-
-    // fn _activation_x2_vec2(value: Vec2) -> Vec2 {
-    //    Vec2::new(
-    //         Self::_activation_x2(value.x), 
-    //         Self::_activation_x2(value.y), 
-    //     )
-    // }
-
-    // fn _derivative_x2_vec2(value: Vec2) -> Mat2 {
-    //     Mat2::new(
-    //         Self::_derivative_x2(value.x),
-    //         0.0,
-    //         0.0,
-    //         Self::_derivative_x2(value.y)
-    //     )
-    // }
-
-    // fn _activation_x2(value: f32) -> f32 {
-    //     value * value
-    // }
-
-    // fn _derivative_x2(value: f32) -> f32 {
-    //     2.0 * value
-    // }

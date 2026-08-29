@@ -160,15 +160,6 @@ impl<const SIZE: usize> std::ops::Sub for GradientsSimd<SIZE> {
     }
 }
 
-// impl<const SIZE: usize> std::ops::Mul<f32> for GradientsSimd<SIZE> {
-//     type Output = Self;
-   
-//     #[inline]
-//     fn mul(self, rhs: f32) -> Self::Output {
-//         GradientsSimd::multiply_constant(&self, rhs)
-//     }
-// }
-
 impl<const SIZE: usize> std::ops::Mul<f32> for &GradientsSimd<SIZE> {
     type Output = GradientsSimd<SIZE>;
 
