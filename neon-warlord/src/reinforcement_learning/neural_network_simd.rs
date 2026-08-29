@@ -1,5 +1,7 @@
 //! A universal function approximator efficiently implemented using simd
 
+pub mod gradients;
+
 #[cfg(test)]
 mod tests;
 
@@ -284,3 +286,4 @@ impl<const SIZE: usize>  std::fmt::Display for NeuralNetworkSimd<SIZE> {
         write!(f, "}}")
     }
 }
+
