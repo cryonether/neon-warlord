@@ -1,6 +1,7 @@
 //! A universal function approximator efficiently implemented using simd
 
 pub mod gradients;
+pub mod epoch;
 
 #[cfg(test)]
 mod tests;
@@ -35,10 +36,6 @@ pub struct NeuralNetworkSimd<const SIZE: usize> {
 
     // back propagation
 
-    // delta_i = delta_i+2 * w_i+1 * f⁻¹(z_i)
-    // delta: [[f32; LANES]; SIZE],
-
-    // dy/dw
     dy_dw: [[[f32; LANES]; LANES]; SIZE],
     dy_db: [[f32; LANES]; SIZE],
 
@@ -60,7 +57,6 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         let a = [[0.0; LANES]; SIZE];
         let z = [[0.0; LANES]; SIZE];
         
-        // let delta = [[0.0; LANES]; SIZE];
         let dy_dw = [[[0.0; LANES]; LANES]; SIZE];
         let dy_db = [[0.0; LANES]; SIZE];
 
@@ -76,7 +72,6 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
             y,
             a,
             z,
-            // delta,
             dy_dw,
             dy_db,
             dy_dw_y,
@@ -116,7 +111,6 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         let mut z_iter = self.z.iter().rev(); 
         let mut a_iter = self.a.iter().rev().chain([&self.x]); 
         let w_iter = self.w.iter().rev();
-        // let mut delta_iter = self.delta.iter_mut().rev();
         let mut dy_db_iter = self.dy_db.iter_mut().rev();
         let mut dy_dw_iter = self.dy_dw.iter_mut().rev();
 
@@ -128,7 +122,6 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         let &z = z_iter.next().unwrap();
         let &a = a_iter.next().unwrap();
         let w = self.w_y;
-        // let delta = delta_iter.next().unwrap();
         let dy_db = dy_db_iter.next().unwrap();
         let dy_dw = dy_dw_iter.next().unwrap();
         let mut delta_previous_;
@@ -140,7 +133,6 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
 
             let dy_dw_ = Self::mul_delta_a(delta_, f32x16::from(a));
 
-            // *delta = delta_.into();
             *dy_db = delta_.into();
             *dy_dw = dy_dw_.into();
         }
@@ -150,7 +142,6 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
             z_iter,
             a_iter,
             w_iter,
-            // delta_iter,
             dy_db_iter,
             dy_dw_iter,
         ) {
@@ -162,7 +153,6 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
 
             let dy_dw_ = Self::mul_delta_a(delta_, f32x16::from(a));
 
-            // *delta = delta_.into();
             *dy_db = delta_.into();
             *dy_dw = dy_dw_.into();
         }
