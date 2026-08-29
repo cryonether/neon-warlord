@@ -58,7 +58,14 @@ impl MotorLinear {
         verlet_particles.accelerate(self.node_id, acceleration);
     }
 
-    pub fn accelerate(&mut self, val: f32) {
-        self.acceleration = (val - 0.5) * 200.0;
+    pub fn accelerate(&mut self, mut val: f32) {
+        // if !self.init {
+        //     self.init = true;
+        //     val = fastrand::f32();
+        // }
+
+        val = val.clamp(0.0, 1.0);
+
+        self.acceleration = (val - 0.5) * 10.0;
     }
 }

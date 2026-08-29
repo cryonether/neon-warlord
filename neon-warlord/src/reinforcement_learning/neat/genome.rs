@@ -188,7 +188,7 @@ impl Genome {
     }
 
     /// Get number of layers
-    pub fn layers(&self) -> usize {
+    pub fn _layers(&self) -> usize {
         self.nodes.last().unwrap().layer
     }
 

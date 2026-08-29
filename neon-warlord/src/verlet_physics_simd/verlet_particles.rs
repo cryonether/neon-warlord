@@ -60,28 +60,30 @@ impl VerletParticles {
 
         let dt2_ = f32x16::splat(dt * dt);
 
-        for (x, y, z, prev_x, prev_y, prev_z, acc_x, acc_y, acc_z) in itertools::izip!(
-            self.x.chunks_exact_mut(LANES),
-            self.y.chunks_exact_mut(LANES),
-            self.z.chunks_exact_mut(LANES),
-            self.prev_x.chunks_exact_mut(LANES),
-            self.prev_y.chunks_exact_mut(LANES),
-            self.prev_z.chunks_exact_mut(LANES),
-            self.acc_x.chunks_exact_mut(LANES),
-            self.acc_y.chunks_exact_mut(LANES),
-            self.acc_z.chunks_exact_mut(LANES),
-        ) {
-            let x_ = f32x16::from(&*x);
-            let y_ = f32x16::from(&*y);
-            let z_ = f32x16::from(&*z);
+        let (x, _) = self.x.as_chunks_mut::<LANES>();
+        let (y, _) = self.y.as_chunks_mut::<LANES>();
+        let (z, _) = self.z.as_chunks_mut::<LANES>();
+        let (prev_x, _) = self.prev_x.as_chunks_mut::<LANES>();
+        let (prev_y, _) = self.prev_y.as_chunks_mut::<LANES>();
+        let (prev_z, _) = self.prev_z.as_chunks_mut::<LANES>();
+        let (acc_x, _) = self.acc_x.as_chunks_mut::<LANES>();
+        let (acc_y, _) = self.acc_y.as_chunks_mut::<LANES>();
+        let (acc_z, _) = self.acc_z.as_chunks_mut::<LANES>();
 
-            let prev_x_ = f32x16::from(&*prev_x);
-            let prev_y_ = f32x16::from(&*prev_y);
-            let prev_z_ = f32x16::from(&*prev_z);
+        for (x, y, z, prev_x, prev_y, prev_z, acc_x, acc_y, acc_z) in
+            itertools::izip!(x, y, z, prev_x, prev_y, prev_z, acc_x, acc_y, acc_z,)
+        {
+            let x_ = f32x16::from(*x);
+            let y_ = f32x16::from(*y);
+            let z_ = f32x16::from(*z);
 
-            let acc_x_ = f32x16::from(&*acc_x);
-            let acc_y_ = f32x16::from(&*acc_y);
-            let acc_z_ = f32x16::from(&*acc_z);
+            let prev_x_ = f32x16::from(*prev_x);
+            let prev_y_ = f32x16::from(*prev_y);
+            let prev_z_ = f32x16::from(*prev_z);
+
+            let acc_x_ = f32x16::from(*acc_x);
+            let acc_y_ = f32x16::from(*acc_y);
+            let acc_z_ = f32x16::from(*acc_z);
 
             let new_x_ = x_ + (x_ - prev_x_) + acc_x_ * dt2_;
             let new_y_ = y_ + (y_ - prev_y_) + acc_y_ * dt2_;
@@ -148,16 +150,16 @@ impl VerletParticles {
         let zero_ = f32x16::splat(0.0);
         let one_ = f32x16::splat(1.0);
 
-        for (acc_x, acc_y, acc_z, inv_mass) in itertools::izip!(
-            self.acc_x.chunks_exact_mut(LANES),
-            self.acc_y.chunks_exact_mut(LANES),
-            self.acc_z.chunks_exact_mut(LANES),
-            self.inv_mass.chunks_exact(LANES),
-        ) {
-            let acc_x_ = f32x16::from(&*acc_x);
-            let acc_y_ = f32x16::from(&*acc_y);
-            let acc_z_ = f32x16::from(&*acc_z);
-            let inv_mass_ = f32x16::from(inv_mass);
+        let (acc_x, _) = self.acc_x.as_chunks_mut::<LANES>();
+        let (acc_y, _) = self.acc_y.as_chunks_mut::<LANES>();
+        let (acc_z, _) = self.acc_z.as_chunks_mut::<LANES>();
+        let (inv_mass, _) = self.inv_mass.as_chunks::<LANES>();
+
+        for (acc_x, acc_y, acc_z, inv_mass) in itertools::izip!(acc_x, acc_y, acc_z, inv_mass,) {
+            let acc_x_ = f32x16::from(*acc_x);
+            let acc_y_ = f32x16::from(*acc_y);
+            let acc_z_ = f32x16::from(*acc_z);
+            let inv_mass_ = f32x16::from(*inv_mass);
 
             // Static particles have inv_mass == 0.
             let movable_ = inv_mass_.simd_gt(zero_).select(one_, zero_);

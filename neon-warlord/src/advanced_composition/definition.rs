@@ -1,6 +1,6 @@
 //! Definitions for a advanced composition
 
-use cgmath::{MetricSpace, Zero};
+use cgmath::{InnerSpace, Zero};
 
 use crate::advanced_composition::neural_network::FitnessFunction;
 
@@ -178,8 +178,8 @@ impl ParsedDefinition {
                 NodeKind::None => 0,
                 NodeKind::Regular => 0,
                 NodeKind::Static => 0,
-                NodeKind::MotorLinear(_, _) => 1,
-                NodeKind::SensorRelativePosition(_) => 3,
+                NodeKind::MotorLinear(_, _) => 2,
+                NodeKind::SensorRelativePosition(_) => 6,
                 NodeKind::NeuralNetwork => 0,
             };
         }
@@ -257,54 +257,54 @@ pub fn get_agent_0_definition() -> [[[Node; 9]; 9]; 3] {
 // .f ... Fixed position to another node
 
 #[rustfmt::skip]
-pub fn get_pendulum_definition() -> [[[Node; 9]; 9]; 4] {
+pub fn get_pendulum_definition() -> [[[Node; 11]; 9]; 4] {
 
     let layer_0 = [
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
     ];
 
     let layer_1 = [
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [z(1).l(0)  , Z          , Z          , Z          , ml(0, 1, 2), Z   , Z          , Z          , z(2).l(0)  ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [z(1).l(0)  , Z          , Z          , Z          , Z          , ml(0, 1, 2), Z   , Z        , Z            , Z          , z(2).l(0)  ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z          ],
     ];
 
     let layer_2 = [
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [n(4).f(1)  , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z          , Z           ],
+        [n(4).f(1)  , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z          , Z],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z          , Z           ],
     ];
 
     let layer_3 = [
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , srp(3, 0).d(0)          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
-        [Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , srp(3, 0).d(0) , Z , Z         , Z        , Z           , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z         , Z          , Z           ],
+        [Z          , Z          , Z          , Z          , Z          , Z          , Z          , Z         , Z         , Z          , Z           ],
     ];
 
     [layer_0, layer_1, layer_2, layer_3]
@@ -314,20 +314,32 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
     struct FitnessFunctionAccumulateZ {
         pub sum: f32,
         pub last_position: Vec3,
+        pub max_position_z: f32,
     }
     impl FitnessFunction for FitnessFunctionAccumulateZ {
         fn calculate_fitness(&mut self, inputs: &[f32]) -> f32 {
-            assert!(inputs.len() == 4);
+            assert!(inputs.len() == 8);
 
             let linear_motor_position = inputs[0];
-            let pos = Vec3::new(inputs[1], inputs[2], inputs[3]);
+            let _linear_motor_velocity = inputs[1];
+            let pos = Vec3::new(inputs[2], inputs[3], inputs[4]);
+            let velocity = Vec3::new(inputs[5], inputs[6], inputs[7]);
 
-            let distance = self.last_position.distance(pos);
+            if linear_motor_position.abs() > 0.8 {
+                self.sum -= 100_000.0;
+            }
 
-            self.sum += pos.z - distance
-                + (1.0 - linear_motor_position.abs() * linear_motor_position.abs());
+            // if self.max_position_z > 0.9 && pos.z < 0.9 {
+            //     self.sum += 100_000.0;
+            // }
+
+            self.sum +=
+                (1.0 + pos.z) * (1.0 + pos.z) - 0.1 * velocity.magnitude() * velocity.magnitude();
+            // - 0.1 * linear_motor_velocity.abs() * linear_motor_velocity.abs()
+            // - 0.4 * linear_motor_position.abs() * linear_motor_position.abs();
 
             self.last_position = pos;
+            self.max_position_z = self.max_position_z.max(pos.z);
 
             self.sum
         }
@@ -336,6 +348,7 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
             Box::new(Self {
                 sum: self.sum,
                 last_position: self.last_position,
+                max_position_z: self.max_position_z,
             })
         }
     }
@@ -343,6 +356,7 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
     let fitness: Box<dyn FitnessFunction + Send> = Box::new(FitnessFunctionAccumulateZ {
         sum: 0.0,
         last_position: Vec3::zero(),
+        max_position_z: 0.0,
     });
 
     fitness

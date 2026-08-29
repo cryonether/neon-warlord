@@ -63,7 +63,7 @@ impl Swarm {
 
         let a = f32::sqrt(size as f32) as usize;
         for i in 0..size {
-            let pos = pos + Vec3::new((i % a) as f32, (i / a) as f32, 0.0);
+            let pos = pos + Vec3::new((i % a) as f32 * 2.0, (i / a) as f32, 0.0);
 
             advanced_composition.push(definition, pos, radius);
         }
@@ -89,7 +89,7 @@ impl Swarm {
         // input
         // sensors -> neural_network inputs
         watch_ups.start("swarm input");
-        self.update_sensors();
+        self.update_sensors(dt);
         self.update_neural_network_inputs();
         self.calculate_neural_network_fitness();
 
@@ -211,8 +211,8 @@ impl Swarm {
         self.advanced_composition.update_actors();
     }
 
-    fn update_sensors(&mut self) {
-        self.advanced_composition.update_sensors();
+    fn update_sensors(&mut self, dt: f32) {
+        self.advanced_composition.update_sensors(dt);
     }
 
     pub fn set_fitness_functions(
@@ -220,6 +220,8 @@ impl Swarm {
         fitness_functions: &[Box<dyn FitnessFunction + Send>],
     ) -> Swarm {
         self.advanced_composition
+            .set_fitness_functions(fitness_functions);
+        self.advanced_composition_original
             .set_fitness_functions(fitness_functions);
 
         self
