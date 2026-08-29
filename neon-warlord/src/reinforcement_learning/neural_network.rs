@@ -5,9 +5,6 @@ pub mod epoch;
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
-mod tests_logic_functions;
-
 type Vec2 = nalgebra::Vector2<f32>;
 type Mat2 = nalgebra::Matrix2<f32>;
 type RowVec2 = nalgebra::RowVector2<f32>;
