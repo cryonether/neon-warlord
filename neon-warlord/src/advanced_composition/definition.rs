@@ -323,7 +323,7 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
             let linear_motor_position = inputs[0];
             let _linear_motor_velocity = inputs[1];
             let pos = Vec3::new(inputs[2], inputs[3], inputs[4]);
-            let volocity = Vec3::new(inputs[5], inputs[6], inputs[7]);
+            let velocity = Vec3::new(inputs[5], inputs[6], inputs[7]);
 
             if linear_motor_position.abs() > 0.8 {
                 self.sum -= 100_000.0;
@@ -334,7 +334,7 @@ pub fn get_pendulum_definition_fitness_function() -> Box<dyn FitnessFunction + '
             // }
 
             self.sum +=
-                (1.0 + pos.z) * (1.0 + pos.z) - 0.1 * volocity.magnitude() * volocity.magnitude();
+                (1.0 + pos.z) * (1.0 + pos.z) - 0.1 * velocity.magnitude() * velocity.magnitude();
             // - 0.1 * linear_motor_velocity.abs() * linear_motor_velocity.abs()
             // - 0.4 * linear_motor_position.abs() * linear_motor_position.abs();
 
