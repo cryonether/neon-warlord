@@ -8,11 +8,11 @@ use wide::f32x16;
 use super::LANES;
 
 pub struct GradientsSimd<const SIZE: usize>  {
-    dy_dw: [[[f32; LANES]; LANES]; SIZE],
-    dy_db: [[f32; LANES]; SIZE],
+    pub dy_dw: [[[f32; LANES]; LANES]; SIZE],
+    pub dy_db: [[f32; LANES]; SIZE],
 
-    dy_dw_y: [f32; LANES],
-    dy_db_y: f32,
+    pub dy_dw_y: [f32; LANES],
+    pub dy_db_y: f32,
 }
 
 impl<const SIZE: usize> GradientsSimd<SIZE> {
@@ -139,4 +139,57 @@ impl<const SIZE: usize> GradientsSimd<SIZE> {
 
     }
 
+}
+
+
+impl<const SIZE: usize> std::ops::Add for GradientsSimd<SIZE> {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        GradientsSimd::add(&self, &rhs)
+    }
+}
+
+impl<const SIZE: usize> std::ops::Sub for GradientsSimd<SIZE> {
+    type Output = Self;
+
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        GradientsSimd::sub(&self, &rhs)
+    }
+}
+
+// impl<const SIZE: usize> std::ops::Mul<f32> for GradientsSimd<SIZE> {
+//     type Output = Self;
+   
+//     #[inline]
+//     fn mul(self, rhs: f32) -> Self::Output {
+//         GradientsSimd::multiply_constant(&self, rhs)
+//     }
+// }
+
+impl<const SIZE: usize> std::ops::Mul<f32> for &GradientsSimd<SIZE> {
+    type Output = GradientsSimd<SIZE>;
+
+    #[inline]
+    fn mul(self, rhs: f32) -> Self::Output {
+        GradientsSimd::multiply_constant(self, rhs)
+    }
+}
+
+impl<const SIZE: usize> std::ops::AddAssign for GradientsSimd<SIZE> {
+    
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        *self = GradientsSimd::add(&self, &rhs)
+    }
+}
+
+impl<const SIZE: usize> std::ops::SubAssign for GradientsSimd<SIZE> {
+    
+    #[inline]
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = GradientsSimd::sub(&self, &rhs)
+    }
 }

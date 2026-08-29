@@ -11,6 +11,8 @@ use std::iter::zip;
 use itertools::izip;
 use wide::f32x16;
 
+use crate::reinforcement_learning::neural_network_simd::gradients::GradientsSimd;
+
 const LANES: usize = 16;
 
 pub struct NeuralNetworkSimd<const SIZE: usize> {
@@ -79,7 +81,40 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }
     }
 
-    pub fn forward(&mut self) {
+    pub fn new_rand() -> Self {
+        let mut rng = fastrand::Rng::with_seed(fastrand::u64(..));
+
+        // Kaiming/He-style initialization
+        let fan_in: f32 = LANES as f32; // fan_in is the number of inputs to the neuron/filter.
+        let bound = 1.0 / (fan_in).sqrt();
+        let mut rand = || (rng.f32() * 2.0 - 1.0) * bound;
+
+        let mut model = Self::new();
+
+        for w in &mut model.w {
+            for w in w {
+                for w in w {
+                    *w = rand();
+                }
+            }
+        }
+
+        for b in &mut model.b {
+            for b in b {
+                *b = rand();
+            }
+        }
+
+        for w in &mut model.w_y {
+            *w = rand();
+        }
+
+        model.b_y = rand();
+
+        model
+    }
+
+    pub fn forward(&mut self) -> f32 {
         let mut input_ = f32x16::from(self.x);
 
         for (w, b, a, z) in izip!(self.w, self.b, &mut self.a, &mut self.z) 
@@ -104,9 +139,11 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }   
         y += self.b_y;
         self.y = y;
+
+        self.y
     }
 
-    pub fn backward(&mut self) {
+    pub fn backward(&mut self) -> GradientsSimd<SIZE> {
 
         let mut z_iter = self.z.iter().rev(); 
         let mut a_iter = self.a.iter().rev().chain([&self.x]); 
@@ -156,6 +193,39 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
             *dy_db = delta_.into();
             *dy_dw = dy_dw_.into();
         }
+
+        GradientsSimd {
+            dy_dw: self.dy_dw,
+            dy_db: self.dy_db,
+            dy_dw_y: self.dy_dw_y,
+            dy_db_y: self.dy_db_y,
+        }
+    }
+
+    fn subtract_gradients(&mut self, gradients: &GradientsSimd<SIZE>) {
+
+        // w
+        for (w, dw) in zip(&mut self.w, gradients.dy_dw, ) {
+            for (w, dw) in zip(w, dw) {
+                let res = f32x16::from(*w) - f32x16::from(dw);
+                *w = res.into();
+            }
+        }
+
+        // b
+        for (b, db) in zip(&mut self.b, gradients.dy_db, ) {
+            let res = f32x16::from(*b) - f32x16::from(db);
+            *b = res.into();
+        }
+
+        // w_y
+        {
+            let res = f32x16::from(self.w_y) - f32x16::from(gradients.dy_dw_y);
+            self.w_y = res.into();
+        }
+
+        // b_y
+        self.b_y = self.b_y - gradients.dy_db_y;
     }
 
 
@@ -223,6 +293,8 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
     fn derivative_re_lu(value: f32) -> f32 {
         if value > 0.0 { 1.0 } else { 0.0 }
     }
+    
+
 }
 
 impl<const SIZE: usize>  std::fmt::Display for NeuralNetworkSimd<SIZE> {
