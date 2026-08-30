@@ -1,6 +1,6 @@
 //! Deep Q Network (DQN)
 
-use std::iter::zip;
+use std::{iter::zip, mem::transmute};
 
 use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, gradients::GradientsSimd};
 
@@ -9,8 +9,9 @@ const LAYERS: usize = 3;
 pub struct Dqn<const INPUTS: usize, const OUTPUTS: usize> {
     model: NeuralNetworkSimd<LAYERS>,
     index: usize,
+    index_max: usize,
 
-    y_pred: Vec<f32>,
+    transitions: Vec<Transition<INPUTS>>,
     gradients: Vec<GradientsSimd<LAYERS>>,
 
     loss: f32,
@@ -20,18 +21,37 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     pub fn new() -> Self {
         let model = NeuralNetworkSimd::new_zero_one();
         let index = 0;
-        let y_pred = Vec::new();
+        let index_max = 0;
+        let transitions = Vec::new();
         let gradients = Vec::new();
         let loss = 0.0;
 
-        Self { index, model, y_pred, gradients, loss }
+        Self { index, index_max, model, transitions, gradients, loss }
     }
 
     /// 1) Modifies the network's input buffer,
     /// 2) Performs inference,
     /// 3) Selects an action,
-    pub fn predict(&mut self, inputs: &[f32]) -> (usize, [f32; OUTPUTS]) {
-        assert!(inputs.len() == INPUTS);
+    /// 
+    /// Usage:
+    /// ```rust
+    /// let mut physics = PhysicsModel::new();
+    /// let mut dqn = Dqn::new();
+    /// 
+    /// for episode in 0..1000
+    /// {
+    ///     for epoch in 0..1000 {
+    ///         let output = dqn.predict(physics.state());
+    ///         physics.simulate(output.action);
+    ///         dqn.remember(physics.reward());
+    ///     }
+    /// 
+    ///     dqn.adjust();
+    /// }
+    /// ```
+    /// 
+    pub fn predict(&mut self, inputs: &[f32]) -> Prediction<OUTPUTS> {
+        assert_eq!(inputs.len(), INPUTS);
         assert!(inputs.len() <= self.model.x.len());
 
         for (x, input) in zip(&mut self.model.x, inputs) {
@@ -39,67 +59,95 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         }
 
         let y_pred = self.model.forward();
-        self.index = Self::arg_max(&y_pred);
+        self.index_max = Self::arg_max(&y_pred);
+
+        self.index = Self::epsilon_greedy(&y_pred);
 
         let res: [f32; OUTPUTS] = y_pred[..OUTPUTS].try_into().unwrap();
-        (self.index, res)
+
+        Prediction {
+            action: self.index,
+            q_values: res
+        }
     } 
 
     /// 4) Computes gradients,
     /// 5) Stores training state.
-    pub fn remeber(&mut self) {
+    pub fn remember(&mut self, 
+        reward: f32,
+    ) {
         let y_pred = self.model.y;
         let index = self.index;
         let gradients = self.model.backward(index);
         
-        self.y_pred.push(y_pred[index]);
+        self.transitions.push(Transition { 
+            // state: self.model.x[0..INPUTS].try_into().unwrap(), 
+            // action: index, 
+            y_prd: y_pred[index],
+            y_prd_max: y_pred[self.index_max],
+            reward,
+        });
         self.gradients.push(gradients);
     }
 
     /// 6) Adjusts the training model
-    pub fn adjust(&mut self, reward: f32) 
+    pub fn adjust(&mut self) 
     {
-        assert_eq!(self.y_pred.len(), self.gradients.len());
-        if self.y_pred.len() == 0 {
+        const GAMMA: f32 = 0.99;
+
+        assert_eq!(self.transitions.len(), self.gradients.len());
+        if self.transitions.len() == 0 {
             return;
         }
 
         let n = self.gradients.len();
-        assert_eq!(n, self.y_pred.len());
+        assert_eq!(n, self.transitions.len());
         let n = n as f32;
 
-        // Loss function
-        // mean square error
-        //      1    N-1
-        // L = --- * ∑ (y_pred_i − y_i)²
-        //      N    i=0
-        let mut sum = 0.0;
-        for y_pred in &self.y_pred {
-            let y = reward;
 
+        let mut sum = 0.0;
+        let mut gradients_loss_sum: GradientsSimd<LAYERS> = GradientsSimd::new();
+        let mut transition = self.transitions.iter().peekable();
+        let mut gradients = self.gradients.iter();
+        while let Some(current) = transition.next() {
+            let next = transition.peek();
+            let gradients = gradients.next().unwrap();
+
+            let target = match next {
+                Some(next) => {
+                    let max_q_next = next.y_prd_max;
+                    current.reward + GAMMA * max_q_next
+                },
+                None => {
+                    current.reward
+                },
+            };
+
+            let y_pred = current.y_prd;
+            let y = target;
             let diff = y_pred - y;
+
+            // Loss function
+            // mean square error
+            //      1    N-1
+            // L = --- * ∑ (y_pred_i − y_i)²
+            //      N    i=0
             sum += diff * diff;
+
+            // Derivative loss function
+            // derivative mean square error
+            // ∂L           2
+            // --------- = --- * (y_pred_i − y_i)
+            // ∂L_pred_i    N
+            let d_loss_dy = 2.0 / n * diff;
+            gradients_loss_sum += gradients * d_loss_dy;
+
         }
+
+        // loss
         let loss = sum / n;
         self.loss = loss;
 
-        // accumulate gradients
-        let mut gradients_loss_sum: GradientsSimd<LAYERS> = GradientsSimd::new();
-
-        // Derivative loss function
-        // derivative mean square error
-        // ∂L           2
-        // --------- = --- * (y_pred_i − y_i)
-        // ∂L_pred_i    N
-        for (y_pred, gradients) in zip(&self.y_pred, &self.gradients) {
-            let y = reward;
-
-            let diff = y_pred - y;
-            let d_loss_dy = 2.0 / n * diff;
-
-            // sum loss
-            gradients_loss_sum += gradients * d_loss_dy;
-        }
 
         // optimizer
         /// plain gradient descent
@@ -110,7 +158,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
 
 
         // cleanup history
-        self.y_pred.clear();
+        self.transitions.clear();
         self.gradients.clear();
     }
 
@@ -146,9 +194,14 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
 
 
 struct Transition<const INPUTS: usize> {
-    state: [f32; INPUTS],
-    action: usize,
-    reward: f32,
-    next_state: [f32; INPUTS],
-    done: bool,
+    // state: [f32; INPUTS],
+    // action: usize,
+    y_prd: f32,     // y_pred
+    y_prd_max: f32, // y_pred max
+    reward: f32,    // y
+}
+
+pub struct Prediction<const OUTPUTS: usize> {
+    pub action: usize,
+    pub q_values: [f32; OUTPUTS],
 }
