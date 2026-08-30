@@ -1,6 +1,5 @@
 //! Gradients of NeuralNetworkSimd
 
-use std::iter::zip;
 
 use itertools::izip;
 use wide::f32x16;

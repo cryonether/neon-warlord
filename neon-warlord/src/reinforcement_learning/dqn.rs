@@ -2,7 +2,7 @@
 
 use std::iter::zip;
 
-use crate::reinforcement_learning::neural_network_simd::{self, NeuralNetworkSimd, gradients::{self, GradientsSimd}};
+use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, gradients::GradientsSimd};
 
 const LAYERS: usize = 3;
 
@@ -20,7 +20,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         Self { model, gradients }
     }
 
-    pub fn step(&mut self, inputs: &[f32], outputs: &mut [f32]) {
+    pub fn step(&mut self, inputs: &[f32], _outputs: &mut [f32]) {
         assert!(inputs.len() == INPUTS);
         assert!(inputs.len() <= self.model.x.len());
 
@@ -28,8 +28,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
             *x = *input;
         }
 
-        let y = self.model.forward();
-        let gradients = self.model.backward(0);
+        let _y = self.model.forward();
+        let _gradients = self.model.backward(0);
 
     } 
 }

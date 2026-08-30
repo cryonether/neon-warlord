@@ -1,5 +1,6 @@
 //! Algorithms for reinforcement learning
 
+#[allow(dead_code)]
 pub mod dqn;
 pub mod neat;
 #[allow(dead_code)]
