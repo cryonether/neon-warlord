@@ -1,5 +1,7 @@
 //! An epoch of the neural network
 
+use std::iter::zip;
+
 use itertools::izip;
 
 use crate::reinforcement_learning::neural_network_simd::gradients::GradientsSimd;
@@ -20,14 +22,15 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         Self { model, loss }
     }
 
-    pub fn learn(&mut self, input: [[f32; 2]; 4], output: [[f32; 1]; 4]) -> [f32; 4] {
+    pub fn learn<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(&mut self, input: [[f32; INPUT_SIZE]; BATCH_SIZE], output: [[f32; 1]; BATCH_SIZE]) -> [f32; BATCH_SIZE] {
         let mut y_pred = Vec::new();
         let mut history = Vec::new();
 
         // evaluate
         for input in input {
-            self.model.x[0] = input[0];
-            self.model.x[1] = input[1];
+            for (x, input) in zip(&mut self.model.x, input) {
+                *x = input; 
+            }
 
             let y_pred_ = self.model.forward();
             let gradients = self.model.backward(0);
@@ -81,6 +84,9 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         self.model
             .subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
 
-        [y_pred[0], y_pred[1], y_pred[2], y_pred[3]]
+
+        let res: [f32; BATCH_SIZE] = y_pred.try_into().unwrap();
+
+        res
     }
 }

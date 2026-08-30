@@ -9,6 +9,9 @@ mod test_neural_network_simd;
 #[cfg(test)]
 mod test_logic_functions;
 
+#[cfg(test)]
+mod test_logic_functions3;
+
 use std::iter::zip;
 
 use itertools::izip;
