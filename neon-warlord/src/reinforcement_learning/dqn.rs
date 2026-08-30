@@ -1,6 +1,6 @@
 //! Deep Q Network (DQN)
 
-use std::{iter::zip, mem::transmute};
+use std::iter::zip;
 
 use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, gradients::GradientsSimd};
 
@@ -11,7 +11,7 @@ pub struct Dqn<const INPUTS: usize, const OUTPUTS: usize> {
     index: usize,
     index_max: usize,
 
-    transitions: Vec<Transition<INPUTS>>,
+    transitions: Vec<Transition>,
     gradients: Vec<GradientsSimd<LAYERS>>,
 
     loss: f32,
@@ -29,6 +29,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         Self { index, index_max, model, transitions, gradients, loss }
     }
 
+    ///
     /// 1) Modifies the network's input buffer,
     /// 2) Performs inference,
     /// 3) Selects an action,
@@ -81,8 +82,6 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         let gradients = self.model.backward(index);
         
         self.transitions.push(Transition { 
-            // state: self.model.x[0..INPUTS].try_into().unwrap(), 
-            // action: index, 
             y_prd: y_pred[index],
             y_prd_max: y_pred[self.index_max],
             reward,
@@ -91,13 +90,13 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     }
 
     /// 6) Adjusts the training model
-    pub fn adjust(&mut self) 
+    pub fn adjust(&mut self) -> f32
     {
         const GAMMA: f32 = 0.99;
 
         assert_eq!(self.transitions.len(), self.gradients.len());
         if self.transitions.len() == 0 {
-            return;
+            return 0.0;
         }
 
         let n = self.gradients.len();
@@ -160,6 +159,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         // cleanup history
         self.transitions.clear();
         self.gradients.clear();
+
+        self.loss
     }
 
 
@@ -183,6 +184,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     {
         const EPSILON: f32 = 0.1;
 
+        // let epsilon = epsilon_min + (epsilon_max - epsilon_min) * exp(-step / decay);
+
         if fastrand::f32() > EPSILON {
             Self::arg_max(val)
         }
@@ -193,9 +196,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
 }
 
 
-struct Transition<const INPUTS: usize> {
-    // state: [f32; INPUTS],
-    // action: usize,
+struct Transition {
     y_prd: f32,     // y_pred
     y_prd_max: f32, // y_pred max
     reward: f32,    // y
