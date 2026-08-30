@@ -1,6 +1,6 @@
 //! Tests for NeuralNetworkSimd
 
-use crate::reinforcement_learning::{_assert_f32_eq, _assert_f32_eq_, neural_network::NeuralNetwork};
+use crate::reinforcement_learning::{_assert_f32_eq_, neural_network::NeuralNetwork};
 
 use super::*;
 
@@ -172,16 +172,16 @@ fn compare_dfdx() {
     print_grads(&model, &grads);
 
 
-    let w_0 = &model.0.0.weight.as_vec();
+    let _w_0 = &model.0.0.weight.as_vec();
     let b_0 = &model.0.0.bias.as_vec();
 
-    let w_1 = &model.1.0.weight.as_vec();
+    let _w_1 = &model.1.0.weight.as_vec();
     let b_1 = &model.1.0.bias.as_vec();
 
-    let w_2 = &model.2.0.weight.as_vec();
+    let _w_2 = &model.2.0.weight.as_vec();
     let b_2 = &model.2.0.bias.as_vec();
 
-    let w_3 = &model.3.weight.as_vec();
+    let _w_3 = &model.3.weight.as_vec();
     let b_3 = &model.3.bias.as_vec();
 
 
