@@ -29,7 +29,7 @@ pub struct NeuralNetworkSimd<const SIZE: usize> {
     // output
     w_y: [[f32; LANES]; LANES],
     b_y: [f32; LANES],
-    y: [f32; LANES],
+    pub y: [f32; LANES],
 
     // intermediate products
 
@@ -228,7 +228,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }
     }
 
-    fn subtract_gradients(&mut self, gradients: &GradientsSimd<SIZE>) {
+    pub fn subtract_gradients(&mut self, gradients: &GradientsSimd<SIZE>) {
         // w
         for (w, dw) in zip(&mut self.w, &gradients.dy_dw) {
             // println!("dw {:?}", dw);
