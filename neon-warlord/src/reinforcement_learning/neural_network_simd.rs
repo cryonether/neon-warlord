@@ -12,6 +12,9 @@ mod test_logic_functions;
 #[cfg(test)]
 mod test_logic_functions3;
 
+#[cfg(test)]
+mod test_predict_maze;
+
 use std::iter::zip;
 
 use itertools::izip;

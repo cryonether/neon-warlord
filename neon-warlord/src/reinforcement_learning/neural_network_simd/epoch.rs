@@ -22,7 +22,21 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         Self { model, loss }
     }
 
-    pub fn learn<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(&mut self, input: [[f32; INPUT_SIZE]; BATCH_SIZE], output: [[f32; 1]; BATCH_SIZE]) -> [f32; BATCH_SIZE] {
+    pub fn learn<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
+        &mut self, 
+        input: [[f32; INPUT_SIZE]; BATCH_SIZE], 
+        output: [[f32; 1]; BATCH_SIZE]) -> [f32; BATCH_SIZE]
+    {
+        self.learn_output(input, output, 0)
+    }
+
+    pub fn learn_output<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
+        &mut self, 
+        input: [[f32; INPUT_SIZE]; BATCH_SIZE], 
+        output: [[f32; 1]; BATCH_SIZE],
+        output_indx: usize
+    ) -> [f32; BATCH_SIZE]
+    {
         let mut y_pred = Vec::new();
         let mut history = Vec::new();
 
@@ -33,9 +47,9 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
             }
 
             let y_pred_ = self.model.forward();
-            let gradients = self.model.backward(0);
+            let gradients = self.model.backward(output_indx);
 
-            y_pred.push(y_pred_[0]);
+            y_pred.push(y_pred_[output_indx]);
             history.push(gradients);
         }
 
