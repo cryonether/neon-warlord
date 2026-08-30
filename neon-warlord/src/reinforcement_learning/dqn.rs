@@ -1,5 +1,8 @@
 //! Deep Q Network (DQN)
 
+#[cfg(test)]
+mod test_maze;
+
 use std::iter::zip;
 
 use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, gradients::GradientsSimd};
@@ -19,7 +22,7 @@ pub struct Dqn<const INPUTS: usize, const OUTPUTS: usize> {
 
 impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     pub fn new() -> Self {
-        let model = NeuralNetworkSimd::new_zero_one();
+        let model = NeuralNetworkSimd::new_rand();
         let index = 0;
         let index_max = 0;
         let transitions = Vec::new();
@@ -182,7 +185,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
 
     fn epsilon_greedy(val: &[f32]) -> usize 
     {
-        const EPSILON: f32 = 0.1;
+        const EPSILON: f32 = 0.5;
 
         // let epsilon = epsilon_min + (epsilon_max - epsilon_min) * exp(-step / decay);
 
