@@ -27,12 +27,12 @@ impl NeuralNetworkEpoch {
         model.w_0 = Mat2::new(rand(), rand(), rand(), rand());
         model.w_1 = Mat2::new(rand(), rand(), rand(), rand());
         model.w_2 = Mat2::new(rand(), rand(), rand(), rand());
-        model.w_3 = RowVec2::new(rand(), rand());
+        model.w_3 = Mat2::new(rand(), rand(), rand(), rand());
 
         model.b_0 = Vec2::new(rand(), rand());
         model.b_1 = Vec2::new(rand(), rand());
         model.b_2 = Vec2::new(rand(), rand());
-        model.b_3 = rand();
+        model.b_3 = Vec2::new(rand(), rand());
 
         // model.b_0 = Vec2::zeros();
         // model.b_1 = Vec2::zeros();
@@ -50,7 +50,7 @@ impl NeuralNetworkEpoch {
         for elem in input {
             self.model.x = elem.into();
             self.model.forward();
-            res.push(self.model.y);
+            res.push(self.model.y[0]);
 
             history.push(self.model.clone());
         }
@@ -63,7 +63,7 @@ impl NeuralNetworkEpoch {
         let mut sum = 0.0;
         let size = history.len() as f32;
         for (model, output) in std::iter::zip(&history, output) {
-            let y_pred = model.y;
+            let y_pred = model.y[0];
             let y = output[0];
             let diff = y_pred - y;
 
@@ -79,26 +79,26 @@ impl NeuralNetworkEpoch {
         let mut d_loss_dw0 = RowVec4::zeros();
         let mut d_loss_dw1 = RowVec4::zeros();
         let mut d_loss_dw2 = RowVec4::zeros();
-        let mut d_loss_dw3 = RowVec2::zeros();
+        let mut d_loss_dw3 = RowVec4::zeros();
 
         let mut d_loss_db0 = RowVec2::zeros();
         let mut d_loss_db1 = RowVec2::zeros();
         let mut d_loss_db2 = RowVec2::zeros();
-        let mut d_loss_db3 = 0.0;
+        let mut d_loss_db3 = RowVec2::zeros();
 
         // derivative mean square error
         // ∂L           2
         // --------- = --- * (y_pred_i − y_i)
         // ∂L_pred_i    N
         for (model, output) in std::iter::zip(&mut history, output) {
-            let y_pred = model.y;
+            let y_pred = model.y[0];
             let y = output[0];
             let diff = y_pred - y;
 
             let d_loss_dy = 2.0 / size * diff;
 
             // Creates Jacobian of the network output with respect to its parameters.
-            model.backward();
+            model.backward(0);
 
             d_loss_dw0 += d_loss_dy * model.dy_dw0;
             d_loss_dw1 += d_loss_dy * model.dy_dw1;
@@ -119,12 +119,12 @@ impl NeuralNetworkEpoch {
         self.model.w_0 -= Self::to_2x2(d_loss_dw0) * LEARNING_RATE;
         self.model.w_1 -= Self::to_2x2(d_loss_dw1) * LEARNING_RATE;
         self.model.w_2 -= Self::to_2x2(d_loss_dw2) * LEARNING_RATE;
-        self.model.w_3 -= d_loss_dw3 * LEARNING_RATE;
+        self.model.w_3 -= Self::to_2x2(d_loss_dw3) * LEARNING_RATE;
 
         self.model.b_0 -= Self::to_2x1(d_loss_db0) * LEARNING_RATE;
         self.model.b_1 -= Self::to_2x1(d_loss_db1) * LEARNING_RATE;
         self.model.b_2 -= Self::to_2x1(d_loss_db2) * LEARNING_RATE;
-        self.model.b_3 -= d_loss_db3 * LEARNING_RATE;
+        self.model.b_3 -= Self::to_2x1(d_loss_db3) * LEARNING_RATE;
 
         [res[0], res[1], res[2], res[3]]
     }

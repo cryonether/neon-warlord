@@ -18,34 +18,34 @@ pub struct NeuralNetwork {
     pub w_0: Mat2,
     pub w_1: Mat2,
     pub w_2: Mat2,
-    pub w_3: RowVec2,
+    pub w_3: Mat2,
 
     pub b_0: Vec2,
     pub b_1: Vec2,
     pub b_2: Vec2,
-    pub b_3: f32,
+    pub b_3: Vec2,
 
     z_0: Vec2,
     z_1: Vec2,
     z_2: Vec2,
-    z_3: f32,
+    z_3: Vec2,
 
     a_0: Vec2,
     a_1: Vec2,
     a_2: Vec2,
 
-    pub y: f32,
+    pub y: Vec2,
 
     // backward
     pub dy_dw0: RowVec4,
-    dy_dw1: RowVec4,
-    dy_dw2: RowVec4,
-    dy_dw3: RowVec2,
+    pub dy_dw1: RowVec4,
+    pub dy_dw2: RowVec4,
+    pub dy_dw3: RowVec4,
 
     pub dy_db0: RowVec2,
-    dy_db1: RowVec2,
-    dy_db2: RowVec2,
-    dy_db3: f32,
+    pub dy_db1: RowVec2,
+    pub dy_db2: RowVec2,
+    pub dy_db3: RowVec2,
 }
 
 impl NeuralNetwork {
@@ -57,35 +57,35 @@ impl NeuralNetwork {
         let w_0 = Mat2::new(1.0, 1.0, 1.0, 1.0);
         let w_1 = Mat2::new(1.0, 1.0, 1.0, 1.0);
         let w_2 = Mat2::new(1.0, 1.0, 1.0, 1.0);
-        let w_3 = RowVec2::new(1.0, 1.0);
+        let w_3 = Mat2::new(1.0, 1.0, 1.0, 1.0);
 
         let b_0 = Vec2::new(1.0, 1.0);
         let b_1 = Vec2::new(1.0, 1.0);
         let b_2 = Vec2::new(1.0, 1.0);
-        let b_3 = 1.0;
+        let b_3 = Vec2::new(1.0, 1.0);
 
         let z_0 = Vec2::new(0.0, 0.0);
         let z_1 = Vec2::new(0.0, 0.0);
         let z_2 = Vec2::new(0.0, 0.0);
-        let z_3 = 0.0;
+        let z_3 = Vec2::new(0.0, 0.0);
 
         let a_0 = Vec2::new(0.0, 0.0);
         let a_1 = Vec2::new(0.0, 0.0);
         let a_2 = Vec2::new(0.0, 0.0);
 
-        let y = 0.0;
+        let y = Vec2::new(0.0, 0.0);
 
         // backward
 
         let dy_dw0 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
         let dy_dw1 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
         let dy_dw2 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
-        let dy_dw3 = RowVec2::new(0.0, 0.0);
+        let dy_dw3 = RowVec4::new(0.0, 0.0, 0.0, 0.0);
 
         let dy_db0 = RowVec2::new(0.0, 0.0);
         let dy_db1 = RowVec2::new(0.0, 0.0);
         let dy_db2 = RowVec2::new(0.0, 0.0);
-        let dy_db3 = 0.0;
+        let dy_db3 = RowVec2::new(0.0, 0.0);
 
         Self {
             // forward
@@ -137,38 +137,57 @@ impl NeuralNetwork {
         self.z_2 = self.w_2 * self.a_1 + self.b_2;
         self.a_2 = Self::_activation_re_lu_vec2(self.z_2);
 
-        self.y = (self.w_3 * self.a_2)[(0, 0)] + self.b_3;
+        self.y = self.w_3 * self.a_2 + self.b_3;
     }
 
     #[rustfmt::skip]
-    pub fn backward(&mut self)
+    pub fn backward(&mut self, index: usize)
     {
+        assert!(index < 2);
+
+        // choose weight
+        let mut w3 = RowVec2::zeros();
+        w3[0] = self.w_3[(index, 0)];
+        w3[1] = self.w_3[(index, 1)];
+
         // weight gradients
 
-        self.dy_dw3 = Self::to_1x2(self.a_2);
+        // choose output
+        let dy_dw3_index = Self::to_1x2(self.a_2);
+        let mut dy_dw3 = RowVec4::zeros();
+        dy_dw3[index * 2 + 0] = dy_dw3_index[0];
+        dy_dw3[index * 2 + 1] = dy_dw3_index[1];
 
-        self.dy_dw2 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+        // calculate gradients
+        self.dy_dw3 = dy_dw3;
+
+        self.dy_dw2 = w3 * Self::_derivative_re_lu_vec2(self.z_2) *
                     Self::to_2x4(self.a_1);
 
-        self.dy_dw1 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+        self.dy_dw1 = w3 * Self::_derivative_re_lu_vec2(self.z_2) *
                     self.w_2 * Self::_derivative_re_lu_vec2(self.z_1) *
                     Self::to_2x4(self.a_0);
 
-        self.dy_dw0 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+        self.dy_dw0 = w3 * Self::_derivative_re_lu_vec2(self.z_2) *
                     self.w_2 * Self::_derivative_re_lu_vec2(self.z_1) *
                     self.w_1 * Self::_derivative_re_lu_vec2(self.z_0) *
                     Self::to_2x4(self.x);
 
         // bias gradients
 
-        self.dy_db3 = 1.0;
+        // choose output
+        let mut dy_db3 = RowVec2::zeros();
+        dy_db3[index] = 1.0;
 
-        self.dy_db2 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2);
+        // calculate gradients
+        self.dy_db3 = dy_db3;
 
-        self.dy_db1 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+        self.dy_db2 = w3 * Self::_derivative_re_lu_vec2(self.z_2);
+
+        self.dy_db1 = w3 * Self::_derivative_re_lu_vec2(self.z_2) *
                     self.w_2 * Self::_derivative_re_lu_vec2(self.z_1);
 
-        self.dy_db0 = self.w_3 * Self::_derivative_re_lu_vec2(self.z_2) *
+        self.dy_db0 = w3 * Self::_derivative_re_lu_vec2(self.z_2) *
                     self.w_2 * Self::_derivative_re_lu_vec2(self.z_1) *
                     self.w_1 * Self::_derivative_re_lu_vec2(self.z_0);
     }

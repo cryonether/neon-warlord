@@ -30,9 +30,9 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
             self.model.x[1] = input[1];
 
             let y_pred_ = self.model.forward();
-            let gradients = self.model.backward();
+            let gradients = self.model.backward(0);
 
-            y_pred.push(y_pred_);
+            y_pred.push(y_pred_[0]);
             history.push(gradients);
         }
 

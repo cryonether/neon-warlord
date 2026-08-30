@@ -23,25 +23,25 @@ type ModelType = (
 #[test]
 fn compare() {
     let mut nn_0 = NeuralNetwork::new();
-    nn_0.x = [1.0, 1.0].into();
+    nn_0.x = [1.0, 2.0].into();
 
     nn_0.w_0 = [[1.0, 1.0], [1.0, 1.0]].into();
     nn_0.w_1 = [[1.0, 1.0], [1.0, 1.0]].into();
     nn_0.w_2 = [[1.0, 1.0], [1.0, 1.0]].into();
-    nn_0.w_3 = [1.0, 1.0].into();
+    nn_0.w_3 = [[1.0, 1.0], [1.0, 1.0]].into();
 
     nn_0.b_0 = [1.0, 1.0].into();
     nn_0.b_1 = [1.0, 1.0].into();
     nn_0.b_2 = [1.0, 1.0].into();
-    nn_0.b_3 = 1.0;
+    nn_0.b_3 = [1.0, 1.0].into();
 
     nn_0.forward();
-    nn_0.backward();
+    nn_0.backward(0);
 
     let mut nn_1: NeuralNetworkSimd<3> = NeuralNetworkSimd::new();
 
     nn_1.x = [
-        1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     ];
 
     nn_1.w[0][0] = [
@@ -65,7 +65,10 @@ fn compare() {
         1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     ];
 
-    nn_1.w_y = [
+    nn_1.w_y[0] = [
+        1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ];
+    nn_1.w_y[1] = [
         1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     ];
 
@@ -79,23 +82,49 @@ fn compare() {
         1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     ];
 
-    nn_1.b_y = 1.0;
+    nn_1.b_y = [
+        1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ];
 
     nn_1.forward();
-    nn_1.backward();
+    nn_1.backward(0);
 
-    // println!("nn_0: {:}", nn_0);
-    // println!("nn_1: {:}", nn_1);
+    println!("nn_0: {:}", nn_0);
+    println!("nn_1: {:}", nn_1);
 
-    assert_eq!(nn_0.y, nn_1.y);
+    assert_eq!(nn_0.y[0], nn_1.y[0]);
 
     assert_eq!(nn_0.dy_db0[0], nn_1.dy_db[0][0]);
     assert_eq!(nn_0.dy_db0[1], nn_1.dy_db[0][1]);
+
+    assert_eq!(nn_0.dy_db1[0], nn_1.dy_db[1][0]);
+    assert_eq!(nn_0.dy_db1[1], nn_1.dy_db[1][1]);
+
+    assert_eq!(nn_0.dy_db2[0], nn_1.dy_db[2][0]);
+    assert_eq!(nn_0.dy_db2[1], nn_1.dy_db[2][1]);
+
+    assert_eq!(nn_0.dy_db3[0], nn_1.dy_db_y[0]);
+    assert_eq!(nn_0.dy_db3[1], nn_1.dy_db_y[1]);
 
     assert_eq!(nn_0.dy_dw0[0], nn_1.dy_dw[0][0][0]);
     assert_eq!(nn_0.dy_dw0[1], nn_1.dy_dw[0][0][1]);
     assert_eq!(nn_0.dy_dw0[2], nn_1.dy_dw[0][1][0]);
     assert_eq!(nn_0.dy_dw0[3], nn_1.dy_dw[0][1][1]);
+
+    assert_eq!(nn_0.dy_dw1[0], nn_1.dy_dw[1][0][0]);
+    assert_eq!(nn_0.dy_dw1[1], nn_1.dy_dw[1][0][1]);
+    assert_eq!(nn_0.dy_dw1[2], nn_1.dy_dw[1][1][0]);
+    assert_eq!(nn_0.dy_dw1[3], nn_1.dy_dw[1][1][1]);
+
+    assert_eq!(nn_0.dy_dw2[0], nn_1.dy_dw[2][0][0]);
+    assert_eq!(nn_0.dy_dw2[1], nn_1.dy_dw[2][0][1]);
+    assert_eq!(nn_0.dy_dw2[2], nn_1.dy_dw[2][1][0]);
+    assert_eq!(nn_0.dy_dw2[3], nn_1.dy_dw[2][1][1]);
+
+    assert_eq!(nn_0.dy_dw3[0], nn_1.dy_dw_y[0][0]);
+    assert_eq!(nn_0.dy_dw3[1], nn_1.dy_dw_y[0][1]);
+    assert_eq!(nn_0.dy_dw3[2], nn_1.dy_dw_y[1][0]);
+    assert_eq!(nn_0.dy_dw3[3], nn_1.dy_dw_y[1][1]);
 }
 
 #[test]
@@ -107,7 +136,7 @@ fn compare_dfdx() {
     ];
 
     nn_1.forward();
-    nn_1.backward();
+    nn_1.backward(0);
 
     let dev = Cpu::default();
     let mut model = dev.build_module::<Model, f32>();

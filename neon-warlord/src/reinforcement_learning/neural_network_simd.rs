@@ -20,16 +20,16 @@ const LANES: usize = 16;
 
 pub struct NeuralNetworkSimd<const SIZE: usize> {
     // input
-    x: [f32; LANES],
+    pub x: [f32; LANES],
 
     // parameters
     w: [[[f32; LANES]; LANES]; SIZE],
     b: [[f32; LANES]; SIZE],
 
     // output
-    w_y: [f32; LANES],
-    b_y: f32,
-    y: f32,
+    w_y: [[f32; LANES]; LANES],
+    b_y: [f32; LANES],
+    y: [f32; LANES],
 
     // intermediate products
 
@@ -43,8 +43,8 @@ pub struct NeuralNetworkSimd<const SIZE: usize> {
     dy_dw: [[[f32; LANES]; LANES]; SIZE],
     dy_db: [[f32; LANES]; SIZE],
 
-    dy_dw_y: [f32; LANES],
-    dy_db_y: f32,
+    dy_dw_y: [[f32; LANES]; LANES],
+    dy_db_y: [f32; LANES],
 }
 
 impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
@@ -53,10 +53,10 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
 
         let w = [[[0.0; LANES]; LANES]; SIZE];
         let b = [[0.0; LANES]; SIZE];
-        let w_y = [0.0; LANES];
-        let b_y = 0.0;
+        let w_y = [[0.0; LANES]; LANES];
+        let b_y = [0.0; LANES];
 
-        let y = 0.0;
+        let y = [0.0; LANES];
 
         let a = [[0.0; LANES]; SIZE];
         let z = [[0.0; LANES]; SIZE];
@@ -64,8 +64,8 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         let dy_dw = [[[0.0; LANES]; LANES]; SIZE];
         let dy_db = [[0.0; LANES]; SIZE];
 
-        let dy_dw_y = [0.0; LANES];
-        let dy_db_y = 0.0;
+        let dy_dw_y = [[0.0; LANES]; LANES];
+        let dy_db_y = [0.0; LANES];
 
         Self {
             x,
@@ -108,10 +108,14 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }
 
         for w in &mut model.w_y {
-            *w = rand();
+             for w in w {
+                *w = rand();
+            }
         }
 
-        model.b_y = rand();
+        for b in &mut model.b_y {
+            *b = rand();
+        }
 
         model
     }
@@ -129,14 +133,16 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
             b.fill(0.1);
         }
 
-        model.w_y.fill(0.1);
+        for w in &mut model.w_y {
+            w.fill(0.1);
+        }
 
-        model.b_y = 0.1;
+        model.b_y.fill(0.1);
 
         model
     }
 
-    pub fn forward(&mut self) -> f32 {
+    pub fn forward(&mut self) -> [f32; LANES] {
         let mut input_ = f32x16::from(self.x);
 
         for (w, b, a, z) in izip!(self.w, self.b, &mut self.a, &mut self.z) {
@@ -154,17 +160,18 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }
 
         // y
-        let mut y = 0.0;
-        for (&input, w) in zip(input_.as_array(), self.w_y) {
-            y += w * input;
-        }
-        y += self.b_y;
-        self.y = y;
+        // z = W * a + b
+        let mut y_ = Self::mul_16x16_16x1(&self.w_y, input_);
+        y_ += f32x16::from(self.b_y);
+        self.y = y_.into();
 
         self.y
     }
 
-    pub fn backward(&mut self) -> GradientsSimd<SIZE> {
+    pub fn backward(&mut self, index: usize) -> GradientsSimd<SIZE> 
+    {
+        assert!(index < LANES);
+
         let mut z_iter = self.z.iter().rev();
         let mut a_iter = self.a.iter().rev().chain([&self.x]);
         let w_iter = self.w.iter().rev();
@@ -172,23 +179,28 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         let mut dy_dw_iter = self.dy_dw.iter_mut().rev();
 
         // last element
-        self.dy_db_y = 1.0;
-        self.dy_dw_y = *a_iter.next().unwrap();
+        let mut dy_db_y = [0.0; LANES]; 
+        dy_db_y[index] = 1.0;   // choose weight
+        self.dy_db_y = dy_db_y;
+
+        let mut dy_dw_y = [[0.0; LANES]; LANES]; 
+        dy_dw_y[index] = *a_iter.next().unwrap();   // choose weight
+        self.dy_dw_y = dy_dw_y;
 
         // last element -1
-        let &z = z_iter.next().unwrap();
-        let &a = a_iter.next().unwrap();
-        let w = self.w_y;
+        let z = z_iter.next().unwrap();
+        let a = a_iter.next().unwrap();
+        let w = &self.w_y[index]; // choose weight
         let dy_db = dy_db_iter.next().unwrap();
         let dy_dw = dy_dw_iter.next().unwrap();
         let mut delta_previous_;
         {
-            let dz_ = Self::derivative_re_lu_f32x16(f32x16::from(z));
-            let delta_ = f32x16::from(w) * dz_;
+            let dz_ = Self::derivative_re_lu_f32x16(f32x16::from(*z));
+            let delta_ = f32x16::from(*w) * dz_;
 
             delta_previous_ = delta_;
 
-            let dy_dw_ = Self::mul_delta_a(delta_, f32x16::from(a));
+            let dy_dw_ = Self::mul_delta_a(delta_, f32x16::from(*a));
 
             *dy_db = delta_.into();
             *dy_dw = dy_dw_;
@@ -218,29 +230,32 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
 
     fn subtract_gradients(&mut self, gradients: &GradientsSimd<SIZE>) {
         // w
-        for (w, dw) in zip(&mut self.w, gradients.dy_dw) {
+        for (w, dw) in zip(&mut self.w, &gradients.dy_dw) {
             // println!("dw {:?}", dw);
             for (w, dw) in zip(w, dw) {
-                let res = f32x16::from(*w) - f32x16::from(dw);
+                let res = f32x16::from(*w) - f32x16::from(*dw);
                 *w = res.into();
             }
         }
 
         // b
-        for (b, db) in zip(&mut self.b, gradients.dy_db) {
+        for (b, db) in zip(&mut self.b, &gradients.dy_db) {
             // println!("db {:?}", db);
-            let res = f32x16::from(*b) - f32x16::from(db);
+            let res = f32x16::from(*b) - f32x16::from(*db);
             *b = res.into();
         }
 
         // w_y
-        {
-            let res = f32x16::from(self.w_y) - f32x16::from(gradients.dy_dw_y);
-            self.w_y = res.into();
+        for (w, dw) in zip(&mut self.w_y, &gradients.dy_dw_y) {
+            let res = f32x16::from(*w) - f32x16::from(*dw);
+            *w = res.into();
         }
 
         // b_y
-        self.b_y -= gradients.dy_db_y;
+        {
+            let res = f32x16::from(self.b_y) - f32x16::from(gradients.dy_db_y);
+            self.b_y = res.into();
+        }
     }
 
     // #[inline]
