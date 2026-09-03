@@ -23,27 +23,26 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
     }
 
     pub fn learn<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
-        &mut self, 
-        input: [[f32; INPUT_SIZE]; BATCH_SIZE], 
-        output: [[f32; 1]; BATCH_SIZE]) -> [f32; BATCH_SIZE]
-    {
+        &mut self,
+        input: [[f32; INPUT_SIZE]; BATCH_SIZE],
+        output: [[f32; 1]; BATCH_SIZE],
+    ) -> [f32; BATCH_SIZE] {
         self.learn_output(input, output, 0)
     }
 
     pub fn learn_output<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
-        &mut self, 
-        input: [[f32; INPUT_SIZE]; BATCH_SIZE], 
+        &mut self,
+        input: [[f32; INPUT_SIZE]; BATCH_SIZE],
         output: [[f32; 1]; BATCH_SIZE],
-        output_indx: usize
-    ) -> [f32; BATCH_SIZE]
-    {
+        output_indx: usize,
+    ) -> [f32; BATCH_SIZE] {
         let mut y_pred = Vec::new();
         let mut history = Vec::new();
 
         // evaluate
         for input in input {
             for (x, input) in zip(&mut self.model.x, input) {
-                *x = input; 
+                *x = input;
             }
 
             let y_pred_ = self.model.forward();
@@ -97,7 +96,6 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         const LEARNING_RATE: f32 = 0.1;
         self.model
             .subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
-
 
         let res: [f32; BATCH_SIZE] = y_pred.try_into().unwrap();
 

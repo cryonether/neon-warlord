@@ -1,6 +1,5 @@
 //! Gradients of NeuralNetworkSimd
 
-
 use itertools::izip;
 use wide::f32x16;
 
@@ -80,9 +79,7 @@ impl<const SIZE: usize> GradientsSimd<SIZE> {
         }
 
         // dy_db_y
-        res.dy_db_y = (f32x16::from(self.dy_db_y)
-            + f32x16::from(other.dy_db_y))
-            .into();
+        res.dy_db_y = (f32x16::from(self.dy_db_y) + f32x16::from(other.dy_db_y)).into();
 
         res
     }
@@ -109,9 +106,7 @@ impl<const SIZE: usize> GradientsSimd<SIZE> {
         }
 
         // dy_db_y
-        res.dy_db_y = (f32x16::from(self.dy_db_y)
-            - f32x16::from(other.dy_db_y))
-            .into();
+        res.dy_db_y = (f32x16::from(self.dy_db_y) - f32x16::from(other.dy_db_y)).into();
 
         res
     }

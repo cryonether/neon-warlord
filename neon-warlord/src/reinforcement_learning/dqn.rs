@@ -5,7 +5,9 @@ mod test_maze;
 
 use std::iter::zip;
 
-use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, gradients::GradientsSimd};
+use crate::reinforcement_learning::neural_network_simd::{
+    NeuralNetworkSimd, gradients::GradientsSimd,
+};
 
 const LAYERS: usize = 3;
 
@@ -29,19 +31,26 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         let gradients = Vec::new();
         let loss = 0.0;
 
-        Self { index, index_max, model, transitions, gradients, loss }
+        Self {
+            index,
+            index_max,
+            model,
+            transitions,
+            gradients,
+            loss,
+        }
     }
 
     ///
     /// 1) Modifies the network's input buffer,
     /// 2) Performs inference,
     /// 3) Selects an action,
-    /// 
+    ///
     /// Usage:
     /// ```rust
     /// let mut physics = PhysicsModel::new();
     /// let mut dqn = Dqn::new();
-    /// 
+    ///
     /// for episode in 0..1000
     /// {
     ///     for epoch in 0..1000 {
@@ -49,11 +58,11 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     ///         physics.simulate(output.action);
     ///         dqn.remember(physics.reward());
     ///     }
-    /// 
+    ///
     ///     dqn.adjust();
     /// }
     /// ```
-    /// 
+    ///
     pub fn predict(&mut self, inputs: &[f32]) -> Prediction<OUTPUTS> {
         assert_eq!(inputs.len(), INPUTS);
         assert!(inputs.len() <= self.model.x.len());
@@ -71,20 +80,18 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
 
         Prediction {
             action: self.index,
-            q_values: res
+            q_values: res,
         }
-    } 
+    }
 
     /// 4) Computes gradients,
     /// 5) Stores training state.
-    pub fn remember(&mut self, 
-        reward: f32,
-    ) {
+    pub fn remember(&mut self, reward: f32) {
         let y_pred = self.model.y;
         let index = self.index;
         let gradients = self.model.backward(index);
-        
-        self.transitions.push(Transition { 
+
+        self.transitions.push(Transition {
             y_prd: y_pred[index],
             y_prd_max: y_pred[self.index_max],
             reward,
@@ -93,8 +100,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     }
 
     /// 6) Adjusts the training model
-    pub fn adjust(&mut self) -> f32
-    {
+    pub fn adjust(&mut self) -> f32 {
         const GAMMA: f32 = 0.99;
 
         assert_eq!(self.transitions.len(), self.gradients.len());
@@ -105,7 +111,6 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         let n = self.gradients.len();
         assert_eq!(n, self.transitions.len());
         let n = n as f32;
-
 
         let mut sum = 0.0;
         let mut gradients_loss_sum: GradientsSimd<LAYERS> = GradientsSimd::new();
@@ -119,10 +124,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
                 Some(next) => {
                     let max_q_next = next.y_prd_max;
                     current.reward + GAMMA * max_q_next
-                },
-                None => {
-                    current.reward
-                },
+                }
+                None => current.reward,
             };
 
             let y_pred = current.y_prd;
@@ -143,13 +146,11 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
             // ∂L_pred_i    N
             let d_loss_dy = 2.0 / n * diff;
             gradients_loss_sum += gradients * d_loss_dy;
-
         }
 
         // loss
         let loss = sum / n;
         self.loss = loss;
-
 
         // optimizer
         /// plain gradient descent
@@ -158,14 +159,12 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         self.model
             .subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
 
-
         // cleanup history
         self.transitions.clear();
         self.gradients.clear();
 
         self.loss
     }
-
 
     fn arg_max(val: &[f32]) -> usize {
         assert!(val.len() >= OUTPUTS);
@@ -183,21 +182,18 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         max_idx
     }
 
-    fn epsilon_greedy(val: &[f32]) -> usize 
-    {
+    fn epsilon_greedy(val: &[f32]) -> usize {
         const EPSILON: f32 = 0.5;
 
         // let epsilon = epsilon_min + (epsilon_max - epsilon_min) * exp(-step / decay);
 
         if fastrand::f32() > EPSILON {
             Self::arg_max(val)
-        }
-        else {
+        } else {
             fastrand::usize(0..OUTPUTS)
         }
     }
 }
-
 
 struct Transition {
     y_prd: f32,     // y_pred

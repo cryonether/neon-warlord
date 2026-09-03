@@ -143,7 +143,6 @@ fn and_6() {
     )
 }
 
-
 #[rustfmt::skip]
 #[test]
 fn and_5() {
@@ -261,7 +260,6 @@ fn and_4() {
         ],
     )
 }
-
 
 #[rustfmt::skip]
 #[test]
@@ -399,8 +397,8 @@ fn nand_3() {
 }
 
 fn predict_logic<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
-    x_data: [[f32; INPUT_SIZE]; BATCH_SIZE], 
-    y_data: [[f32; 1]; BATCH_SIZE]
+    x_data: [[f32; INPUT_SIZE]; BATCH_SIZE],
+    y_data: [[f32; 1]; BATCH_SIZE],
 ) {
     let mut model: EpochSimd<3> = EpochSimd::new();
 
@@ -412,11 +410,9 @@ fn predict_logic<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
         y_pred = model.learn::<INPUT_SIZE, BATCH_SIZE>(x_data, y_data);
 
         if epoch % 10 == 0 {
-            println!("epoch: {}, target: {:?}, prediction: {:?}, loss: {}",
-                epoch,
-                y_data,
-                y_pred,
-                model.loss,
+            println!(
+                "epoch: {}, target: {:?}, prediction: {:?}, loss: {}",
+                epoch, y_data, y_pred, model.loss,
             );
         }
 

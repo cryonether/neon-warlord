@@ -171,7 +171,6 @@ fn compare_dfdx() {
     print_model(&model);
     print_grads(&model, &grads);
 
-
     let _w_0 = &model.0.0.weight.as_vec();
     let b_0 = &model.0.0.bias.as_vec();
 
@@ -184,8 +183,6 @@ fn compare_dfdx() {
     let _w_3 = &model.3.weight.as_vec();
     let b_3 = &model.3.bias.as_vec();
 
-
-
     let dw_0 = grads.get(&model.0.0.weight).as_vec();
     let db_0 = grads.get(&model.0.0.bias).as_vec();
 
@@ -197,7 +194,6 @@ fn compare_dfdx() {
 
     let dw_3 = grads.get(&model.3.weight).as_vec();
     let db_3 = grads.get(&model.3.bias).as_vec();
-
 
     _assert_f32_eq_(y_vec[0], nn_1.y[0]);
 
@@ -212,7 +208,6 @@ fn compare_dfdx() {
 
     _assert_f32_eq_(b_3[0], nn_1.b_y[0]);
     // assert_f32_eq_(b_3[1], nn_1.b_y[1]);
-
 
     _assert_f32_eq_(db_0[0], nn_1.dy_db[0][0]);
     _assert_f32_eq_(db_0[1], nn_1.dy_db[0][1]);
@@ -245,7 +240,6 @@ fn compare_dfdx() {
     _assert_f32_eq_(dw_3[1], nn_1.dy_dw_y[0][1]);
     // assert_f32_eq_(dw_3[2], nn_1.dy_dw_y[1][0]);
     // assert_f32_eq_(dw_3[3], nn_1.dy_dw_y[1][1]);
-
 }
 
 fn print_model(model: &ModelType) {

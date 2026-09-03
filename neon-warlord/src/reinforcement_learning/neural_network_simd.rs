@@ -114,7 +114,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }
 
         for w in &mut model.w_y {
-             for w in w {
+            for w in w {
                 *w = rand();
             }
         }
@@ -174,8 +174,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         self.y
     }
 
-    pub fn backward(&mut self, index: usize) -> GradientsSimd<SIZE> 
-    {
+    pub fn backward(&mut self, index: usize) -> GradientsSimd<SIZE> {
         assert!(index < LANES);
 
         let mut z_iter = self.z.iter().rev();
@@ -185,12 +184,12 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         let mut dy_dw_iter = self.dy_dw.iter_mut().rev();
 
         // last element
-        let mut dy_db_y = [0.0; LANES]; 
-        dy_db_y[index] = 1.0;   // choose weight
+        let mut dy_db_y = [0.0; LANES];
+        dy_db_y[index] = 1.0; // choose weight
         self.dy_db_y = dy_db_y;
 
-        let mut dy_dw_y = [[0.0; LANES]; LANES]; 
-        dy_dw_y[index] = *a_iter.next().unwrap();   // choose weight
+        let mut dy_dw_y = [[0.0; LANES]; LANES];
+        dy_dw_y[index] = *a_iter.next().unwrap(); // choose weight
         self.dy_dw_y = dy_dw_y;
 
         // last element -1

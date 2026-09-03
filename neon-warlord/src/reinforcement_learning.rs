@@ -10,7 +10,7 @@ pub mod neural_network_dfdx;
 #[allow(dead_code)]
 pub mod neural_network_simd;
 pub mod ppo;
-
+pub mod q_learning;
 
 pub fn _assert_f32_eq(a: f32, b: f32, epsilon: f32) {
     assert!(

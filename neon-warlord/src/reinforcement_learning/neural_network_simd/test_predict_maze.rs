@@ -4,20 +4,17 @@ use std::iter::zip;
 
 use crate::reinforcement_learning::neural_network_simd::epoch::EpochSimd;
 
-
 fn create_input_table() -> [[f32; 6]; 9] {
     let res: [[f32; 6]; 9] = [
-        [1.0, 0.0, 0.0,   1.0, 0.0, 0.0,],
-        [0.0, 1.0, 0.0,   1.0, 0.0, 0.0,],
-        [0.0, 0.0, 1.0,   1.0, 0.0, 0.0,],
-
-        [1.0, 0.0, 0.0,   0.0, 1.0, 0.0,],
-        [0.0, 1.0, 0.0,   0.0, 1.0, 0.0,],
-        [0.0, 0.0, 1.0,   0.0, 1.0, 0.0,],
-
-        [1.0, 0.0, 0.0,   0.0, 0.0, 1.0,],
-        [0.0, 1.0, 0.0,   0.0, 0.0, 1.0,],
-        [0.0, 0.0, 1.0,   0.0, 0.0, 1.0,],
+        [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 1.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0, 1.0, 0.0],
+        [1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+        [0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 1.0, 0.0, 0.0, 1.0],
     ];
 
     res
@@ -25,12 +22,7 @@ fn create_input_table() -> [[f32; 6]; 9] {
 
 fn create_output_table(
     maze: [[i32; 3]; 3],
-) -> (
-    [[f32; 1]; 9],
-    [[f32; 1]; 9],
-    [[f32; 1]; 9],
-    [[f32; 1]; 9],
-) {
+) -> ([[f32; 1]; 9], [[f32; 1]; 9], [[f32; 1]; 9], [[f32; 1]; 9]) {
     let mut up = [[-1.0; 1]; 9];
     let mut right = [[-1.0; 1]; 9];
     let mut down = [[-1.0; 1]; 9];
@@ -70,7 +62,6 @@ fn create_output_table(
     (up, right, down, left)
 }
 
-
 #[rustfmt::skip]
 #[test]
 fn test_3x3() {
@@ -93,7 +84,7 @@ fn test_3x3() {
 }
 
 fn predict_logic<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
-    x_data: [[f32; INPUT_SIZE]; BATCH_SIZE], 
+    x_data: [[f32; INPUT_SIZE]; BATCH_SIZE],
     y_data_0: [[f32; 1]; BATCH_SIZE],
     y_data_1: [[f32; 1]; BATCH_SIZE],
     y_data_2: [[f32; 1]; BATCH_SIZE],
@@ -115,11 +106,9 @@ fn predict_logic<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
         y_pred_3 = model.learn_output::<INPUT_SIZE, BATCH_SIZE>(x_data, y_data_3, 3);
 
         if epoch % 10 == 0 {
-            println!("epoch: {}, target: {:?}, prediction: {:?}, loss: {}",
-                epoch,
-                y_data_3,
-                y_pred_3,
-                model.loss,
+            println!(
+                "epoch: {}, target: {:?}, prediction: {:?}, loss: {}",
+                epoch, y_data_3, y_pred_3, model.loss,
             );
         }
 
