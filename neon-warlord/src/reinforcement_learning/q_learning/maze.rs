@@ -1,5 +1,7 @@
 //! A maze for testing reinforcement learning algorithms
 
+use crate::reinforcement_learning::console_color::{BRIGHT_BLACK, RESET};
+
 pub struct Maze<const W: usize, const H: usize> {
     maze: [[u8; W]; H],
 
@@ -124,4 +126,71 @@ pub fn encode_position<const W: usize, const H: usize, const WH: usize>
     res[W + position.1] = 1;
 
     res
+}
+
+pub fn print_maze<const W: usize, const H: usize, const WH: usize>
+    (maze: &Maze<W, H>, agent: &mut impl Agent<WH>)
+{
+    for y in 0..H {
+        for _x in 0..W {
+            print!("-------------");
+        }
+        println!("-");
+
+
+        for i in 0..3 {
+            for x in 0..W {
+                let position = (x, y);
+                let position_encoded = encode_position::<W, H, WH>(&position);
+                let (_action, q_values) = agent.choose_action(&position_encoded);
+
+                let marker = if maze.is_wall(&position) {
+                    print!("{}", BRIGHT_BLACK);
+                    '#'
+                }
+                else if maze.is_goal(&position) {
+                    'G'
+                }
+                else if maze.is_start(&position) {
+                    'S'
+                }
+                else {
+                    ' '
+                };
+
+                let marker_player = if maze.is_agent_position(&position) {
+                    '*'
+                }
+                else {
+                    ' '
+                };
+
+                match i {
+                    0 => {
+                        print!("|{}  {:5.2}    ", marker, q_values[0]);
+                    },
+                    1 => {
+                        print!("|{:5.2}{}{:5.2} ", q_values[2], marker_player, q_values[3]);
+                    },
+                    2 => {
+                        print!("|   {:5.2}    ", q_values[1]);
+                    },
+                    _ => {}
+                }
+                print!("{}", RESET);
+            }
+            println!("|");
+
+        }
+    }
+
+    for _x in 0..W {
+            print!("-------------");
+    }
+    println!("-");
+    println!("");
+}
+
+pub trait Agent<const WH: usize> {
+    fn choose_action(&mut self, inputs: &[u8; WH]) -> (usize, [f32; 4]);
 }

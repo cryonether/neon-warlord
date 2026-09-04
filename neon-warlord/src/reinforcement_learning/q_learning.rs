@@ -149,6 +149,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> QLearning<INPUTS, OUTPUTS> {
             });
         }
 
+        self.steps.clear();
         self.epsilon = f32::max(self.epsilon * 0.95, 0.1); 
     }
 }
