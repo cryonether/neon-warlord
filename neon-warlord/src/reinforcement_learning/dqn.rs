@@ -129,7 +129,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
                     reward
                 },
                 false => {
-                    reward + GAMMA * (q_value_max_next - reward)
+                    reward + GAMMA * (q_value_max_next)
                 },
             };  
 
