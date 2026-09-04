@@ -28,6 +28,14 @@ fn test_solve_maze() {
         [1, 1, 0, 0, 1, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 1, 0],
     ];
+
+    // let maze: [[u8; W]; H] = [
+    //     [0, 0, 0],
+    //     [1, 1, 0],
+    //     [0, 0, 0],
+    // ];
+
+
     let start = (0, 0);
     let goal = (0, 7);
 
@@ -35,9 +43,25 @@ fn test_solve_maze() {
 
     let mut agent: Dqn<WH, 4> = Dqn::new(); 
 
-    for _episode in 0..200 {
+    let mut loss = 0.0;
+    for _episode in 0..200000 {
         maze.reset();
-        for _steps in 0..30 {
+        let nr_steps = 100;
+        for step in 0..nr_steps {
+
+            // random sampling
+            let mut position = (
+                fastrand::usize(0..W), 
+                fastrand::usize(0..H),
+            );
+            while maze.is_wall(&position) {
+                position = (
+                    fastrand::usize(0..W), 
+                    fastrand::usize(0..H),
+                );
+            }
+            maze.set_position(position);
+            //
 
             let position = maze.get_position();
             let position_encoded: [u8; WH] = encode_position::<W, H, WH>(&position);
@@ -48,18 +72,32 @@ fn test_solve_maze() {
             let reward = maze.step(action_);
             let next_position = maze.get_position();
             let next_position_encoded = encode_position::<W, H, WH>(&next_position);
-            agent.set_reward_u8(position_encoded, action, reward, next_position_encoded);
 
-            print_maze(&maze, &mut agent);
-            std::thread::sleep(Duration::from_millis(200));
+            let finished = step >= nr_steps -1 || maze.finished() || position == next_position;
 
-            if maze.finished() {
+            agent.set_reward_u8(
+                position_encoded, 
+                action, 
+                reward, 
+                next_position_encoded,
+                finished,
+            );
+
+            // print_maze(&maze, &mut agent);
+            // println!("loss: {}", loss);
+            // std::thread::sleep(Duration::from_millis(100));
+
+
+            if finished {
                 break;
             }
         }
-        agent.learn();
+        loss = agent.learn();
+        std::thread::sleep(Duration::from_millis(4));
         print_maze(&maze, &mut agent);
+        println!("loss: {}", loss);
     }
 
     assert!(maze.finished());
 }
+

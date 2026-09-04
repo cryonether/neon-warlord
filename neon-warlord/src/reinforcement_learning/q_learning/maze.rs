@@ -92,6 +92,10 @@ impl<const W: usize, const H: usize> Maze<W, H>
     pub fn is_agent_position(&self, position: &(usize, usize)) -> bool {
         *position == self.position
     }
+
+    pub fn set_position(&mut self, position: (usize, usize)) {
+        self.position = position;
+    }
 }
 
 #[repr(usize)]
@@ -128,15 +132,19 @@ pub fn encode_position<const W: usize, const H: usize, const WH: usize>
     res
 }
 
-pub fn print_maze<const W: usize, const H: usize, const WH: usize>
-    (maze: &Maze<W, H>, agent: &mut impl Agent<WH>)
-{
-    for y in 0..H {
-        for _x in 0..W {
-            print!("-------------");
-        }
-        println!("-");
+use std::fmt::Write;
 
+pub fn print_maze<const W: usize, const H: usize, const WH: usize>(
+    maze: &Maze<W, H>,
+    agent: &mut impl Agent<WH>,
+) {
+    let mut output = String::new();
+
+    for y in 0..H {
+        for _ in 0..W {
+            output.push_str("-------------");
+        }
+        output.push_str("-\n");
 
         for i in 0..3 {
             for x in 0..W {
@@ -145,51 +153,129 @@ pub fn print_maze<const W: usize, const H: usize, const WH: usize>
                 let (_action, q_values) = agent.choose_action(&position_encoded);
 
                 let marker = if maze.is_wall(&position) {
-                    print!("{}", BRIGHT_BLACK);
+                    output.push_str(BRIGHT_BLACK);
                     '#'
-                }
-                else if maze.is_goal(&position) {
+                } else if maze.is_goal(&position) {
                     'G'
-                }
-                else if maze.is_start(&position) {
+                } else if maze.is_start(&position) {
                     'S'
-                }
-                else {
+                } else {
                     ' '
                 };
 
                 let marker_player = if maze.is_agent_position(&position) {
                     '*'
-                }
-                else {
+                } else {
                     ' '
                 };
 
                 match i {
                     0 => {
-                        print!("|{}  {:5.2}    ", marker, q_values[0]);
-                    },
+                        write!(
+                            output,
+                            "|{}  {:5.2}    {}",
+                            marker,
+                            q_values[0],
+                            RESET
+                        ).unwrap();
+                    }
                     1 => {
-                        print!("|{:5.2}{}{:5.2} ", q_values[2], marker_player, q_values[3]);
-                    },
+                        write!(
+                            output,
+                            "|{:5.2}{}{:5.2} {}",
+                            q_values[2],
+                            marker_player,
+                            q_values[3],
+                            RESET
+                        ).unwrap();
+                    }
                     2 => {
-                        print!("|   {:5.2}    ", q_values[1]);
-                    },
+                        write!(
+                            output,
+                            "|   {:5.2}    {}",
+                            q_values[1],
+                            RESET
+                        ).unwrap();
+                    }
                     _ => {}
                 }
-                print!("{}", RESET);
             }
-            println!("|");
 
+            output.push_str("|\n");
         }
     }
 
-    for _x in 0..W {
-            print!("-------------");
+    for _ in 0..W {
+        output.push_str("-------------");
     }
-    println!("-");
-    println!("");
+    output.push_str("-\n\n");
+
+    print!("{}", output);
 }
+
+
+// pub fn print_maze<const W: usize, const H: usize, const WH: usize>
+//     (maze: &Maze<W, H>, agent: &mut impl Agent<WH>)
+// {
+//     for y in 0..H {
+//         for _x in 0..W {
+//             print!("-------------");
+//         }
+//         println!("-");
+
+
+//         for i in 0..3 {
+//             for x in 0..W {
+//                 let position = (x, y);
+//                 let position_encoded = encode_position::<W, H, WH>(&position);
+//                 let (_action, q_values) = agent.choose_action(&position_encoded);
+
+//                 let marker = if maze.is_wall(&position) {
+//                     print!("{}", BRIGHT_BLACK);
+//                     '#'
+//                 }
+//                 else if maze.is_goal(&position) {
+//                     'G'
+//                 }
+//                 else if maze.is_start(&position) {
+//                     'S'
+//                 }
+//                 else {
+//                     ' '
+//                 };
+
+//                 let marker_player = if maze.is_agent_position(&position) {
+//                     '*'
+//                 }
+//                 else {
+//                     ' '
+//                 };
+
+//                 match i {
+//                     0 => {
+//                         print!("|{}  {:5.2}    ", marker, q_values[0]);
+//                     },
+//                     1 => {
+//                         print!("|{:5.2}{}{:5.2} ", q_values[2], marker_player, q_values[3]);
+//                     },
+//                     2 => {
+//                         print!("|   {:5.2}    ", q_values[1]);
+//                     },
+//                     _ => {}
+//                 }
+//                 print!("{}", RESET);
+//             }
+//             println!("|");
+
+//         }
+//     }
+
+//     for _x in 0..W {
+//             print!("-------------");
+//     }
+//     println!("-");
+//     println!("");
+// }
 
 pub trait Agent<const WH: usize> {
     fn choose_action(&mut self, inputs: &[u8; WH]) -> (usize, [f32; 4]);

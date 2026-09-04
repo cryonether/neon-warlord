@@ -7,7 +7,7 @@ use crate::reinforcement_learning::neural_network_simd::{
     NeuralNetworkSimd, gradients::GradientsSimd,
 };
 
-const LAYERS: usize = 3;
+const LAYERS: usize = 1;
 
 pub struct Dqn<const INPUTS: usize, const OUTPUTS: usize> {
     model: NeuralNetworkSimd<INPUTS, OUTPUTS, LAYERS>,
@@ -18,9 +18,9 @@ pub struct Dqn<const INPUTS: usize, const OUTPUTS: usize> {
 
 impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     pub fn new() -> Self {
-        let model = NeuralNetworkSimd::new_zero_one();
+        let model = NeuralNetworkSimd::new_rand();
         let steps = Vec::new();
-        let epsilon = 0.6;
+        let epsilon = 0.8;
 
         Self {
             model,
@@ -69,11 +69,12 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         action: usize, 
         reward: f32,
         next_inputs: [u8; INPUTS], 
+        finished: bool,
     ) 
     {
         let inputs_f32 = inputs.map(|x| x as f32);
         let next_inputs_f32 = next_inputs.map(|x| x as f32);
-        self.set_reward(inputs_f32, action, reward, next_inputs_f32);
+        self.set_reward(inputs_f32, action, reward, next_inputs_f32, finished);
     }
 
     pub fn set_reward(
@@ -82,6 +83,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         action: usize, 
         reward: f32,
         next_inputs: [f32; INPUTS], 
+        finished: bool,
     ) 
     {
         self.steps.push(Transition{
@@ -89,11 +91,12 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
             action,
             reward,
             inputs_next: next_inputs,
+            finished,
         });
     }
 
     pub fn learn(&mut self) -> f32 {
-        const GAMMA: f32 = 0.99;
+        const GAMMA: f32 = 0.9;
         
         if self.steps.len() == 0 {
             return 0.0;
@@ -108,6 +111,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
             let action = step.action;
             let reward = step.reward;
             let inputs_next = step.inputs_next;
+            let finished = step.finished;
 
             let q_values = self.model.forward(&inputs);
             let gradients = self.model.backward(action);
@@ -120,8 +124,16 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
                 }
             }
 
-            let reward_2 = reward + GAMMA * (q_value_max_next - reward);
+            let reward_2 = match finished {
+                true => {
+                    reward
+                },
+                false => {
+                    reward + GAMMA * (q_value_max_next - reward)
+                },
+            };  
 
+            // let reward_2 = reward + GAMMA * (q_value_max_next - reward);
 
             let y_pred = q_values[action];
             let y = reward_2;
@@ -149,13 +161,13 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         // optimizer
         /// plain gradient descent
         /// w_new = w_old - eta * dw
-        const LEARNING_RATE: f32 = 0.1;
+        const LEARNING_RATE: f32 = 0.001;
         self.model
             .subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
 
 
         self.steps.clear();
-        self.epsilon = f32::max(self.epsilon * 0.95, 0.1); 
+        self.epsilon = f32::max(self.epsilon * 0.99, 0.1); 
 
         loss
     }
@@ -166,4 +178,5 @@ pub struct Transition<const INPUTS: usize> {
     pub action: usize,
     pub reward: f32,
     pub inputs_next: [f32; INPUTS],
+    pub finished: bool,
 }
