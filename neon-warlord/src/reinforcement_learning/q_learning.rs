@@ -1,11 +1,15 @@
 //! Learns the path of best quality
 
+mod maze;
+
+#[cfg(test)]
+mod test_maze;
+
+
 use std::collections::HashMap;
 
 use crate::agents::agent_drawer;
 
-#[cfg(test)]
-mod test_maze;
 
 pub struct QLearning<const INPUTS: usize, const OUTPUTS: usize> {
     state: HashMap<StateKey<INPUTS>, StateValue<OUTPUTS>>,
@@ -41,7 +45,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> QLearning<INPUTS, OUTPUTS> {
         (action, q_values)
     }
 
-    fn pick_action_probability(mut q_values: [f32; OUTPUTS]) -> usize {
+    fn _pick_action_probability(mut q_values: [f32; OUTPUTS]) -> usize {
 
         let min = q_values
             .iter()
