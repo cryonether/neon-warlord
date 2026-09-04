@@ -161,7 +161,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         // optimizer
         /// plain gradient descent
         /// w_new = w_old - eta * dw
-        const LEARNING_RATE: f32 = 0.001;
+        const LEARNING_RATE: f32 = 0.01;
         self.model
             .subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
 

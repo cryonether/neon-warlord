@@ -2,6 +2,7 @@
 
 #[allow(dead_code)]
 pub mod dqn;
+pub mod dqn_dfdx;
 pub mod neat;
 #[allow(dead_code)]
 pub mod neural_network;

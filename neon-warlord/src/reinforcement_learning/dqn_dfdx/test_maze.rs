@@ -2,17 +2,17 @@
 
 use std::time::Duration;
 
-use crate::reinforcement_learning::{dqn::Dqn, q_learning::maze::{Action, Agent, Maze, encode_position, print_maze}};
+use crate::reinforcement_learning::{dqn_dfdx::DqnDfdx, q_learning::maze::{Action, Agent, Maze, encode_position, print_maze}};
 
 
 const W: usize = 8;
 const H: usize = 8;
 const WH: usize = W+H;
 
-impl Agent<WH> for Dqn<WH, 4>
+impl Agent<WH> for DqnDfdx<WH, 128, 4>
 {
     fn choose_action(&mut self, inputs: &[u8; WH]) -> (usize, [f32; 4]) {
-        Dqn::choose_action_u8(self, inputs)
+        DqnDfdx::choose_action_u8(self, inputs)
     }
 }
 
@@ -41,10 +41,10 @@ fn test_solve_maze() {
 
     let mut maze = Maze::new(maze, start, goal);
 
-    let mut agent: Dqn<WH, 4> = Dqn::new(); 
+    let mut agent: DqnDfdx<WH, 128, 4> = DqnDfdx::new(); 
 
     let mut loss = 0.0;
-    for episode in 0..200000 {
+    for _episode in 0..200000 {
         maze.reset();
         let nr_steps = 100;
         for step in 0..nr_steps {
@@ -95,7 +95,7 @@ fn test_solve_maze() {
         loss = agent.learn();
         std::thread::sleep(Duration::from_millis(4));
         print_maze(&maze, &mut agent);
-        println!("episode: {}, loss: {}", episode, loss);
+        println!("loss: {}", loss);
     }
 
     assert!(maze.finished());
