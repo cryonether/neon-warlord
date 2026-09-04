@@ -1,123 +1,65 @@
-//! Trying to learn a maze
+//! Learns the path through the maze
 
-use super::*;
+use std::time::Duration;
 
-const W: usize = 3;
-const H: usize = 3;
-
-// const MAZE: [[u8; W]; H] = [
-//     [0, 0, 0, 1, 0],
-//     [1, 1, 0, 1, 0],
-//     [0, 0, 0, 0, 0],
-//     [0, 1, 1, 1, 1],
-//     [0, 0, 0, 0, 0],
-// ];
-
-const MAZE: [[u8; W]; H] = [
-    [0, 0, 0],
-    [1, 1, 0],
-    [0, 0, 0],
-];
-
-const START: (usize, usize) = (0, 0);
-const GOAL:  (usize, usize) = (2, 1);
-
-const UP: usize    = 0;
-const RIGHT: usize = 1;
-const DOWN: usize  = 2;
-const LEFT: usize  = 3;
+use crate::reinforcement_learning::{dqn::Dqn, q_learning::maze::{Action, Agent, Maze, encode_position, print_maze}};
 
 
+const W: usize = 8;
+const H: usize = 8;
+const WH: usize = W+H;
 
-const REWARD_GOAL: f32 = 10.0;
-const REWARD_STEP: f32 = -0.1;
-const REWARD_WALL: f32 = -1.0;
-
-struct Maze {
-    position: (usize, usize)
+impl Agent<WH> for Dqn<WH, 4>
+{
+    fn choose_action(&mut self, inputs: &[u8; WH]) -> (usize, [f32; 4]) {
+        Dqn::choose_action_u8(self, inputs)
+    }
 }
-
-impl Maze {
-    fn new() -> Self {
-        let position  = START;
-
-        Self { position }
-    }
-
-    fn step(&mut self, action: usize) -> (f32, bool) {
-        let (x, y) = self.position;
-
-        let (nx, ny) = match action {
-            UP    if y > 0 => (x, y - 1),
-            RIGHT if x + 1 < W => (x + 1, y),
-            DOWN  if y + 1 < H => (x, y + 1),
-            LEFT  if x > 0 => (x - 1, y),
-            _ => return (REWARD_WALL, false),
-        };
-
-        if MAZE[ny][nx] == 1 {
-            return (REWARD_WALL, false);
-        }
-
-        self.position = (nx, ny);
-
-        if self.position == GOAL {
-            return (REWARD_GOAL, true);
-        }
-
-        (REWARD_STEP, false)
-    }
-    
-    fn reset(&mut self) {
-        self.position = START;
-    }
-
-    fn state(&self) -> [f32; 2] {
-        [
-            self.position.0 as f32 / (W - 1) as f32,
-            self.position.1 as f32 / (H - 1) as f32,
-        ]
-    }
-
-}
-
-
 
 #[test]
-fn test_maze_0() {
-    const INPUTS: usize = 2;
-    const OUTPUTS: usize = 4;
+fn test_solve_maze() {
+    let maze: [[u8; W]; H] = [
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 0, 1, 1, 0, 1, 0],
+        [0, 0, 0, 0, 1, 0, 1, 0],
+        [1, 0, 1, 1, 1, 1, 1, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1],
+        [0, 1, 1, 1, 0, 1, 0, 0],
+        [1, 1, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 1, 0],
+    ];
+    let start = (0, 0);
+    let goal = (0, 7);
 
-    let mut dqn = Dqn::<INPUTS, OUTPUTS>::new();
-    let mut maze = Maze::new();
+    let mut maze = Maze::new(maze, start, goal);
 
+    let mut agent: Dqn<WH, 4> = Dqn::new(); 
 
-    for episode in 0..100 {
+    for _episode in 0..200 {
         maze.reset();
+        for _steps in 0..30 {
 
-        let mut finished = false;
-        for _step in 0..5 {
-            let s = maze.state();
+            let position = maze.get_position();
+            let position_encoded: [u8; WH] = encode_position::<W, H, WH>(&position);
 
-            let prediction = dqn.predict(&s);
-            
-            let (reward, done) = maze.step(prediction.action);
-            println!("state: {:?} act: {:?}, pred: {}, reward. {}", s, prediction.action, prediction.q_values[prediction.action], reward);
-            
-            dqn.remember(reward);
+            let (action, _q_values) = agent.choose_action_u8(&position_encoded);
 
-            if done {
-                finished = true;
+            let action_ = Action::try_from(action).unwrap();
+            let reward = maze.step(action_);
+            let next_position = maze.get_position();
+            let next_position_encoded = encode_position::<W, H, WH>(&next_position);
+            agent.set_reward_u8(position_encoded, action, reward, next_position_encoded);
+
+            print_maze(&maze, &mut agent);
+            std::thread::sleep(Duration::from_millis(200));
+
+            if maze.finished() {
                 break;
             }
         }
-
-        let loss = dqn.adjust();
-
-        // if episode % 100 == 0 {
-            println!(
-                "episode={episode}, loss={loss}, finished={finished}",
-            );
-        // }
+        agent.learn();
+        print_maze(&maze, &mut agent);
     }
+
+    assert!(maze.finished());
 }

@@ -38,11 +38,12 @@ fn compare() {
     nn_0.forward();
     nn_0.backward(0);
 
-    let mut nn_1: NeuralNetworkSimd<3> = NeuralNetworkSimd::new();
+    let mut nn_1: NeuralNetworkSimd<16, 16, 3> = NeuralNetworkSimd::new();
 
-    nn_1.x = [
+    let x = [
         1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     ];
+    nn_1.x = x;
 
     nn_1.w[0][0] = [
         1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -86,7 +87,7 @@ fn compare() {
         1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     ];
 
-    nn_1.forward();
+    nn_1.forward(&x);
     nn_1.backward(0);
 
     // println!("nn_0: {:}", nn_0);
@@ -129,13 +130,14 @@ fn compare() {
 
 #[test]
 fn compare_dfdx() {
-    let mut nn_1: NeuralNetworkSimd<3> = NeuralNetworkSimd::new_zero_one();
+    let mut nn_1: NeuralNetworkSimd<16, 16, 3> = NeuralNetworkSimd::new_zero_one();
 
-    nn_1.x = [
+    let x = [
         1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
     ];
+    nn_1.x = x;
 
-    nn_1.forward();
+    nn_1.forward(&x);
     nn_1.backward(0);
 
     let dev = Cpu::default();

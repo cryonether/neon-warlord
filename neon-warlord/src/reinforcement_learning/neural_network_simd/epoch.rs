@@ -9,7 +9,7 @@ use crate::reinforcement_learning::neural_network_simd::gradients::GradientsSimd
 use super::NeuralNetworkSimd;
 
 pub struct EpochSimd<const SIZE: usize> {
-    pub model: NeuralNetworkSimd<SIZE>,
+    pub model: NeuralNetworkSimd<16, 16, SIZE>,
 
     pub loss: f32,
 }
@@ -45,7 +45,8 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
                 *x = input;
             }
 
-            let y_pred_ = self.model.forward();
+            let x = self.model.x;
+            let y_pred_ = self.model.forward(&x);
             let gradients = self.model.backward(output_indx);
 
             y_pred.push(y_pred_[output_indx]);

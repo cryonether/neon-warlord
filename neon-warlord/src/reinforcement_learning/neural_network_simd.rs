@@ -24,13 +24,13 @@ use crate::reinforcement_learning::neural_network_simd::gradients::GradientsSimd
 
 const LANES: usize = 16;
 
-pub struct NeuralNetworkSimd<const SIZE: usize> {
+pub struct NeuralNetworkSimd<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize> {
     // input
     pub x: [f32; LANES],
 
     // parameters
-    w: [[[f32; LANES]; LANES]; SIZE],
-    b: [[f32; LANES]; SIZE],
+    w: [[[f32; LANES]; LANES]; NR_LAYERS],
+    b: [[f32; LANES]; NR_LAYERS],
 
     // output
     w_y: [[f32; LANES]; LANES],
@@ -40,35 +40,36 @@ pub struct NeuralNetworkSimd<const SIZE: usize> {
     // intermediate products
 
     // a = f(z)
-    a: [[f32; LANES]; SIZE],
+    a: [[f32; LANES]; NR_LAYERS],
 
     // z = W*a + b
-    z: [[f32; LANES]; SIZE],
+    z: [[f32; LANES]; NR_LAYERS],
 
     // back propagation
-    dy_dw: [[[f32; LANES]; LANES]; SIZE],
-    dy_db: [[f32; LANES]; SIZE],
+    dy_dw: [[[f32; LANES]; LANES]; NR_LAYERS],
+    dy_db: [[f32; LANES]; NR_LAYERS],
 
     dy_dw_y: [[f32; LANES]; LANES],
     dy_db_y: [f32; LANES],
 }
 
-impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
+impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize> 
+    NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS> {
     pub fn new() -> Self {
         let x = [0.0; LANES];
 
-        let w = [[[0.0; LANES]; LANES]; SIZE];
-        let b = [[0.0; LANES]; SIZE];
+        let w = [[[0.0; LANES]; LANES]; NR_LAYERS];
+        let b = [[0.0; LANES]; NR_LAYERS];
         let w_y = [[0.0; LANES]; LANES];
         let b_y = [0.0; LANES];
 
         let y = [0.0; LANES];
 
-        let a = [[0.0; LANES]; SIZE];
-        let z = [[0.0; LANES]; SIZE];
+        let a = [[0.0; LANES]; NR_LAYERS];
+        let z = [[0.0; LANES]; NR_LAYERS];
 
-        let dy_dw = [[[0.0; LANES]; LANES]; SIZE];
-        let dy_db = [[0.0; LANES]; SIZE];
+        let dy_dw = [[[0.0; LANES]; LANES]; NR_LAYERS];
+        let dy_db = [[0.0; LANES]; NR_LAYERS];
 
         let dy_dw_y = [[0.0; LANES]; LANES];
         let dy_db_y = [0.0; LANES];
@@ -148,7 +149,21 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         model
     }
 
-    pub fn forward(&mut self) -> [f32; LANES] {
+    pub fn forward(&mut self, x: &[f32; INPUTS]) -> [f32; OUTPUTS] {
+        assert!(INPUTS <= LANES);
+        assert!(OUTPUTS <= LANES);
+
+        let mut padded = [0.0; LANES];
+        padded[..INPUTS].copy_from_slice(x);
+
+        let output = self.forward_16(padded);
+
+        output[..OUTPUTS].try_into().unwrap()
+    }
+
+    pub fn forward_16(&mut self, x: [f32; LANES]) -> [f32; LANES] {
+        self.x = x;
+
         let mut input_ = f32x16::from(self.x);
 
         for (w, b, a, z) in izip!(self.w, self.b, &mut self.a, &mut self.z) {
@@ -174,7 +189,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         self.y
     }
 
-    pub fn backward(&mut self, index: usize) -> GradientsSimd<SIZE> {
+    pub fn backward(&mut self, index: usize) -> GradientsSimd<NR_LAYERS> {
         assert!(index < LANES);
 
         let mut z_iter = self.z.iter().rev();
@@ -233,7 +248,7 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
         }
     }
 
-    pub fn subtract_gradients(&mut self, gradients: &GradientsSimd<SIZE>) {
+    pub fn subtract_gradients(&mut self, gradients: &GradientsSimd<NR_LAYERS>) {
         // w
         for (w, dw) in zip(&mut self.w, &gradients.dy_dw) {
             // println!("dw {:?}", dw);
@@ -326,7 +341,6 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
 
     #[inline]
     fn derivative_re_lu_f32x16(x: f32x16) -> f32x16 {
-        // 1 where x > 0, otherwise 0.
         x.simd_gt(f32x16::splat(0.0))
             .select(f32x16::splat(1.0), f32x16::splat(0.0))
     }
@@ -340,7 +354,8 @@ impl<const SIZE: usize> NeuralNetworkSimd<SIZE> {
     }
 }
 
-impl<const SIZE: usize> std::fmt::Display for NeuralNetworkSimd<SIZE> {
+impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize>  
+    std::fmt::Display for NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "NeuralNetworkSimd {{")?;
 

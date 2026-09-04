@@ -1,6 +1,6 @@
 //! Learns the path of best quality
 
-mod maze;
+pub mod maze;
 
 #[cfg(test)]
 mod test_maze;
