@@ -1,6 +1,6 @@
 //! A maze for testing reinforcement learning algorithms
 
-use crate::reinforcement_learning::console_color::{BRIGHT_BLACK, RESET};
+use crate::reinforcement_learning::console_color::{BRIGHT_BLACK, GREEN, RESET};
 
 pub struct Maze<const W: usize, const H: usize> {
     maze: [[u8; W]; H],
@@ -150,9 +150,12 @@ pub fn print_maze<const W: usize, const H: usize, const WH: usize>(
             for x in 0..W {
                 let position = (x, y);
                 let position_encoded = encode_position::<W, H, WH>(&position);
-                let (_action, q_values) = agent.choose_action(&position_encoded);
+                let (action, q_values) = agent.choose_action(&position_encoded);
 
-                let marker = if maze.is_wall(&position) {
+                let mut current_color = RESET;
+                let is_wall = maze.is_wall(&position);
+                let marker = if is_wall {
+                    current_color = BRIGHT_BLACK;
                     output.push_str(BRIGHT_BLACK);
                     '#'
                 } else if maze.is_goal(&position) {
@@ -169,31 +172,65 @@ pub fn print_maze<const W: usize, const H: usize, const WH: usize>(
                     ' '
                 };
 
+
+
                 match i {
                     0 => {
+                        let color_0 = if action == 0 && !is_wall {
+                            GREEN
+                        } else {
+                            current_color
+                        };
+
                         write!(
                             output,
-                            "|{}  {:5.2}    {}",
+                            "|{}  {}{:5.2}{}    {}",
                             marker,
+                            color_0,
                             q_values[0],
+                            current_color,
                             RESET
                         ).unwrap();
                     }
                     1 => {
+                        let color_2 = if action == 2 && !is_wall {
+                            GREEN
+                        } else {
+                            current_color
+                        };
+
+                        let color_3 = if action == 3 && !is_wall {
+                            GREEN
+                        } else {
+                            current_color
+                        };
+
                         write!(
                             output,
-                            "|{:5.2}{}{:5.2} {}",
+                            "|{}{:5.2}{}{}{}{:5.2}{} {}",
+                            color_2,
                             q_values[2],
+                            current_color,
                             marker_player,
+                            color_3,
                             q_values[3],
+                            current_color,
                             RESET
                         ).unwrap();
                     }
                     2 => {
+                        let color_1 = if action == 1 && !is_wall {
+                            GREEN
+                        } else {
+                            current_color
+                        };
+
                         write!(
                             output,
-                            "|   {:5.2}    {}",
+                            "|   {}{:5.2}{}    {}",
+                            color_1,
                             q_values[1],
+                            current_color,
                             RESET
                         ).unwrap();
                     }
@@ -213,69 +250,6 @@ pub fn print_maze<const W: usize, const H: usize, const WH: usize>(
     print!("{}", output);
 }
 
-
-// pub fn print_maze<const W: usize, const H: usize, const WH: usize>
-//     (maze: &Maze<W, H>, agent: &mut impl Agent<WH>)
-// {
-//     for y in 0..H {
-//         for _x in 0..W {
-//             print!("-------------");
-//         }
-//         println!("-");
-
-
-//         for i in 0..3 {
-//             for x in 0..W {
-//                 let position = (x, y);
-//                 let position_encoded = encode_position::<W, H, WH>(&position);
-//                 let (_action, q_values) = agent.choose_action(&position_encoded);
-
-//                 let marker = if maze.is_wall(&position) {
-//                     print!("{}", BRIGHT_BLACK);
-//                     '#'
-//                 }
-//                 else if maze.is_goal(&position) {
-//                     'G'
-//                 }
-//                 else if maze.is_start(&position) {
-//                     'S'
-//                 }
-//                 else {
-//                     ' '
-//                 };
-
-//                 let marker_player = if maze.is_agent_position(&position) {
-//                     '*'
-//                 }
-//                 else {
-//                     ' '
-//                 };
-
-//                 match i {
-//                     0 => {
-//                         print!("|{}  {:5.2}    ", marker, q_values[0]);
-//                     },
-//                     1 => {
-//                         print!("|{:5.2}{}{:5.2} ", q_values[2], marker_player, q_values[3]);
-//                     },
-//                     2 => {
-//                         print!("|   {:5.2}    ", q_values[1]);
-//                     },
-//                     _ => {}
-//                 }
-//                 print!("{}", RESET);
-//             }
-//             println!("|");
-
-//         }
-//     }
-
-//     for _x in 0..W {
-//             print!("-------------");
-//     }
-//     println!("-");
-//     println!("");
-// }
 
 pub trait Agent<const WH: usize> {
     fn choose_action(&mut self, inputs: &[u8; WH]) -> (usize, [f32; 4]);
