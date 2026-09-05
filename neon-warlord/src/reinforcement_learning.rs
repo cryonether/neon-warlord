@@ -2,6 +2,7 @@
 
 #[allow(dead_code)]
 pub mod dqn;
+#[allow(dead_code)]
 pub mod dqn_dfdx;
 pub mod neat;
 #[allow(dead_code)]
@@ -10,7 +11,9 @@ pub mod neural_network;
 pub mod neural_network_dfdx;
 #[allow(dead_code)]
 pub mod neural_network_simd;
+#[allow(dead_code)]
 pub mod ppo;
+#[allow(dead_code)]
 pub mod q_learning;
 
 pub fn _assert_f32_eq(a: f32, b: f32, epsilon: f32) {
@@ -26,6 +29,7 @@ pub fn _assert_f32_eq_(a: f32, b: f32) {
 }
 
 
+#[allow(dead_code)]
 pub mod console_color {
     pub const RESET: &str = "\x1b[0m";
 

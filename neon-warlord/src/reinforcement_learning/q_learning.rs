@@ -8,7 +8,6 @@ mod test_maze;
 
 use std::collections::HashMap;
 
-use crate::agents::agent_drawer;
 
 
 pub struct QLearning<const INPUTS: usize, const OUTPUTS: usize> {
