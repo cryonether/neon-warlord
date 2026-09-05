@@ -3,29 +3,38 @@
 #[cfg(test)]
 mod test_maze;
 
+use std::collections::HashMap;
+
 use crate::reinforcement_learning::neural_network_simd::{
     NeuralNetworkSimd, gradients::GradientsSimd,
 };
 
-const LAYERS: usize = 1;
+const LAYERS: usize = 5;
 
 pub struct Dqn<const INPUTS: usize, const OUTPUTS: usize> {
-    model: NeuralNetworkSimd<INPUTS, OUTPUTS, LAYERS>,
+    model: NeuralNetworkSimd<INPUTS, OUTPUTS, LAYERS, true>,
     steps: Vec<Transition<INPUTS>>,
 
+    replay_buffer: HashMap<ReplayKey<INPUTS>, Transition<INPUTS>>,
+
     epsilon: f32,
+
+    count: usize,
 }
 
 impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     pub fn new() -> Self {
         let model = NeuralNetworkSimd::new_rand();
         let steps = Vec::new();
-        let epsilon = 0.8;
+        let replay_buffer: HashMap<ReplayKey<INPUTS>, Transition<INPUTS>> = HashMap::new();
+        let epsilon = 1.0;
 
         Self {
             model,
             steps,
+            replay_buffer,
             epsilon,
+            count: 0,
         }
     }
 
@@ -86,13 +95,19 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         finished: bool,
     ) 
     {
-        self.steps.push(Transition{
+        let step = Transition{
             inputs,
             action,
             reward,
             inputs_next: next_inputs,
             finished,
-        });
+        };
+
+        let inputs_u8 = inputs.map(|x| x as u8);
+        let replay_key = ReplayKey { inputs: inputs_u8 , action };
+
+        self.steps.push(step.clone());
+        self.replay_buffer.insert(replay_key, step);
     }
 
     pub fn learn(&mut self) -> f32 {
@@ -167,12 +182,24 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
 
 
         self.steps.clear();
-        self.epsilon = f32::max(self.epsilon * 0.99, 0.1); 
+        // self.epsilon = f32::max(self.epsilon * 0.99, 0.1); 
 
         loss
     }
+
+    pub fn learn_replay(&mut self) -> f32 {
+        self.epsilon = f32::max(self.epsilon * 0.9999, 0.01); 
+
+        for (_key, value) in &self.replay_buffer {
+            self.steps.push(value.clone());
+        }
+
+        self.learn()
+    } 
+
 }
 
+#[derive(Clone)]
 pub struct Transition<const INPUTS: usize> {
     pub inputs: [f32; INPUTS],
     pub action: usize,
@@ -180,3 +207,10 @@ pub struct Transition<const INPUTS: usize> {
     pub inputs_next: [f32; INPUTS],
     pub finished: bool,
 }
+
+#[derive(Hash, Eq, PartialEq)]
+pub struct ReplayKey<const INPUTS: usize> {
+    pub inputs: [u8; INPUTS],
+    pub action: usize,
+}
+

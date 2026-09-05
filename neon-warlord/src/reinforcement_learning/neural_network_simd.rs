@@ -24,7 +24,7 @@ use crate::reinforcement_learning::neural_network_simd::gradients::GradientsSimd
 
 const LANES: usize = 16;
 
-pub struct NeuralNetworkSimd<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize> {
+pub struct NeuralNetworkSimd<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> {
     // input
     pub x: [f32; LANES],
 
@@ -53,8 +53,8 @@ pub struct NeuralNetworkSimd<const INPUTS: usize, const OUTPUTS: usize, const NR
     dy_db_y: [f32; LANES],
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize> 
-    NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS> {
+impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> 
+    NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL> {
     pub fn new() -> Self {
         let x = [0.0; LANES];
 
@@ -167,9 +167,12 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize>
         let mut input_ = f32x16::from(self.x);
 
         for (w, b, a, z) in izip!(self.w, self.b, &mut self.a, &mut self.z) {
-            // z = W * a + b
+            // z = W * input + b + input
             let mut z_ = Self::mul_16x16_16x1(&w, input_);
             z_ += f32x16::from(b);
+            if RESIDUAL {
+                z_ += input_;
+            }
 
             // a = f(z)
             let a_ = Self::activation_re_lu_f32x16(z_);
@@ -228,7 +231,15 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize>
 
         // other elements
         for (&z, &a, w, dy_db, dy_dw) in izip!(z_iter, a_iter, w_iter, dy_db_iter, dy_dw_iter,) {
-            let delta_ = Self::mul_1x16_16x16(delta_previous_, w);
+            // Gradient through W
+            let mut delta_ = Self::mul_1x16_16x16(delta_previous_, w);
+
+            // Gradient through residual connection
+            if RESIDUAL {
+                delta_ += delta_previous_;
+            }
+
+            // Gradient through ReLU
             let dz_ = Self::derivative_re_lu_f32x16(f32x16::from(z));
             let delta_ = delta_ * dz_;
 
@@ -334,28 +345,63 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize>
         res
     }
 
+    // #[inline]
+    // fn activation_re_lu_f32x16(x: f32x16) -> f32x16 {
+    //     x.max(f32x16::splat(0.0))
+    // }
+
+    // #[inline]
+    // fn derivative_re_lu_f32x16(x: f32x16) -> f32x16 {
+    //     x.simd_gt(f32x16::splat(0.0))
+    //         .select(f32x16::splat(1.0), f32x16::splat(0.0))
+    // }
+
+    // fn activation_re_lu(value: f32) -> f32 {
+    //     value.max(0.0)
+    // }
+
+    // fn derivative_re_lu(value: f32) -> f32 {
+    //     if value > 0.0 { 1.0 } else { 0.0 }
+    // }
+
+    const LEAKY_RELU_ALPHA: f32 = 0.01;
+
     #[inline]
     fn activation_re_lu_f32x16(x: f32x16) -> f32x16 {
-        x.max(f32x16::splat(0.0))
+        x.simd_gt(f32x16::splat(0.0))
+            .select(x, x * f32x16::splat(Self::LEAKY_RELU_ALPHA))
     }
 
     #[inline]
     fn derivative_re_lu_f32x16(x: f32x16) -> f32x16 {
         x.simd_gt(f32x16::splat(0.0))
-            .select(f32x16::splat(1.0), f32x16::splat(0.0))
+            .select(
+                f32x16::splat(1.0),
+                f32x16::splat(Self::LEAKY_RELU_ALPHA),
+            )
     }
 
+    #[inline]
     fn activation_re_lu(value: f32) -> f32 {
-        value.max(0.0)
+        if value > 0.0 {
+            value
+        } else {
+            Self::LEAKY_RELU_ALPHA * value
+        }
     }
 
+    #[inline]
     fn derivative_re_lu(value: f32) -> f32 {
-        if value > 0.0 { 1.0 } else { 0.0 }
+        if value > 0.0 {
+            1.0
+        } else {
+            Self::LEAKY_RELU_ALPHA
+        }
     }
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize>  
-    std::fmt::Display for NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS> {
+impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool>  
+    std::fmt::Display for NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "NeuralNetworkSimd {{")?;
 

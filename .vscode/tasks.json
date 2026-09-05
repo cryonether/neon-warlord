@@ -42,7 +42,9 @@
 			"label": "cargo run --release",
 			"type": "cargo",
 			"command": "run",
-			"args": ["--release"],
+			"args": [
+				"--release"
+			],
 			"problemMatcher": [
 				"$rustc"
 			],
@@ -59,7 +61,6 @@
 		{
 			"label": "wasm-pack debug",
 			"type": "shell",
-			// "command": "RUSTFLAGS=--cfg=web_sys_unstable_apis wasm-pack build --target web",
 			"command": "~/.cargo/bin/wasm-pack build neon-warlord --target web --dev",
 			"problemMatcher": [
 				"$rustc"
@@ -76,7 +77,6 @@
 		{
 			"label": "wasm-pack release",
 			"type": "shell",
-			// "command": "RUSTFLAGS=--cfg=web_sys_unstable_apis wasm-pack build --target web",
 			"command": "~/.cargo/bin/wasm-pack build neon-warlord --target web",
 			"problemMatcher": [
 				"$rustc"
@@ -94,12 +94,32 @@
 			"label": "python server",
 			"type": "shell",
 			"windows": {
-				"command": "python -m http.server 8000",
+				"command": "python -m http.server 8000"
 			},
 			"linux": {
-				"command": "python3 -m http.server 8000",
+				"command": "python3 -m http.server 8000"
 			},
 			"problemMatcher": []
+		},
+		{
+			"type": "cargo",
+			"command": "test",
+			"args": [
+				"--package",
+				"neon-warlord",
+				"--lib",
+				"--release",
+				"--",
+				"reinforcement_learning::dqn::test_maze::test_solve_maze",
+				"--exact",
+				"--nocapture",
+				"--include-ignored",
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"label": "rust: test reinforcement_learning::dqn::test_maze::test_solve_maze relese"
 		}
 	]
 }

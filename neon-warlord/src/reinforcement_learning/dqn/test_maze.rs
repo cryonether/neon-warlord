@@ -2,6 +2,8 @@
 
 use std::time::Duration;
 
+use instant::Instant;
+
 use crate::reinforcement_learning::{dqn::Dqn, q_learning::maze::{Action, Agent, Maze, encode_position, print_maze}};
 
 
@@ -43,24 +45,25 @@ fn test_solve_maze() {
 
     let mut agent: Dqn<WH, 4> = Dqn::new(); 
 
+    let mut last_print = Instant::now();
     let mut loss = 0.0;
-    for episode in 0..200000 {
+    for episode in 0..1_000_000 {
         maze.reset();
-        let nr_steps = 100;
+        let nr_steps = 128;
         for step in 0..nr_steps {
 
             // random sampling
-            let mut position = (
-                fastrand::usize(0..W), 
-                fastrand::usize(0..H),
-            );
-            while maze.is_wall(&position) {
-                position = (
-                    fastrand::usize(0..W), 
-                    fastrand::usize(0..H),
-                );
-            }
-            maze.set_position(position);
+            // let mut position = (
+            //     fastrand::usize(0..W), 
+            //     fastrand::usize(0..H),
+            // );
+            // while maze.is_wall(&position) {
+            //     position = (
+            //         fastrand::usize(0..W), 
+            //         fastrand::usize(0..H),
+            //     );
+            // }
+            // maze.set_position(position);
             //
 
             let position = maze.get_position();
@@ -88,14 +91,28 @@ fn test_solve_maze() {
             // std::thread::sleep(Duration::from_millis(100));
 
 
-            if finished {
+            if maze.finished() {
                 break;
             }
         }
-        loss = agent.learn();
-        std::thread::sleep(Duration::from_millis(4));
-        print_maze(&maze, &mut agent);
-        println!("episode: {}, loss: {}", episode, loss);
+        // loss = agent.learn();
+        loss = agent.learn_replay();
+        // agent.learn_backlog();
+
+        if last_print.elapsed() >= Duration::from_millis(20)
+        {
+            last_print = Instant::now();
+            // std::thread::sleep(Duration::from_millis(4));
+            print_maze(&maze, &mut agent);
+            print!("episode: {}, loss: {}", episode, loss);
+            if maze.finished() {
+                println!(" * ");
+            }
+            else {
+                println!("   ");
+            }
+        }
+
     }
 
     assert!(maze.finished());

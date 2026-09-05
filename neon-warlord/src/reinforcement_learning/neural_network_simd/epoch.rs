@@ -9,7 +9,7 @@ use crate::reinforcement_learning::neural_network_simd::gradients::GradientsSimd
 use super::NeuralNetworkSimd;
 
 pub struct EpochSimd<const SIZE: usize> {
-    pub model: NeuralNetworkSimd<16, 16, SIZE>,
+    pub model: NeuralNetworkSimd<16, 16, SIZE, false>,
 
     pub loss: f32,
 }

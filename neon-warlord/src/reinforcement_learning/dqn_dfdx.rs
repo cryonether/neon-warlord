@@ -184,7 +184,7 @@ impl<
     }
 
     pub fn learn(&mut self) -> f32 {
-        const GAMMA: f32 = 0.9;
+        const GAMMA: f32 = 0.99;
 
         if self.steps.is_empty() {
             return 0.0;

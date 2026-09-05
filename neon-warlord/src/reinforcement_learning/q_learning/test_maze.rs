@@ -34,7 +34,7 @@ fn test_solve_maze() {
 
     let mut agent: QLearning<WH, 4> = QLearning::new(); 
 
-    for _episode in 0..200 {
+    for episode in 0..200 {
         maze.reset();
         for _steps in 0..30 {
 
@@ -49,7 +49,16 @@ fn test_solve_maze() {
             let next_position_encoded = encode_position::<W, H, WH>(&next_position);
             agent.set_reward(position_encoded, action, reward, next_position_encoded);
 
+            // print_maze(&maze, &mut agent);
             print_maze(&maze, &mut agent);
+            print!("episode: {}", episode);
+            if maze.finished() {
+                println!(" * ");
+            }
+            else {
+                println!("   ");
+            }
+
             std::thread::sleep(Duration::from_millis(10));
 
             if maze.finished() {
@@ -57,7 +66,9 @@ fn test_solve_maze() {
             }
         }
         agent.learn();
-        print_maze(&maze, &mut agent);
+        // print_maze(&maze, &mut agent);
+
+
     }
 
     assert!(maze.finished());
