@@ -34,7 +34,7 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         &mut self,
         input: [[f32; INPUT_SIZE]; BATCH_SIZE],
         output: [[f32; 1]; BATCH_SIZE],
-        output_indx: usize,
+        output_index: usize,
     ) -> [f32; BATCH_SIZE] {
         let mut y_pred = Vec::new();
         let mut history = Vec::new();
@@ -47,9 +47,9 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
 
             let x = self.model.x;
             let y_pred_ = self.model.forward(&x);
-            let gradients = self.model.backward(output_indx);
+            let gradients = self.model.backward(output_index);
 
-            y_pred.push(y_pred_[output_indx]);
+            y_pred.push(y_pred_[output_index]);
             history.push(gradients);
         }
 
