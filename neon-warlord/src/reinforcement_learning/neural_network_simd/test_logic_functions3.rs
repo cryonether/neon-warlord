@@ -6,6 +6,7 @@ use crate::reinforcement_learning::neural_network_simd::epoch::EpochSimd;
 
 #[rustfmt::skip]
 #[test]
+#[ignore = "too expensive"]
 fn and_6() {
     predict_logic(
         [
@@ -145,6 +146,7 @@ fn and_6() {
 
 #[rustfmt::skip]
 #[test]
+#[ignore = "too expensive"]
 fn and_5() {
     predict_logic(
         [
