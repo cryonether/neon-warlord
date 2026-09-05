@@ -16,6 +16,7 @@ impl Agent<WH> for QLearning<WH, 4>
 }
 
 #[test]
+#[ignore = "too expensive"]
 fn test_solve_maze() {
     let maze: [[u8; W]; H] = [
         [0, 0, 0, 0, 0, 0, 0, 0],

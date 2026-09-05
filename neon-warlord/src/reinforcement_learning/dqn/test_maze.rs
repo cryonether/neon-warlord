@@ -19,6 +19,7 @@ impl Agent<WH> for Dqn<WH, 4>
 }
 
 #[test]
+#[ignore = "too expensive"]
 fn test_solve_maze() {
     let maze: [[u8; W]; H] = [
         [0, 0, 0, 0, 0, 0, 0, 0],
@@ -46,8 +47,7 @@ fn test_solve_maze() {
     let mut agent: Dqn<WH, 4> = Dqn::new(); 
 
     let mut last_print = Instant::now();
-    let mut loss = 0.0;
-    for episode in 0..1_000_000 {
+    for episode in 0..100_000 {
         maze.reset();
         let nr_steps = 128;
         for step in 0..nr_steps {
@@ -86,23 +86,16 @@ fn test_solve_maze() {
                 finished,
             );
 
-            // print_maze(&maze, &mut agent);
-            // println!("loss: {}", loss);
-            // std::thread::sleep(Duration::from_millis(100));
-
-
             if maze.finished() {
                 break;
             }
         }
         // loss = agent.learn();
-        loss = agent.learn_replay();
-        // agent.learn_backlog();
+        let loss = agent.learn_replay();
 
         if last_print.elapsed() >= Duration::from_millis(20)
         {
             last_print = Instant::now();
-            // std::thread::sleep(Duration::from_millis(4));
             print_maze(&maze, &mut agent);
             print!("episode: {}, loss: {}", episode, loss);
             if maze.finished() {

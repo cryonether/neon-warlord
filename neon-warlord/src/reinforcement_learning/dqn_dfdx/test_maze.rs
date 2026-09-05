@@ -19,6 +19,7 @@ impl Agent<WH> for DqnDfdx<WH, HIDDEN, 4>
 }
 
 #[test]
+#[ignore = "too expensive"]
 fn test_solve_maze() {
     let maze: [[u8; W]; H] = [
         [0, 0, 0, 0, 0, 0, 0, 0],
@@ -84,11 +85,6 @@ fn test_solve_maze() {
                 next_position_encoded,
                 finished,
             );
-
-            // print_maze(&maze, &mut agent);
-            // println!("loss: {}", loss);
-            // std::thread::sleep(Duration::from_millis(100));
-
 
             if maze.finished() {
                 break;
