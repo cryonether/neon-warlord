@@ -155,7 +155,7 @@ impl NeuralNetwork {
         // choose output
         let dy_dw3_index = Self::to_1x2(self.a_2);
         let mut dy_dw3 = RowVec4::zeros();
-        dy_dw3[index * 2 + 0] = dy_dw3_index[0];
+        dy_dw3[(index * 2)] = dy_dw3_index[0];
         dy_dw3[index * 2 + 1] = dy_dw3_index[1];
 
         // calculate gradients

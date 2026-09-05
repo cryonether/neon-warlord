@@ -113,7 +113,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     pub fn learn(&mut self) -> f32 {
         const GAMMA: f32 = 0.9;
         
-        if self.steps.len() == 0 {
+        if self.steps.is_empty() {
             return 0.0;
         }
 
@@ -190,7 +190,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     pub fn learn_replay(&mut self) -> f32 {
         self.epsilon = f32::max(self.epsilon * 0.9999, 0.01); 
 
-        for (_key, value) in &self.replay_buffer {
+        for value in self.replay_buffer.values() {
             self.steps.push(value.clone());
         }
 

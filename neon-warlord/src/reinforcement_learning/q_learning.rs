@@ -119,7 +119,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> QLearning<INPUTS, OUTPUTS> {
             let reward = step.reward;
             let inputs_next = step.inputs_next;
 
-            let state_key = StateKey{inputs: inputs};
+            let state_key = StateKey{inputs};
             let state_key_next = StateKey{inputs: inputs_next};
 
             let mut q_values: [f32; OUTPUTS] = match self.state.get(&state_key) {

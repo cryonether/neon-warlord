@@ -22,7 +22,7 @@ impl<const W: usize, const H: usize> Maze<W, H>
 
     pub fn step(&mut self, action: Action) -> f32 {
         let position = self.position;
-        let mut x = position.0 as usize;
+        let mut x = position.0;
         let mut y = position.1;       
         
         match action {
@@ -30,25 +30,25 @@ impl<const W: usize, const H: usize> Maze<W, H>
                 if y == 0 {
                     return -1.0;
                 }
-                y = y-1;                
+                y -= 1;                
             },
             Action::Down => {
                 if y == H-1 {
                     return -1.0;
                 }
-                y = y+1;   
+                y += 1;   
             },
             Action::Left => {
                 if x== 0 {
                     return -1.0;
                 }
-                x = x-1;   
+                x -= 1;   
             },
             Action::Right => {
                 if x == W-1 {
                     return -1.0;
                 }
-                x = x+1;   
+                x += 1;   
             },
 
         }
