@@ -28,7 +28,6 @@ pub fn _assert_f32_eq_(a: f32, b: f32) {
     _assert_f32_eq(a, b, 0.1);
 }
 
-
 #[allow(dead_code)]
 pub mod console_color {
     pub const RESET: &str = "\x1b[0m";
@@ -66,5 +65,3 @@ pub mod console_color {
     pub const TEAL: &str = "\x1b[38;5;30m";
     pub const LIME: &str = "\x1b[38;5;118m";
 }
-
-

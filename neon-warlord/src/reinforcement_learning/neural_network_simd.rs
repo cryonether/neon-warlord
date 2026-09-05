@@ -24,7 +24,12 @@ use crate::reinforcement_learning::neural_network_simd::gradients::GradientsSimd
 
 const LANES: usize = 16;
 
-pub struct NeuralNetworkSimd<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> {
+pub struct NeuralNetworkSimd<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NR_LAYERS: usize,
+    const RESIDUAL: bool,
+> {
     // input
     pub x: [f32; LANES],
 
@@ -53,8 +58,9 @@ pub struct NeuralNetworkSimd<const INPUTS: usize, const OUTPUTS: usize, const NR
     dy_db_y: [f32; LANES],
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> 
-    NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL> {
+impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool>
+    NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL>
+{
     pub fn new() -> Self {
         let x = [0.0; LANES];
 
@@ -375,10 +381,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
     #[inline]
     fn derivative_re_lu_f32x16(x: f32x16) -> f32x16 {
         x.simd_gt(f32x16::splat(0.0))
-            .select(
-                f32x16::splat(1.0),
-                f32x16::splat(Self::LEAKY_RELU_ALPHA),
-            )
+            .select(f32x16::splat(1.0), f32x16::splat(Self::LEAKY_RELU_ALPHA))
     }
 
     #[inline]
@@ -400,8 +403,9 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
     }
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool>  
-    std::fmt::Display for NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL> {
+impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool>
+    std::fmt::Display for NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL>
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "NeuralNetworkSimd {{")?;
 

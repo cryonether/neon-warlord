@@ -5,11 +5,9 @@ mod test_maze;
 
 use dfdx::{
     nn::{
+        DeviceBuildExt, Module, ZeroGrads,
         builders::Linear as LinearBuilder,
         modules::{Linear, ReLU},
-        DeviceBuildExt,
-        Module,
-        ZeroGrads,
     },
     optim::{Sgd, SgdConfig},
     prelude::*,
@@ -18,11 +16,7 @@ use dfdx::{
 /// Builder type.
 ///
 /// dfdx uses the builder types when calling `build_module()`.
-type ModelBuilder<
-    const INPUTS: usize,
-    const HIDDEN: usize,
-    const OUTPUTS: usize,
-> = (
+type ModelBuilder<const INPUTS: usize, const HIDDEN: usize, const OUTPUTS: usize> = (
     LinearBuilder<INPUTS, HIDDEN>,
     ReLU,
     LinearBuilder<HIDDEN, OUTPUTS>,
@@ -32,41 +26,26 @@ type ModelBuilder<
 ///
 /// `build_module()` converts the builder type into these
 /// device/dtype-specific modules.
-type Model<
-    const INPUTS: usize,
-    const HIDDEN: usize,
-    const OUTPUTS: usize,
-> = (
+type Model<const INPUTS: usize, const HIDDEN: usize, const OUTPUTS: usize> = (
     Linear<INPUTS, HIDDEN, f32, Cpu>,
     ReLU,
     Linear<HIDDEN, OUTPUTS, f32, Cpu>,
 );
 
-pub struct DqnDfdx<
-    const INPUTS: usize,
-    const HIDDEN: usize,
-    const OUTPUTS: usize,
-> {
+pub struct DqnDfdx<const INPUTS: usize, const HIDDEN: usize, const OUTPUTS: usize> {
     dev: Cpu,
 
     model: Model<INPUTS, HIDDEN, OUTPUTS>,
 
-    optimizer: Sgd<
-        Model<INPUTS, HIDDEN, OUTPUTS>,
-        f32,
-        Cpu,
-    >,
+    optimizer: Sgd<Model<INPUTS, HIDDEN, OUTPUTS>, f32, Cpu>,
 
     steps: Vec<Transition<INPUTS>>,
 
     epsilon: f32,
 }
 
-impl<
-    const INPUTS: usize,
-    const HIDDEN: usize,
-    const OUTPUTS: usize,
-> DqnDfdx<INPUTS, HIDDEN, OUTPUTS>
+impl<const INPUTS: usize, const HIDDEN: usize, const OUTPUTS: usize>
+    DqnDfdx<INPUTS, HIDDEN, OUTPUTS>
 {
     pub fn new() -> Self {
         assert!(OUTPUTS > 0);
@@ -74,10 +53,7 @@ impl<
         let dev = Cpu::default();
 
         let model: Model<INPUTS, HIDDEN, OUTPUTS> =
-            dev.build_module::<
-                ModelBuilder<INPUTS, HIDDEN, OUTPUTS>,
-                f32,
-            >();
+            dev.build_module::<ModelBuilder<INPUTS, HIDDEN, OUTPUTS>, f32>();
 
         let optimizer = Sgd::new(
             &model,
@@ -96,19 +72,13 @@ impl<
         }
     }
 
-    pub fn choose_action_u8(
-        &mut self,
-        inputs: &[u8; INPUTS],
-    ) -> (usize, [f32; OUTPUTS]) {
+    pub fn choose_action_u8(&mut self, inputs: &[u8; INPUTS]) -> (usize, [f32; OUTPUTS]) {
         let inputs_f32 = inputs.map(|x| x as f32);
 
         self.choose_action(&inputs_f32)
     }
 
-    pub fn choose_action(
-        &mut self,
-        inputs: &[f32; INPUTS],
-    ) -> (usize, [f32; OUTPUTS]) {
+    pub fn choose_action(&mut self, inputs: &[f32; INPUTS]) -> (usize, [f32; OUTPUTS]) {
         let input = self.dev.tensor(*inputs);
 
         let q_values = self.model.forward(input);
@@ -150,13 +120,7 @@ impl<
         let inputs_f32 = inputs.map(|x| x as f32);
         let next_inputs_f32 = next_inputs.map(|x| x as f32);
 
-        self.set_reward(
-            inputs_f32,
-            action,
-            reward,
-            next_inputs_f32,
-            finished,
-        );
+        self.set_reward(inputs_f32, action, reward, next_inputs_f32, finished);
     }
 
     pub fn set_reward(
@@ -217,15 +181,12 @@ impl<
             // traced() starts the autograd tape and associates the
             // computation with `grads`.
             //
-            let q_values = self
-                .model
-                .forward_mut(input.traced(grads));
+            let q_values = self.model.forward_mut(input.traced(grads));
 
             //
             // Save Q(s) before consuming the tensor below.
             //
-            let q_values_array: [f32; OUTPUTS] =
-                q_values.array();
+            let q_values_array: [f32; OUTPUTS] = q_values.array();
 
             //
             // ---------------------------------------------------------
@@ -234,17 +195,14 @@ impl<
             //
             // This forward pass is deliberately NOT traced.
             //
-            let q_values_next =
-                self.model.forward(next_input);
+            let q_values_next = self.model.forward(next_input);
 
-            let q_values_next_array: [f32; OUTPUTS] =
-                q_values_next.array();
+            let q_values_next_array: [f32; OUTPUTS] = q_values_next.array();
 
             //
             // max_a Q(s', a)
             //
-            let mut q_value_max_next =
-                f32::NEG_INFINITY;
+            let mut q_value_max_next = f32::NEG_INFINITY;
 
             for q_value in q_values_next_array {
                 if q_value > q_value_max_next {
@@ -279,8 +237,7 @@ impl<
             // Only Q(s, action) is supposed to contribute to the loss,
             // just like the original NeuralNetworkSimd implementation.
             //
-            let prediction =
-                q_values_array[step.action];
+            let prediction = q_values_array[step.action];
 
             let diff = prediction - target;
 
@@ -301,8 +258,7 @@ impl<
 
             target_values[step.action] = target;
 
-            let target_tensor =
-                self.dev.tensor(target_values);
+            let target_tensor = self.dev.tensor(target_values);
 
             //
             // IMPORTANT:
@@ -317,11 +273,7 @@ impl<
             //
             // `mean()` here would additionally divide by OUTPUTS.
             //
-            let loss =
-                (q_values - target_tensor)
-                    .square()
-                    .sum()
-                    * (1.0 / n);
+            let loss = (q_values - target_tensor).square().sum() * (1.0 / n);
 
             //
             // Backward pass.
@@ -352,8 +304,7 @@ impl<
         //
         // Epsilon decay.
         //
-        self.epsilon =
-            f32::max(self.epsilon * 0.99, 0.1);
+        self.epsilon = f32::max(self.epsilon * 0.99, 0.1);
 
         loss
     }

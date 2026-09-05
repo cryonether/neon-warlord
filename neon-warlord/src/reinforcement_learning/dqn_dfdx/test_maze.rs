@@ -2,17 +2,17 @@
 
 use std::time::Duration;
 
-use crate::reinforcement_learning::{dqn_dfdx::DqnDfdx, q_learning::maze::{Action, Agent, Maze, encode_position, print_maze}};
-
+use crate::reinforcement_learning::{
+    dqn_dfdx::DqnDfdx,
+    q_learning::maze::{Action, Agent, Maze, encode_position, print_maze},
+};
 
 const W: usize = 8;
 const H: usize = 8;
-const WH: usize = W+H;
+const WH: usize = W + H;
 const HIDDEN: usize = 256;
 
-
-impl Agent<WH> for DqnDfdx<WH, HIDDEN, 4>
-{
+impl Agent<WH> for DqnDfdx<WH, HIDDEN, 4> {
     fn choose_action(&mut self, inputs: &[u8; WH]) -> (usize, [f32; 4]) {
         DqnDfdx::choose_action_u8(self, inputs)
     }
@@ -38,30 +38,22 @@ fn test_solve_maze() {
     //     [0, 0, 0],
     // ];
 
-
     let start = (0, 0);
     let goal = (0, 7);
 
     let mut maze = Maze::new(maze, start, goal);
 
-    let mut agent: DqnDfdx<WH, HIDDEN, 4> = DqnDfdx::new(); 
+    let mut agent: DqnDfdx<WH, HIDDEN, 4> = DqnDfdx::new();
 
     let mut loss = 0.0;
     for episode in 0..200000 {
         maze.reset();
         let nr_steps = 100;
         for step in 0..nr_steps {
-
             // random sampling
-            let mut position = (
-                fastrand::usize(0..W), 
-                fastrand::usize(0..H),
-            );
+            let mut position = (fastrand::usize(0..W), fastrand::usize(0..H));
             while maze.is_wall(&position) {
-                position = (
-                    fastrand::usize(0..W), 
-                    fastrand::usize(0..H),
-                );
+                position = (fastrand::usize(0..W), fastrand::usize(0..H));
             }
             maze.set_position(position);
             //
@@ -76,12 +68,12 @@ fn test_solve_maze() {
             let next_position = maze.get_position();
             let next_position_encoded = encode_position::<W, H, WH>(&next_position);
 
-            let finished = step >= nr_steps -1 || maze.finished() || position == next_position;
+            let finished = step >= nr_steps - 1 || maze.finished() || position == next_position;
 
             agent.set_reward_u8(
-                position_encoded, 
-                action, 
-                reward, 
+                position_encoded,
+                action,
+                reward,
                 next_position_encoded,
                 finished,
             );
@@ -99,4 +91,3 @@ fn test_solve_maze() {
 
     assert!(maze.finished());
 }
-

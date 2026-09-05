@@ -11,46 +11,48 @@ pub struct Maze<const W: usize, const H: usize> {
     position: (usize, usize),
 }
 
-impl<const W: usize, const H: usize> Maze<W, H> 
-{
-    pub fn new(maze: [[u8; W]; H], start: (usize, usize), goal: (usize, usize), ) -> Self {
-
+impl<const W: usize, const H: usize> Maze<W, H> {
+    pub fn new(maze: [[u8; W]; H], start: (usize, usize), goal: (usize, usize)) -> Self {
         let position: (usize, usize) = (0, 0);
 
-        Self { maze, start, goal, position }
+        Self {
+            maze,
+            start,
+            goal,
+            position,
+        }
     }
 
     pub fn step(&mut self, action: Action) -> f32 {
         let position = self.position;
         let mut x = position.0;
-        let mut y = position.1;       
-        
+        let mut y = position.1;
+
         match action {
             Action::Up => {
                 if y == 0 {
                     return -1.0;
                 }
-                y -= 1;                
-            },
+                y -= 1;
+            }
             Action::Down => {
-                if y == H-1 {
+                if y == H - 1 {
                     return -1.0;
                 }
-                y += 1;   
-            },
+                y += 1;
+            }
             Action::Left => {
-                if x== 0 {
+                if x == 0 {
                     return -1.0;
                 }
-                x -= 1;   
-            },
+                x -= 1;
+            }
             Action::Right => {
-                if x == W-1 {
+                if x == W - 1 {
                     return -1.0;
                 }
-                x += 1;   
-            },
-
+                x += 1;
+            }
         }
 
         if self.maze[y][x] != 0 {
@@ -120,9 +122,9 @@ impl TryFrom<usize> for Action {
     }
 }
 
-pub fn encode_position<const W: usize, const H: usize, const WH: usize>
-    (position: &(usize, usize)) -> [u8; WH]
-{
+pub fn encode_position<const W: usize, const H: usize, const WH: usize>(
+    position: &(usize, usize),
+) -> [u8; WH] {
     assert!(WH >= W + H);
     let mut res: [u8; WH] = [0; WH];
 
@@ -172,8 +174,6 @@ pub fn print_maze<const W: usize, const H: usize, const WH: usize>(
                     ' '
                 };
 
-
-
                 match i {
                     0 => {
                         let color_0 = if action == 0 && !is_wall {
@@ -185,12 +185,9 @@ pub fn print_maze<const W: usize, const H: usize, const WH: usize>(
                         write!(
                             output,
                             "|{}  {}{:5.2}{}    {}",
-                            marker,
-                            color_0,
-                            q_values[0],
-                            current_color,
-                            RESET
-                        ).unwrap();
+                            marker, color_0, q_values[0], current_color, RESET
+                        )
+                        .unwrap();
                     }
                     1 => {
                         let color_2 = if action == 2 && !is_wall {
@@ -216,7 +213,8 @@ pub fn print_maze<const W: usize, const H: usize, const WH: usize>(
                             q_values[3],
                             current_color,
                             RESET
-                        ).unwrap();
+                        )
+                        .unwrap();
                     }
                     2 => {
                         let color_1 = if action == 1 && !is_wall {
@@ -228,11 +226,9 @@ pub fn print_maze<const W: usize, const H: usize, const WH: usize>(
                         write!(
                             output,
                             "|   {}{:5.2}{}    {}",
-                            color_1,
-                            q_values[1],
-                            current_color,
-                            RESET
-                        ).unwrap();
+                            color_1, q_values[1], current_color, RESET
+                        )
+                        .unwrap();
                     }
                     _ => {}
                 }
@@ -249,7 +245,6 @@ pub fn print_maze<const W: usize, const H: usize, const WH: usize>(
 
     print!("{}", output);
 }
-
 
 pub trait Agent<const WH: usize> {
     fn choose_action(&mut self, inputs: &[u8; WH]) -> (usize, [f32; 4]);
