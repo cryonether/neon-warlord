@@ -8,18 +8,18 @@ fn evaluate_zeros() {
     nn.w_0 = Mat2::zeros();
     nn.w_1 = Mat2::zeros();
     nn.w_2 = Mat2::zeros();
-    nn.w_3 = RowVec2::zeros();
+    nn.w_3 = Mat2::zeros();
 
     nn.b_0 = Vec2::zeros();
     nn.b_1 = Vec2::zeros();
     nn.b_2 = Vec2::zeros();
-    nn.b_3 = 0.0;
+    nn.b_3 = Vec2::zeros();
 
     nn.forward();
-    nn.backward();
+    nn.backward(0);
 
     // println!("nn: {:}", nn);
-    assert_eq!(nn.y, 0.0);
+    assert_eq!(nn.y[0], 0.0);
     assert_eq!(nn.dy_dw0[0], 0.0);
 }
 
@@ -29,18 +29,18 @@ fn evaluate_minus_one() {
     nn.w_0 = Mat2::new(-1.0, -1.0, -1.0, -1.0);
     nn.w_1 = Mat2::new(-1.0, -1.0, -1.0, -1.0);
     nn.w_2 = Mat2::new(-1.0, -1.0, -1.0, -1.0);
-    nn.w_3 = RowVec2::new(-1.0, -1.0);
+    nn.w_3 = Mat2::new(-1.0, -1.0, -1.0, -1.0);
 
     nn.b_0 = Vec2::new(-1.0, -1.0);
     nn.b_1 = Vec2::new(-1.0, -1.0);
     nn.b_2 = Vec2::new(-1.0, -1.0);
-    nn.b_3 = -1.0;
+    nn.b_3 = Vec2::new(-1.0, -1.0);
 
     nn.forward();
-    nn.backward();
+    nn.backward(0);
 
     // println!("nn: {:}", nn);
-    assert_eq!(nn.y, -1.0);
+    assert_eq!(nn.y[0], -1.0);
     assert_eq!(nn.dy_dw0[0], 0.0);
 }
 
@@ -48,7 +48,7 @@ fn evaluate_minus_one() {
 fn evaluate() {
     let mut nn = NeuralNetwork::new();
     nn.forward();
-    nn.backward();
+    nn.backward(0);
 
     // println!("nn: {:}", nn);
 }
@@ -57,7 +57,7 @@ fn evaluate() {
 fn evaluate_diff() {
     let mut nn_0 = NeuralNetwork::new();
     nn_0.forward();
-    nn_0.backward();
+    nn_0.backward(0);
 
     // println!("nn_0: {:}", nn_0);
     // println!("");
@@ -65,7 +65,7 @@ fn evaluate_diff() {
     let mut nn_1 = nn_0.clone();
     nn_1.w_2[0] = 0.5;
     nn_1.forward();
-    nn_1.backward();
+    nn_1.backward(0);
 
     // println!("nn_1: {:}", nn_1);
 }
@@ -75,7 +75,7 @@ fn compare_with_dfdx() {
     let mut nn = NeuralNetwork::new();
     nn.x[1] = 2.0;
     nn.forward();
-    nn.backward();
+    nn.backward(0);
 
     // println!("nn: {:}", nn);
     // println!("");
