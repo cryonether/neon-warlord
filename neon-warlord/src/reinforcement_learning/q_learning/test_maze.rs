@@ -1,14 +1,11 @@
 //! Learns the path through the maze
 
-use std::{os::unix::thread, time::Duration};
+use std::time::Duration;
 
-use crate::reinforcement_learning::{
-    console_color::{BRIGHT_BLACK, RESET},
-    q_learning::{
+use crate::reinforcement_learning::q_learning::{
         QLearning,
         maze::{Action, Agent, Maze, encode_position, print_maze},
-    },
-};
+    };
 
 const W: usize = 8;
 const H: usize = 8;

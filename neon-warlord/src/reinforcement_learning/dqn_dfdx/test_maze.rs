@@ -45,7 +45,6 @@ fn test_solve_maze() {
 
     let mut agent: DqnDfdx<WH, HIDDEN, 4> = DqnDfdx::new();
 
-    let mut loss = 0.0;
     for episode in 0..200000 {
         maze.reset();
         let nr_steps = 100;
@@ -82,7 +81,7 @@ fn test_solve_maze() {
                 break;
             }
         }
-        loss = agent.learn();
+        let loss = agent.learn();
         // agent.learn_backlog();
         std::thread::sleep(Duration::from_millis(2));
         print_maze(&maze, &mut agent);
