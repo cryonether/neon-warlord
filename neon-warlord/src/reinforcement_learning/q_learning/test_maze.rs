@@ -3,9 +3,9 @@
 use std::time::Duration;
 
 use crate::reinforcement_learning::q_learning::{
-        QLearning,
-        maze::{Action, Agent, Maze, encode_position, print_maze},
-    };
+    QLearning,
+    maze::{Action, Agent, Maze, encode_position, print_maze},
+};
 
 const W: usize = 8;
 const H: usize = 8;
