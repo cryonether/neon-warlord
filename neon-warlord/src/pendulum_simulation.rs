@@ -18,7 +18,7 @@ use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 use crate::{
     pendulum_simulation::{
         graph_lines::{GraphLines, GraphLinesDrawer}, pendulum::{Pendulum, PendulumAction, PendulumState}, verlet_physics_drawer::VerletPhysicsDrawer,
-    }, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::{dqn::{self}, dqn_dfdx2::DqnDfdx2}, triple_buffer, worker_thread,
+    }, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::{dqn::{self}, dqn_dfdx2::DqnDfdx2, dqn2::Dqn2}, triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
@@ -36,7 +36,7 @@ pub struct PendulumSimulation {
     // model: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL>>,
     // model_drawer: NeuralNetworkDrawer<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, 128, 8>,
 
-    dqn: DqnDfdx2,
+    dqn: Dqn2,
 
     graph_loss: GraphLines<1>,
     graph_chosen_action: GraphLines<1>,
@@ -88,7 +88,7 @@ impl PendulumSimulation {
 
         // let model = Box::new(NeuralNetworkSimd::new());
         // let dqn = Dqn::new();
-        let dqn = DqnDfdx2::new();
+        let dqn = Dqn2::new();
         // let model_drawer: NeuralNetworkDrawer<4, 2, 1, false, 128, 8> = NeuralNetworkDrawer::new(&dqn.target_net, scale, pos_model);
 
         // Debug

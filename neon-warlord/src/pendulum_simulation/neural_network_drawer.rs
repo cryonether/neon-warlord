@@ -65,7 +65,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
         let w_iter = model.w.iter().chain([&model.w_y]);
 
         for (k, layer) in w_iter.enumerate() {
-            for (j, node) in layer.iter().enumerate() {
+            for (j, node) in layer.as_array().iter().enumerate() {
                 for (i, &w) in node.iter().enumerate() {
                     let position = Vec3::new(k as f32, j as f32, i as f32);
 

@@ -7,6 +7,7 @@ use wide::f32x16;
 
 // 238 fps
 // 169 fps
+// 222 fps
 
 const N: usize = 128;
 const LANES: usize = 16;
