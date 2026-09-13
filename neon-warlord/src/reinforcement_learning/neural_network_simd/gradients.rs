@@ -1,25 +1,28 @@
 //! Gradients of NeuralNetworkSimd
 
+use std::iter::zip;
+
 use itertools::izip;
 
 
 use super::SVec;
+use super::SMat;
 
-pub struct GradientsSimd<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> {
-    pub dy_dw: [[[f32; NR_NEURONS]; NR_NEURONS]; SIZE],
-    pub dy_db: [[f32; NR_NEURONS]; SIZE],
+pub struct GradientsSimd<const SIZE: usize, const N: usize, const L: usize> {
+    pub dy_dw: [SMat<N, L>; SIZE],
+    pub dy_db: [SVec<N, L>; SIZE],
 
-    pub dy_dw_y: [[f32; NR_NEURONS]; NR_NEURONS],
-    pub dy_db_y: [f32; NR_NEURONS],
+    pub dy_dw_y: SMat<N, L>,
+    pub dy_db_y: SVec<N, L>,
 }
 
 impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> GradientsSimd<SIZE, NR_NEURONS, NR_LANES> {
     pub fn new() -> Self {
-        let dy_dw = [[[0.0; NR_NEURONS]; NR_NEURONS]; SIZE];
-        let dy_db = [[0.0; NR_NEURONS]; SIZE];
+        let dy_dw = [SMat::new([[0.0; NR_NEURONS]; NR_NEURONS]); SIZE];
+        let dy_db = [SVec::new([0.0; NR_NEURONS]); SIZE];
 
-        let dy_dw_y = [[0.0; NR_NEURONS]; NR_NEURONS];
-        let dy_db_y = [0.0; NR_NEURONS];
+        let dy_dw_y = SMat::new([[0.0; NR_NEURONS]; NR_NEURONS]);
+        let dy_db_y = SVec::new([0.0; NR_NEURONS]);
 
         Self {
             dy_dw,
@@ -32,27 +35,34 @@ impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> Gradient
     #[inline]
     pub fn multiply_constant(&self, val: f32) -> Self {
         let mut res = Self::new();
-        let val_: SVec<NR_NEURONS, NR_LANES> = SVec::new([val; NR_NEURONS]);
 
         // dy_dw
-        for (x, y) in std::iter::zip(&self.dy_dw, &mut res.dy_dw) {
-            for (x, y) in std::iter::zip(x, y) {
-                *y = (SVec::new(*x) * &val_).into();
+        for (x, y) in zip(self.dy_dw, &mut res.dy_dw) {
+            for (x, y) in zip(x.as_array(), y.as_mut_array()) {
+                for (x, y) in zip(x, y) {
+                    *y = x * val;
+                }
             }
         }
 
         // dy_db
-        for (x, y) in std::iter::zip(&self.dy_db, &mut res.dy_db) {
-            *y = (SVec::new(*x) * &val_).into();
+        for (x, y) in zip(&self.dy_db, &mut res.dy_db) {
+            for (x, y) in zip(x.as_array(), y.as_mut_array()) {
+                *y = x * val;
+            }
         }
 
         // dy_dw_y
-        for (x, y) in std::iter::zip(&self.dy_dw_y, &mut res.dy_dw_y) {
-            *y = (SVec::new(*x) * &val_).into();
+        for (x, y) in zip(self.dy_dw_y.as_array(), res.dy_dw_y.as_mut_array()) {
+                for (x, y) in zip(x, y) {
+                    *y = x * val;
+                }
         }
 
         // dy_db_y
-        res.dy_db_y = (SVec::new(self.dy_db_y) * &val_).into();
+        for (x, y) in zip(self.dy_db_y.as_array(), res.dy_db_y.as_mut_array()) {
+            *y = x * val;
+        }
 
         res
     }
@@ -63,23 +73,19 @@ impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> Gradient
 
         // dy_dw
         for (a, b, y) in izip!(&self.dy_dw, &other.dy_dw, &mut res.dy_dw) {
-            for (a, b, y) in izip!(a, b, y) {
-                *y = (SVec::<NR_NEURONS, NR_LANES>::new(*a) + &SVec::new(*b)).into();
-            }
+            *y = a + b;
         }
 
         // dy_db
         for (a, b, y) in izip!(&self.dy_db, &other.dy_db, &mut res.dy_db) {
-            *y = (SVec::<NR_NEURONS, NR_LANES>::new(*a) + &SVec::new(*b)).into();
+            *y = a + b;
         }
 
         // dy_dw_y
-        for (a, b, y) in izip!(&self.dy_dw_y, &other.dy_dw_y, &mut res.dy_dw_y) {
-            *y = (SVec::<NR_NEURONS, NR_LANES>::new(*a) + &SVec::new(*b)).into();
-        }
+        res.dy_dw_y = &self.dy_dw_y + &other.dy_dw_y;
 
         // dy_db_y
-        res.dy_db_y = (SVec::<NR_NEURONS, NR_LANES>::new(self.dy_db_y) + &SVec::new(other.dy_db_y)).into();
+        res.dy_db_y = &self.dy_db_y + &other.dy_db_y;
 
         res
     }
@@ -90,23 +96,19 @@ impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> Gradient
 
         // dy_dw
         for (a, b, y) in izip!(&self.dy_dw, &other.dy_dw, &mut res.dy_dw) {
-            for (a, b, y) in izip!(a, b, y) {
-                *y = (SVec::<NR_NEURONS, NR_LANES>::new(*a) - &SVec::new(*b)).into();
-            }
+            *y = a - b;
         }
 
         // dy_db
         for (a, b, y) in izip!(&self.dy_db, &other.dy_db, &mut res.dy_db) {
-            *y = (SVec::<NR_NEURONS, NR_LANES>::new(*a) - &SVec::new(*b)).into();
+            *y = a - b;
         }
 
         // dy_dw_y
-        for (a, b, y) in izip!(&self.dy_dw_y, &other.dy_dw_y, &mut res.dy_dw_y) {
-            *y = (SVec::<NR_NEURONS, NR_LANES>::new(*a) - &SVec::new(*b)).into();
-        }
+        res.dy_dw_y = &self.dy_dw_y - &other.dy_dw_y;
 
         // dy_db_y
-        res.dy_db_y = (SVec::<NR_NEURONS, NR_LANES>::new(self.dy_db_y) - &SVec::new(other.dy_db_y)).into();
+        res.dy_db_y = &self.dy_db_y - &other.dy_db_y;
 
         res
     }
