@@ -1,7 +1,7 @@
 //! A universal function approximator efficiently implemented using simd
 
 pub mod epoch;
-pub mod gradients;
+pub mod gradients_sum;
 pub mod simd_math;
 
 #[cfg(test)]
@@ -21,7 +21,7 @@ use std::iter::zip;
 use itertools::izip;
 use wide::f32x16;
 
-use crate::reinforcement_learning::neural_network_simd::{gradients::GradientsSimd, simd_math::{SMat, SRowVec, SVec}};
+use crate::reinforcement_learning::neural_network_simd::{gradients_sum::GradientsSum, simd_math::{SMat, SRowVec, SVec}};
 
 
 const LANES: usize = 16;
@@ -44,7 +44,7 @@ pub type NeuralNetwork16<
     1, 
 >;
 
-pub type Gradient16<const SIZE: usize> = GradientsSimd<SIZE, 16, 1>;
+pub type Gradient16<const SIZE: usize> = GradientsSum<SIZE, 16, 1>;
 
 pub type NeuralNetwork32<
     const INPUTS: usize,
@@ -60,7 +60,7 @@ pub type NeuralNetwork32<
     2, 
 >;
 
-pub type Gradient32<const SIZE: usize> = GradientsSimd<SIZE, 32, 2>;
+pub type Gradient32<const SIZE: usize> = GradientsSum<SIZE, 32, 2>;
 
 
 pub type NeuralNetwork64<
@@ -77,7 +77,7 @@ pub type NeuralNetwork64<
     4, 
 >;
 
-pub type Gradient64<const SIZE: usize> = GradientsSimd<SIZE, 164, 4>;
+pub type Gradient64<const SIZE: usize> = GradientsSum<SIZE, 164, 4>;
 
 
 pub type NeuralNetwork128<
@@ -94,7 +94,7 @@ pub type NeuralNetwork128<
     8, 
 >;
 
-pub type Gradient128<const SIZE: usize> = GradientsSimd<SIZE, 128, 8>;
+pub type Gradient128<const SIZE: usize> = GradientsSum<SIZE, 128, 8>;
 
 
 #[derive(Clone)]
@@ -134,27 +134,27 @@ pub struct NeuralNetworkSimd<
     dy_db_y: SVec<N, L>,
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool, const NR_NEURONS: usize, const NR_LANES: usize>
-    NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, NR_NEURONS, NR_LANES>
+impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool, const N: usize, const L: usize>
+    NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, N, L>
 {
     pub fn new() -> Self {
-        let x = SVec::new([0.0; NR_NEURONS]);
+        let x = SVec::new([0.0; N]);
 
-        let w = [ SMat::new([[0.0; NR_NEURONS]; NR_NEURONS]); NR_LAYERS];
-        let b = [ SVec::new([0.0; NR_NEURONS]); NR_LAYERS];
-        let w_y = SMat::new([[0.0; NR_NEURONS]; NR_NEURONS]);
-        let b_y =  SVec::new([0.0; NR_NEURONS]);
+        let w = [ SMat::new([[0.0; N]; N]); NR_LAYERS];
+        let b = [ SVec::new([0.0; N]); NR_LAYERS];
+        let w_y = SMat::new([[0.0; N]; N]);
+        let b_y =  SVec::new([0.0; N]);
 
-        let y =  SVec::new([0.0; NR_NEURONS]);
+        let y =  SVec::new([0.0; N]);
 
-        let a = [ SVec::new([0.0; NR_NEURONS]); NR_LAYERS];
-        let z = [ SVec::new([0.0; NR_NEURONS]); NR_LAYERS];
+        let a = [ SVec::new([0.0; N]); NR_LAYERS];
+        let z = [ SVec::new([0.0; N]); NR_LAYERS];
 
-        let dy_dw = [SMat::new([[0.0; NR_NEURONS]; NR_NEURONS]); NR_LAYERS];
-        let dy_db = [SVec::new([0.0; NR_NEURONS]); NR_LAYERS];
+        let dy_dw = [SMat::new([[0.0; N]; N]); NR_LAYERS];
+        let dy_db = [SVec::new([0.0; N]); NR_LAYERS];
 
-        let dy_dw_y = SMat::new([ [0.0; NR_NEURONS]; NR_NEURONS]);
-        let dy_db_y =  SVec::new([0.0; NR_NEURONS]);
+        let dy_dw_y = SMat::new([ [0.0; N]; N]);
+        let dy_db_y =  SVec::new([0.0; N]);
 
         Self {
             x,
@@ -235,7 +235,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
         assert!(INPUTS <= LANES);
         assert!(OUTPUTS <= LANES);
 
-        let mut padded = [0.0; NR_NEURONS];
+        let mut padded = [0.0; N];
         padded[..INPUTS].copy_from_slice(x);
 
         let output = self.forward_full(padded);
@@ -245,7 +245,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
 
 
 
-    fn forward_full(&mut self, x: [f32; NR_NEURONS]) -> [f32; NR_NEURONS] {
+    fn forward_full(&mut self, x: [f32; N]) -> [f32; N] {
         self.x = SVec::new(x);
 
         let mut input_ = &self.x;
@@ -271,8 +271,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
         self.y.as_array().clone()
     }
 
-    pub fn backward(&mut self, index: usize) -> GradientsSimd<NR_LAYERS, NR_NEURONS, NR_LANES> {
-        assert!(index < NR_NEURONS);
+    pub fn backward(&mut self, index: usize) -> GradientsRef<NR_LAYERS, N, L> {
+        assert!(index < N);
 
         let mut z_iter = self.z.iter().rev();
         let mut a_iter = self.a.iter().rev().chain([&self.x]);
@@ -281,11 +281,11 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
         let mut dy_dw_iter = self.dy_dw.iter_mut().rev();
 
         // last element
-        let mut dy_db_y= [0.0; NR_NEURONS];
+        let mut dy_db_y= [0.0; N];
         dy_db_y[index] = 1.0; // choose weight
         self.dy_db_y = SVec::new(dy_db_y);
 
-        let mut dy_dw_y = SMat::new([[0.0; NR_NEURONS]; NR_NEURONS]);
+        let mut dy_dw_y = SMat::new([[0.0; N]; N]);
         dy_dw_y.as_mut_array()[index] = *a_iter.next().unwrap().as_array(); // choose weight
         self.dy_dw_y = dy_dw_y;
 
@@ -327,46 +327,46 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
             let dy_dw_ = &delta_ * &a.as_row_vec();
 
             delta_previous_ = delta_;
-            
+
             *dy_db = delta_;
             *dy_dw = dy_dw_;
         }
 
-        GradientsSimd {
-            dy_dw: self.dy_dw,
-            dy_db: self.dy_db,
-            dy_dw_y: self.dy_dw_y,
-            dy_db_y: self.dy_db_y,
+        GradientsRef {
+            dy_dw: &self.dy_dw,
+            dy_db: &self.dy_db,
+            dy_dw_y: &self.dy_dw_y,
+            dy_db_y: &self.dy_db_y,
         }
     }
 
-    pub fn subtract_gradients(&mut self, gradients: &GradientsSimd<NR_LAYERS, NR_NEURONS, NR_LANES>) {
+    pub fn subtract_gradients(&mut self, gradients: &GradientsSum<NR_LAYERS, N, L>) {
         // w
-        for (w, dw) in zip(&mut self.w, &gradients.dy_dw) {
+        for (w, dw) in zip(&mut self.w, &gradients.dl_dw) {
             *w -= dw;
         }
 
         // b
-        for (b, db) in zip(&mut self.b, &gradients.dy_db) {
+        for (b, db) in zip(&mut self.b, &gradients.dl_db) {
             *b -= db;
         }
 
         // w_y
         let w_y = &mut self.w_y;
-        let dy_dw_y = &gradients.dy_dw_y;
+        let dy_dw_y = &gradients.dl_dw_y;
         *w_y -= dy_dw_y;
 
         // b_y
         let b_y = &mut self.b_y;
-        let dy_by_y = &gradients.dy_db_y;
+        let dy_by_y = &gradients.dl_db_y;
         *b_y -= dy_by_y;
     }
 
     const LEAKY_RELU_ALPHA: f32 = 0.01;
 
     #[inline]
-    fn activation_re_lu_vec(x: &SVec<NR_NEURONS, NR_LANES>) -> SVec<NR_NEURONS, NR_LANES> {
-        let mut res =  SVec::new([0.0; NR_NEURONS]);
+    fn activation_re_lu_vec(x: &SVec<N, L>) -> SVec<N, L> {
+        let mut res =  SVec::new([0.0; N]);
         let zero = f32x16::ZERO;
         let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
 
@@ -379,8 +379,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
     }
 
     #[inline]
-    fn derivative_re_lu_vec(x: &SVec<NR_NEURONS, NR_LANES>) -> SVec<NR_NEURONS, NR_LANES> {
-        let mut res =  SVec::new([0.0; NR_NEURONS]);
+    fn derivative_re_lu_vec(x: &SVec<N, L>) -> SVec<N, L> {
+        let mut res =  SVec::new([0.0; N]);
         let zero = f32x16::ZERO;
         let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
         let one = f32x16::splat(1.0);
@@ -464,3 +464,12 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
     }
 }
 
+
+
+pub struct GradientsRef<'a, const NR_LAYERS: usize, const N: usize, const L: usize, > {
+    pub dy_dw: &'a [SMat<N, L>; NR_LAYERS],
+    pub dy_db: &'a [SVec<N, L>; NR_LAYERS],
+
+    pub dy_dw_y: &'a SMat<N, L>,
+    pub dy_db_y: &'a SVec<N, L>,
+}

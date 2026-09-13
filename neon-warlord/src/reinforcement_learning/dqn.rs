@@ -6,7 +6,7 @@ mod test_maze;
 use std::collections::HashMap;
 
 use crate::reinforcement_learning::neural_network_simd::{
-    NeuralNetwork16, gradients::GradientsSimd, Gradient16
+    NeuralNetwork16, gradients_sum::GradientsSum, Gradient16
 };
 
 const LAYERS: usize = 5;
@@ -140,9 +140,9 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
             let inputs_next = step.inputs_next;
             let finished = step.finished;
 
+            let q_values_next = self.model.forward(&inputs_next);
             let q_values = self.model.forward(&inputs);
             let gradients = self.model.backward(action);
-            let q_values_next = self.model.forward(&inputs_next);
 
             let mut q_value_max_next = f32::NEG_INFINITY;
             for q_value in q_values_next {
@@ -175,7 +175,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
             // --------- = --- * (y_pred_i − y_i)
             // ∂L_pred_i    N
             let d_loss_dy = 2.0 / n * diff;
-            gradients_loss_sum += &gradients * d_loss_dy;
+            gradients_loss_sum.add_loss_gradients(&gradients, d_loss_dy);
         }
 
         // loss

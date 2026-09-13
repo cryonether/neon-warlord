@@ -145,7 +145,7 @@ impl Dqn2 {
                 // --------- = --- * (y_pred_i − y_i)
                 // ∂L_pred_i    N
                 let d_loss_dy = 2.0 / BATCH_SIZE as f32 * diff;
-                gradients_loss_sum += &gradients * d_loss_dy;
+                gradients_loss_sum.add_loss_gradients(&gradients, d_loss_dy);
             }
 
             // loss

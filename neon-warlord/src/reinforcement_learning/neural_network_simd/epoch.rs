@@ -4,7 +4,7 @@ use std::iter::zip;
 
 use itertools::izip;
 
-use crate::reinforcement_learning::neural_network_simd::{Gradient16, NeuralNetwork16, gradients::GradientsSimd};
+use crate::reinforcement_learning::neural_network_simd::{Gradient16, NeuralNetwork16, gradients_sum::GradientsSum};
 
 use super::NeuralNetworkSimd;
 
@@ -35,12 +35,17 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         input: [[f32; INPUT_SIZE]; BATCH_SIZE],
         output: [[f32; 1]; BATCH_SIZE],
         output_index: usize,
-    ) -> [f32; BATCH_SIZE] {
-        let mut y_pred = Vec::new();
-        let mut history = Vec::new();
+    ) -> [f32; BATCH_SIZE] 
+    {
+        let mut y_pred_vec: Vec<f32> = Vec::new();
 
+        let n = BATCH_SIZE as f32;
+
+        // accumulate gradients
+        let mut gradients_loss_sum: Gradient16<SIZE> = GradientsSum::new();
+        let mut sum = 0.0;
         // evaluate
-        for input in input {
+        for (input, output) in zip(input, output) {
             for (x, input) in zip(self.model.x.as_mut_array(), input) {
                 *x = input;
             }
@@ -49,47 +54,36 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
             let y_pred_ = self.model.forward(x.as_array());
             let gradients = self.model.backward(output_index);
 
-            y_pred.push(y_pred_[output_index]);
-            history.push(gradients);
-        }
+            let y_pred = y_pred_[output_index];
+            y_pred_vec.push(y_pred);
 
-        let n = history.len();
-        assert_eq!(n, y_pred.len());
-        assert_eq!(n, output.len());
-        let n = n as f32;
+            // Loss function
+            // mean square error
+            //      1    N-1
+            // L = --- * ∑ (y_pred_i − y_i)²
+            //      N    i=0
 
-        // Loss function
-        // mean square error
-        //      1    N-1
-        // L = --- * ∑ (y_pred_i − y_i)²
-        //      N    i=0
-        let mut sum = 0.0;
-        for (y_pred, output) in izip!(&y_pred, output) {
             let y = output[0];
 
             let diff = y_pred - y;
             sum += diff * diff;
-        }
-        let loss = sum / n;
-        self.loss = loss;
 
-        // accumulate gradients
-        let mut gradients_loss_sum: Gradient16<SIZE> = GradientsSimd::new();
-
-        // Derivative loss function
-        // derivative mean square error
-        // ∂L           2
-        // --------- = --- * (y_pred_i − y_i)
-        // ∂L_pred_i    N
-        for (y_pred, output, gradients) in izip!(&y_pred, output, history) {
+            // Derivative loss function
+            // derivative mean square error
+            // ∂L           2
+            // --------- = --- * (y_pred_i − y_i)
+            // ∂L_pred_i    N
             let y = output[0];
 
             let diff = y_pred - y;
             let d_loss_dy = 2.0 / n * diff;
 
             // sum loss
-            gradients_loss_sum += &gradients * d_loss_dy;
+            gradients_loss_sum.add_loss_gradients(&gradients, d_loss_dy);
         }
+
+        let loss = sum / n;
+        self.loss = loss;
 
         // optimizer
         /// plain gradient descent
@@ -98,7 +92,7 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         self.model
             .subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
 
-        let res: [f32; BATCH_SIZE] = y_pred.try_into().unwrap();
+        let res: [f32; BATCH_SIZE] = y_pred_vec.try_into().unwrap();
 
         res
     }
