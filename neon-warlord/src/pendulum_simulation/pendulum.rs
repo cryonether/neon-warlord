@@ -31,12 +31,12 @@ impl Pendulum {
         let radius = 0.1;
         let mass = 0.1;
 
-        let particles_static_pos_0 = Vec3::new(-20.0, 0.0, 0.0);
+        let particles_static_pos_0 = Vec3::new(-40.0, 0.0, 0.0);
         let particles_static_0 = verlet_physics.push_particle(particles_static_pos_0, radius, mass);
 
         let particle_cart = verlet_physics.push_particle(Vec3::new(0.0, 0.0, 0.0), radius, mass);
 
-        let particles_static_pos_1 = Vec3::new(20.0, 0.0, 0.0);
+        let particles_static_pos_1 = Vec3::new(40.0, 0.0, 0.0);
         let particles_static_1 = verlet_physics.push_particle(particles_static_pos_1, radius, mass);
 
         let particle_pendulum =
@@ -169,9 +169,9 @@ impl Pendulum {
         match action {
             // PendulumAction::Left2 => self.motor_linear.accelerate(-1.6),
             // PendulumAction::Left1 => self.motor_linear.accelerate(-0.8),
-            PendulumAction::Left0 => self.motor_linear.accelerate(-2.4),
+            PendulumAction::Left0 => self.motor_linear.accelerate(-4.4),
             // PendulumAction::None => {}
-            PendulumAction::Right0 => self.motor_linear.accelerate(2.4),
+            PendulumAction::Right0 => self.motor_linear.accelerate(4.4),
             // PendulumAction::Right1 => self.motor_linear.accelerate(0.8),
             // PendulumAction::Right2 => self.motor_linear.accelerate(1.6),
         }

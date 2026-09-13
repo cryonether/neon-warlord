@@ -4,11 +4,11 @@ use std::{collections::VecDeque, iter::zip};
 
 
 
-use crate::reinforcement_learning::neural_network_simd::{Gradient128, NeuralNetwork128};
+use crate::reinforcement_learning::neural_network_simd::{Gradient64, Gradient128, NeuralNetwork64, NeuralNetwork128};
 
 const INPUTS: usize = 4;
 const OUTPUTS: usize = 2;
-const LAYERS: usize = 2;
+const LAYERS: usize = 3;
 
 
 struct Transition {
@@ -20,8 +20,8 @@ struct Transition {
 }
 
 pub struct Dqn2 {
-    q_net: Box<NeuralNetwork128<INPUTS, OUTPUTS, LAYERS, false>>,
-    pub target_net: Box<NeuralNetwork128<INPUTS, OUTPUTS, LAYERS, false>>,
+    q_net: Box<NeuralNetwork64<INPUTS, OUTPUTS, LAYERS, true>>,
+    pub target_net: Box<NeuralNetwork64<INPUTS, OUTPUTS, LAYERS, true>>,
 
     epsilon: f32,
     epsilon_decay: f32,
@@ -39,14 +39,15 @@ impl Dqn2 {
     pub fn new(
 
     ) -> Self {
-        let q_net = Box::new(NeuralNetwork128::new());
+        let q_net = Box::new(NeuralNetwork64::new());
         let target_net = q_net.clone();
 
         let epsilon: f32 = 1.0f32;
         let epsilon_decay: f32 = 0.998; 
         let epsilon_min: f32 = 0.02;
-        let gamma: f32 = 0.99f32;
-        let replay_buffer_capacity: usize = 20000;
+        // let gamma: f32 = 0.99;
+        let gamma: f32 = 0.90;
+        let replay_buffer_capacity: usize = 200000;
         let replay_buffer: VecDeque<Transition> = VecDeque::with_capacity(replay_buffer_capacity);
 
         let total_reward: f32 = 0.0;
@@ -98,8 +99,8 @@ impl Dqn2 {
         }
 
         let mut sum: f32 = 0.0;
-        let mut gradients_loss_sum = Gradient128::new();
-        const BATCH_SIZE: usize = 64;
+        let mut gradients_loss_sum = Gradient64::new();
+        const BATCH_SIZE: usize = 32;
         if self.replay_buffer.len() >= BATCH_SIZE {
 
             for _i in 0..BATCH_SIZE {
@@ -156,7 +157,8 @@ impl Dqn2 {
             const LEARNING_RATE: f32 = 0.01;
             self.q_net.subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
 
-            return self.total_reward;
+            // return self.total_reward;
+            return self.loss;
         }
 
         return 0.0;

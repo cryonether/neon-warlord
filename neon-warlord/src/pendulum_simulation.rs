@@ -294,7 +294,7 @@ impl PendulumSimulation {
         // Winkel fortlaufend auf den Bereich [-PI, PI] normalisieren.
         // Dadurch ist 0.0 perfekt oben, PI und -PI sind unten.
         let out_of_bounds = pendulum_state.cart_pos.abs() > 0.9;
-        let done = out_of_bounds || self.steps >= 1000;
+        let done = out_of_bounds || self.steps >= 5000;
         if done {
             self.steps = 0;
         }
@@ -311,6 +311,7 @@ impl PendulumSimulation {
             // Kleine Strafen für zu wildes Bewegen, damit er oben stabilisiert
             r -= 0.01 * pendulum_state.angular_velocity.powi(2);
             r -= 0.01 * pendulum_state.cart_velocity.powi(2);
+            r -= 0.01 * pendulum_state.cart_pos.powi(2);
 
             r.max(0.0) // Verhindert, dass der Reward negativ wird!
         } else {
