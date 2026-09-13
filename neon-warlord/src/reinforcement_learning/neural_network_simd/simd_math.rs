@@ -5,42 +5,52 @@ use std::ops::{Add, AddAssign, Sub};
 
 use wide::f32x16;
 
+// 238 fps
+// 169 fps
+
 const N: usize = 128;
 const LANES: usize = 16;
 // const L: usize = N/LANES;
 
 pub struct SMat<const N: usize, const L: usize> {
-    pub m: [[f32; N]; N]
+    pub m: [[f32x16; L]; N]
 }
 
 #[derive(Debug, Clone)]
 pub struct SVec<const N: usize, const L: usize> {
-    pub a: [f32; N]
+    pub a: [f32x16; L]
 }
 
 pub struct SRowVec<const N: usize, const L: usize> {
-    pub a: [f32; N]
+    pub a: [f32x16; L]
 }
 
 
 impl<const N: usize, const L: usize> SMat<N, L> {
     #[inline]
     pub fn new(m: [[f32; N]; N]) -> Self {
-        Self { m }
+
+        let m_vec = std::array::from_fn(|i| f32x16_from(m[i]));
+
+        Self { m: m_vec }
     }
 }
 
 impl<const N: usize, const L: usize> SVec<N, L> {
     #[inline]
     pub fn new(a: [f32; N]) -> Self {
-        Self { a }
+        let a_vec = f32x16_from(a);
+
+        Self { a: a_vec }
     }
 }
 
 impl<const N: usize, const L: usize> SRowVec<N, L> {
     #[inline]
     pub fn new(a: [f32; N]) -> Self {
-        Self { a }
+        let a_vec = f32x16_from(a);
+
+        Self { a: a_vec }
     }
 }
 
@@ -48,21 +58,21 @@ impl<const N: usize, const L: usize> SRowVec<N, L> {
 impl<const N: usize, const L: usize> From<SVec<N, L>> for [f32; N] {
     #[inline]
     fn from(v: SVec<N, L>) -> Self {
-        v.a
+        f32x16_to(v.a)
     }
 }
 
 impl<const N: usize, const L: usize> From<SRowVec<N, L>> for [f32; N] {
     #[inline]
     fn from(v: SRowVec<N, L>) -> Self {
-        v.a
+        f32x16_to(v.a)
     }
 }
 
 impl<const N: usize, const L: usize> From<SMat<N, L>> for [[f32; N]; N] {
     #[inline]
     fn from(m: SMat<N, L>) -> Self {
-        m.m
+        std::array::from_fn(|i| f32x16_to(m.m[i]))   
     }
 }
 
@@ -120,11 +130,10 @@ impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for SMat<N, L> {
     // 186 ups
     #[inline]
     fn mul(self, rhs: &SVec<N, L>) -> Self::Output {
-        let a = f32x16_from::<N, L>(rhs.a);
+        let a = rhs.a;
         let mut res = [0.0f32; N];
 
         for (res, m) in std::iter::zip(&mut res, &self.m) {
-            let m = f32x16_from::<N, L>(*m);
 
             let mut sum = f32x16::splat(0.0);
 
@@ -135,7 +144,7 @@ impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for SMat<N, L> {
             *res = sum.reduce_add();
         }
 
-        SVec { a: res }
+        SVec::new(res)
     }
 }
 
@@ -152,9 +161,10 @@ impl<const N: usize, const L: usize> Mul<SMat<N, L>> for SRowVec<N, L> {
     fn mul(self, rhs: SMat<N, L>) -> Self::Output {
         let mut res = [f32x16::ZERO; L];
 
-        for (x, row) in zip(self.a, &rhs.m) {
+        let x: [f32; N] = f32x16_to(self.a);
+
+        for (x, row) in zip(x, &rhs.m) {
             let x = f32x16::splat(x);
-            let row = f32x16_from::<N, L>(*row);
 
             for i in 0..L {
                 res[i] += x * row[i];
@@ -162,7 +172,7 @@ impl<const N: usize, const L: usize> Mul<SMat<N, L>> for SRowVec<N, L> {
         }
 
         SRowVec {
-            a: f32x16_to::<N, L>(res),
+            a: res,
         }
     }
 }
@@ -177,14 +187,15 @@ impl<const N: usize, const L: usize> Mul<SRowVec<N, L>> for SVec<N, L> {
 
     #[inline]
     fn mul(self, rhs: SRowVec<N, L>) -> Self::Output {
-        let b = f32x16_from::<N, L>(rhs.a);
+        let b = rhs.a;
+        let a: [f32; N] = f32x16_to(self.a);
 
         let m = std::array::from_fn(|i| {
-            let a = f32x16::splat(self.a[i]);
+            let a = f32x16::splat(a[i]);
 
             let row = std::array::from_fn(|j| a * b[j]);
 
-            f32x16_to::<N, L>(row)
+            row
         });
 
         SMat { m }
@@ -204,13 +215,13 @@ impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for SVec<N, L> {
 
     #[inline]
     fn mul(self, rhs: &SVec<N, L>) -> Self::Output {
-        let a = f32x16_from::<N, L>(self.a);
-        let b = f32x16_from::<N, L>(rhs.a);
+        let a = self.a;
+        let b = rhs.a;
 
         let res = std::array::from_fn(|i| a[i] * b[i]);
 
         SVec {
-            a: f32x16_to::<N, L>(res),
+            a: res,
         }
     }
 }
@@ -247,13 +258,13 @@ impl<const N: usize, const L: usize> Add<&SVec<N, L>> for SVec<N, L> {
 
     #[inline]
     fn add(self, rhs: &SVec<N, L>) -> Self::Output {
-        let a = f32x16_from::<N, L>(self.a);
-        let b = f32x16_from::<N, L>(rhs.a);
+        let a = self.a;
+        let b = rhs.a;
 
         let c = std::array::from_fn(|i| a[i] + b[i]);
 
         SVec {
-            a: f32x16_to::<N, L>(c),
+            a: c,
         }
     }
 }
@@ -282,13 +293,13 @@ impl<const N: usize, const L: usize> Sub<&SVec<N, L>> for SVec<N, L> {
 
     #[inline]
     fn sub(self, rhs: &SVec<N, L>) -> Self::Output {
-        let a = f32x16_from::<N, L>(self.a);
-        let b = f32x16_from::<N, L>(rhs.a);
+        let a = self.a;
+        let b = rhs.a;
 
         let c = std::array::from_fn(|i| a[i] - b[i]);
 
         SVec {
-            a: f32x16_to::<N, L>(c),
+            a: c,
         }
     }
 }
@@ -336,7 +347,7 @@ fn test_mul_mat_vec() {
     // x = [1, 2, 3, ..., 128]
     let a = std::array::from_fn(|i| (i + 1) as f32);
 
-    let res: SVec<N, L> = SMat { m } * &SVec { a };
+    let res: SVec<N, L> = SMat::new(m) * &SVec::new(a);
 
     // Reference implementation.
     let expected: [f32; N] = std::array::from_fn(|i| {
@@ -348,17 +359,22 @@ fn test_mul_mat_vec() {
     // println!("res: {:?}", res);
 
 
-    for i in 0..N {
+    let expected: [f32x16; L] = f32x16_from(expected);
+
+    for i in 0..L {
         let got = res.a[i];
         let expected = expected[i];
 
         let diff = (got - expected).abs();
-        let tolerance = 1e-5 * expected.abs().max(1.0);
+        let tolerance = 1e-5 * expected.abs().max(f32x16::splat(1.0));
 
-        assert!(
-            diff <= tolerance,
-            "mismatch at row {i}: got {got}, expected {expected}, diff {diff}, tolerance {tolerance}"
-        );
+        for (diff, tolerance) in zip(diff.as_array(), tolerance.as_array()) {
+            assert!(
+                *diff <= *tolerance,
+                "mismatch at index {i}: got {got}, expected {expected}, \
+                diff {diff}, tolerance {tolerance}"
+            );
+        }
     }
 }
 
@@ -376,7 +392,7 @@ fn test_mul_vec_mat() {
     // x = [1, 2, 3, ..., 128]
     let a = std::array::from_fn(|i| (i + 1) as f32);
 
-    let res: SRowVec<N, L> = SRowVec { a } * SMat { m };
+    let res: SRowVec<N, L> = SRowVec::new(a) * SMat::new(m);
 
     // Reference implementation:
     //
@@ -387,17 +403,22 @@ fn test_mul_vec_mat() {
             .sum::<f32>()
     });
 
-    for i in 0..N {
+    let expected: [f32x16; L] = f32x16_from(expected);
+
+    for i in 0..L {
         let got = res.a[i];
         let expected = expected[i];
 
         let diff = (got - expected).abs();
-        let tolerance = 1e-5 * expected.abs().max(1.0);
+        let tolerance = 1e-5 * expected.abs().max(f32x16::splat(1.0));
 
-        assert!(
-            diff <= tolerance,
-            "mismatch at column {i}: got {got}, expected {expected}, diff {diff}, tolerance {tolerance}"
-        );
+        for (diff, tolerance) in zip(diff.as_array(), tolerance.as_array()) {
+            assert!(
+                *diff <= *tolerance,
+                "mismatch at index {i}: got {got}, expected {expected}, \
+                diff {diff}, tolerance {tolerance}"
+            );
+        }
     }
 }
 
@@ -412,7 +433,7 @@ fn test_outer_product() {
     // b = [129, 130, 131, ..., 256]
     let b = std::array::from_fn(|i| (N + i + 1) as f32);
 
-    let res: SMat<N, L> = SVec { a } * SRowVec { a: b };
+    let res: SMat<N, L> = SVec::new(a) * SRowVec::new(b);
 
     // Reference implementation:
     //
@@ -421,19 +442,23 @@ fn test_outer_product() {
         std::array::from_fn(|j| a[i] * b[j])
     });
 
+    let expected: [[f32x16; L]; 128] = SMat::new(expected).m;
+
     for i in 0..N {
-        for j in 0..N {
+        for j in 0..L {
             let got = res.m[i][j];
             let expected = expected[i][j];
 
             let diff = (got - expected).abs();
-            let tolerance = 1e-5 * expected.abs().max(1.0);
+            let tolerance = 1e-5 * expected.abs().max(f32x16::splat(1.0));
 
-            assert!(
-                diff <= tolerance,
-                "mismatch at [{i}][{j}]: got {got}, expected {expected}, \
-                 diff {diff}, tolerance {tolerance}"
-            );
+            for (diff, tolerance) in zip(diff.as_array(), tolerance.as_array()) {
+                assert!(
+                    *diff <= *tolerance,
+                    "mismatch at index {i}: got {got}, expected {expected}, \
+                    diff {diff}, tolerance {tolerance}"
+                );
+            }
         }
     }
 }
@@ -460,18 +485,22 @@ fn test_mul_element_wise() {
         (i + 1) as f32 * (N + i + 1) as f32
     });
 
-    for i in 0..N {
+    let expected: [f32x16; L] = f32x16_from(expected);
+
+    for i in 0..L {
         let got = res.a[i];
         let expected = expected[i];
 
         let diff = (got - expected).abs();
-        let tolerance = 1e-5 * expected.abs().max(1.0);
+        let tolerance = 1e-5 * expected.abs().max(f32x16::splat(1.0));
 
-        assert!(
-            diff <= tolerance,
-            "mismatch at index {i}: got {got}, expected {expected}, \
-             diff {diff}, tolerance {tolerance}"
-        );
+        for (diff, tolerance) in zip(diff.as_array(), tolerance.as_array()) {
+            assert!(
+                *diff <= *tolerance,
+                "mismatch at index {i}: got {got}, expected {expected}, \
+                diff {diff}, tolerance {tolerance}"
+            );
+        }
     }
 }
 

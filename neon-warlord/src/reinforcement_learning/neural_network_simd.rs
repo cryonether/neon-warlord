@@ -382,12 +382,9 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
         let zero = f32x16::ZERO;
         let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
 
-        for (x, res) in zip(x.a.as_chunks::<LANES>().0,  res.a.as_chunks_mut::<LANES>().0) {
-            let x_ = f32x16::from(*x);
+        for (x, res) in zip(x.a,  &mut res.a) {
 
-            let res_ = x_.simd_gt(zero).select(x_, x_ * alpha);
-
-            *res = res_.into();
+            *res = x.simd_gt(zero).select(x, x * alpha);
         }
 
         res
@@ -400,12 +397,9 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
         let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
         let one = f32x16::splat(1.0);
 
-        for (x, res) in zip(x.a.as_chunks::<LANES>().0,  res.a.as_chunks_mut::<LANES>().0) {
-            let x_ = f32x16::from(*x);
+        for (x, res) in zip(x.a,  &mut res.a) {
 
-            let res_ = x_.simd_gt(zero).select(one, alpha);
-
-            *res = res_.into();
+            *res = x.simd_gt(zero).select(one, alpha);
         }
 
         res
