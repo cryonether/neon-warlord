@@ -102,7 +102,7 @@ impl Dqn2 {
         const BATCH_SIZE: usize = 64;
         if self.replay_buffer.len() >= BATCH_SIZE {
 
-            for i in 0..BATCH_SIZE {
+            for _i in 0..BATCH_SIZE {
                 let idx = fastrand::usize(0..self.replay_buffer.len());
                 let transition = &self.replay_buffer[idx];
                 
@@ -112,17 +112,21 @@ impl Dqn2 {
                 let next_state = transition.next_state;
                 let done = if transition.done { 1.0f32 } else { 0.0f32 };
 
+                // Double dqn implementation
+                // Online network gives best action
+                // Target network gives q-value
                 let next_online_q = self.q_net.forward(&next_state);
                 let next_target_q = self.target_net.forward(&next_state);
 
                 let best_action_next = if next_online_q[0] > next_online_q[1] { 0 } else { 1 };
                 let max_next_q = next_target_q[best_action_next];
 
+                // reward function
                 let target_qs = reward + self.gamma * max_next_q * (1.0 - done);
 
+                // get current q-value
                 let pred_q_values = self.q_net.forward(&state);
                 let gradients = self.q_net.backward(action);
-
 
                 let y_pred = pred_q_values[action];
                 let y = target_qs;
