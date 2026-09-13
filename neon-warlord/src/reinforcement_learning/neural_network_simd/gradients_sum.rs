@@ -35,7 +35,8 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
         }
     }
 
-    // 220 ups -> 550 ups
+    // 220 ups -> 630 ups
+    #[inline(never)]
     pub fn add_loss_gradients(&mut self, gradients_dy: &GradientsRef<SIZE, N, L>, d_loss_dy: f32)
     {
         let d_loss_dy = f32x16::splat(d_loss_dy);
@@ -57,17 +58,54 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
         }
 
         // dl_dw_y
-        for (dl_dw_y, dy_dw_y) in zip(&mut self.dl_dw_y.m, gradients_dy.dy_dw_y.m) {
+        for (dl_dw_y, dy_dw_y) in zip(&mut self.dl_dw_y.m, &gradients_dy.dy_dw_y.m) {
             for (dl_dw_y, dy_dw_y) in zip( dl_dw_y, dy_dw_y) {
                 *dl_dw_y += dy_dw_y * d_loss_dy;
             }
         }
 
         // dl_db_y
-        for (dl_db_y, dy_db_y) in zip(&mut self.dl_db_y.a, gradients_dy.dy_db_y.a) {
+        for (dl_db_y, dy_db_y) in zip(&mut self.dl_db_y.a, &gradients_dy.dy_db_y.a) {
             *dl_db_y += dy_db_y * d_loss_dy;
         }
     }
+
+    // // 630 ups -> 655 ups
+    // #[inline(never)]
+    // pub fn add_loss_gradients(
+    //     &mut self,
+    //     gradients_dy: &GradientsRef<SIZE, N, L>,
+    //     d_loss_dy: f32,
+    // ) {
+    //     let scale = f32x16::splat(d_loss_dy);
+
+    //     for i in 0..SIZE {
+    //         let dst = &mut self.dl_dw[i].m;
+    //         let src = &gradients_dy.dy_dw[i].m;
+
+    //         for j in 0..N {
+    //             for k in 0..L {
+    //                 dst[j][k] += src[j][k] * scale;
+    //             }
+    //         }
+
+    //         for j in 0..L {
+    //             self.dl_db[i].a[j] += gradients_dy.dy_db[i].a[j] * scale;
+    //         }
+    //     }
+
+    //     for j in 0..N {
+    //         for k in 0..L {
+    //             self.dl_dw_y.m[j][k] +=
+    //                 gradients_dy.dy_dw_y.m[j][k] * scale;
+    //         }
+    //     }
+
+    //     for j in 0..L {
+    //         self.dl_db_y.a[j] += gradients_dy.dy_db_y.a[j] * scale;
+    //     }
+    // }
+
 
     #[inline]
     pub fn multiply_constant(&self, val: f32) -> Self {

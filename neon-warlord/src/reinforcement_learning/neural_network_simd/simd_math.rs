@@ -271,27 +271,6 @@ impl<const N: usize, const L: usize> From<[[f32; N]; N]> for SMat<N, L> {
 impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for &SMat<N, L> {
     type Output = SVec<N, L>;
 
-    // // 160 ups
-    // // #[inline]
-    // fn mul(self, rhs: &SVec<N, L>) -> Self::Output {
-    //     let a = f32x16_from::<N, L>(rhs.a);
-    //     let mut res = [0.0f32; N];
-
-    //     for (res, m) in std::iter::zip(&mut res, &self.m) {
-    //         let m = f32x16_from::<N, L>(*m);
-
-    //         let mut sum = 0.0f32;
-
-    //         for i in 0..L {
-    //             sum += (m[i] * a[i]).reduce_add();
-    //         }
-
-    //         *res = sum;
-    //     }
-
-    //     SVec { a: res }
-    // }
-
     // 186 ups
     // #[inline]
     fn mul(self, rhs: &SVec<N, L>) -> Self::Output {
@@ -326,10 +305,10 @@ impl<const N: usize, const L: usize> Mul<&SMat<N, L>> for &SRowVec<N, L> {
     fn mul(self, rhs: &SMat<N, L>) -> Self::Output {
         let mut res = [f32x16::ZERO; L];
 
-        let x: [f32; N] = f32x16_to(self.a);
+        let x = self.as_array();
 
         for (x, row) in zip(x, &rhs.m) {
-            let x = f32x16::splat(x);
+            let x = f32x16::splat(*x);
 
             for i in 0..L {
                 res[i] += x * row[i];

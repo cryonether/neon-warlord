@@ -77,7 +77,7 @@ pub type NeuralNetwork64<
     4, 
 >;
 
-pub type Gradient64<const SIZE: usize> = GradientsSum<SIZE, 164, 4>;
+pub type Gradient64<const SIZE: usize> = GradientsSum<SIZE, 64, 4>;
 
 
 pub type NeuralNetwork128<
@@ -254,6 +254,9 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
             // z = W * input + b + input
             *z = w * input_ + b;
 
+            // transposed representation
+            // *z = w.transpose_mul(input_) + b;
+
             if RESIDUAL {
                 *z += input_;
             }
@@ -271,7 +274,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
         self.y.as_array().clone()
     }
 
-    pub fn backward(&mut self, index: usize) -> GradientsRef<NR_LAYERS, N, L> {
+    pub fn backward<'a>(&'a mut self, index: usize) -> GradientsRef<'a, NR_LAYERS, N, L> {
         assert!(index < N);
 
         let mut z_iter = self.z.iter().rev();
@@ -315,6 +318,9 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
             let w_ = w;
             let mut delta_ = (&delta_previous_row_vec * w_).as_column_vec();
 
+            // transposed representation
+            // let mut delta_ = w * &delta_previous_;
+
             // Gradient through residual connection
             if RESIDUAL {
                 delta_ += &delta_previous_;
@@ -325,6 +331,9 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
             let delta_ = &delta_ * &dz_;
 
             let dy_dw_ = &delta_ * &a.as_row_vec();
+
+            // transposed representation
+            // let dy_dw_ = a * &delta_.as_row_vec();
 
             delta_previous_ = delta_;
 
