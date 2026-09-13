@@ -11,3 +11,11 @@ rustflags = ["-C", "target-cpu=native"]
 
 [target.wasm32-unknown-unknown]
 rustflags = []
+
+# performance measurement:
+#
+# /home/sarah/.cargo/bin/samply record ./target/release/app
+#
+# perf record -g  ./target/release/app     
+# perf report  > report.txt  
+#
