@@ -324,12 +324,12 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
             let dz_ = Self::derivative_re_lu_vec(z);
             let delta_ = &delta_ * &dz_;
 
-            delta_previous_ = delta_;
-
             let dy_dw_ = &delta_ * &a.as_row_vec();
 
-            *dy_db = delta_.into();
-            *dy_dw = dy_dw_.into();
+            delta_previous_ = delta_;
+            
+            *dy_db = delta_;
+            *dy_dw = dy_dw_;
         }
 
         GradientsSimd {
