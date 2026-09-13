@@ -17,8 +17,8 @@ use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
 use crate::{
     pendulum_simulation::{
-        graph_lines::{GraphLines, GraphLinesDrawer}, pendulum::{Pendulum, PendulumAction, PendulumState}, verlet_physics_drawer::VerletPhysicsDrawer,
-    }, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::{dqn::{self}, dqn_dfdx2::DqnDfdx2}, triple_buffer, worker_thread,
+        graph_lines::{GraphLines, GraphLinesDrawer}, neural_network_drawer::NeuralNetworkDrawer, pendulum::{Pendulum, PendulumAction, PendulumState}, verlet_physics_drawer::VerletPhysicsDrawer,
+    }, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::{dqn::{self}, dqn_dfdx2::DqnDfdx2, dqn2::Dqn2}, triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
@@ -26,17 +26,17 @@ type Vec3 = cgmath::Vector3<f32>;
 
 const INPUTS: usize = 4;
 const OUTPUTS: usize = 2;
-const NR_LAYERS: usize = 5;
-const RESIDUAL: bool = true;
+const NR_LAYERS: usize = 2;
+const RESIDUAL: bool = false;
 
 pub struct PendulumSimulation {
     // Physics
     ticks: u64,
 
     // model: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL>>,
-    // model_drawer: NeuralNetworkDrawer<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL>,
+    // model_drawer: NeuralNetworkDrawer<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, 128, 8>,
 
-    dqn: DqnDfdx2,
+    dqn: Dqn2,
 
     graph_loss: GraphLines<1>,
     graph_chosen_action: GraphLines<1>,
@@ -88,8 +88,8 @@ impl PendulumSimulation {
 
         // let model = Box::new(NeuralNetworkSimd::new());
         // let dqn = Dqn::new();
-        let dqn = DqnDfdx2::new();
-        // let model_drawer = NeuralNetworkDrawer::new(&dqn.model, scale, pos_model);
+        let dqn = Dqn2::new();
+        // let model_drawer: NeuralNetworkDrawer<4, 2, 1, false, 128, 8> = NeuralNetworkDrawer::new(&dqn.target_net, scale, pos_model);
 
         // Debug
         let ups = Fps::new();
@@ -340,7 +340,7 @@ impl PendulumSimulation {
         let edges = &mut objects.genome_edges;
 
         self.watch_ups.start("Draw Model");
-        // self.model_drawer.update(&self.dqn.model, nodes, edges);
+        // self.model_drawer.update(&self.dqn.target_net, nodes, edges);
 
         self.graph_drawer_loss.update(&self.graph_loss, edges);
         self.graph_drawer_chosen_action.update(&self.graph_chosen_action, edges);

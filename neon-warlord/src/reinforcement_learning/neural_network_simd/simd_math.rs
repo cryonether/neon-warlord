@@ -96,6 +96,28 @@ impl<const N: usize, const L: usize> From<[[f32; N]; N]> for SMat<N, L> {
 impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for SMat<N, L> {
     type Output = SVec<N, L>;
 
+    // // 160 ups
+    // #[inline]
+    // fn mul(self, rhs: &SVec<N, L>) -> Self::Output {
+    //     let a = f32x16_from::<N, L>(rhs.a);
+    //     let mut res = [0.0f32; N];
+
+    //     for (res, m) in std::iter::zip(&mut res, &self.m) {
+    //         let m = f32x16_from::<N, L>(*m);
+
+    //         let mut sum = 0.0f32;
+
+    //         for i in 0..L {
+    //             sum += (m[i] * a[i]).reduce_add();
+    //         }
+
+    //         *res = sum;
+    //     }
+
+    //     SVec { a: res }
+    // }
+
+    // 186 ups
     #[inline]
     fn mul(self, rhs: &SVec<N, L>) -> Self::Output {
         let a = f32x16_from::<N, L>(rhs.a);
@@ -104,18 +126,20 @@ impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for SMat<N, L> {
         for (res, m) in std::iter::zip(&mut res, &self.m) {
             let m = f32x16_from::<N, L>(*m);
 
-            let mut sum = 0.0f32;
+            let mut sum = f32x16::splat(0.0);
 
             for i in 0..L {
-                sum += (m[i] * a[i]).reduce_add();
+                sum += m[i] * a[i];
             }
 
-            *res = sum;
+            *res = sum.reduce_add();
         }
 
         SVec { a: res }
     }
 }
+
+
 
 /// Vector-matrix multiplication: `y = x^T * A`.
 /// 

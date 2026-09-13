@@ -12,11 +12,13 @@ const OUTPUTS: usize = 2;
 type QNetworkBuilder = (
     (builders::Linear<INPUTS, 128>, ReLU),
     (builders::Linear<128, 128>, ReLU),
+    (builders::Linear<128, 128>, ReLU),
     builders::Linear<128, OUTPUTS>,
 );
 
 type QNetworkModule = (
     (modules::Linear<INPUTS, 128, f32, Cpu>, ReLU),
+    (modules::Linear<128, 128, f32, Cpu>, ReLU),
     (modules::Linear<128, 128, f32, Cpu>, ReLU),
     modules::Linear<128, OUTPUTS, f32, Cpu>,
 );

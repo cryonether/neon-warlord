@@ -20,8 +20,8 @@ struct Transition {
 }
 
 pub struct Dqn2 {
-    q_net: NeuralNetwork128<INPUTS, OUTPUTS, LAYERS, false>,
-    target_net: NeuralNetwork128<INPUTS, OUTPUTS, LAYERS, false>,
+    q_net: Box<NeuralNetwork128<INPUTS, OUTPUTS, LAYERS, false>>,
+    pub target_net: Box<NeuralNetwork128<INPUTS, OUTPUTS, LAYERS, false>>,
 
     epsilon: f32,
     epsilon_decay: f32,
@@ -39,7 +39,7 @@ impl Dqn2 {
     pub fn new(
 
     ) -> Self {
-        let q_net = NeuralNetwork128::new();
+        let q_net = Box::new(NeuralNetwork128::new());
         let target_net = q_net.clone();
 
         let epsilon: f32 = 1.0f32;
