@@ -97,6 +97,7 @@ pub type NeuralNetwork128<
 pub type Gradient128<const SIZE: usize> = GradientsSimd<SIZE, 128, 8>;
 
 
+#[derive(Clone)]
 pub struct NeuralNetworkSimd<
     const INPUTS: usize,
     const OUTPUTS: usize,

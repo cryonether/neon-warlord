@@ -2,6 +2,7 @@
 
 #[allow(dead_code)]
 pub mod dqn;
+pub mod dqn2;
 #[allow(dead_code)]
 pub mod dqn_dfdx;
 pub mod dqn_dfdx2;
