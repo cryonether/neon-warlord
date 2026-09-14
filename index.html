@@ -5,47 +5,230 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel=”shortcut icon” href =“./favicon.ico”>
+    <link rel="shortcut icon" href="./favicon.ico">
+
     <title>Neon-Warlord</title>
+
     <style>
+        html,
+        body {
+            background-color: black;
+        }
+
         canvas {
             background-color: black;
         }
-        body {
-            background-color: black;
+
+        /* Loading screen */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            background: #000;
+            color: #00ffff;
+
+            font-family: monospace;
+        }
+
+        #loading-title {
+            margin-bottom: 20px;
+            font-size: 24px;
+            letter-spacing: 4px;
+            text-shadow:
+                0 0 5px #00ffff,
+                0 0 15px #00ffff,
+                0 0 30px #00ffff;
+        }
+
+        #progress-container {
+            width: min(500px, 70vw);
+            height: 20px;
+
+            border: 2px solid #00ffff;
+            box-shadow:
+                0 0 5px #00ffff,
+                0 0 15px #00ffff,
+                inset 0 0 10px rgba(0, 255, 255, 0.4);
+
+            background: #050505;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+
+            background: #00ffff;
+
+            box-shadow:
+                0 0 5px #00ffff,
+                0 0 15px #00ffff,
+                0 0 30px #00ffff;
+
+            transition: width 0.1s linear;
+        }
+
+        #loading-percentage {
+            margin-top: 12px;
+            font-size: 18px;
+            text-shadow:
+                0 0 5px #00ffff,
+                0 0 10px #00ffff;
+        }
+
+        #loading-status {
+            margin-top: 8px;
+            color: #777;
+            font-size: 13px;
         }
     </style>
 </head>
 
 <body id="wasm-demo">
 
+    <div id="loading-screen">
+        <div id="loading-title">NEON-WARLORD</div>
+
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+
+        <div id="loading-percentage">0%</div>
+        <div id="loading-status">Loading WASM...</div>
+    </div>
+
     <canvas id="canvas"></canvas>
-    
+
     <script type="module">
+        import init from "./neon-warlord/pkg/neon_warlord.js";
+
         window.addEventListener('resize', resizeCanvas, false);
         resizeCanvas();
 
-        import init from "./neon-warlord/pkg/neon_warlord.js";
+        const loadingScreen = document.getElementById("loading-screen");
+        const progressBar = document.getElementById("progress-bar");
+        const percentageText = document.getElementById("loading-percentage");
+        const loadingStatus = document.getElementById("loading-status");
+
         console.log("WASM Loading");
 
-        init().then(() => {
-            console.log("WASM Loaded");
-        });
+        async function loadWasm() {
+            try {
+                // Fetch the WASM file manually so we can track download progress.
+                const wasmUrl = "./neon-warlord/pkg/neon_warlord_bg.wasm";
+
+                const response = await fetch(wasmUrl);
+
+                if (!response.ok) {
+                    throw new Error(
+                        `Failed to load WASM: ${response.status} ${response.statusText}`
+                    );
+                }
+
+                const contentLength = response.headers.get("Content-Length");
+                console.log("contentLength", contentLength);
+
+                if (!contentLength) {
+                    // Some servers don't provide Content-Length.
+                    loadingStatus.textContent = "Loading WASM...";
+
+                    const wasmBytes = await response.arrayBuffer();
+
+                    updateProgress(100);
+
+                    await init(wasmBytes);
+                } else {
+                    const total = parseInt(contentLength, 10);
+                    const reader = response.body.getReader();
+
+                    let received = 0;
+                    const chunks = [];
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+
+                        if (done) {
+                            break;
+                        }
+
+                        chunks.push(value);
+                        received += value.length;
+
+                        // console.log("received", received);
+
+                        const percent = Math.round(
+                            (received / total) * 100
+                        );
+
+                        updateProgress(percent);
+                    }
+
+                    // Combine downloaded chunks.
+                    const wasmBytes = new Uint8Array(received);
+
+                    let offset = 0;
+
+                    for (const chunk of chunks) {
+                        wasmBytes.set(chunk, offset);
+                        offset += chunk.length;
+                    }
+
+                    await init(wasmBytes);
+                }
+
+                console.log("WASM Loaded");
+
+                updateProgress(100);
+                loadingStatus.textContent = "WASM Loaded";
+
+                // Small delay so the user can see 100%.
+                setTimeout(() => {
+                    loadingScreen.style.transition = "opacity 0.4s ease";
+                    loadingScreen.style.opacity = "0";
+
+                    setTimeout(() => {
+                        loadingScreen.remove();
+                    }, 400);
+                }, 300);
+
+            } catch (error) {
+                console.error("WASM Loading Error:", error);
+
+                loadingStatus.textContent = "Failed to load WASM";
+                loadingStatus.style.color = "#ff0055";
+                loadingStatus.style.textShadow = "0 0 10px #ff0055";
+            }
+        }
+
+        function updateProgress(percent) {
+            percent = Math.max(0, Math.min(100, percent));
+
+            progressBar.style.width = `${percent}%`;
+            percentageText.textContent = `${percent}%`;
+        }
 
         function resizeCanvas() {
-            var width = window.innerWidth -15;
-            var height = window.innerHeight -15;
-            
-            var canvas = document.getElementById('canvas');
+            const width = window.innerWidth - 15;
+            const height = window.innerHeight - 15;
+
+            const canvas = document.getElementById("canvas");
 
             canvas.width = width;
             canvas.height = height;
-            canvas.style.width = width.toString() + 'px';
-            canvas.style.height = height.toString() + 'px';;
-            console.log("canvas resize", width, height);
 
+            canvas.style.width = width + "px";
+            canvas.style.height = height + "px";
+
+            console.log("canvas resize", width, height);
         }
-  </script>
+
+        loadWasm();
+    </script>
 
 </body>
 
