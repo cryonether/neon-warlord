@@ -21,7 +21,7 @@ use std::iter::zip;
 use itertools::izip;
 use wide::f32x16;
 
-use crate::reinforcement_learning::neural_network_simd::{gradients_sum::GradientsSum, simd_math::{SMat, SRowVec, SVec}};
+use crate::reinforcement_learning::neural_network_simd::{gradients_sum::GradientsSum, simd_math::{SMat, SVec}};
 
 
 const LANES: usize = 16;

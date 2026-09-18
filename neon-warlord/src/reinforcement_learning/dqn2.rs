@@ -1,10 +1,10 @@
 //! A dqn implementation based on the output of gemini
 
-use std::{collections::VecDeque, iter::zip};
+use std::collections::VecDeque;
 
 
 
-use crate::reinforcement_learning::neural_network_simd::{Gradient64, Gradient128, NeuralNetwork64, NeuralNetwork128};
+use crate::reinforcement_learning::neural_network_simd::{Gradient64, NeuralNetwork64};
 
 const INPUTS: usize = 4;
 const OUTPUTS: usize = 2;

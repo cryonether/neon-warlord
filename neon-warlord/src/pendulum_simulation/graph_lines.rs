@@ -90,7 +90,7 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
     }
 
     /// Set the color of a particular line.
-    pub fn line_color(mut self, line: usize, color: [f32; 3]) -> Self {
+    pub fn _line_color(mut self, line: usize, color: [f32; 3]) -> Self {
         if line < SIZE {
             self.colors[line] = color.into();
         }
@@ -104,7 +104,7 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
         self
     }
 
-    pub fn x_lim(mut self, start: f32, end: f32) -> Self {
+    pub fn _x_lim(mut self, start: f32, end: f32) -> Self {
         self.x_lim_start = start;
         self.x_lim_end = end;
         self
@@ -116,18 +116,18 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
         self
     }
 
-    pub fn y_lim_range(mut self, start: f32, end: f32) -> Self {
+    pub fn _y_lim_range(mut self, start: f32, end: f32) -> Self {
         self.y_lim_start = start;
         self.y_lim_end = end;
         self
     }
 
-    pub fn grid_spacing(mut self, spacing: f32) -> Self {
+    pub fn _grid_spacing(mut self, spacing: f32) -> Self {
         self.grid_spacing = spacing;
         self
     }
 
-    pub fn grid_extent(mut self, extent: f32) -> Self {
+    pub fn _grid_extent(mut self, extent: f32) -> Self {
         self.grid_extent = extent;
         self
     }

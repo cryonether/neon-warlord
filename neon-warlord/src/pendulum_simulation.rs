@@ -14,16 +14,16 @@ use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 use crate::{
     pendulum_simulation::{
         graph_lines::{GraphLines, GraphLinesDrawer}, pendulum::{Pendulum, PendulumAction, PendulumState}, verlet_physics_drawer::VerletPhysicsDrawer,
-    }, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::{dqn::{self}, dqn_dfdx2::DqnDfdx2, dqn2::Dqn2}, triple_buffer, worker_thread,
+    }, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::dqn2::Dqn2, triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
 type Vec3 = cgmath::Vector3<f32>;
 
-const INPUTS: usize = 4;
+// const INPUTS: usize = 4;
 const OUTPUTS: usize = 2;
-const NR_LAYERS: usize = 2;
-const RESIDUAL: bool = false;
+// const NR_LAYERS: usize = 2;
+// const RESIDUAL: bool = false;
 
 pub struct PendulumSimulation {
     // Physics

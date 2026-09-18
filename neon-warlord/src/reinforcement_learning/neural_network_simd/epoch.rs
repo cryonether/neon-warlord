@@ -2,11 +2,9 @@
 
 use std::iter::zip;
 
-use itertools::izip;
 
 use crate::reinforcement_learning::neural_network_simd::{Gradient16, NeuralNetwork16, gradients_sum::GradientsSum};
 
-use super::NeuralNetworkSimd;
 
 pub struct EpochSimd<const SIZE: usize> {
     pub model: NeuralNetwork16<16, 16, SIZE, false>,

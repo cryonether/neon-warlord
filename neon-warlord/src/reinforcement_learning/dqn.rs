@@ -6,7 +6,7 @@ mod test_maze;
 use std::collections::HashMap;
 
 use crate::reinforcement_learning::neural_network_simd::{
-    NeuralNetwork16, gradients_sum::GradientsSum, Gradient16
+    NeuralNetwork16, Gradient16
 };
 
 const LAYERS: usize = 5;
