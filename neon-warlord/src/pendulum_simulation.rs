@@ -1,14 +1,10 @@
 //! Simulates an inverted pendulum
 
 mod graph_lines;
+#[allow(dead_code)]
 mod neural_network_drawer;
 mod pendulum;
 mod verlet_physics_drawer;
-mod test_pendulum_simulation_dfdx;
-mod test_pendulum_simulation_dfdx_2;
-mod test_pendulum_simulation_dfdx_3;
-mod test_pendulum_simulation_dfdx_4;
-mod test_pendulum_simulation_dfdx_5;
 
 use std::collections::VecDeque;
 
@@ -33,7 +29,6 @@ pub struct PendulumSimulation {
     // Physics
     ticks: u64,
 
-    // model: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL>>,
     // model_drawer: NeuralNetworkDrawer<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, 128, 8>,
 
     dqn: Dqn2,
@@ -72,7 +67,7 @@ impl PendulumSimulation {
     pub fn new() -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
-        let pos_model = pos;
+        let _pos_model = pos;
 
         let pos_graph_loss = pos + Vec3::new(-4.2, 1.0, 1.0);
         let pos_graph_chosen_action = pos + Vec3::new(-2.0, 1.0, 0.0);
@@ -86,8 +81,6 @@ impl PendulumSimulation {
 
         let scale = 0.1;
 
-        // let model = Box::new(NeuralNetworkSimd::new());
-        // let dqn = Dqn::new();
         let dqn = Dqn2::new();
         // let model_drawer: NeuralNetworkDrawer<4, 2, 1, false, 128, 8> = NeuralNetworkDrawer::new(&dqn.target_net, scale, pos_model);
 
@@ -269,13 +262,8 @@ impl PendulumSimulation {
     ) {
         self.steps += 1;
 
-        // let alpha = pendulum_state.alpha;
-        // let angular_velocity = pendulum_state.angular_velocity;
-        // let cart_pos = pendulum_state.cart_pos;
-        // let cart_velocity = pendulum_state.cart_velocity;
         let action: u8 = pendulum_action.into();
         let action = action as usize;
-        // println!("action: {}", action);
 
         let state: [f32; 4] = [
             pendulum_state.alpha, 
@@ -362,8 +350,6 @@ impl PendulumSimulation {
         self.watch_ups.update();
         objects.watch_ups = self.watch_ups.get_viewer_data();
     }
-    
-
 }
 
 pub struct PendulumSimulationThread<T>

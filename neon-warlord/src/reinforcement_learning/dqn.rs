@@ -112,12 +112,6 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
             finished,
         };
 
-        // let inputs_u8 = inputs.map(|x| x as u8);
-        // let replay_key: ReplayKey<INPUTS> = ReplayKey {
-        //     inputs: inputs_u8,
-        //     action,
-        // };
-
         self.steps.push(step.clone());
         self.replay_buffer.insert(replay_key, step);
     }
@@ -195,7 +189,6 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     }
 
     pub fn learn_replay(&mut self) -> f32 {
-        // self.epsilon = f32::max(self.epsilon * 0.99, 0.01);
 
         let values: Vec<&Transition<INPUTS>> = (0..1000)
             .map(|_| {
@@ -207,10 +200,6 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         for value in values {
             self.steps.push(value.clone());
         }
-
-        // for value in self.replay_buffer.values() {
-        //     self.steps.push(value.clone());
-        // }
 
         self.learn()
     }

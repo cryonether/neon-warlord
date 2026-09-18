@@ -170,7 +170,7 @@ impl DqnDfdx2 {
             let targets_t = self.dev.tensor(targets_array);
 
             let loss = mse_loss(pred_q_values, targets_t);
-            let loss_res = loss.as_vec()[0];
+            let _loss_res = loss.as_vec()[0];
             let grads = loss.backward();
             self.adam.update(&mut self.q_net, &grads).expect("Fehler beim Optimizer-Update");
 

@@ -79,7 +79,7 @@ where
         }
     }
 
-    pub fn limit_ups(&mut self, val: bool) {
+    pub fn _limit_ups(&mut self, val: bool) {
         self.limit_ups.store(val, Ordering::Relaxed);
     }
 

@@ -13,12 +13,12 @@ pub struct GraphLines<const SIZE: usize> {
 
 impl<const SIZE: usize> GraphLines<SIZE> {
     /// Pushes a new X value and removes the oldest one.
-    pub fn x_push_pop(&mut self, val: f32) {
+    pub fn _x_push_pop(&mut self, val: f32) {
         self.x.pop_front();
         self.x.push_back(val);
     }
 
-    /// Pushes a value onto one of the Y lines and removes the oldest value.
+    // Pushes a value onto one of the Y lines and removes the oldest value.
     pub fn y_push_pop(&mut self, line: usize, val: f32) {
         if line >= SIZE {
             return;
@@ -29,7 +29,7 @@ impl<const SIZE: usize> GraphLines<SIZE> {
     }
 
     /// Pushes a complete sample containing values for every line.
-    pub fn push(&mut self, x: f32, values: [f32; SIZE]) {
+    pub fn _push(&mut self, x: f32, values: [f32; SIZE]) {
         self.x.pop_front();
         self.x.push_back(x);
 
