@@ -178,7 +178,7 @@ impl DqnDfdx2 {
             return self.total_reward;
         }
 
-        return 0.0;
+        0.0
     }
 
     pub fn update_target_net(&mut self) {

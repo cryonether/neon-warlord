@@ -337,9 +337,9 @@ impl<const N: usize, const L: usize> Mul<&SRowVec<N, L>> for &SVec<N, L> {
         let m = std::array::from_fn(|i| {
             let a = f32x16::splat(a[i]);
 
-            let row = std::array::from_fn(|j| a * b[j]);
+            
 
-            row
+            std::array::from_fn(|j| a * b[j])
         });
 
         SMat { m }

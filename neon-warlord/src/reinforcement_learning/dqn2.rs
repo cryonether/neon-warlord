@@ -161,7 +161,7 @@ impl Dqn2 {
             return self.loss;
         }
 
-        return 0.0;
+        0.0
     }
 
     pub fn update_target_net(&mut self) {

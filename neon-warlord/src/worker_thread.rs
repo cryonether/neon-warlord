@@ -53,11 +53,10 @@ where
                     let frame_time = frame_start.elapsed();
                     let target_frame_time = Duration::from_micros(16_667);
 
-                    if limit_ups_thread.load(Ordering::Relaxed) {
-                        if frame_time < target_frame_time {
+                    if limit_ups_thread.load(Ordering::Relaxed)
+                        && frame_time < target_frame_time {
                             thread::sleep(target_frame_time - frame_time);
                         }
-                    }
                 }
             });
             WorkerThread {

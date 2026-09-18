@@ -271,7 +271,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
         // z = W * a + b
         self.y = &self.w_y * input_ + &self.b_y;
 
-        self.y.as_array().clone()
+        *self.y.as_array()
     }
 
     pub fn backward<'a>(&'a mut self, index: usize) -> GradientsRef<'a, NR_LAYERS, N, L> {
