@@ -2,3 +2,6 @@
 [workspace]
 resolver = "3"
 members = ["forward-renderer","neon-warlord"]
+
+[profile.release]
+debug = true

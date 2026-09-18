@@ -749,6 +749,20 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             WindowEvent::KeyboardInput {
                 event:
                     winit::event::KeyEvent {
+                        physical_key:
+                            winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::F3),
+                        state: ElementState::Pressed,
+                        ..
+                    },
+                ..
+            } => {
+                self.pendulum_simulation_thread.limit_ups_toggle();
+                true
+            }
+            // #########################################################
+            WindowEvent::KeyboardInput {
+                event:
+                    winit::event::KeyEvent {
                         // virtual_keycode: Some(key),
                         physical_key: winit::keyboard::PhysicalKey::Code(key),
                         state,

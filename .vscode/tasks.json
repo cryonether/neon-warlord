@@ -113,7 +113,7 @@
 				"reinforcement_learning::dqn::test_maze::test_solve_maze",
 				"--exact",
 				"--nocapture",
-				"--include-ignored",
+				"--include-ignored"
 			],
 			"problemMatcher": [
 				"$rustc"

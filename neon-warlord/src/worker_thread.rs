@@ -1,6 +1,13 @@
 //! Creates a thread or uses a single threaded update function on wasm
 
-use std::{thread::JoinHandle, time::Duration};
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    thread::JoinHandle,
+    time::Duration,
+};
 
 use instant::Instant;
 
@@ -10,6 +17,8 @@ where
     T: Update,
 {
     thread: Thread<T>,
+
+    limit_ups: Arc<AtomicBool>,
 }
 
 impl<T> WorkerThread<T>
@@ -32,10 +41,13 @@ where
             let res = SingleThreadHandle { func_obj };
             WorkerThread {
                 thread: Thread::SingleThread(res),
+                limit_ups: Arc::new(AtomicBool::new(true)),
             }
         } else {
             use std::thread;
 
+            let limit_ups = Arc::new(AtomicBool::new(true));
+            let limit_ups_thread = limit_ups.clone();
             let res = thread::spawn(move || {
                 let mut func_obj = func_obj;
                 loop {
@@ -48,13 +60,14 @@ where
                     let frame_time = frame_start.elapsed();
                     let target_frame_time = Duration::from_micros(16_667);
 
-                    if frame_time < target_frame_time {
+                    if limit_ups_thread.load(Ordering::Relaxed) && frame_time < target_frame_time {
                         thread::sleep(target_frame_time - frame_time);
                     }
                 }
             });
             WorkerThread {
                 thread: Thread::MultiThread(res),
+                limit_ups,
             }
         }
     }
@@ -69,6 +82,15 @@ where
                 // nothing to do
             }
         }
+    }
+
+    pub fn _limit_ups(&mut self, val: bool) {
+        self.limit_ups.store(val, Ordering::Relaxed);
+    }
+
+    pub fn limit_ups_toggle(&mut self) {
+        let val = self.limit_ups.load(Ordering::Relaxed);
+        self.limit_ups.store(!val, Ordering::Relaxed);
     }
 }
 

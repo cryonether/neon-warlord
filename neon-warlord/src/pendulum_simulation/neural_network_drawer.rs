@@ -12,6 +12,8 @@ pub struct NeuralNetworkDrawer<
     const OUTPUTS: usize,
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
+    const NR_NEURONS: usize,
+    const NR_LANES: usize,
 > {
     size: f32,
     color_negative: Vec3,
@@ -25,11 +27,17 @@ pub struct NeuralNetworkDrawer<
 
 const LANES: usize = 16;
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool>
-    NeuralNetworkDrawer<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL>
+impl<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NR_LAYERS: usize,
+    const RESIDUAL: bool,
+    const NR_NEURONS: usize,
+    const NR_LANES: usize,
+> NeuralNetworkDrawer<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, NR_NEURONS, NR_LANES>
 {
     pub fn new(
-        _model: &NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL>,
+        _model: &NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, NR_NEURONS, NR_LANES>,
         radius: f32,
         position: Vec3,
     ) -> Self {
@@ -54,7 +62,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
 
     pub fn update(
         &mut self,
-        model: &NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL>,
+        model: &NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, NR_NEURONS, NR_LANES>,
         producer_nodes: &mut Vec<particle_shader::Instance>,
         _producer_edges: &mut Vec<particle_shader_two_point::Instance>,
     ) {
@@ -63,13 +71,13 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RE
 
     fn update_nodes(
         &mut self,
-        model: &NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL>,
+        model: &NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, NR_NEURONS, NR_LANES>,
         producer_nodes: &mut Vec<particle_shader::Instance>,
     ) {
         let w_iter = model.w.iter().chain([&model.w_y]);
 
         for (k, layer) in w_iter.enumerate() {
-            for (j, node) in layer.iter().enumerate() {
+            for (j, node) in layer.as_array().iter().enumerate() {
                 for (i, &w) in node.iter().enumerate() {
                     let position = Vec3::new(k as f32, j as f32, i as f32);
 

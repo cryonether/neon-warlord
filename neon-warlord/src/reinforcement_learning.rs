@@ -2,8 +2,11 @@
 
 #[allow(dead_code)]
 pub mod dqn;
+pub mod dqn2;
 #[allow(dead_code)]
 pub mod dqn_dfdx;
+#[allow(dead_code)]
+pub mod dqn_dfdx2;
 #[allow(dead_code)]
 pub mod neat;
 #[allow(dead_code)]
