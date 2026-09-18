@@ -183,6 +183,7 @@ impl<const N: usize, const L: usize> SRowVec<N, L> {
     }
 
     // #[inline]
+    #[allow(clippy::wrong_self_convention)]
     pub fn as_column_vec(self) -> SVec<N, L> {
         SVec {
             a: self.a
