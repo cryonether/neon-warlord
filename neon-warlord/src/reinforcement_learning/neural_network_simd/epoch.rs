@@ -2,9 +2,9 @@
 
 use std::iter::zip;
 
-
-use crate::reinforcement_learning::neural_network_simd::{Gradient16, NeuralNetwork16, gradients_sum::GradientsSum};
-
+use crate::reinforcement_learning::neural_network_simd::{
+    Gradient16, NeuralNetwork16, gradients_sum::GradientsSum,
+};
 
 pub struct EpochSimd<const SIZE: usize> {
     pub model: NeuralNetwork16<16, 16, SIZE, false>,
@@ -33,8 +33,7 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         input: [[f32; INPUT_SIZE]; BATCH_SIZE],
         output: [[f32; 1]; BATCH_SIZE],
         output_index: usize,
-    ) -> [f32; BATCH_SIZE] 
-    {
+    ) -> [f32; BATCH_SIZE] {
         let mut y_pred_vec: Vec<f32> = Vec::new();
 
         let n = BATCH_SIZE as f32;

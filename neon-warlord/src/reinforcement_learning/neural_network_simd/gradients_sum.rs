@@ -5,11 +5,10 @@ use std::iter::zip;
 use itertools::izip;
 use wide::f32x16;
 
-
 use crate::reinforcement_learning::neural_network_simd::GradientsRef;
 
-use super::SVec;
 use super::SMat;
+use super::SVec;
 
 pub struct GradientsSum<const SIZE: usize, const N: usize, const L: usize> {
     pub dl_dw: [SMat<N, L>; SIZE],
@@ -37,8 +36,7 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
 
     // 220 ups -> 630 ups
     #[inline(never)]
-    pub fn add_loss_gradients(&mut self, gradients_dy: &GradientsRef<SIZE, N, L>, d_loss_dy: f32)
-    {
+    pub fn add_loss_gradients(&mut self, gradients_dy: &GradientsRef<SIZE, N, L>, d_loss_dy: f32) {
         let d_loss_dy = f32x16::splat(d_loss_dy);
 
         // dl_dw
@@ -59,7 +57,7 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
 
         // dl_dw_y
         for (dl_dw_y, dy_dw_y) in zip(&mut self.dl_dw_y.m, &gradients_dy.dy_dw_y.m) {
-            for (dl_dw_y, dy_dw_y) in zip( dl_dw_y, dy_dw_y) {
+            for (dl_dw_y, dy_dw_y) in zip(dl_dw_y, dy_dw_y) {
                 *dl_dw_y += dy_dw_y * d_loss_dy;
             }
         }
@@ -106,7 +104,6 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
     //     }
     // }
 
-
     #[inline]
     pub fn multiply_constant(&self, val: f32) -> Self {
         let mut res = Self::new();
@@ -129,9 +126,9 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
 
         // dy_dw_y
         for (x, y) in zip(self.dl_dw_y.as_array(), res.dl_dw_y.as_mut_array()) {
-                for (x, y) in zip(x, y) {
-                    *y = x * val;
-                }
+            for (x, y) in zip(x, y) {
+                *y = x * val;
+            }
         }
 
         // dy_db_y
@@ -189,7 +186,9 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
     }
 }
 
-impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops::Add for GradientsSum<SIZE, NR_NEURONS, NR_LANES> {
+impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops::Add
+    for GradientsSum<SIZE, NR_NEURONS, NR_LANES>
+{
     type Output = Self;
 
     #[inline]
@@ -198,7 +197,9 @@ impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops
     }
 }
 
-impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops::Sub for GradientsSum<SIZE, NR_NEURONS, NR_LANES> {
+impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops::Sub
+    for GradientsSum<SIZE, NR_NEURONS, NR_LANES>
+{
     type Output = Self;
 
     #[inline]
@@ -207,7 +208,9 @@ impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops
     }
 }
 
-impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops::Mul<f32> for &GradientsSum<SIZE, NR_NEURONS, NR_LANES> {
+impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops::Mul<f32>
+    for &GradientsSum<SIZE, NR_NEURONS, NR_LANES>
+{
     type Output = GradientsSum<SIZE, NR_NEURONS, NR_LANES>;
 
     #[inline]
@@ -216,14 +219,18 @@ impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops
     }
 }
 
-impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops::AddAssign for GradientsSum<SIZE, NR_NEURONS, NR_LANES> {
+impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops::AddAssign
+    for GradientsSum<SIZE, NR_NEURONS, NR_LANES>
+{
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         *self = GradientsSum::add(self, &rhs)
     }
 }
 
-impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops::SubAssign for GradientsSum<SIZE, NR_NEURONS, NR_LANES> {
+impl<const SIZE: usize, const NR_NEURONS: usize, const NR_LANES: usize> std::ops::SubAssign
+    for GradientsSum<SIZE, NR_NEURONS, NR_LANES>
+{
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         *self = GradientsSum::sub(self, &rhs)

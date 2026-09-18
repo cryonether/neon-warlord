@@ -3,7 +3,11 @@
 use std::collections::VecDeque;
 
 use dfdx::{
-    losses::mse_loss, nn::modules::modules::modules::{DeviceBuildExt, Module, ReLU, ZeroGrads, builders, modules}, optim::Optimizer, tensor::{AsArray, Cpu, TensorFrom, Trace}, tensor_ops::Backward,
+    losses::mse_loss,
+    nn::modules::modules::modules::{DeviceBuildExt, Module, ReLU, ZeroGrads, builders, modules},
+    optim::Optimizer,
+    tensor::{AsArray, Cpu, TensorFrom, Trace},
+    tensor_ops::Backward,
 };
 
 const INPUTS: usize = 4;
@@ -49,21 +53,22 @@ pub struct DqnDfdx2 {
 }
 
 impl DqnDfdx2 {
-    pub fn new(
-
-    ) -> Self {
+    pub fn new() -> Self {
         let dev = Cpu::default();
 
         let q_net: QNetworkModule = dev.build_module::<QNetworkBuilder, f32>();
         let target_net: QNetworkModule = q_net.clone();
-        let adam: dfdx::optim::Adam<QNetworkModule, f32, Cpu> = dfdx::optim::Adam::new(&q_net, dfdx::optim::AdamConfig {
-            lr: 1e-3,
-            betas: [0.9, 0.999],
-            eps: 1e-8,
-            weight_decay: None,
-        });
+        let adam: dfdx::optim::Adam<QNetworkModule, f32, Cpu> = dfdx::optim::Adam::new(
+            &q_net,
+            dfdx::optim::AdamConfig {
+                lr: 1e-3,
+                betas: [0.9, 0.999],
+                eps: 1e-8,
+                weight_decay: None,
+            },
+        );
         let epsilon: f32 = 1.0f32;
-        let epsilon_decay: f32 = 0.998; 
+        let epsilon_decay: f32 = 0.998;
         let epsilon_min: f32 = 0.02;
         let gamma: f32 = 0.99f32;
         let replay_buffer_capacity: usize = 20000;
@@ -87,18 +92,17 @@ impl DqnDfdx2 {
     }
 
     pub fn choose_action(&mut self, state: &[f32; INPUTS]) -> (usize, [f32; OUTPUTS]) {
-
-            // Epsilon-Greedy mit fastrand
-            let mut q_values_res = [0.0; 2];
-            let action = if fastrand::f32() < self.epsilon {
-                fastrand::usize(0..2)
-            } else {
-                let state_tensor = self.dev.tensor(state);
-                let q_values = self.q_net.forward(state_tensor);
-                let q_arr: [f32; 2] = q_values.array();
-                q_values_res = q_arr;
-                if q_arr[0] > q_arr[1] { 0 } else { 1 }
-            };
+        // Epsilon-Greedy mit fastrand
+        let mut q_values_res = [0.0; 2];
+        let action = if fastrand::f32() < self.epsilon {
+            fastrand::usize(0..2)
+        } else {
+            let state_tensor = self.dev.tensor(state);
+            let q_values = self.q_net.forward(state_tensor);
+            let q_arr: [f32; 2] = q_values.array();
+            q_values_res = q_arr;
+            if q_arr[0] > q_arr[1] { 0 } else { 1 }
+        };
 
         (action, q_values_res)
     }
@@ -113,7 +117,13 @@ impl DqnDfdx2 {
     ) -> f32 {
         self.total_reward += reward;
 
-        self.replay_buffer.push_back(Transition { state, action, reward, next_state, done });
+        self.replay_buffer.push_back(Transition {
+            state,
+            action,
+            reward,
+            next_state,
+            done,
+        });
         if self.replay_buffer.len() > self.replay_buffer_capacity {
             self.replay_buffer.pop_front();
         }
@@ -129,7 +139,7 @@ impl DqnDfdx2 {
             for i in 0..BATCH_SIZE {
                 let idx = fastrand::usize(0..self.replay_buffer.len());
                 let t = &self.replay_buffer[idx];
-                
+
                 states_batch[i] = t.state;
                 actions_batch[i] = t.action;
                 rewards_batch[i] = t.reward;
@@ -148,14 +158,18 @@ impl DqnDfdx2 {
             // 2. Das TARGET-Netzwerk berechnet den stabilen Q-Wert für ebendiese Aktion
             let next_target_q = self.target_net.forward(next_states_t);
             let next_target_arr = next_target_q.array();
-            
+
             let mut target_qs = [0.0f32; 64];
             for i in 0..BATCH_SIZE {
                 // Wähle Aktion mit dem Online-Netz aus
-                let best_action_next = if next_online_arr[i][0] > next_online_arr[i][1] { 0 } else { 1 };
+                let best_action_next = if next_online_arr[i][0] > next_online_arr[i][1] {
+                    0
+                } else {
+                    1
+                };
                 // Bewerte sie über das Target-Netz (Verhindert Überschätzungs-Bias)
                 let max_next_q = next_target_arr[i][best_action_next];
-                
+
                 target_qs[i] = rewards_batch[i] + self.gamma * max_next_q * (1.0 - dones_batch[i]);
             }
 
@@ -172,8 +186,9 @@ impl DqnDfdx2 {
             let loss = mse_loss(pred_q_values, targets_t);
             let _loss_res = loss.as_vec()[0];
             let grads = loss.backward();
-            self.adam.update(&mut self.q_net, &grads).expect("Fehler beim Optimizer-Update");
-
+            self.adam
+                .update(&mut self.q_net, &grads)
+                .expect("Fehler beim Optimizer-Update");
 
             return self.total_reward;
         }
@@ -184,13 +199,16 @@ impl DqnDfdx2 {
     pub fn update_target_net(&mut self) {
         self.target_net = self.q_net.clone();
     }
-    
+
     pub fn epsilon_decay(&mut self) {
         if self.epsilon > self.epsilon_min {
             self.epsilon *= self.epsilon_decay;
         }
 
-        println!("Episode: {:4}, Accum. Reward: {:7.1}, Epsilon: {:.3}", 0.0, self.total_reward, self.epsilon);
+        println!(
+            "Episode: {:4}, Accum. Reward: {:7.1}, Epsilon: {:.3}",
+            0.0, self.total_reward, self.epsilon
+        );
 
         self.total_reward = 0.0;
     }

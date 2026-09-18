@@ -66,7 +66,7 @@ impl Pendulum {
             previous_angle: 0.0,
             unwrapped_angle: 0.0,
             previous_cart_position: 0.0,
-            pendulum_state
+            pendulum_state,
         };
 
         obj.update(PendulumAction::Left0, 0.0);
@@ -145,7 +145,11 @@ impl Pendulum {
         let position = 2.0 * (cart.x - left.x) / (right.x - left.x) - 1.0;
 
         // Calculate velocity.
-        let velocity = if dt > 0.0 {(position - self.previous_cart_position) / dt} else {0.0};
+        let velocity = if dt > 0.0 {
+            (position - self.previous_cart_position) / dt
+        } else {
+            0.0
+        };
 
         self.previous_cart_position = position;
 
@@ -182,13 +186,12 @@ impl Pendulum {
     }
 }
 
-
 #[repr(u8)]
 #[derive(Clone, Copy)]
 pub enum PendulumAction {
     // Left2  = 0,
     // Left1  = 1,
-    Left0  = 0,
+    Left0 = 0,
     // None  = 3,
     Right0 = 1,
     // Right1 = 5,

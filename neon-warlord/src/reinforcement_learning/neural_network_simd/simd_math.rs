@@ -1,7 +1,7 @@
 //! Implements matrix multiplication with simd operations
 
-use std::{iter::zip, ops::Mul};
 use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::{iter::zip, ops::Mul};
 
 use wide::f32x16;
 
@@ -15,20 +15,18 @@ const LANES: usize = 16;
 
 #[derive(Debug, Copy, Clone)]
 pub struct SMat<const N: usize, const L: usize> {
-    pub m: [[f32x16; L]; N]
+    pub m: [[f32x16; L]; N],
 }
-
 
 #[derive(Debug, Copy, Clone)]
 pub struct SVec<const N: usize, const L: usize> {
-    pub a: [f32x16; L]
+    pub a: [f32x16; L],
 }
 
 #[derive(Debug, Clone)]
 pub struct SRowVec<const N: usize, const L: usize> {
-    pub a: [f32x16; L]
+    pub a: [f32x16; L],
 }
-
 
 impl<const N: usize, const L: usize> SMat<N, L> {
     /// Returns an array reference containing the entire SIMD vector.
@@ -36,10 +34,7 @@ impl<const N: usize, const L: usize> SMat<N, L> {
     // #[must_use]
     pub fn as_array(&self) -> &[[f32; N]; N] {
         assert_eq!(N, L * 16);
-        assert_eq!(
-                size_of_val(&self.m),
-                size_of::<[[f32; N]; N]>()
-            );
+        assert_eq!(size_of_val(&self.m), size_of::<[[f32; N]; N]>());
 
         // SAFETY:
         // - `self.a` contains exactly L * 16 f32 values.
@@ -49,9 +44,7 @@ impl<const N: usize, const L: usize> SMat<N, L> {
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
-        unsafe {
-            &*(self.m.as_ptr() as *const [[f32; N]; N])
-        }
+        unsafe { &*(self.m.as_ptr() as *const [[f32; N]; N]) }
     }
 
     /// Returns an array reference containing the entire SIMD vector.
@@ -59,10 +52,7 @@ impl<const N: usize, const L: usize> SMat<N, L> {
     // #[must_use]
     pub fn as_mut_array(&mut self) -> &mut [[f32; N]; N] {
         assert_eq!(N, L * 16);
-        assert_eq!(
-                size_of_val(&self.m),
-                size_of::<[[f32; N]; N]>()
-            );
+        assert_eq!(size_of_val(&self.m), size_of::<[[f32; N]; N]>());
 
         // SAFETY:
         // - `self.a` contains exactly L * 16 f32 values.
@@ -72,12 +62,9 @@ impl<const N: usize, const L: usize> SMat<N, L> {
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
-        unsafe {
-            &mut *(self.m.as_ptr() as *mut [[f32; N]; N])
-        }
+        unsafe { &mut *(self.m.as_ptr() as *mut [[f32; N]; N]) }
     }
 }
-
 
 impl<const N: usize, const L: usize> SVec<N, L> {
     /// Returns an array reference containing the entire SIMD vector.
@@ -85,10 +72,7 @@ impl<const N: usize, const L: usize> SVec<N, L> {
     // #[must_use]
     pub fn as_array(&self) -> &[f32; N] {
         assert_eq!(N, L * 16);
-        assert_eq!(
-                size_of_val(&self.a),
-                size_of::<[f32; N]>()
-            );
+        assert_eq!(size_of_val(&self.a), size_of::<[f32; N]>());
 
         // SAFETY:
         // - `self.a` contains exactly L * 16 f32 values.
@@ -98,9 +82,7 @@ impl<const N: usize, const L: usize> SVec<N, L> {
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
-        unsafe {
-            &*(self.a.as_ptr() as *const [f32; N])
-        }
+        unsafe { &*(self.a.as_ptr() as *const [f32; N]) }
     }
 
     /// Returns an array reference containing the entire SIMD vector.
@@ -108,10 +90,7 @@ impl<const N: usize, const L: usize> SVec<N, L> {
     // #[must_use]
     pub fn as_mut_array(&mut self) -> &mut [f32; N] {
         assert_eq!(N, L * 16);
-        assert_eq!(
-                size_of_val(&self.a),
-                size_of::<[f32; N]>()
-            );
+        assert_eq!(size_of_val(&self.a), size_of::<[f32; N]>());
 
         // SAFETY:
         // - `self.a` contains exactly L * 16 f32 values.
@@ -121,19 +100,14 @@ impl<const N: usize, const L: usize> SVec<N, L> {
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
-        unsafe {
-            &mut *(self.a.as_ptr() as *mut [f32; N])
-        }
+        unsafe { &mut *(self.a.as_ptr() as *mut [f32; N]) }
     }
 
     // // #[inline]
     pub fn as_row_vec(self) -> SRowVec<N, L> {
-        SRowVec {
-            a: self.a
-        }
+        SRowVec { a: self.a }
     }
 }
-
 
 impl<const N: usize, const L: usize> SRowVec<N, L> {
     /// Returns an array reference containing the entire SIMD vector.
@@ -141,10 +115,7 @@ impl<const N: usize, const L: usize> SRowVec<N, L> {
     // #[must_use]
     pub fn as_array(&self) -> &[f32; N] {
         assert_eq!(N, L * 16);
-        assert_eq!(
-                size_of_val(&self.a),
-                size_of::<[f32; N]>()
-            );
+        assert_eq!(size_of_val(&self.a), size_of::<[f32; N]>());
 
         // SAFETY:
         // - `self.a` contains exactly L * 16 f32 values.
@@ -154,9 +125,7 @@ impl<const N: usize, const L: usize> SRowVec<N, L> {
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
-        unsafe {
-            &*(self.a.as_ptr() as *const [f32; N])
-        }
+        unsafe { &*(self.a.as_ptr() as *const [f32; N]) }
     }
 
     /// Returns an array reference containing the entire SIMD vector.
@@ -164,10 +133,7 @@ impl<const N: usize, const L: usize> SRowVec<N, L> {
     // #[must_use]
     pub fn as_mut_array(&mut self) -> &mut [f32; N] {
         assert_eq!(N, L * 16);
-        assert_eq!(
-                size_of_val(&self.a),
-                size_of::<[f32; N]>()
-            );
+        assert_eq!(size_of_val(&self.a), size_of::<[f32; N]>());
 
         // SAFETY:
         // - `self.a` contains exactly L * 16 f32 values.
@@ -177,25 +143,19 @@ impl<const N: usize, const L: usize> SRowVec<N, L> {
         // SAFETY: The input type has greater alignment than the output type,
         // and both pointed-at types have the same size, accept all bit-patterns
         // and only contain initialized memory.
-        unsafe {
-            &mut *(self.a.as_ptr() as *mut [f32; N])
-        }
+        unsafe { &mut *(self.a.as_ptr() as *mut [f32; N]) }
     }
 
     // #[inline]
     #[allow(clippy::wrong_self_convention)]
     pub fn as_column_vec(self) -> SVec<N, L> {
-        SVec {
-            a: self.a
-        }
+        SVec { a: self.a }
     }
 }
-
 
 impl<const N: usize, const L: usize> SMat<N, L> {
     // #[inline]
     pub fn new(m: [[f32; N]; N]) -> Self {
-
         let m_vec = std::array::from_fn(|i| f32x16_from(m[i]));
 
         Self { m: m_vec }
@@ -220,7 +180,6 @@ impl<const N: usize, const L: usize> SRowVec<N, L> {
     }
 }
 
-
 impl<const N: usize, const L: usize> From<SVec<N, L>> for [f32; N] {
     // #[inline]
     fn from(v: SVec<N, L>) -> Self {
@@ -238,7 +197,7 @@ impl<const N: usize, const L: usize> From<SRowVec<N, L>> for [f32; N] {
 impl<const N: usize, const L: usize> From<SMat<N, L>> for [[f32; N]; N] {
     // #[inline]
     fn from(m: SMat<N, L>) -> Self {
-        std::array::from_fn(|i| f32x16_to(m.m[i]))   
+        std::array::from_fn(|i| f32x16_to(m.m[i]))
     }
 }
 
@@ -263,10 +222,8 @@ impl<const N: usize, const L: usize> From<[[f32; N]; N]> for SMat<N, L> {
     }
 }
 
-
-
 /// Matrix-vector multiplication: `y = A * x`.
-/// 
+///
 /// (N×N)(N×1) → N×1
 ///
 impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for &SMat<N, L> {
@@ -279,7 +236,6 @@ impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for &SMat<N, L> {
         let mut res = [0.0f32; N];
 
         for (res, m) in std::iter::zip(&mut res, &self.m) {
-
             let mut sum = f32x16::splat(0.0);
 
             for i in 0..L {
@@ -293,10 +249,8 @@ impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for &SMat<N, L> {
     }
 }
 
-
-
 /// Vector-matrix multiplication: `y = x^T * A`.
-/// 
+///
 /// (1×N)(N×N) → 1×N
 ///
 impl<const N: usize, const L: usize> Mul<&SMat<N, L>> for &SRowVec<N, L> {
@@ -316,15 +270,13 @@ impl<const N: usize, const L: usize> Mul<&SMat<N, L>> for &SRowVec<N, L> {
             }
         }
 
-        SRowVec {
-            a: res,
-        }
+        SRowVec { a: res }
     }
 }
 
 ///
 /// Outer Product M = a * b^T
-/// 
+///
 /// (N×1)(1×N) → N×N
 ///
 impl<const N: usize, const L: usize> Mul<&SRowVec<N, L>> for &SVec<N, L> {
@@ -337,8 +289,6 @@ impl<const N: usize, const L: usize> Mul<&SRowVec<N, L>> for &SVec<N, L> {
 
         let m = std::array::from_fn(|i| {
             let a = f32x16::splat(a[i]);
-
-            
 
             std::array::from_fn(|j| a * b[j])
         });
@@ -354,7 +304,7 @@ impl<const N: usize, const L: usize> Mul<&SRowVec<N, L>> for &SVec<N, L> {
 ///
 /// Each element is multiplied independently:
 /// `c[i] = a[i] * b[i]`.
-/// 
+///
 impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for &SVec<N, L> {
     type Output = SVec<N, L>;
 
@@ -365,13 +315,11 @@ impl<const N: usize, const L: usize> Mul<&SVec<N, L>> for &SVec<N, L> {
 
         let res = std::array::from_fn(|i| a[i] * b[i]);
 
-        SVec {
-            a: res,
-        }
+        SVec { a: res }
     }
 }
 
-/// 
+///
 /// `a += b`
 ///
 impl<const N: usize, const L: usize> AddAssign<&SVec<N, L>> for SVec<N, L> {
@@ -383,7 +331,7 @@ impl<const N: usize, const L: usize> AddAssign<&SVec<N, L>> for SVec<N, L> {
     }
 }
 
-/// 
+///
 /// `a += b`
 ///
 impl<const N: usize, const L: usize> SubAssign<&SVec<N, L>> for SVec<N, L> {
@@ -395,7 +343,7 @@ impl<const N: usize, const L: usize> SubAssign<&SVec<N, L>> for SVec<N, L> {
     }
 }
 
-/// 
+///
 /// `a -= b`
 ///
 impl<const N: usize, const L: usize> SubAssign<&SMat<N, L>> for SMat<N, L> {
@@ -418,13 +366,10 @@ impl<const N: usize, const L: usize> Add<&SMat<N, L>> for &SMat<N, L> {
         let a = &self.m;
         let b = &rhs.m;
 
-        let c: [[f32x16; L]; N] = std::array::from_fn(|i| {
-                std::array::from_fn(|j| a[i][j] + b[i][j])
-            });
+        let c: [[f32x16; L]; N] =
+            std::array::from_fn(|i| std::array::from_fn(|j| a[i][j] + b[i][j]));
 
-        SMat {
-            m: c,
-        }
+        SMat { m: c }
     }
 }
 
@@ -439,9 +384,7 @@ impl<const N: usize, const L: usize> Add<&SVec<N, L>> for &SVec<N, L> {
 
         let c = std::array::from_fn(|i| a[i] + b[i]);
 
-        SVec {
-            a: c,
-        }
+        SVec { a: c }
     }
 }
 
@@ -456,13 +399,11 @@ impl<const N: usize, const L: usize> Add<&SVec<N, L>> for SVec<N, L> {
 
         let c = std::array::from_fn(|i| a[i] + b[i]);
 
-        SVec {
-            a: c,
-        }
+        SVec { a: c }
     }
 }
 
-/// 
+///
 /// `c = a - b`
 ///
 impl<const N: usize, const L: usize> Sub<&SMat<N, L>> for &SMat<N, L> {
@@ -470,11 +411,7 @@ impl<const N: usize, const L: usize> Sub<&SMat<N, L>> for &SMat<N, L> {
 
     // #[inline]
     fn sub(self, rhs: &SMat<N, L>) -> Self::Output {
-        let m = std::array::from_fn(|i| {
-            std::array::from_fn(|j| {
-                self.m[i][j] - rhs.m[i][j]
-            })
-        });
+        let m = std::array::from_fn(|i| std::array::from_fn(|j| self.m[i][j] - rhs.m[i][j]));
 
         SMat { m }
     }
@@ -491,9 +428,7 @@ impl<const N: usize, const L: usize> Sub<&SVec<N, L>> for &SVec<N, L> {
 
         let c = std::array::from_fn(|i| a[i] - b[i]);
 
-        SVec {
-            a: c,
-        }
+        SVec { a: c }
     }
 }
 
@@ -503,7 +438,7 @@ fn f32x16_from<const N: usize, const L: usize>(x: [f32; N]) -> [f32x16; L] {
 
     let mut res = [f32x16::ZERO; L];
 
-    for (x, res) in zip( x.as_chunks::<LANES>().0, &mut res) {
+    for (x, res) in zip(x.as_chunks::<LANES>().0, &mut res) {
         *res = f32x16::from(*x);
     }
 
@@ -511,9 +446,7 @@ fn f32x16_from<const N: usize, const L: usize>(x: [f32; N]) -> [f32x16; L] {
 }
 
 // #[inline]
-fn f32x16_to<const N: usize, const L: usize>(
-    x: [f32x16; L],
-) -> [f32; N] {
+fn f32x16_to<const N: usize, const L: usize>(x: [f32x16; L]) -> [f32; N] {
     assert_eq!(N, L * LANES);
 
     let mut res = [0.0f32; N];
@@ -525,17 +458,13 @@ fn f32x16_to<const N: usize, const L: usize>(
     res
 }
 
-
-
 #[test]
 fn test_mul_mat_vec() {
     const N: usize = 128;
     const L: usize = 8;
 
     // A[i][j] = i * N + j
-    let m = std::array::from_fn(|i| {
-        std::array::from_fn(|j| (i * N + j) as f32)
-    });
+    let m = std::array::from_fn(|i| std::array::from_fn(|j| (i * N + j) as f32));
 
     // x = [1, 2, 3, ..., 128]
     let a = std::array::from_fn(|i| (i + 1) as f32);
@@ -543,14 +472,9 @@ fn test_mul_mat_vec() {
     let res: SVec<N, L> = &SMat::new(m) * &SVec::new(a);
 
     // Reference implementation.
-    let expected: [f32; N] = std::array::from_fn(|i| {
-        (0..N)
-            .map(|j| m[i][j] * a[j])
-            .sum::<f32>()
-    });
+    let expected: [f32; N] = std::array::from_fn(|i| (0..N).map(|j| m[i][j] * a[j]).sum::<f32>());
 
     // println!("res: {:?}", res);
-
 
     let expected: [f32x16; L] = f32x16_from(expected);
 
@@ -571,16 +495,13 @@ fn test_mul_mat_vec() {
     }
 }
 
-
 #[test]
 fn test_mul_vec_mat() {
     const N: usize = 128;
     const L: usize = 8;
 
     // A[i][j] = i * N + j
-    let m = std::array::from_fn(|i| {
-        std::array::from_fn(|j| (i * N + j) as f32)
-    });
+    let m = std::array::from_fn(|i| std::array::from_fn(|j| (i * N + j) as f32));
 
     // x = [1, 2, 3, ..., 128]
     let a = std::array::from_fn(|i| (i + 1) as f32);
@@ -590,11 +511,7 @@ fn test_mul_vec_mat() {
     // Reference implementation:
     //
     // y[j] = sum_i x[i] * A[i][j]
-    let expected: [f32; N] = std::array::from_fn(|j| {
-        (0..N)
-            .map(|i| a[i] * m[i][j])
-            .sum::<f32>()
-    });
+    let expected: [f32; N] = std::array::from_fn(|j| (0..N).map(|i| a[i] * m[i][j]).sum::<f32>());
 
     let expected: [f32x16; L] = f32x16_from(expected);
 
@@ -631,9 +548,7 @@ fn test_outer_product() {
     // Reference implementation:
     //
     // M[i][j] = a[i] * b[j]
-    let expected: [[f32; N]; N] = std::array::from_fn(|i| {
-        std::array::from_fn(|j| a[i] * b[j])
-    });
+    let expected: [[f32; N]; N] = std::array::from_fn(|i| std::array::from_fn(|j| a[i] * b[j]));
 
     let expected: [[f32x16; L]; 128] = SMat::new(expected).m;
 
@@ -656,7 +571,6 @@ fn test_outer_product() {
     }
 }
 
-
 #[test]
 fn test_mul_element_wise() {
     const N: usize = 128;
@@ -674,9 +588,7 @@ fn test_mul_element_wise() {
     let res = &a * &b;
 
     // Scalar reference implementation.
-    let expected: [f32; N] = std::array::from_fn(|i| {
-        (i + 1) as f32 * (N + i + 1) as f32
-    });
+    let expected: [f32; N] = std::array::from_fn(|i| (i + 1) as f32 * (N + i + 1) as f32);
 
     let expected: [f32x16; L] = f32x16_from(expected);
 
@@ -843,14 +755,8 @@ mod tests {
     }
 }
 
-
-
-
 fn assert_close(a: f32, b: f32, tolerance: f32) {
     let diff = (a - b).abs();
 
-    assert!(
-        diff <= tolerance,
-        "expected {b}, got {a}, diff {diff}"
-    );
+    assert!(diff <= tolerance, "expected {b}, got {a}, diff {diff}");
 }

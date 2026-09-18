@@ -2,14 +2,11 @@
 
 use std::collections::VecDeque;
 
-
-
 use crate::reinforcement_learning::neural_network_simd::{Gradient64, NeuralNetwork64};
 
 const INPUTS: usize = 4;
 const OUTPUTS: usize = 2;
 const LAYERS: usize = 3;
-
 
 struct Transition {
     state: [f32; INPUTS],
@@ -36,14 +33,12 @@ pub struct Dqn2 {
 }
 
 impl Dqn2 {
-    pub fn new(
-
-    ) -> Self {
+    pub fn new() -> Self {
         let q_net = Box::new(NeuralNetwork64::new());
         let target_net = q_net.clone();
 
         let epsilon: f32 = 1.0f32;
-        let epsilon_decay: f32 = 0.998; 
+        let epsilon_decay: f32 = 0.998;
         let epsilon_min: f32 = 0.02;
         // let gamma: f32 = 0.99;
         let gamma: f32 = 0.90;
@@ -68,17 +63,16 @@ impl Dqn2 {
     }
 
     pub fn choose_action(&mut self, state: &[f32; INPUTS]) -> (usize, [f32; OUTPUTS]) {
-
-            // Epsilon-Greedy mit fastrand
-            let mut q_values_res = [0.0; 2];
-            let action = if fastrand::f32() < self.epsilon {
-                fastrand::usize(0..2)
-            } else {
-                let q_values = self.q_net.forward(state);
-                let q_arr: [f32; 2] = q_values;
-                q_values_res = q_arr;
-                if q_arr[0] > q_arr[1] { 0 } else { 1 }
-            };
+        // Epsilon-Greedy mit fastrand
+        let mut q_values_res = [0.0; 2];
+        let action = if fastrand::f32() < self.epsilon {
+            fastrand::usize(0..2)
+        } else {
+            let q_values = self.q_net.forward(state);
+            let q_arr: [f32; 2] = q_values;
+            q_values_res = q_arr;
+            if q_arr[0] > q_arr[1] { 0 } else { 1 }
+        };
 
         (action, q_values_res)
     }
@@ -93,7 +87,13 @@ impl Dqn2 {
     ) -> f32 {
         self.total_reward += reward;
 
-        self.replay_buffer.push_back(Transition { state, action, reward, next_state, done });
+        self.replay_buffer.push_back(Transition {
+            state,
+            action,
+            reward,
+            next_state,
+            done,
+        });
         if self.replay_buffer.len() > self.replay_buffer_capacity {
             self.replay_buffer.pop_front();
         }
@@ -102,11 +102,10 @@ impl Dqn2 {
         let mut gradients_loss_sum = Gradient64::new();
         const BATCH_SIZE: usize = 32;
         if self.replay_buffer.len() >= BATCH_SIZE {
-
             for _i in 0..BATCH_SIZE {
                 let idx = fastrand::usize(0..self.replay_buffer.len());
                 let transition = &self.replay_buffer[idx];
-                
+
                 let state = transition.state;
                 let action = transition.action;
                 let reward = transition.reward;
@@ -119,7 +118,11 @@ impl Dqn2 {
                 let next_online_q = self.q_net.forward(&next_state);
                 let next_target_q = self.target_net.forward(&next_state);
 
-                let best_action_next = if next_online_q[0] > next_online_q[1] { 0 } else { 1 };
+                let best_action_next = if next_online_q[0] > next_online_q[1] {
+                    0
+                } else {
+                    1
+                };
                 let max_next_q = next_target_q[best_action_next];
 
                 // reward function
@@ -155,7 +158,8 @@ impl Dqn2 {
             // optimizer
             /// plain gradient descent
             const LEARNING_RATE: f32 = 0.01;
-            self.q_net.subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
+            self.q_net
+                .subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
 
             // return self.total_reward;
             return self.loss;
@@ -167,13 +171,16 @@ impl Dqn2 {
     pub fn update_target_net(&mut self) {
         self.target_net = self.q_net.clone();
     }
-    
+
     pub fn epsilon_decay(&mut self) {
         if self.epsilon > self.epsilon_min {
             self.epsilon *= self.epsilon_decay;
         }
 
-        println!("Episode: {:4}, Accum. Reward: {:7.1}, Epsilon: {:.3}", 0.0, self.total_reward, self.epsilon);
+        println!(
+            "Episode: {:4}, Accum. Reward: {:7.1}, Epsilon: {:.3}",
+            0.0, self.total_reward, self.epsilon
+        );
 
         self.total_reward = 0.0;
     }

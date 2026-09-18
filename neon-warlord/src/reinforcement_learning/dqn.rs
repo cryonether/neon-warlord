@@ -5,9 +5,7 @@ mod test_maze;
 
 use std::collections::HashMap;
 
-use crate::reinforcement_learning::neural_network_simd::{
-    NeuralNetwork16, Gradient16
-};
+use crate::reinforcement_learning::neural_network_simd::{Gradient16, NeuralNetwork16};
 
 const LAYERS: usize = 5;
 
@@ -86,12 +84,12 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
         let inputs_f32 = inputs.map(|x| x as f32);
         let inputs_next_f32 = next_inputs.map(|x| x as f32);
         self.set_reward(
-            inputs_f32, 
-            action, 
-            reward, 
-            inputs_next_f32, 
-            finished, 
-            replay_key
+            inputs_f32,
+            action,
+            reward,
+            inputs_next_f32,
+            finished,
+            replay_key,
         );
     }
 
@@ -189,7 +187,6 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
     }
 
     pub fn learn_replay(&mut self) -> f32 {
-
         let values: Vec<&Transition<INPUTS>> = (0..1000)
             .map(|_| {
                 let index = fastrand::usize(..self.replay_buffer.len());

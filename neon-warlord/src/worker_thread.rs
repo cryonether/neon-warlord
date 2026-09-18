@@ -1,6 +1,13 @@
 //! Creates a thread or uses a single threaded update function on wasm
 
-use std::{sync::{Arc, atomic::{AtomicBool, Ordering}}, thread::JoinHandle, time::Duration};
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    thread::JoinHandle,
+    time::Duration,
+};
 
 use instant::Instant;
 
@@ -11,7 +18,7 @@ where
 {
     thread: Thread<T>,
 
-    limit_ups: Arc<AtomicBool>
+    limit_ups: Arc<AtomicBool>,
 }
 
 impl<T> WorkerThread<T>
@@ -34,7 +41,7 @@ where
             let res = SingleThreadHandle { func_obj };
             WorkerThread {
                 thread: Thread::SingleThread(res),
-                limit_ups: Arc::new(AtomicBool::new(true))
+                limit_ups: Arc::new(AtomicBool::new(true)),
             }
         } else {
             use std::thread;
@@ -53,15 +60,14 @@ where
                     let frame_time = frame_start.elapsed();
                     let target_frame_time = Duration::from_micros(16_667);
 
-                    if limit_ups_thread.load(Ordering::Relaxed)
-                        && frame_time < target_frame_time {
-                            thread::sleep(target_frame_time - frame_time);
-                        }
+                    if limit_ups_thread.load(Ordering::Relaxed) && frame_time < target_frame_time {
+                        thread::sleep(target_frame_time - frame_time);
+                    }
                 }
             });
             WorkerThread {
                 thread: Thread::MultiThread(res),
-                limit_ups
+                limit_ups,
             }
         }
     }

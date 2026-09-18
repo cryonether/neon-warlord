@@ -7,8 +7,14 @@ use crate::{
     pendulum_simulation::Vec3, reinforcement_learning::neural_network_simd::NeuralNetworkSimd,
 };
 
-pub struct NeuralNetworkDrawer<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool, const NR_NEURONS: usize, const NR_LANES: usize>
-{
+pub struct NeuralNetworkDrawer<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NR_LAYERS: usize,
+    const RESIDUAL: bool,
+    const NR_NEURONS: usize,
+    const NR_LANES: usize,
+> {
     size: f32,
     color_negative: Vec3,
     color_zero: Vec3,
@@ -21,8 +27,14 @@ pub struct NeuralNetworkDrawer<const INPUTS: usize, const OUTPUTS: usize, const 
 
 const LANES: usize = 16;
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const NR_LAYERS: usize, const RESIDUAL: bool, const NR_NEURONS: usize, const NR_LANES: usize>
-    NeuralNetworkDrawer<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, NR_NEURONS, NR_LANES>
+impl<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NR_LAYERS: usize,
+    const RESIDUAL: bool,
+    const NR_NEURONS: usize,
+    const NR_LANES: usize,
+> NeuralNetworkDrawer<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, NR_NEURONS, NR_LANES>
 {
     pub fn new(
         _model: &NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, NR_NEURONS, NR_LANES>,
