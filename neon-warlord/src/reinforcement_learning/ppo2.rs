@@ -1,5 +1,10 @@
 //! Implements a beginner version of policy gradient decent
 //! https://github.com/ericyangyu/PPO-for-Beginners/tree/master
+//! PPO was published in 2017
+
+use std::iter::zip;
+
+use cgmath::num_traits::clamp;
 
 use crate::reinforcement_learning::neural_network_simd::NeuralNetwork64;
 
@@ -17,13 +22,24 @@ pub struct Ppo2 {
     variance: f32,
     std_dev: f32,
     gamma: f32,
+    clip: f32,
+    nr_updates_per_iteration: usize,
 }
 
 impl Ppo2 {
     pub fn new() -> Self {
+        // For choosing an action
         const VARIANCE: f32 = 0.5;
         const STD_DEV: f32 = 0.70710677; // sqrt(0.5)
-        const GAMMA: f32 = 0.99;
+
+        // Discount factor, for calculating the discounted reward
+        const GAMMA: f32 = 0.95;     
+
+        // Threshold to clip the ratio
+        const CLIP: f32 = 0.2;
+
+        // Number of times to update the network from the same batch of data
+        const NR_UPDATES_PER_ITERATION: usize = 5;  
 
         let actor = NeuralNetwork64::new();
         let critic = NeuralNetwork64::new();
@@ -37,6 +53,8 @@ impl Ppo2 {
             variance: VARIANCE,
             std_dev: STD_DEV,
             gamma: GAMMA, 
+            clip: CLIP,
+            nr_updates_per_iteration: NR_UPDATES_PER_ITERATION,
         }
     }
 
@@ -53,21 +71,18 @@ impl Ppo2 {
     //
     pub fn get_action(&mut self, observation: &[f32; INPUTS]) -> ([f32; OUTPUTS], f32)
     {
-        let std_dev = self.std_dev;
-
         // Query the actor network for a mean action.
-        let mean = self.actor.forward(&observation);
+        let mean_action = self.actor.forward(&observation);
 
-        // Create multivariate normal distributed action
-        let action = mean.map(|mu| {
-            mu + std_dev * box_mueller_standard_normal()
+        let action = mean_action.map(|mu| {
+            mu + self.std_dev * box_mueller_standard_normal()
         });
 
         // Calculate the log probability over the sampled action
         let log_probability = gaussian_log_prob(
             &action,
-            &mean,
-            std_dev,
+            &mean_action,
+            self.std_dev,
         );
 
         (action, log_probability)
@@ -93,8 +108,6 @@ impl Ppo2 {
 
     pub fn learn(&mut self) {
 
-        let gamma = self.gamma;
-
         let mut discounted_reward = 0.0;
 
         let mut advantages = Vec::new();
@@ -105,13 +118,15 @@ impl Ppo2 {
             let log_probability = transition.log_probability;
             let reward = transition.reward;
 
+            // Calculate the discounted reward
             discounted_reward = reward + self.gamma * discounted_reward;
 
             // Query critic network for the quality value
-            let v = self.critic.forward(&observation)[0];
+            let baseline_estimate = self.critic.forward(&observation)[0];
         
             // Calculate the advantage
-            let advantage = discounted_reward - v;
+            // A = Q - V
+            let advantage = discounted_reward - baseline_estimate;
 
             advantages.push(advantage)
         }
@@ -133,6 +148,51 @@ impl Ppo2 {
         for advantage in &mut advantages {
             *advantage = (*advantage - advantages_mean) / advantages_std_dev + 1e-10;
         } 
+
+        // Update the neural networks for n epochs
+        for _i in 0..self.nr_updates_per_iteration {
+            for (transition, advantage) in zip(&self.transitions, &advantages) {
+                let observation = transition.observation;
+                let action = transition.action;
+                let log_probability = transition.log_probability;
+                let reward = transition.reward;
+
+                // Calculate V_phi and pi_theta(a_t | s_t)
+                // Estimate the values of each observation, and the log probs of
+                // each action in the most recent batch with the most recent
+                // iteration of the actor network.
+                let curr_estimate = self.critic.forward(&observation);
+                let cur_mean_action = self.actor.forward(&observation);
+
+                // Calculate the log probability over the sampled action
+                let curr_log_probability = gaussian_log_prob(
+                    &action,
+                    &cur_mean_action,
+                    self.std_dev,
+                );
+
+				// Calculate the ratio pi_theta(a_t | s_t) / pi_theta_k(a_t | s_t)
+				// NOTE: we just subtract the logs, which is the same as
+				// dividing the values and then canceling the log with e^log.
+				// For why we use log probabilities instead of actual probabilities,
+				// here's a great explanation: 
+				// https://cs.stackexchange.com/questions/70518/why-do-we-use-the-log-in-gradient-based-reinforcement-algorithms
+				// TL;DR makes gradient ascent easier behind the scenes.
+                let ratio = f32::exp(curr_log_probability - log_probability);
+
+                // Calculate surrogate loss
+                let surrogate_loss_1 = ratio * advantage;
+                let surrogate_loss_2 = f32::clamp(ratio, 1.0 - self.clip, 1.0 + self.clip) * advantage;
+
+				// Calculate actor and critic losses.
+				// NOTE: we take the negative min of the surrogate losses because we're trying to maximize
+				// the performance function, but Adam minimizes the loss. So minimizing the negative
+				// performance function maximizes it.
+
+                let gradient_critic = self.critic.backward(0);
+                let gradients_actor = self.actor.backward(0);
+            }
+        }
 
     }
 }
