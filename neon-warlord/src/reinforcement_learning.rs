@@ -17,6 +17,7 @@ pub mod neural_network_dfdx;
 pub mod neural_network_simd;
 #[allow(dead_code)]
 pub mod ppo;
+pub mod ppo2;
 #[allow(dead_code)]
 pub mod q_learning;
 
