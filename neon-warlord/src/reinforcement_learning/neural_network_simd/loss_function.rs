@@ -192,8 +192,8 @@ impl MeanSquareError {
     //      1    N-1
     // L = --- * ∑ (y_pred_i − y_i)²
     //      N    i=0
-    pub fn calc(&mut self, y_pred: f32, y: f32) -> f32 {
-        let diff = y_pred - y;
+    pub fn calc(&mut self, y_pred: [f32; 1], y: f32) -> f32 {
+        let diff = y_pred[0] - y;
         let res = diff * diff;
 
         self.diff = diff;
@@ -204,8 +204,8 @@ impl MeanSquareError {
     // ∂L           2
     // --------- = --- * (y_pred_i − y_i)
     // ∂L_pred_i    N
-    pub fn derivative(&self) -> f32 {
-        2.0 * (self.diff)
+    pub fn derivative(&self) -> [f32;1] {
+        [2.0 * (self.diff)]
 
     }
 }

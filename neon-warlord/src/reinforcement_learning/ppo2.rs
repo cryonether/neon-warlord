@@ -182,7 +182,7 @@ impl Ppo2 {
 
                 // Critic mean square error
                 let mut mse = MeanSquareError::new();
-                let critic_square_error = mse.calc(curr_estimate[0], *discounted_reward);
+                let critic_square_error = mse.calc(curr_estimate, *discounted_reward);
                 let critic_square_error_derivative = mse.derivative();
 
                 critic_loss_sum += critic_square_error;
@@ -209,6 +209,9 @@ impl Ppo2 {
                 for (curr_log_probability_derivative, loss_derivative) in zip(curr_log_probability_derivative, &mut loss_derivative) {
                     *loss_derivative = surrogate_loss_clipped_derivative * ratio_derivative * curr_log_probability_derivative;
                 }
+
+                let critic_gradients = self.critic.backward(critic_square_error_derivative);
+                let actor_gradients = self.actor.backward(loss_derivative);
 
             }
 
