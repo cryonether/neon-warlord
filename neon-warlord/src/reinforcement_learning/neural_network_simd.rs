@@ -78,31 +78,31 @@ pub struct NeuralNetworkSimd<
     const L: usize,
 > {
     // input
-    pub x: SVec16<L>,
+    pub x: SVec16<N>,
 
     // parameters
-    pub w: [SMat16<N, L>; NR_LAYERS],
-    b: [SVec16<L>; NR_LAYERS],
+    pub w: [SMat16<M, N>; NR_LAYERS],
+    b: [SVec16<N>; NR_LAYERS],
 
     // output
-    pub w_y: SMat16<N, L>,
-    b_y: SVec16<L>,
-    pub y: SVec16<L>,
+    pub w_y: SMat16<M, N>,
+    b_y: SVec16<N>,
+    pub y: SVec16<N>,
 
     // intermediate products
 
     // a = f(z)
-    a: [SVec16<L>; NR_LAYERS],
+    a: [SVec16<N>; NR_LAYERS],
 
     // z = W*a + b
-    z: [SVec16<L>; NR_LAYERS],
+    z: [SVec16<N>; NR_LAYERS],
 
     // back propagation
-    dy_dw: [SMat16<N, L>; NR_LAYERS],
-    dy_db: [SVec16<L>; NR_LAYERS],
+    dy_dw: [SMat16<M, N>; NR_LAYERS],
+    dy_db: [SVec16<N>; NR_LAYERS],
 
-    dy_dw_y: SMat16<N, L>,
-    dy_db_y: SVec16<L>,
+    dy_dw_y: SMat16<M, N>,
+    dy_db_y: SVec16<N>,
 }
 
 impl<
@@ -351,7 +351,7 @@ impl<
     const LEAKY_RELU_ALPHA: f32 = 0.01;
 
     #[inline]
-    fn activation_re_lu_vec(x: &SVec16<L>) -> SVec16<L> {
+    fn activation_re_lu_vec(x: &SVec16<N>) -> SVec16<N> {
         let mut res = SVec16::new([0.0; N]);
         let zero = f32x16::ZERO;
         let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
@@ -364,7 +364,7 @@ impl<
     }
 
     #[inline]
-    fn derivative_re_lu_vec(x: &SVec16<L>) -> SVec16<L> {
+    fn derivative_re_lu_vec(x: &SVec16<N>) -> SVec16<N> {
         let mut res = SVec16::new([0.0; N]);
         let zero = f32x16::ZERO;
         let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
@@ -456,9 +456,9 @@ impl<
 }
 
 pub struct GradientsRef<'a, const NR_LAYERS: usize, const N: usize, const L: usize> {
-    pub dy_dw: &'a [SMat16<N, L>; NR_LAYERS],
-    pub dy_db: &'a [SVec16<L>; NR_LAYERS],
+    pub dy_dw: &'a [SMat16<M, N>; NR_LAYERS],
+    pub dy_db: &'a [SVec16<N>; NR_LAYERS],
 
-    pub dy_dw_y: &'a SMat16<N, L>,
-    pub dy_db_y: &'a SVec16<L>,
+    pub dy_dw_y: &'a SMat16<M, N>,
+    pub dy_db_y: &'a SVec16<N>,
 }

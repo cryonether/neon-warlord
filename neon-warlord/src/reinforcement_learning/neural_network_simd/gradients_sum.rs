@@ -11,11 +11,11 @@ use super::SMat16;
 use super::SVec16;
 
 pub struct GradientsSum<const SIZE: usize, const N: usize, const L: usize> {
-    pub dl_dw: [SMat16<N, L>; SIZE],
-    pub dl_db: [SVec16<L>; SIZE],
+    pub dl_dw: [SMat16<M, N>; SIZE],
+    pub dl_db: [SVec16<N>; SIZE],
 
-    pub dl_dw_y: SMat16<N, L>,
-    pub dl_db_y: SVec16<L>,
+    pub dl_dw_y: SMat16<M, N>,
+    pub dl_db_y: SVec16<N>,
 }
 
 impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L> {

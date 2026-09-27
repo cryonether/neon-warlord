@@ -1,7 +1,7 @@
 
 //! A layer of a neural network
 
-use crate::reinforcement_learning::neural_network_simd::simd_math::SVec16;
+use crate::reinforcement_learning::neural_network_simd::simd_math::{SMat16, SVec16};
 
 const LANES: usize = 16;
 
@@ -14,5 +14,9 @@ pub struct LayerSimd<
     const RESIDUAL: bool
 >
 {
-    x: SVec16<INPUTS_16>
+    x: SVec16<INPUTS_16>,
+
+    w: SMat16<INPUTS_16, OUTPUTS_16>,
+
+    y: SVec16<OUTPUTS_16>,
 }
