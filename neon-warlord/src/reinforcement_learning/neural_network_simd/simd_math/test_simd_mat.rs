@@ -470,3 +470,353 @@ fn test_sub_assign_matches_sub() {
 
     assert_matrix_eq(&actual, &expected);
 }
+
+// -----------------------------------------------------------------------------
+// Non-SIMD / remainder dimensions
+// -----------------------------------------------------------------------------
+
+#[test]
+fn test_matrix_vector_mul_remainder() {
+    // N = 18 exercises one SIMD chunk + 2 scalar remainder elements.
+    let matrix = std::array::from_fn(|i| {
+        std::array::from_fn(|j| {
+            (i + j + 1) as f32
+        })
+    });
+
+    let mat = SMat16::<18, 18>::new(matrix);
+
+    let values = std::array::from_fn(|i| (i + 1) as f32);
+    let vec = SVec16::<18>::new(values);
+
+    let result = &mat * &vec;
+
+    let expected_values = std::array::from_fn(|i| {
+        (0..18)
+            .map(|j| matrix[i][j] * values[j])
+            .sum::<f32>()
+    });
+
+    let expected = SVec16::<18>::new(expected_values);
+
+    assert_vec_eq(&result, &expected);
+}
+
+#[test]
+fn test_matrix_vector_mul_remainder_only() {
+    // N < 16 means the entire operation uses the scalar remainder path.
+    let matrix = std::array::from_fn(|i| {
+        std::array::from_fn(|j| {
+            (i + j + 1) as f32
+        })
+    });
+
+    let mat = SMat16::<7, 7>::new(matrix);
+
+    let values = std::array::from_fn(|i| (i + 1) as f32);
+    let vec = SVec16::<7>::new(values);
+
+    let result = &mat * &vec;
+
+    let expected_values = std::array::from_fn(|i| {
+        (0..7)
+            .map(|j| matrix[i][j] * values[j])
+            .sum::<f32>()
+    });
+
+    let expected = SVec16::<7>::new(expected_values);
+
+    assert_vec_eq(&result, &expected);
+}
+
+#[test]
+fn test_matrix_vector_mul_exact_simd_width() {
+    // Exactly one SIMD vector.
+    let matrix = std::array::from_fn(|i| {
+        std::array::from_fn(|j| {
+            (i * 2 + j + 1) as f32
+        })
+    });
+
+    let mat = SMat16::<16, 16>::new(matrix);
+
+    let values = std::array::from_fn(|i| (i + 1) as f32);
+    let vec = SVec16::<16>::new(values);
+
+    let result = &mat * &vec;
+
+    let expected_values = std::array::from_fn(|i| {
+        (0..16)
+            .map(|j| matrix[i][j] * values[j])
+            .sum::<f32>()
+    });
+
+    let expected = SVec16::<16>::new(expected_values);
+
+    assert_vec_eq(&result, &expected);
+}
+
+#[test]
+fn test_matrix_vector_mul_multiple_simd_chunks_and_remainder() {
+    // 34 = 2 * 16 + 2 remainder elements.
+    let matrix = std::array::from_fn(|i| {
+        std::array::from_fn(|j| {
+            ((i * 3 + j * 2 + 1) % 17) as f32
+        })
+    });
+
+    let mat = SMat16::<34, 34>::new(matrix);
+
+    let values = std::array::from_fn(|i| {
+        ((i * 5 + 1) % 11) as f32
+    });
+
+    let vec = SVec16::<34>::new(values);
+
+    let result = &mat * &vec;
+
+    let expected_values = std::array::from_fn(|i| {
+        (0..34)
+            .map(|j| matrix[i][j] * values[j])
+            .sum::<f32>()
+    });
+
+    let expected = SVec16::<34>::new(expected_values);
+
+    assert_vec_eq(&result, &expected);
+}
+
+// -----------------------------------------------------------------------------
+// Addition with remainder
+// -----------------------------------------------------------------------------
+
+#[test]
+fn test_add_with_remainder() {
+    let a = SMat16::<3, 18>::new(
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| {
+                (i * 10 + j) as f32
+            })
+        })
+    );
+
+    let b = SMat16::<3, 18>::new(
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| {
+                (i + j * 2) as f32
+            })
+        })
+    );
+
+    let result = &a + &b;
+
+    let expected = SMat16::<3, 18>::new(
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| {
+                (i * 10 + j) as f32
+                    + (i + j * 2) as f32
+            })
+        })
+    );
+
+    assert_matrix_eq(&result, &expected);
+}
+
+#[test]
+fn test_sub_with_remainder() {
+    let a = SMat16::<3, 18>::new(
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| {
+                (i * 20 + j * 3) as f32
+            })
+        })
+    );
+
+    let b = SMat16::<3, 18>::new(
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| {
+                (i * 2 + j) as f32
+            })
+        })
+    );
+
+    let result = &a - &b;
+
+    let expected = SMat16::<3, 18>::new(
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| {
+                (i * 20 + j * 3) as f32
+                    - (i * 2 + j) as f32
+            })
+        })
+    );
+
+    assert_matrix_eq(&result, &expected);
+}
+
+// -----------------------------------------------------------------------------
+// AddAssign / SubAssign with remainder
+// -----------------------------------------------------------------------------
+
+#[test]
+fn test_sub_assign_with_remainder() {
+    let mut a = SMat16::<3, 18>::new(
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| {
+                (i * 20 + j * 3) as f32
+            })
+        })
+    );
+
+    let b = SMat16::<3, 18>::new(
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| {
+                (i * 2 + j) as f32
+            })
+        })
+    );
+
+    let expected = &a - &b;
+
+    a -= &b;
+
+    assert_matrix_eq(&a, &expected);
+}
+
+// -----------------------------------------------------------------------------
+// Degenerate dimensions
+// -----------------------------------------------------------------------------
+
+#[test]
+fn test_single_row_matrix_vector_mul() {
+    let matrix = [[
+        1.0, 2.0, 3.0, 4.0,
+        5.0, 6.0, 7.0, 8.0,
+    ]];
+
+    let mat = SMat16::<1, 8>::new(matrix);
+
+    let vec = SVec16::<8>::new([
+        1.0, 2.0, 1.0, 2.0,
+        1.0, 2.0, 1.0, 2.0,
+    ]);
+
+    let result = &mat * &vec;
+
+    // 1 + 4 + 3 + 8 + 5 + 12 + 7 + 16 = 56
+    assert!((result[0] - 56.0).abs() < EPS);
+}
+
+#[test]
+fn test_single_column_matrix_vector_mul() {
+    let matrix = std::array::from_fn(|i| [((i + 1) * 2) as f32]);
+
+    let mat = SMat16::<8, 1>::new(matrix);
+
+    let vec = SVec16::<1>::new([3.0]);
+
+    let result = &mat * &vec;
+
+    for i in 0..8 {
+        let expected = ((i + 1) * 2) as f32 * 3.0;
+
+        assert!(
+            (result[i] - expected).abs() < EPS,
+            "row {i}: expected {expected}, got {}",
+            result[i]
+        );
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Special floating-point values
+// -----------------------------------------------------------------------------
+
+#[test]
+fn test_matrix_vector_mul_negative_values() {
+    let matrix = std::array::from_fn(|i| {
+        std::array::from_fn(|j| {
+            if (i + j) % 2 == 0 {
+                (i + j + 1) as f32
+            } else {
+                -((i + j + 1) as f32)
+            }
+        })
+    });
+
+    let values = std::array::from_fn(|i| {
+        if i % 2 == 0 {
+            (i + 1) as f32
+        } else {
+            -((i + 1) as f32)
+        }
+    });
+
+    let mat = SMat16::<16, 16>::new(matrix);
+    let vec = SVec16::<16>::new(values);
+
+    let result = &mat * &vec;
+
+    let expected_values = std::array::from_fn(|i| {
+        (0..16)
+            .map(|j| matrix[i][j] * values[j])
+            .sum::<f32>()
+    });
+
+    let expected = SVec16::<16>::new(expected_values);
+
+    assert_vec_eq(&result, &expected);
+}
+
+// -----------------------------------------------------------------------------
+// Identity for non-16 dimensions
+// -----------------------------------------------------------------------------
+
+#[test]
+fn test_matrix_vector_mul_identity_with_remainder() {
+    let mut matrix = [[0.0f32; 18]; 18];
+
+    for i in 0..18 {
+        matrix[i][i] = 1.0;
+    }
+
+    let mat = SMat16::<18, 18>::new(matrix);
+
+    let values = std::array::from_fn(|i| {
+        (i * 3 + 1) as f32
+    });
+
+    let vec = SVec16::<18>::new(values);
+
+    let result = &mat * &vec;
+
+    assert_vec_eq(&result, &vec);
+}
+
+// -----------------------------------------------------------------------------
+// Matrix arithmetic consistency with remainder
+// -----------------------------------------------------------------------------
+
+#[test]
+fn test_add_sub_consistency_with_remainder() {
+    let a = SMat16::<3, 18>::new(
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| {
+                (i * 3 + j) as f32
+            })
+        })
+    );
+
+    let b = SMat16::<3, 18>::new(
+        std::array::from_fn(|i| {
+            std::array::from_fn(|j| {
+                (i * 7 + j * 2) as f32
+            })
+        })
+    );
+
+    let c = &a + &b;
+    let result = &c - &b;
+
+    assert_matrix_eq(&result, &a);
+}

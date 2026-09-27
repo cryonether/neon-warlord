@@ -10,14 +10,14 @@ use super::simd_vec::SVec16;
 pub struct SMat16<const M: usize, const N: usize>(pub [AlignedVec<N>; M]);
 
 impl<const M: usize, const N: usize> SMat16<M, N> {
-    pub fn new(m: [[f32; N]; N]) -> Self {
+    pub fn new(m: [[f32; N]; M]) -> Self {
         let m_vec = std::array::from_fn(|i| AlignedVec(m[i]));
 
         Self(m_vec)
     }
 
     pub fn zero() -> Self {
-        Self::new([[0.0; N]; N])
+        Self::new([[0.0; N]; M])
     }
 }
 
@@ -84,11 +84,11 @@ impl<const M: usize, const N: usize> Mul<&SVec16<N>> for &SMat16<M, N> {
                 sum += m * a;
             }
 
-            for (m, a) in zip(a.remainder(), m.remainder()) {
-                sum += m * a;
-            }
-
             *res = sum.reduce_add();
+
+            for (m, a) in zip(a.remainder(), m.remainder()) {
+                *res += m * a;
+            }
         }
 
         res

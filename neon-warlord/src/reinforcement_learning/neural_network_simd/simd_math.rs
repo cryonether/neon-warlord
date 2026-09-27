@@ -4,8 +4,11 @@ pub mod simd_mat;
 pub mod simd_vec;
 pub mod simd_row_vec;
 
+#[cfg(test)]
 mod test_simd_mat;
+#[cfg(test)]
 mod test_simd_vec;
+#[cfg(test)]
 mod test_simd_row_vec;
 
 use std::ops::{Add, AddAssign, Sub, SubAssign};
