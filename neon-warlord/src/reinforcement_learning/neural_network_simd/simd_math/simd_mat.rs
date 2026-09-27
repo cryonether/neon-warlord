@@ -1,7 +1,6 @@
 //! MxN Matrix
 
 use itertools::izip;
-use winit::keyboard::KeyCode::Resume;
 
 use super::*;
 use super::simd_vec::SVec16;

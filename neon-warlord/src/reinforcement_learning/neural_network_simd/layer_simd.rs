@@ -11,7 +11,6 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::{
 const LANES: usize = 16;
 
 /// A simd layer
-/// Inputs and outputs are multiple of 16
 pub struct LayerSimd<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -33,8 +32,8 @@ pub struct LayerSimd<
     a: SVec16<OUTPUTS>,
 
     // back propagation
-    dy_dw: SMat16<OUTPUTS, INPUTS>,
-    dy_db: SVec16<OUTPUTS>,
+    dl_dw: SMat16<OUTPUTS, INPUTS>,
+    dl_db: SVec16<OUTPUTS>,
 }
 
 impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RESIDUAL: bool>
@@ -46,8 +45,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         let b = SVec16::zero();
         let z = SVec16::zero();
         let a = SVec16::zero();
-        let dy_dw = SMat16::zero();
-        let dy_db = SVec16::zero();
+        let dl_dw = SMat16::zero();
+        let dl_db = SVec16::zero();
 
         Self {
             x,
@@ -55,8 +54,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             b,
             z,
             a,
-            dy_dw,
-            dy_db,
+            dl_dw,
+            dl_db,
         }
     }
 
@@ -80,9 +79,13 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         }
 
         // a = f(z)
-        self.a = Self::activation_re_lu_vec(&self.z);
+        self.a = if ACTIVATION {
+            Self::activation_re_lu_vec(&self.z)
+        } else {
+            self.z.clone()
+        };
 
-        self.a
+        self.a.clone()
     }
 
     pub fn backward(&mut self, delta: &SVec16<OUTPUTS>) -> SVec16<INPUTS> {
@@ -91,13 +94,18 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         //
         // dz = delta ⊙ f'(z)
         //
-
-        let dz_activation = Self::derivative_re_lu_vec(&self.z);
-        let dz = delta * &dz_activation;
+        let dz = if ACTIVATION {
+            delta * &Self::derivative_re_lu_vec(&self.z)
+        } else {
+            delta.clone()
+        };
 
         // W^T * dz
         //
         // dz^T * W gives the same vector as W^T * dz.
+        //
+        // dz^T * W= (W^T * dz)^T
+        //
         let dz_row = dz.as_row_vec();
         let mut dx = (&dz_row * &self.w).as_column_vec();
 
@@ -127,10 +135,10 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
 
         // Store gradients
         // dL/db = dz
-        self.dy_db = dz.clone();
+        self.dl_db = dz.clone();
 
         // dL/dW = dz * x^T
-        self.dy_dw = &dz * &self.x.as_row_vec();
+        self.dl_dw = &dz * &self.x.as_row_vec();
 
         dx
     }
