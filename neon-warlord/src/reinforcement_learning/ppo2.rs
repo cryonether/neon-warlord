@@ -156,9 +156,9 @@ impl Ppo2 {
 
 
         let mut critic_loss_sum = 0.0;
-        let mut critic_derivatives_sum = 0.0;
+        let mut critic_derivatives_sum;
         let mut actor_loss_sum = 0.0;
-        let mut actor_derivatives_sum = [0.0; OUTPUTS];
+        let mut actor_derivatives_sum;
 
         let n = self.transitions.len();
         assert_eq!(advantages.len(), n);
@@ -205,13 +205,19 @@ impl Ppo2 {
                 actor_loss_sum += surrogate_loss_clipped;
 
                 // dL / dy
-                let mut loss_derivative = [0.0; 2];
+                //
+                // ∂L_t                      a_t − μ_t
+                // ----- = - − A_t * r_t * --------------
+                // ∂μt                          σ2
+                //
+                let mut loss_derivative = [0.0; OUTPUTS];
                 for (curr_log_probability_derivative, loss_derivative) in zip(curr_log_probability_derivative, &mut loss_derivative) {
                     *loss_derivative = surrogate_loss_clipped_derivative * ratio_derivative * curr_log_probability_derivative;
                 }
 
-                let critic_gradients = self.critic.backward(critic_square_error_derivative);
-                let actor_gradients = self.actor.backward(loss_derivative);
+                // Calculate gradients
+                // let critic_gradients = self.critic.backward(critic_square_error_derivative);
+                // let actor_gradients = self.actor.backward(loss_derivative);
 
             }
 

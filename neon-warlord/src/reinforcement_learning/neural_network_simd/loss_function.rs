@@ -167,7 +167,7 @@ impl PpoSurrogateLossClipped {
     /// Clipped branch:
     ///  ∂L
     /// ------ = 0
-    ///  ∂μ
+    ///  ∂r
     /// 
     pub fn derivative(&self) -> f32 {
         if self.use_unclipped {
