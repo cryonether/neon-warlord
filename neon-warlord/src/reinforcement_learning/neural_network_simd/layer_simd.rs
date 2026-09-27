@@ -59,6 +59,73 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         }
     }
 
+    pub fn new_rand() -> Self {
+        let x = SVec16::zero();
+        let mut w = SMat16::zero();
+        let mut b = SVec16::zero();
+        let z = SVec16::zero();
+        let a = SVec16::zero();
+        let dl_dw = SMat16::zero();
+        let dl_db = SVec16::zero();
+
+        let mut rng = fastrand::Rng::with_seed(fastrand::u64(..));
+
+        // Kaiming/He-style initialization
+        let fan_in: f32 = LANES as f32; // fan_in is the number of inputs to the neuron/filter.
+        let bound = 1.0 / (fan_in).sqrt();
+        let mut rand = || (rng.f32() * 2.0 - 1.0) * bound;
+
+        for w in &mut w {
+            for w in w {
+                *w = rand();
+            }
+        }
+
+        for b in &mut b {
+            *b = rand();
+        }
+
+        Self {
+            x,
+            w,
+            b,
+            z,
+            a,
+            dl_dw,
+            dl_db,
+        }
+    }
+
+    pub fn new_zero_one() -> Self {
+        let x = SVec16::zero();
+        let mut w = SMat16::zero();
+        let mut b = SVec16::zero();
+        let z = SVec16::zero();
+        let a = SVec16::zero();
+        let dl_dw = SMat16::zero();
+        let dl_db = SVec16::zero();
+
+        for w in &mut w {
+            for w in w {
+                *w = 0.1;
+            }
+        }
+
+        for b in &mut b {
+            *b = 0.1;
+        }
+
+        Self {
+            x,
+            w,
+            b,
+            z,
+            a,
+            dl_dw,
+            dl_db,
+        }
+    }
+
     pub fn forward(&mut self, x: &SVec16<INPUTS>) -> SVec16<OUTPUTS> {
         
         self.x = *x;
