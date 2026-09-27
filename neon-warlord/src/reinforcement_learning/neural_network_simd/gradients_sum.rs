@@ -7,24 +7,24 @@ use wide::f32x16;
 
 use crate::reinforcement_learning::neural_network_simd::GradientsRef;
 
-use super::SMat;
-use super::SVec;
+use super::SMat16;
+use super::SVec16;
 
 pub struct GradientsSum<const SIZE: usize, const N: usize, const L: usize> {
-    pub dl_dw: [SMat<N, L>; SIZE],
-    pub dl_db: [SVec<N, L>; SIZE],
+    pub dl_dw: [SMat16<N, L>; SIZE],
+    pub dl_db: [SVec16<L>; SIZE],
 
-    pub dl_dw_y: SMat<N, L>,
-    pub dl_db_y: SVec<N, L>,
+    pub dl_dw_y: SMat16<N, L>,
+    pub dl_db_y: SVec16<L>,
 }
 
 impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L> {
     pub fn new() -> Self {
-        let dl_dw = [SMat::new([[0.0; N]; N]); SIZE];
-        let dl_db = [SVec::new([0.0; N]); SIZE];
+        let dl_dw = [SMat16::new([[0.0; N]; N]); SIZE];
+        let dl_db = [SVec16::new([0.0; N]); SIZE];
 
-        let dl_dw_y = SMat::new([[0.0; N]; N]);
-        let dl_db_y = SVec::new([0.0; N]);
+        let dl_dw_y = SMat16::new([[0.0; N]; N]);
+        let dl_db_y = SVec16::new([0.0; N]);
 
         Self {
             dl_dw,
@@ -119,7 +119,7 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
 
         // dy_db
         for (x, y) in zip(&self.dl_db, &mut res.dl_db) {
-            for (x, y) in zip(x.as_array(), y.as_mut_array()) {
+            for (x, y) in zip(x.as_array::<N>(), y.as_mut_array::<N>()) {
                 *y = x * val;
             }
         }
@@ -132,7 +132,7 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
         }
 
         // dy_db_y
-        for (x, y) in zip(self.dl_db_y.as_array(), res.dl_db_y.as_mut_array()) {
+        for (x, y) in zip(self.dl_db_y.as_array::<N>(), res.dl_db_y.as_mut_array::<N>()) {
             *y = x * val;
         }
 

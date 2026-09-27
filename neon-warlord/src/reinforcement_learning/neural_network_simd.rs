@@ -3,6 +3,7 @@
 pub mod epoch;
 pub mod gradients_sum;
 pub mod simd_math;
+pub mod layer_simd;
 
 #[cfg(test)]
 mod test_neural_network_simd;
@@ -24,7 +25,7 @@ use wide::f32x16;
 
 use crate::reinforcement_learning::neural_network_simd::{
     gradients_sum::GradientsSum,
-    simd_math::{SMat, SVec},
+    simd_math::{SMat16, SVec16},
 };
 
 const LANES: usize = 16;
@@ -77,31 +78,31 @@ pub struct NeuralNetworkSimd<
     const L: usize,
 > {
     // input
-    pub x: SVec<N, L>,
+    pub x: SVec16<L>,
 
     // parameters
-    pub w: [SMat<N, L>; NR_LAYERS],
-    b: [SVec<N, L>; NR_LAYERS],
+    pub w: [SMat16<N, L>; NR_LAYERS],
+    b: [SVec16<L>; NR_LAYERS],
 
     // output
-    pub w_y: SMat<N, L>,
-    b_y: SVec<N, L>,
-    pub y: SVec<N, L>,
+    pub w_y: SMat16<N, L>,
+    b_y: SVec16<L>,
+    pub y: SVec16<L>,
 
     // intermediate products
 
     // a = f(z)
-    a: [SVec<N, L>; NR_LAYERS],
+    a: [SVec16<L>; NR_LAYERS],
 
     // z = W*a + b
-    z: [SVec<N, L>; NR_LAYERS],
+    z: [SVec16<L>; NR_LAYERS],
 
     // back propagation
-    dy_dw: [SMat<N, L>; NR_LAYERS],
-    dy_db: [SVec<N, L>; NR_LAYERS],
+    dy_dw: [SMat16<N, L>; NR_LAYERS],
+    dy_db: [SVec16<L>; NR_LAYERS],
 
-    dy_dw_y: SMat<N, L>,
-    dy_db_y: SVec<N, L>,
+    dy_dw_y: SMat16<N, L>,
+    dy_db_y: SVec16<L>,
 }
 
 impl<
@@ -114,23 +115,23 @@ impl<
 > NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, N, L>
 {
     pub fn new() -> Self {
-        let x = SVec::new([0.0; N]);
+        let x = SVec16::new([0.0; N]);
 
-        let w = [SMat::new([[0.0; N]; N]); NR_LAYERS];
-        let b = [SVec::new([0.0; N]); NR_LAYERS];
-        let w_y = SMat::new([[0.0; N]; N]);
-        let b_y = SVec::new([0.0; N]);
+        let w = [SMat16::new([[0.0; N]; N]); NR_LAYERS];
+        let b = [SVec16::new([0.0; N]); NR_LAYERS];
+        let w_y = SMat16::new([[0.0; N]; N]);
+        let b_y = SVec16::new([0.0; N]);
 
-        let y = SVec::new([0.0; N]);
+        let y = SVec16::new([0.0; N]);
 
-        let a = [SVec::new([0.0; N]); NR_LAYERS];
-        let z = [SVec::new([0.0; N]); NR_LAYERS];
+        let a = [SVec16::new([0.0; N]); NR_LAYERS];
+        let z = [SVec16::new([0.0; N]); NR_LAYERS];
 
-        let dy_dw = [SMat::new([[0.0; N]; N]); NR_LAYERS];
-        let dy_db = [SVec::new([0.0; N]); NR_LAYERS];
+        let dy_dw = [SMat16::new([[0.0; N]; N]); NR_LAYERS];
+        let dy_db = [SVec16::new([0.0; N]); NR_LAYERS];
 
-        let dy_dw_y = SMat::new([[0.0; N]; N]);
-        let dy_db_y = SVec::new([0.0; N]);
+        let dy_dw_y = SMat16::new([[0.0; N]; N]);
+        let dy_db_y = SVec16::new([0.0; N]);
 
         Self {
             x,
@@ -167,7 +168,7 @@ impl<
         }
 
         for b in &mut model.b {
-            for b in b.as_mut_array() {
+            for b in b.as_mut_array::<N>() {
                 *b = rand();
             }
         }
@@ -178,7 +179,7 @@ impl<
             }
         }
 
-        for b in model.b_y.as_mut_array() {
+        for b in model.b_y.as_mut_array::<N>() {
             *b = rand();
         }
 
@@ -195,14 +196,14 @@ impl<
         }
 
         for b in &mut model.b {
-            b.as_mut_array().fill(0.1);
+            b.as_mut_array::<N>().fill(0.1);
         }
 
         for w in model.w_y.as_mut_array() {
             w.fill(0.1);
         }
 
-        model.b_y.as_mut_array().fill(0.1);
+        model.b_y.as_mut_array::<N>().fill(0.1);
 
         model
     }
@@ -220,7 +221,7 @@ impl<
     }
 
     fn forward_full(&mut self, x: [f32; N]) -> [f32; N] {
-        self.x = SVec::new(x);
+        self.x = SVec16::new(x);
 
         let mut input_ = &self.x;
 
@@ -245,6 +246,8 @@ impl<
         // z = W * a + b
         self.y = &self.w_y * input_ + &self.b_y;
 
+        let y_array: &[f32; N] = self.y.as_array();
+
         *self.y.as_array()
     }
 
@@ -260,9 +263,9 @@ impl<
         // last element
         let mut dy_db_y = [0.0; N];
         dy_db_y[index] = 1.0; // choose weight
-        self.dy_db_y = SVec::new(dy_db_y);
+        self.dy_db_y = SVec16::new(dy_db_y);
 
-        let mut dy_dw_y = SMat::new([[0.0; N]; N]);
+        let mut dy_dw_y = SMat16::new([[0.0; N]; N]);
         dy_dw_y.as_mut_array()[index] = *a_iter.next().unwrap().as_array(); // choose weight
         self.dy_dw_y = dy_dw_y;
 
@@ -275,7 +278,7 @@ impl<
         let mut delta_previous_;
         {
             let dz_ = Self::derivative_re_lu_vec(z);
-            let delta_ = &SVec::new(*w) * &dz_;
+            let delta_ = &SVec16::new(*w) * &dz_;
 
             delta_previous_ = delta_;
 
@@ -348,8 +351,8 @@ impl<
     const LEAKY_RELU_ALPHA: f32 = 0.01;
 
     #[inline]
-    fn activation_re_lu_vec(x: &SVec<N, L>) -> SVec<N, L> {
-        let mut res = SVec::new([0.0; N]);
+    fn activation_re_lu_vec(x: &SVec16<L>) -> SVec16<L> {
+        let mut res = SVec16::new([0.0; N]);
         let zero = f32x16::ZERO;
         let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
 
@@ -361,8 +364,8 @@ impl<
     }
 
     #[inline]
-    fn derivative_re_lu_vec(x: &SVec<N, L>) -> SVec<N, L> {
-        let mut res = SVec::new([0.0; N]);
+    fn derivative_re_lu_vec(x: &SVec16<L>) -> SVec16<L> {
+        let mut res = SVec16::new([0.0; N]);
         let zero = f32x16::ZERO;
         let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
         let one = f32x16::splat(1.0);
@@ -453,9 +456,9 @@ impl<
 }
 
 pub struct GradientsRef<'a, const NR_LAYERS: usize, const N: usize, const L: usize> {
-    pub dy_dw: &'a [SMat<N, L>; NR_LAYERS],
-    pub dy_db: &'a [SVec<N, L>; NR_LAYERS],
+    pub dy_dw: &'a [SMat16<N, L>; NR_LAYERS],
+    pub dy_db: &'a [SVec16<L>; NR_LAYERS],
 
-    pub dy_dw_y: &'a SMat<N, L>,
-    pub dy_db_y: &'a SVec<N, L>,
+    pub dy_dw_y: &'a SMat16<N, L>,
+    pub dy_db_y: &'a SVec16<L>,
 }

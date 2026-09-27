@@ -6,6 +6,9 @@ use super::*;
 
 use dfdx::prelude::*;
 
+const N: usize = 16;
+const L: usize = 1;
+
 type Model = (
     (Linear<16, 16>, ReLU),
     (Linear<16, 16>, ReLU),
@@ -38,7 +41,8 @@ fn compare() {
     nn_0.forward();
     nn_0.backward(0);
 
-    let mut nn_1: NeuralNetwork16<16, 16, 3, false> = NeuralNetwork16::new();
+
+    let mut nn_1: NeuralNetworkSimd<16, 16, 3, false, N, L > = NeuralNetworkSimd::new();
 
     let x = [
         1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -93,19 +97,19 @@ fn compare() {
     // println!("nn_0: {:}", nn_0);
     // println!("nn_1: {:}", nn_1);
 
-    assert_eq!(nn_0.y[0], nn_1.y.as_array()[0]);
+    assert_eq!(nn_0.y[0], nn_1.y.as_array::<N>()[0]);
 
-    assert_eq!(nn_0.dy_db0[0], nn_1.dy_db[0].as_array()[0]);
-    assert_eq!(nn_0.dy_db0[1], nn_1.dy_db[0].as_array()[1]);
+    assert_eq!(nn_0.dy_db0[0], nn_1.dy_db[0].as_array::<N>()[0]);
+    assert_eq!(nn_0.dy_db0[1], nn_1.dy_db[0].as_array::<N>()[1]);
 
-    assert_eq!(nn_0.dy_db1[0], nn_1.dy_db[1].as_array()[0]);
-    assert_eq!(nn_0.dy_db1[1], nn_1.dy_db[1].as_array()[1]);
+    assert_eq!(nn_0.dy_db1[0], nn_1.dy_db[1].as_array::<N>()[0]);
+    assert_eq!(nn_0.dy_db1[1], nn_1.dy_db[1].as_array::<N>()[1]);
 
-    assert_eq!(nn_0.dy_db2[0], nn_1.dy_db[2].as_array()[0]);
-    assert_eq!(nn_0.dy_db2[1], nn_1.dy_db[2].as_array()[1]);
+    assert_eq!(nn_0.dy_db2[0], nn_1.dy_db[2].as_array::<N>()[0]);
+    assert_eq!(nn_0.dy_db2[1], nn_1.dy_db[2].as_array::<N>()[1]);
 
-    assert_eq!(nn_0.dy_db3[0], nn_1.dy_db_y.as_array()[0]);
-    assert_eq!(nn_0.dy_db3[1], nn_1.dy_db_y.as_array()[1]);
+    assert_eq!(nn_0.dy_db3[0], nn_1.dy_db_y.as_array::<N>()[0]);
+    assert_eq!(nn_0.dy_db3[1], nn_1.dy_db_y.as_array::<N>()[1]);
 
     assert_eq!(nn_0.dy_dw0[0], nn_1.dy_dw[0].as_array()[0][0]);
     assert_eq!(nn_0.dy_dw0[1], nn_1.dy_dw[0].as_array()[0][1]);
@@ -197,30 +201,30 @@ fn compare_dfdx() {
     let dw_3 = grads.get(&model.3.weight).as_vec();
     let db_3 = grads.get(&model.3.bias).as_vec();
 
-    _assert_f32_eq_(y_vec[0], nn_1.y.as_array()[0]);
+    _assert_f32_eq_(y_vec[0], nn_1.y.as_array::<N>()[0]);
 
-    _assert_f32_eq_(b_0[0], nn_1.b[0].as_array()[0]);
-    _assert_f32_eq_(b_0[1], nn_1.b[0].as_array()[1]);
+    _assert_f32_eq_(b_0[0], nn_1.b[0].as_array::<N>()[0]);
+    _assert_f32_eq_(b_0[1], nn_1.b[0].as_array::<N>()[1]);
 
-    _assert_f32_eq_(b_1[0], nn_1.b[1].as_array()[0]);
-    _assert_f32_eq_(b_1[1], nn_1.b[1].as_array()[1]);
+    _assert_f32_eq_(b_1[0], nn_1.b[1].as_array::<N>()[0]);
+    _assert_f32_eq_(b_1[1], nn_1.b[1].as_array::<N>()[1]);
 
-    _assert_f32_eq_(b_2[0], nn_1.b[2].as_array()[0]);
-    _assert_f32_eq_(b_2[1], nn_1.b[2].as_array()[1]);
+    _assert_f32_eq_(b_2[0], nn_1.b[2].as_array::<N>()[0]);
+    _assert_f32_eq_(b_2[1], nn_1.b[2].as_array::<N>()[1]);
 
-    _assert_f32_eq_(b_3[0], nn_1.b_y.as_array()[0]);
+    _assert_f32_eq_(b_3[0], nn_1.b_y.as_array::<N>()[0]);
     // assert_f32_eq_(b_3[1], nn_1.b_y[1]);
 
-    _assert_f32_eq_(db_0[0], nn_1.dy_db[0].as_array()[0]);
-    _assert_f32_eq_(db_0[1], nn_1.dy_db[0].as_array()[1]);
+    _assert_f32_eq_(db_0[0], nn_1.dy_db[0].as_array::<N>()[0]);
+    _assert_f32_eq_(db_0[1], nn_1.dy_db[0].as_array::<N>()[1]);
 
-    _assert_f32_eq_(db_1[0], nn_1.dy_db[1].as_array()[0]);
-    _assert_f32_eq_(db_1[1], nn_1.dy_db[1].as_array()[1]);
+    _assert_f32_eq_(db_1[0], nn_1.dy_db[1].as_array::<N>()[0]);
+    _assert_f32_eq_(db_1[1], nn_1.dy_db[1].as_array::<N>()[1]);
 
-    _assert_f32_eq_(db_2[0], nn_1.dy_db[2].as_array()[0]);
-    _assert_f32_eq_(db_2[1], nn_1.dy_db[2].as_array()[1]);
+    _assert_f32_eq_(db_2[0], nn_1.dy_db[2].as_array::<N>()[0]);
+    _assert_f32_eq_(db_2[1], nn_1.dy_db[2].as_array::<N>()[1]);
 
-    _assert_f32_eq_(db_3[0], nn_1.dy_db_y.as_array()[0]);
+    _assert_f32_eq_(db_3[0], nn_1.dy_db_y.as_array::<N>()[0]);
     // assert_f32_eq_(db_3[1], nn_1.dy_db_y[1]);
 
     _assert_f32_eq_(dw_0[0], nn_1.dy_dw[0].as_array()[0][0]);

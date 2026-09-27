@@ -43,7 +43,7 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         let mut sum = 0.0;
         // evaluate
         for (input, output) in zip(input, output) {
-            for (x, input) in zip(self.model.x.as_mut_array(), input) {
+            for (x, input) in zip(self.model.x.as_mut_array::<16>(), input) {
                 *x = input;
             }
 
