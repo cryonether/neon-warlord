@@ -108,3 +108,17 @@ impl<'a, const N: usize> IntoIterator for &'a mut AlignedVec<N> {
     }
 }
 
+pub trait AlignedVecSlice {
+    fn as_slice(&self) -> &[f32];
+    fn as_mut_slice(&mut self) -> &mut [f32];
+}
+
+impl<const N: usize> AlignedVecSlice for AlignedVec<N> {
+    fn as_slice(&self) -> &[f32] {
+        &self.0
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [f32] {
+        &mut self.0
+    }
+}

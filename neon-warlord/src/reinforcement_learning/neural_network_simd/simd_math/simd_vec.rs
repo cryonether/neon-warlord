@@ -23,6 +23,37 @@ impl<const N: usize> SVec16<N> {
     }
 }
 
+pub trait SVec16Ref: std::any::Any {
+    fn as_any(&self) -> &dyn Any;
+    // fn as_slice(&self) -> &[f32];
+}
+
+impl<const N: usize> SVec16Ref for SVec16<N> {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    // fn as_slice(&self) -> &[f32] {
+    //     &self.0.0
+    // }
+}
+
+fn create(vec: &dyn SVec16Ref) {
+    let a = vec.as_any().downcast_ref::<SVec16<5>>();
+
+}
+
+use std::any::Any;
+
+fn main() {
+    let value: Box<dyn Any> = Box::new(42i32);
+
+    if let Some(n) = value.downcast_ref::<i32>() {
+        println!("value = {n}");
+    }
+}
+
+
 // Deref
 
 impl<const N: usize> std::ops::Deref for SVec16<N> {

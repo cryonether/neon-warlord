@@ -5,12 +5,13 @@ use std::iter::zip;
 use wide::f32x16;
 
 use crate::reinforcement_learning::neural_network_simd::simd_math::{
-    simd_mat::SMat16, simd_vec::SVec16,
+    AlignedVecSlice, simd_mat::{SMat16, SMat16Slice}, simd_vec::{SVec16, SVec16Ref},
 };
 
 const LANES: usize = 16;
 
 /// A simd layer
+#[derive(Copy, Clone)]
 pub struct LayerSimd<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -34,11 +35,18 @@ pub struct LayerSimd<
     // back propagation
     dl_dw: SMat16<OUTPUTS, INPUTS>,
     dl_db: SVec16<OUTPUTS>,
+
+    // intermediate products
+    dx: SVec16<INPUTS>,
 }
 
 impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RESIDUAL: bool>
     LayerSimd<INPUTS, OUTPUTS, ACTIVATION, RESIDUAL>
 {
+    pub fn new_box() -> Box<dyn LayerRef> {
+        Box::new(Self::new())
+    }
+
     pub fn new() -> Self {
         let x = SVec16::zero();
         let w = SMat16::zero();
@@ -47,6 +55,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         let a = SVec16::zero();
         let dl_dw = SMat16::zero();
         let dl_db = SVec16::zero();
+        let dx = SVec16::zero();
 
         Self {
             x,
@@ -56,6 +65,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             a,
             dl_dw,
             dl_db,
+            dx
         }
     }
 
@@ -67,6 +77,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         let a = SVec16::zero();
         let dl_dw = SMat16::zero();
         let dl_db = SVec16::zero();
+        let dx = SVec16::zero();
 
         let mut rng = fastrand::Rng::with_seed(fastrand::u64(..));
 
@@ -93,6 +104,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             a,
             dl_dw,
             dl_db,
+            dx
         }
     }
 
@@ -104,6 +116,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         let a = SVec16::zero();
         let dl_dw = SMat16::zero();
         let dl_db = SVec16::zero();
+        let dx = SVec16::zero();
 
         for w in &mut w {
             for w in w {
@@ -123,6 +136,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             a,
             dl_dw,
             dl_db,
+            dx
         }
     }
 
@@ -202,17 +216,46 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
 
         // Store gradients
         // dL/db = dz
-        self.dl_db = dz.clone();
+        let dl_db = dz;
 
         // dL/dW = dz * x^T
-        self.dl_dw = &dz * &self.x.as_row_vec();
+        let dl_dw = &dz * &self.x.as_row_vec();
+
+        self.dx = dx;
+
+        // Update gradients
+        self.dl_db += &dl_db;
+        self.dl_dw += &dl_dw;
 
         dx
     }
 
+    pub fn subtract_gradients(&mut self, learning_rate: f32) {
+        let learning_rate_= f32x16::splat(learning_rate);
+
+        // b
+        for (b, dl_db) in zip(self.b.simd_iter_mut(), self.dl_db.simd_iter()) {
+            *b -= dl_db * learning_rate_;
+        }
+
+        for (b, dl_db) in zip(self.b.remainder_mut(), self.dl_db.remainder()) {
+            *b -= dl_db * learning_rate;
+        }
+
+        // w
+        for (w, dl_dw) in zip(&mut self.w, &self.dl_dw) {
+            for (w, dl_dw) in zip(w.simd_iter_mut(), dl_dw.simd_iter()) {
+                *w -= dl_dw * learning_rate_;
+            }
+
+            for (w, dl_dw) in zip(w.remainder_mut(), dl_dw.remainder()) {
+                *w -= dl_dw * learning_rate;
+            }
+        }
+    }
+
+
     const LEAKY_RELU_ALPHA: f32 = 0.01;
-
-
 
     #[inline]
     fn activation_re_lu_vec(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
@@ -265,5 +308,140 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         } else {
             Self::LEAKY_RELU_ALPHA
         }
+    }
+}
+
+impl<const A: usize, const B: usize, const C: bool, const D: bool> Default
+    for LayerSimd<A, B, C, D>
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub trait LayerRef {
+    fn forward(&mut self, x: &dyn SVec16Ref) ->  &dyn SVec16Ref;
+    fn backward(&mut self, x: &dyn SVec16Ref) ->  &dyn SVec16Ref;
+    fn subtract_gradients(&mut self, learning_rate: f32);
+
+    fn get_inputs(&self) -> usize;
+    fn get_outputs(&self) -> usize;
+    fn get_w(&self) ->  &dyn SMat16Slice;
+    fn get_b(&self) ->  &[f32];
+}
+
+impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RESIDUAL: bool>
+ LayerRef for LayerSimd<INPUTS, OUTPUTS, ACTIVATION, RESIDUAL> {
+    fn forward(&mut self, x: &dyn SVec16Ref) -> &dyn SVec16Ref {
+
+        let x = x.as_any().downcast_ref::<SVec16<INPUTS>>();
+        match x {
+            Some(x) => {
+                self.forward(x)
+            },
+            None => panic!("layer does not match"),
+        };
+
+        &self.z        
+    }
+ 
+    fn backward(&mut self, y: &dyn SVec16Ref) ->  &dyn SVec16Ref {
+        let y = y.as_any().downcast_ref::<SVec16<OUTPUTS>>();
+        match y {
+            Some(y) => {
+                self.backward(y)
+            },
+            None => panic!("layer does not match"),
+        };
+
+        &self.dx   
+    }
+
+     fn subtract_gradients(&mut self, learning_rate: f32) {
+        self.subtract_gradients(learning_rate);
+     }
+
+    fn get_inputs(&self) -> usize {
+        INPUTS
+    }
+
+    fn get_outputs(&self) -> usize {
+        OUTPUTS
+    }
+
+
+    fn get_w(&self) -> &dyn SMat16Slice {
+        &self.w
+    }
+
+    fn get_b(&self) ->  &[f32] {
+        self.b.as_slice()
+    }
+ }
+
+
+
+
+
+
+type Model = (
+    LayerSimd::<2, 4, true, false>,
+    LayerSimd::<4, 4, true, false>,
+    LayerSimd::<4, 2, false, false>,
+);
+
+fn create() {
+
+
+    let model: Vec<Box<dyn LayerRef>>= vec![
+        LayerSimd::<2, 4, true, false>::new_box(),
+        LayerSimd::<4, 4, true, false>::new_box(),
+        LayerSimd::<4, 2, false, false>::new_box(),
+    ];
+
+
+}
+
+
+pub struct NeuralNetworkLayered {
+    model: Vec<Box<dyn LayerRef>>
+}
+
+impl NeuralNetworkLayered {
+    pub fn new(model: Vec<Box<dyn LayerRef>>) -> Self {
+        assert!(!model.is_empty());
+
+        // Check parameters
+        let mut outputs = model[0].get_inputs();
+        for layer in &model {
+            let inputs = layer.get_inputs();
+            assert_eq!(outputs, inputs);
+            outputs = inputs;
+        }
+
+        Self { model }
+    }
+
+    pub fn forward<const INPUTS: usize, const OUTPUTS: usize>(&mut self, x: [f32; INPUTS]) {
+        assert!(!self.model.is_empty());
+
+        let x = SVec16::new(x);
+
+        // forward
+        let mut x: &dyn SVec16Ref = &x;
+        for layer in &mut self.model {
+            let y = layer.forward(x);
+            x = y;
+        }
+
+        // return result
+        let y = x.as_any().downcast_ref::<SVec16<OUTPUTS>>();
+        match y {
+            Some(y) => {
+                y
+            },
+            None => panic!("layer does not match"),
+        };
+
     }
 }

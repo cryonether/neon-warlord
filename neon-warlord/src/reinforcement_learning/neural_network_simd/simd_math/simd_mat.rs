@@ -20,6 +20,23 @@ impl<const M: usize, const N: usize> SMat16<M, N> {
     }
 }
 
+// Slice
+
+pub trait SMat16Slice {
+    fn len(&self) -> usize;
+    fn row(&self, index: usize) -> &dyn AlignedVecSlice;
+}
+
+impl<const M: usize, const N: usize> SMat16Slice for SMat16<M, N> {
+    fn len(&self) -> usize {
+        M
+    }
+
+    fn row(&self, index: usize) -> &dyn AlignedVecSlice {
+        &self.0[index]
+    }
+}
+
 // Deref
 
 impl<const M: usize, const N: usize> std::ops::Deref for SMat16<M, N> {
@@ -91,6 +108,23 @@ impl<const M: usize, const N: usize> Mul<&SVec16<N>> for &SMat16<M, N> {
         }
 
         res
+    }
+}
+
+///
+/// `a += b`
+///
+impl<const M: usize, const N: usize> AddAssign<&SMat16<M, N>> for SMat16<M, N> {
+    fn add_assign(&mut self, rhs: &SMat16<M, N>) {
+        for (a, b) in zip(self, rhs) {
+            for (a, b) in zip(a.simd_iter_mut(), b.simd_iter()) {
+                *a += *b;
+            }
+
+            for (a, b) in zip(a.remainder_mut(), b.remainder()) {
+                *a += *b;
+            }
+        }
     }
 }
 
