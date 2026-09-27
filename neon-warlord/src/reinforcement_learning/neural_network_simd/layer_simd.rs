@@ -73,6 +73,10 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             for (z, x) in zip(self.z.simd_iter_mut(), x.simd_iter()){
                 *z += x;
             }
+
+            for (z, x) in zip(self.z.remainder_mut(), x.remainder()){
+                *z += x;
+            }
         }
 
         // a = f(z)
@@ -115,6 +119,10 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             for (dx, dz) in zip(dx.simd_iter_mut(), dz.simd_iter()) {
                 *dx += *dz;
             }
+
+            for (dx, dz) in zip(dx.remainder_mut(), dz.remainder()) {
+                *dx += *dz;
+            }
         }
 
         // Store gradients
@@ -141,6 +149,10 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             *res = x.simd_gt(zero).select(*x, x * alpha);
         }
 
+        for (x, res) in zip(x.remainder(), res.remainder_mut()) {
+            *res = if *x > 0.0 { *x } else { x * Self::LEAKY_RELU_ALPHA };
+        }
+
         res
     }
 
@@ -153,6 +165,10 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
 
         for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
             *res = x.simd_gt(zero).select(one, alpha);
+        }
+
+        for (x, res) in zip(x.remainder(), res.remainder_mut()) {
+            *res = if *x > 0.0 { 1.0 } else { Self::LEAKY_RELU_ALPHA };
         }
 
         res
