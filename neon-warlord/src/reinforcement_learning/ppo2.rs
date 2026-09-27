@@ -156,9 +156,9 @@ impl Ppo2 {
 
 
         let mut critic_loss_sum = 0.0;
-        let mut critic_derivatives_sum;
+        // let mut critic_derivatives_sum;
         let mut actor_loss_sum = 0.0;
-        let mut actor_derivatives_sum;
+        // let mut actor_derivatives_sum;
 
         let n = self.transitions.len();
         assert_eq!(advantages.len(), n);
@@ -216,6 +216,11 @@ impl Ppo2 {
                 }
 
                 // Calculate gradients
+                //
+                //  ∂Lt        ∂L_t
+                // ----- = Jᵀ -----
+                //  ∂θ         ∂μ_t
+                //
                 // let critic_gradients = self.critic.backward(critic_square_error_derivative);
                 // let actor_gradients = self.actor.backward(loss_derivative);
 
