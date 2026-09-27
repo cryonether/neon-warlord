@@ -23,10 +23,8 @@ use std::iter::zip;
 use itertools::izip;
 use wide::f32x16;
 
-use crate::reinforcement_learning::neural_network_simd::{
-    gradients_sum::GradientsSum,
-    simd_math::{SMat16, SVec16},
-};
+use crate::reinforcement_learning::neural_network_simd::{gradients_sum::GradientsSum, simd_math::{simd_mat::SMat16, simd_vec::SVec16}};
+
 
 const LANES: usize = 16;
 const NR_NEURONS: usize = 128;
@@ -81,11 +79,11 @@ pub struct NeuralNetworkSimd<
     pub x: SVec16<N>,
 
     // parameters
-    pub w: [SMat16<M, N>; NR_LAYERS],
+    pub w: [SMat16<N, N>; NR_LAYERS],
     b: [SVec16<N>; NR_LAYERS],
 
     // output
-    pub w_y: SMat16<M, N>,
+    pub w_y: SMat16<N, N>,
     b_y: SVec16<N>,
     pub y: SVec16<N>,
 
@@ -98,10 +96,10 @@ pub struct NeuralNetworkSimd<
     z: [SVec16<N>; NR_LAYERS],
 
     // back propagation
-    dy_dw: [SMat16<M, N>; NR_LAYERS],
+    dy_dw: [SMat16<N, N>; NR_LAYERS],
     dy_db: [SVec16<N>; NR_LAYERS],
 
-    dy_dw_y: SMat16<M, N>,
+    dy_dw_y: SMat16<N, N>,
     dy_db_y: SVec16<N>,
 }
 
@@ -160,7 +158,7 @@ impl<
         let mut model = Self::new();
 
         for w in &mut model.w {
-            for w in w.as_mut_array() {
+            for w in w {
                 for w in w {
                     *w = rand();
                 }
@@ -168,18 +166,18 @@ impl<
         }
 
         for b in &mut model.b {
-            for b in b.as_mut_array::<N>() {
+            for b in b {
                 *b = rand();
             }
         }
 
-        for w in model.w_y.as_mut_array() {
+        for w in &mut model.w_y {
             for w in w {
                 *w = rand();
             }
         }
 
-        for b in model.b_y.as_mut_array::<N>() {
+        for b in &mut model.b_y {
             *b = rand();
         }
 
@@ -190,20 +188,20 @@ impl<
         let mut model = Self::new();
 
         for w in &mut model.w {
-            for w in w.as_mut_array() {
+            for w in w {
                 w.fill(0.1);
             }
         }
 
         for b in &mut model.b {
-            b.as_mut_array::<N>().fill(0.1);
+            b.fill(0.1);
         }
 
-        for w in model.w_y.as_mut_array() {
+        for w in &mut model.w_y {
             w.fill(0.1);
         }
 
-        model.b_y.as_mut_array::<N>().fill(0.1);
+        model.b_y.fill(0.1);
 
         model
     }
@@ -227,7 +225,7 @@ impl<
 
         for (w, b, a, z) in izip!(&self.w, &self.b, &mut self.a, &mut self.z) {
             // z = W * input + b + input
-            *z = w * input_ + b;
+            *z = &(w * input_) + b;
 
             // transposed representation
             // *z = w.transpose_mul(input_) + b;
@@ -244,11 +242,9 @@ impl<
 
         // y
         // z = W * a + b
-        self.y = &self.w_y * input_ + &self.b_y;
+        self.y = &(&self.w_y * input_) + &self.b_y;
 
-        let y_array: &[f32; N] = self.y.as_array();
-
-        *self.y.as_array()
+        *self.y.0
     }
 
     pub fn backward<'a>(&'a mut self, index: usize) -> GradientsRef<'a, NR_LAYERS, N, L> {
@@ -266,19 +262,19 @@ impl<
         self.dy_db_y = SVec16::new(dy_db_y);
 
         let mut dy_dw_y = SMat16::new([[0.0; N]; N]);
-        dy_dw_y.as_mut_array()[index] = *a_iter.next().unwrap().as_array(); // choose weight
+        dy_dw_y[index].0 = *a_iter.next().unwrap().0; // choose weight
         self.dy_dw_y = dy_dw_y;
 
         // last element -1
         let z = z_iter.next().unwrap();
         let a = a_iter.next().unwrap();
-        let w = &self.w_y.as_array()[index]; // choose weight
+        let w = &self.w_y[index]; // choose weight
         let dy_db = dy_db_iter.next().unwrap();
         let dy_dw = dy_dw_iter.next().unwrap();
         let mut delta_previous_;
         {
             let dz_ = Self::derivative_re_lu_vec(z);
-            let delta_ = &SVec16::new(*w) * &dz_;
+            let delta_ = &SVec16::new(w.0) * &dz_;
 
             delta_previous_ = delta_;
 
@@ -356,8 +352,8 @@ impl<
         let zero = f32x16::ZERO;
         let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
 
-        for (x, res) in zip(x.a, &mut res.a) {
-            *res = x.simd_gt(zero).select(x, x * alpha);
+        for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
+            *res = x.simd_gt(zero).select(*x, x * alpha);
         }
 
         res
@@ -370,7 +366,7 @@ impl<
         let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
         let one = f32x16::splat(1.0);
 
-        for (x, res) in zip(x.a, &mut res.a) {
+        for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
             *res = x.simd_gt(zero).select(one, alpha);
         }
 
@@ -413,7 +409,7 @@ impl<
         writeln!(f)?;
 
         for (i, w) in self.w.iter().enumerate() {
-            for (j, w) in w.as_array().iter().enumerate() {
+            for (j, w) in w.iter().enumerate() {
                 writeln!(f, "w_{}_{:02}: {:?}", i, j, w)?;
             }
         }
@@ -438,7 +434,7 @@ impl<
         writeln!(f)?;
 
         for (i, dy_dw) in self.dy_dw.iter().enumerate() {
-            for (j, dy_dw) in dy_dw.as_array().iter().enumerate() {
+            for (j, dy_dw) in dy_dw.iter().enumerate() {
                 writeln!(f, "dy_dw_{}_{:02}: {:?}", i, j, dy_dw)?;
             }
         }
@@ -456,9 +452,9 @@ impl<
 }
 
 pub struct GradientsRef<'a, const NR_LAYERS: usize, const N: usize, const L: usize> {
-    pub dy_dw: &'a [SMat16<M, N>; NR_LAYERS],
+    pub dy_dw: &'a [SMat16<N, N>; NR_LAYERS],
     pub dy_db: &'a [SVec16<N>; NR_LAYERS],
 
-    pub dy_dw_y: &'a SMat16<M, N>,
+    pub dy_dw_y: &'a SMat16<N, N>,
     pub dy_db_y: &'a SVec16<N>,
 }

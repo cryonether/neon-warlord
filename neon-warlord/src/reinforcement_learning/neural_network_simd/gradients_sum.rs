@@ -5,16 +5,14 @@ use std::iter::zip;
 use itertools::izip;
 use wide::f32x16;
 
-use crate::reinforcement_learning::neural_network_simd::GradientsRef;
+use crate::reinforcement_learning::neural_network_simd::{GradientsRef, simd_math::{simd_mat::SMat16, simd_vec::SVec16}};
 
-use super::SMat16;
-use super::SVec16;
 
 pub struct GradientsSum<const SIZE: usize, const N: usize, const L: usize> {
-    pub dl_dw: [SMat16<M, N>; SIZE],
+    pub dl_dw: [SMat16<N, N>; SIZE],
     pub dl_db: [SVec16<N>; SIZE],
 
-    pub dl_dw_y: SMat16<M, N>,
+    pub dl_dw_y: SMat16<N, N>,
     pub dl_db_y: SVec16<N>,
 }
 
@@ -41,8 +39,8 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
 
         // dl_dw
         for (dl_dw, dy_dw) in zip(&mut self.dl_dw, gradients_dy.dy_dw) {
-            for (dl_dw, dy_dw) in zip(&mut dl_dw.m, &dy_dw.m) {
-                for (dl_dw, dy_dw) in zip(dl_dw, dy_dw) {
+            for (dl_dw, dy_dw) in zip(dl_dw, dy_dw) {
+                for (dl_dw, dy_dw) in zip(dl_dw.simd_iter_mut(), dy_dw.simd_iter()) {
                     *dl_dw += dy_dw * d_loss_dy;
                 }
             }
@@ -50,20 +48,20 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
 
         // dl_db
         for (dl_db, dy_db) in zip(&mut self.dl_db, gradients_dy.dy_db) {
-            for (dl_db, dy_db) in zip(&mut dl_db.a, &dy_db.a) {
+            for (dl_db, dy_db) in zip( dl_db.simd_iter_mut(), dy_db.simd_iter()) {
                 *dl_db += dy_db * d_loss_dy;
             }
         }
 
         // dl_dw_y
-        for (dl_dw_y, dy_dw_y) in zip(&mut self.dl_dw_y.m, &gradients_dy.dy_dw_y.m) {
-            for (dl_dw_y, dy_dw_y) in zip(dl_dw_y, dy_dw_y) {
+        for (dl_dw_y, dy_dw_y) in zip(&mut self.dl_dw_y, gradients_dy.dy_dw_y) {
+            for (dl_dw_y, dy_dw_y) in zip(dl_dw_y.simd_iter_mut(), dy_dw_y.simd_iter()) {
                 *dl_dw_y += dy_dw_y * d_loss_dy;
             }
         }
 
         // dl_db_y
-        for (dl_db_y, dy_db_y) in zip(&mut self.dl_db_y.a, &gradients_dy.dy_db_y.a) {
+        for (dl_db_y, dy_db_y) in zip(self.dl_db_y.simd_iter_mut(), gradients_dy.dy_db_y.simd_iter()) {
             *dl_db_y += dy_db_y * d_loss_dy;
         }
     }
@@ -110,7 +108,7 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
 
         // dy_dw
         for (x, y) in zip(self.dl_dw, &mut res.dl_dw) {
-            for (x, y) in zip(x.as_array(), y.as_mut_array()) {
+            for (x, y) in zip(x, y) {
                 for (x, y) in zip(x, y) {
                     *y = x * val;
                 }
@@ -119,20 +117,20 @@ impl<const SIZE: usize, const N: usize, const L: usize> GradientsSum<SIZE, N, L>
 
         // dy_db
         for (x, y) in zip(&self.dl_db, &mut res.dl_db) {
-            for (x, y) in zip(x.as_array::<N>(), y.as_mut_array::<N>()) {
+            for (x, y) in zip(x, y) {
                 *y = x * val;
             }
         }
 
         // dy_dw_y
-        for (x, y) in zip(self.dl_dw_y.as_array(), res.dl_dw_y.as_mut_array()) {
+        for (x, y) in zip(&self.dl_dw_y, &mut res.dl_dw_y) {
             for (x, y) in zip(x, y) {
                 *y = x * val;
             }
         }
 
         // dy_db_y
-        for (x, y) in zip(self.dl_db_y.as_array::<N>(), res.dl_db_y.as_mut_array::<N>()) {
+        for (x, y) in zip(&self.dl_db_y, &mut res.dl_db_y) {
             *y = x * val;
         }
 

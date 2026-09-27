@@ -43,12 +43,12 @@ impl<const SIZE: usize> EpochSimd<SIZE> {
         let mut sum = 0.0;
         // evaluate
         for (input, output) in zip(input, output) {
-            for (x, input) in zip(self.model.x.as_mut_array::<16>(), input) {
+            for (x, input) in zip(&mut self.model.x, input) {
                 *x = input;
             }
 
             let x = self.model.x;
-            let y_pred_ = self.model.forward(x.as_array());
+            let y_pred_ = self.model.forward(&x);
             let gradients = self.model.backward(output_index);
 
             let y_pred = y_pred_[output_index];
