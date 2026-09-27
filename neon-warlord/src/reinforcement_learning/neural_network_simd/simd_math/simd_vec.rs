@@ -85,6 +85,10 @@ impl<const M: usize, const N: usize> Mul<&SRowVec16<N>> for &SVec16<M> {
             for (b, res) in std::iter::zip(rhs.simd_iter(), res_row.simd_iter_mut()) {
                 *res = a_ * b;
             }
+
+            for (b, res) in std::iter::zip(rhs.remainder(), res_row.remainder_mut()) {
+                *res = a * b;
+            }
         }
 
         res
@@ -115,6 +119,14 @@ impl<const N: usize> Mul<&SVec16<N>> for &SVec16<N> {
             *res = a * b
         }
 
+        for(a, b, res) in izip!(
+            a.remainder(), 
+            b.remainder(), 
+            res.remainder_mut())
+        {
+            *res = a * b
+        }
+
         res
     }
 }
@@ -127,6 +139,10 @@ impl<const N: usize> AddAssign<&SVec16<N>> for SVec16<N> {
         for (a, b) in std::iter::zip(self.simd_iter_mut(), rhs.simd_iter()) {
             *a += *b;
         }
+
+        for (a, b) in std::iter::zip(self.remainder_mut(), rhs.remainder()) {
+            *a += *b;
+        }
     }
 }
 
@@ -136,6 +152,10 @@ impl<const N: usize> AddAssign<&SVec16<N>> for SVec16<N> {
 impl<const N: usize> SubAssign<&SVec16<N>> for SVec16<N> {
     fn sub_assign(&mut self, rhs: &SVec16<N>) {
         for (a, b) in std::iter::zip(self.simd_iter_mut(), rhs.simd_iter()) {
+            *a -= *b;
+        }
+
+        for (a, b) in std::iter::zip(self.remainder_mut(), rhs.remainder()) {
             *a -= *b;
         }
     }
@@ -154,6 +174,10 @@ impl<const N: usize> Add<&SVec16<N>> for &SVec16<N> {
             *res = a + b;
         }
 
+        for( a, b, res ) in izip!(a.remainder(), b.remainder(), res.remainder_mut()) {
+            *res = a + b;
+        }
+
         res
     }
 }
@@ -168,6 +192,10 @@ impl<const N: usize> Sub<&SVec16<N>> for &SVec16<N> {
         let mut res = SVec16::zero();
 
         for( a, b, res ) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()) {
+            *res = a - b;
+        }
+
+        for( a, b, res ) in izip!(a.remainder(), b.remainder(), res.remainder_mut()) {
             *res = a - b;
         }
 

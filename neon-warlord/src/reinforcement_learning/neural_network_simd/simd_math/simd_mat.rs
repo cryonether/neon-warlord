@@ -84,6 +84,10 @@ impl<const M: usize, const N: usize> Mul<&SVec16<N>> for &SMat16<M, N> {
                 sum += m * a;
             }
 
+            for (m, a) in zip(a.remainder(), m.remainder()) {
+                sum += m * a;
+            }
+
             *res = sum.reduce_add();
         }
 
@@ -98,6 +102,10 @@ impl<const M: usize, const N: usize> SubAssign<&SMat16<M, N>> for SMat16<M, N> {
     fn sub_assign(&mut self, rhs: &SMat16<M, N>) {
         for (a, b) in zip(self, rhs) {
             for (a, b) in zip(a.simd_iter_mut(), b.simd_iter()) {
+                *a -= *b;
+            }
+
+            for (a, b) in zip(a.remainder_mut(), b.remainder()) {
                 *a -= *b;
             }
         }
@@ -115,6 +123,10 @@ impl<const M: usize, const N: usize> Add<&SMat16<M, N>> for &SMat16<M, N> {
         let mut res = SMat16::zero();
         for (a, b, res) in izip!(a, b, &mut res){
             for (a, b, res) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()){
+                *res = a + b;
+            }
+
+            for (a, b, res) in izip!(a.remainder(), b.remainder(), res.remainder_mut()){
                 *res = a + b;
             }
         }
@@ -136,6 +148,10 @@ impl<const M: usize, const N: usize> Sub<&SMat16<M, N>> for &SMat16<M, N> {
         let mut res = SMat16::zero();
         for (a, b, res) in izip!(a, b, &mut res){
             for (a, b, res) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()){
+                *res = a - b;
+            }
+
+            for (a, b, res) in izip!(a.remainder(), b.remainder(), res.remainder_mut()){
                 *res = a - b;
             }
         }

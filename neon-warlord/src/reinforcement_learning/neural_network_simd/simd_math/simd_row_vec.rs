@@ -79,9 +79,13 @@ impl<const M: usize, const N: usize> Mul<&SMat16<M, N>> for &SRowVec16<M> {
         let x = self;
 
         for (x, row) in zip(x, rhs) {
-            let x = f32x16::splat(*x);
+            let x_ = f32x16::splat(*x);
 
             for (res, row) in zip(res.simd_iter_mut(), row.simd_iter()) {
+                *res = x_ * row;
+            }
+
+            for (res, row) in zip(res.remainder_mut(), row.remainder()) {
                 *res = x * row;
             }
         }
