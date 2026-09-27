@@ -68,10 +68,10 @@ impl<'a, const M: usize, const N: usize> IntoIterator for &'a mut SMat16<M, N> {
 
 /// Matrix-vector multiplication: `y = A * x`.
 ///
-/// (N×N)(N×1) → N×1
+/// (M×N)(N×1) → M×1
 ///
 impl<const M: usize, const N: usize> Mul<&SVec16<N>> for &SMat16<M, N> {
-    type Output = SVec16<N>;
+    type Output = SVec16<M>;
 
     fn mul(self, rhs: &SVec16<N>) -> Self::Output {
         let a = rhs;

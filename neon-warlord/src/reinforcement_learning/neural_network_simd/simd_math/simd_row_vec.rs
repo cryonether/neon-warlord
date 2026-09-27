@@ -68,9 +68,9 @@ impl<'a, const N: usize> IntoIterator for &'a mut SRowVec16<N> {
 
 /// Vector-matrix multiplication: `y = x^T * A`.
 ///
-/// (1×N)(N×N) → 1×N
+/// (1×M)(M×N) → 1×N
 ///
-impl<const M: usize, const N: usize> Mul<&SMat16<M, N>> for &SRowVec16<N> {
+impl<const M: usize, const N: usize> Mul<&SMat16<M, N>> for &SRowVec16<M> {
     type Output = SRowVec16<N>;
 
     fn mul(self, rhs: &SMat16<M, N>) -> Self::Output {
