@@ -2,11 +2,12 @@
 //! https://github.com/ericyangyu/PPO-for-Beginners/tree/master
 //! PPO was published in 2017
 
-use std::iter::zip;
+use std::{collections::VecDeque, iter::zip};
 
 use cgmath::num_traits::clamp;
+use itertools::izip;
 
-use crate::reinforcement_learning::neural_network_simd::NeuralNetwork64;
+use crate::reinforcement_learning::neural_network_simd::{NeuralNetwork64, loss_function::{GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped}};
 
 
 const INPUTS: usize = 4;
@@ -108,18 +109,19 @@ impl Ppo2 {
 
     pub fn learn(&mut self) {
 
-        let mut discounted_reward = 0.0;
+        let mut last_discounted_reward = 0.0;
 
-        let mut advantages = Vec::new();
+        let mut discounted_rewards = VecDeque::new();
+        let mut advantages = VecDeque::new();
 
-        for transition in &self.transitions {
+        for transition in self.transitions.iter().rev() {
             let observation = transition.observation;
             let action = transition.action;
             let log_probability = transition.log_probability;
             let reward = transition.reward;
 
             // Calculate the discounted reward
-            discounted_reward = reward + self.gamma * discounted_reward;
+            let discounted_reward = reward + self.gamma * last_discounted_reward;
 
             // Query critic network for the quality value
             let baseline_estimate = self.critic.forward(&observation)[0];
@@ -128,7 +130,10 @@ impl Ppo2 {
             // A = Q - V
             let advantage = discounted_reward - baseline_estimate;
 
-            advantages.push(advantage)
+            discounted_rewards.push_front(discounted_reward);
+            advantages.push_front(advantage);
+
+            last_discounted_reward = discounted_reward;
         }
 
         // Normalizing advantages
@@ -146,12 +151,23 @@ impl Ppo2 {
         let advantages_std_dev = advantages_variance.sqrt();
 
         for advantage in &mut advantages {
-            *advantage = (*advantage - advantages_mean) / advantages_std_dev + 1e-10;
+            *advantage = (*advantage - advantages_mean) / (advantages_std_dev + 1e-10);
         } 
+
+
+        let mut critic_loss_sum = 0.0;
+        let mut critic_derivatives_sum = 0.0;
+        let mut actor_loss_sum = 0.0;
+        let mut actor_derivatives_sum = [0.0; OUTPUTS];
+
+        let n = self.transitions.len();
+        assert_eq!(advantages.len(), n);
+        assert_eq!(discounted_rewards.len(), n);
+        let n = n as f32;
 
         // Update the neural networks for n epochs
         for _i in 0..self.nr_updates_per_iteration {
-            for (transition, advantage) in zip(&self.transitions, &advantages) {
+            for (transition, advantage, discounted_reward) in izip!(&self.transitions, &advantages, &discounted_rewards) {
                 let observation = transition.observation;
                 let action = transition.action;
                 let log_probability = transition.log_probability;
@@ -164,34 +180,41 @@ impl Ppo2 {
                 let curr_estimate = self.critic.forward(&observation);
                 let cur_mean_action = self.actor.forward(&observation);
 
-                // Calculate the log probability over the sampled action
-                let curr_log_probability = gaussian_log_prob(
-                    &action,
-                    &cur_mean_action,
-                    self.std_dev,
-                );
+                // Critic mean square error
+                let mut mse = MeanSquareError::new();
+                let critic_square_error = mse.calc(curr_estimate[0], *discounted_reward);
+                let critic_square_error_derivative = mse.derivative();
 
-				// Calculate the ratio pi_theta(a_t | s_t) / pi_theta_k(a_t | s_t)
-				// NOTE: we just subtract the logs, which is the same as
-				// dividing the values and then canceling the log with e^log.
-				// For why we use log probabilities instead of actual probabilities,
-				// here's a great explanation: 
-				// https://cs.stackexchange.com/questions/70518/why-do-we-use-the-log-in-gradient-based-reinforcement-algorithms
-				// TL;DR makes gradient ascent easier behind the scenes.
-                let ratio = f32::exp(curr_log_probability - log_probability);
+                critic_loss_sum += critic_square_error;
+                
+                // Calculate the log probability over the sampled action
+                let mut glp = GaussianLogProbability::new();
+                let curr_log_probability = glp.calc(&action, &cur_mean_action, self.std_dev);
+                let curr_log_probability_derivative = glp.derivative();
+
+                // Calculate the ratio pi_theta(a_t | s_t) / pi_theta_k(a_t | s_t)
+                let mut ppo_actor_ratio = PpoActorRatio::new();
+                let ratio = ppo_actor_ratio.calc(curr_log_probability, log_probability);
+                let ratio_derivative = ppo_actor_ratio.derivative();
 
                 // Calculate surrogate loss
-                let surrogate_loss_1 = ratio * advantage;
-                let surrogate_loss_2 = f32::clamp(ratio, 1.0 - self.clip, 1.0 + self.clip) * advantage;
+                let mut ppo_surrogate_loss_clipped = PpoSurrogateLossClipped::new();
+                let surrogate_loss_clipped = ppo_surrogate_loss_clipped.calc(ratio, *advantage, self.clip);
+                let surrogate_loss_clipped_derivative = ppo_surrogate_loss_clipped.derivative();
 
-				// Calculate actor and critic losses.
-				// NOTE: we take the negative min of the surrogate losses because we're trying to maximize
-				// the performance function, but Adam minimizes the loss. So minimizing the negative
-				// performance function maximizes it.
+                actor_loss_sum += surrogate_loss_clipped;
 
-                let gradient_critic = self.critic.backward(0);
-                let gradients_actor = self.actor.backward(0);
+                // dL / dy
+                let mut loss_derivative = [0.0; 2];
+                for (curr_log_probability_derivative, loss_derivative) in zip(curr_log_probability_derivative, &mut loss_derivative) {
+                    *loss_derivative = surrogate_loss_clipped_derivative * ratio_derivative * curr_log_probability_derivative;
+                }
+
             }
+
+            let critic_loss = critic_loss_sum / n;
+            let actor_loss = actor_loss_sum / n;
+
         }
 
     }

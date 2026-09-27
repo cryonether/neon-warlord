@@ -21,6 +21,8 @@ pub mod ppo2;
 #[allow(dead_code)]
 pub mod q_learning;
 
+pub mod auto_diff;
+
 pub fn _assert_f32_eq(a: f32, b: f32, epsilon: f32) {
     assert!(
         (a - b).abs() < epsilon,

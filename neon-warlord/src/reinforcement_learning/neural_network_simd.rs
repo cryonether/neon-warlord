@@ -15,6 +15,7 @@ mod test_logic_functions3;
 
 #[cfg(test)]
 mod test_predict_maze;
+pub mod loss_function;
 
 use std::iter::zip;
 
