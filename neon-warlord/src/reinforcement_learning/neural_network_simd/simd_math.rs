@@ -11,6 +11,7 @@ mod test_simd_vec;
 #[cfg(test)]
 mod test_simd_row_vec;
 
+use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::{iter::zip, ops::Mul};
 
@@ -63,6 +64,14 @@ impl<const N: usize> AlignedVec<N> {
     }
 }
 
+// From
+
+impl<const N: usize> From<[f32; N]> for AlignedVec<N> {
+    fn from(value: [f32; N]) -> Self {
+        Self(value)
+    }
+}
+
 // Deref
 
 impl<const N: usize> std::ops::Deref for AlignedVec<N> {
@@ -108,17 +117,19 @@ impl<'a, const N: usize> IntoIterator for &'a mut AlignedVec<N> {
     }
 }
 
-pub trait AlignedVecSlice {
-    fn as_slice(&self) -> &[f32];
-    fn as_mut_slice(&mut self) -> &mut [f32];
-}
+// Print
 
-impl<const N: usize> AlignedVecSlice for AlignedVec<N> {
-    fn as_slice(&self) -> &[f32] {
-        &self.0
-    }
+impl<const N: usize> fmt::Display for AlignedVec<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[")?;
 
-    fn as_mut_slice(&mut self) -> &mut [f32] {
-        &mut self.0
+        for (i, value) in self.0.iter().enumerate() {
+            if i > 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:?}", value)?;
+        }
+
+        write!(f, "]")
     }
 }

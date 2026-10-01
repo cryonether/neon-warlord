@@ -4,6 +4,7 @@ pub mod epoch;
 pub mod gradients_sum;
 pub mod simd_math;
 pub mod layer_simd;
+pub mod neural_network_layered;
 
 #[cfg(test)]
 mod test_neural_network_simd;

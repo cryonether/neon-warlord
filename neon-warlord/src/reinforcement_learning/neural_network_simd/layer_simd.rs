@@ -5,7 +5,8 @@ use std::iter::zip;
 use wide::f32x16;
 
 use crate::reinforcement_learning::neural_network_simd::simd_math::{
-    AlignedVecSlice, simd_mat::{SMat16, SMat16Slice}, simd_vec::{SVec16, SVec16Ref},
+    simd_mat::SMat16,
+    simd_vec::SVec16,
 };
 
 const LANES: usize = 16;
@@ -18,23 +19,22 @@ pub struct LayerSimd<
     const ACTIVATION: bool,
     const RESIDUAL: bool,
 > {
+    pub x: SVec16<INPUTS>,
 
-    x: SVec16<INPUTS>,
-
-    w: SMat16<OUTPUTS, INPUTS>,
-    b: SVec16<OUTPUTS>,
+    pub w: SMat16<OUTPUTS, INPUTS>,
+    pub b: SVec16<OUTPUTS>,
 
     // intermediate products
 
     // z = W * a + b
-    z: SVec16<OUTPUTS>,
+    pub z: SVec16<OUTPUTS>,
 
     // a = f(z)
-    a: SVec16<OUTPUTS>,
+    pub a: SVec16<OUTPUTS>,
 
     // back propagation
-    dl_dw: SMat16<OUTPUTS, INPUTS>,
-    dl_db: SVec16<OUTPUTS>,
+    pub dl_dw: SMat16<OUTPUTS, INPUTS>,
+    pub dl_db: SVec16<OUTPUTS>,
 
     // intermediate products
     dx: SVec16<INPUTS>,
@@ -43,10 +43,6 @@ pub struct LayerSimd<
 impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RESIDUAL: bool>
     LayerSimd<INPUTS, OUTPUTS, ACTIVATION, RESIDUAL>
 {
-    pub fn new_box() -> Box<dyn LayerRef> {
-        Box::new(Self::new())
-    }
-
     pub fn new() -> Self {
         let x = SVec16::zero();
         let w = SMat16::zero();
@@ -65,7 +61,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             a,
             dl_dw,
             dl_db,
-            dx
+            dx,
         }
     }
 
@@ -104,7 +100,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             a,
             dl_dw,
             dl_db,
-            dx
+            dx,
         }
     }
 
@@ -136,12 +132,11 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             a,
             dl_dw,
             dl_db,
-            dx
+            dx,
         }
     }
 
     pub fn forward(&mut self, x: &SVec16<INPUTS>) -> SVec16<OUTPUTS> {
-        
         self.x = *x;
 
         // z = W * x + b
@@ -150,11 +145,11 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         if RESIDUAL {
             // Note: residual requires INPUTS == OUTPUTS.
             assert_eq!(INPUTS, OUTPUTS);
-            for (z, x) in zip(self.z.simd_iter_mut(), x.simd_iter()){
+            for (z, x) in zip(self.z.simd_iter_mut(), x.simd_iter()) {
                 *z += x;
             }
 
-            for (z, x) in zip(self.z.remainder_mut(), x.remainder()){
+            for (z, x) in zip(self.z.remainder_mut(), x.remainder()) {
                 *z += x;
             }
         }
@@ -231,7 +226,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
     }
 
     pub fn subtract_gradients(&mut self, learning_rate: f32) {
-        let learning_rate_= f32x16::splat(learning_rate);
+        let learning_rate_ = f32x16::splat(learning_rate);
 
         // b
         for (b, dl_db) in zip(self.b.simd_iter_mut(), self.dl_db.simd_iter()) {
@@ -254,7 +249,6 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         }
     }
 
-
     const LEAKY_RELU_ALPHA: f32 = 0.01;
 
     #[inline]
@@ -268,7 +262,11 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         }
 
         for (x, res) in zip(x.remainder(), res.remainder_mut()) {
-            *res = if *x > 0.0 { *x } else { x * Self::LEAKY_RELU_ALPHA };
+            *res = if *x > 0.0 {
+                *x
+            } else {
+                x * Self::LEAKY_RELU_ALPHA
+            };
         }
 
         res
@@ -286,7 +284,11 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         }
 
         for (x, res) in zip(x.remainder(), res.remainder_mut()) {
-            *res = if *x > 0.0 { 1.0 } else { Self::LEAKY_RELU_ALPHA };
+            *res = if *x > 0.0 {
+                1.0
+            } else {
+                Self::LEAKY_RELU_ALPHA
+            };
         }
 
         res
@@ -311,137 +313,4 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
     }
 }
 
-impl<const A: usize, const B: usize, const C: bool, const D: bool> Default
-    for LayerSimd<A, B, C, D>
-{
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
-pub trait LayerRef {
-    fn forward(&mut self, x: &dyn SVec16Ref) ->  &dyn SVec16Ref;
-    fn backward(&mut self, x: &dyn SVec16Ref) ->  &dyn SVec16Ref;
-    fn subtract_gradients(&mut self, learning_rate: f32);
-
-    fn get_inputs(&self) -> usize;
-    fn get_outputs(&self) -> usize;
-    fn get_w(&self) ->  &dyn SMat16Slice;
-    fn get_b(&self) ->  &[f32];
-}
-
-impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RESIDUAL: bool>
- LayerRef for LayerSimd<INPUTS, OUTPUTS, ACTIVATION, RESIDUAL> {
-    fn forward(&mut self, x: &dyn SVec16Ref) -> &dyn SVec16Ref {
-
-        let x = x.as_any().downcast_ref::<SVec16<INPUTS>>();
-        match x {
-            Some(x) => {
-                self.forward(x)
-            },
-            None => panic!("layer does not match"),
-        };
-
-        &self.z        
-    }
- 
-    fn backward(&mut self, y: &dyn SVec16Ref) ->  &dyn SVec16Ref {
-        let y = y.as_any().downcast_ref::<SVec16<OUTPUTS>>();
-        match y {
-            Some(y) => {
-                self.backward(y)
-            },
-            None => panic!("layer does not match"),
-        };
-
-        &self.dx   
-    }
-
-     fn subtract_gradients(&mut self, learning_rate: f32) {
-        self.subtract_gradients(learning_rate);
-     }
-
-    fn get_inputs(&self) -> usize {
-        INPUTS
-    }
-
-    fn get_outputs(&self) -> usize {
-        OUTPUTS
-    }
-
-
-    fn get_w(&self) -> &dyn SMat16Slice {
-        &self.w
-    }
-
-    fn get_b(&self) ->  &[f32] {
-        self.b.as_slice()
-    }
- }
-
-
-
-
-
-
-type Model = (
-    LayerSimd::<2, 4, true, false>,
-    LayerSimd::<4, 4, true, false>,
-    LayerSimd::<4, 2, false, false>,
-);
-
-fn create() {
-
-
-    let model: Vec<Box<dyn LayerRef>>= vec![
-        LayerSimd::<2, 4, true, false>::new_box(),
-        LayerSimd::<4, 4, true, false>::new_box(),
-        LayerSimd::<4, 2, false, false>::new_box(),
-    ];
-
-
-}
-
-
-pub struct NeuralNetworkLayered {
-    model: Vec<Box<dyn LayerRef>>
-}
-
-impl NeuralNetworkLayered {
-    pub fn new(model: Vec<Box<dyn LayerRef>>) -> Self {
-        assert!(!model.is_empty());
-
-        // Check parameters
-        let mut outputs = model[0].get_inputs();
-        for layer in &model {
-            let inputs = layer.get_inputs();
-            assert_eq!(outputs, inputs);
-            outputs = inputs;
-        }
-
-        Self { model }
-    }
-
-    pub fn forward<const INPUTS: usize, const OUTPUTS: usize>(&mut self, x: [f32; INPUTS]) {
-        assert!(!self.model.is_empty());
-
-        let x = SVec16::new(x);
-
-        // forward
-        let mut x: &dyn SVec16Ref = &x;
-        for layer in &mut self.model {
-            let y = layer.forward(x);
-            x = y;
-        }
-
-        // return result
-        let y = x.as_any().downcast_ref::<SVec16<OUTPUTS>>();
-        match y {
-            Some(y) => {
-                y
-            },
-            None => panic!("layer does not match"),
-        };
-
-    }
-}

@@ -23,36 +23,13 @@ impl<const N: usize> SVec16<N> {
     }
 }
 
-pub trait SVec16Ref: std::any::Any {
-    fn as_any(&self) -> &dyn Any;
-    // fn as_slice(&self) -> &[f32];
-}
+// From
 
-impl<const N: usize> SVec16Ref for SVec16<N> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    // fn as_slice(&self) -> &[f32] {
-    //     &self.0.0
-    // }
-}
-
-fn create(vec: &dyn SVec16Ref) {
-    let a = vec.as_any().downcast_ref::<SVec16<5>>();
-
-}
-
-use std::any::Any;
-
-fn main() {
-    let value: Box<dyn Any> = Box::new(42i32);
-
-    if let Some(n) = value.downcast_ref::<i32>() {
-        println!("value = {n}");
+impl<const N: usize> From<[f32; N]> for SVec16<N> {
+    fn from(value: [f32; N]) -> Self {
+        SVec16(AlignedVec(value))
     }
 }
-
 
 // Deref
 
@@ -96,6 +73,14 @@ impl<'a, const N: usize> IntoIterator for &'a mut SVec16<N> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter_mut()
+    }
+}
+
+// Print
+
+impl<const N: usize> fmt::Display for SVec16<N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

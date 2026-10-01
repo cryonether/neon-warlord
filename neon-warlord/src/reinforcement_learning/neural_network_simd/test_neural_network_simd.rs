@@ -1,6 +1,6 @@
 //! Tests for NeuralNetworkSimd
 
-use crate::reinforcement_learning::{_assert_f32_eq_, neural_network::NeuralNetwork};
+use crate::reinforcement_learning::{_assert_f32_eq_, neural_network::NeuralNetwork, neural_network_simd::neural_network_layered::NeuralNetworkLayered};
 
 use super::*;
 
@@ -26,7 +26,10 @@ type ModelType = (
 #[test]
 fn compare() {
     let mut nn_0 = NeuralNetwork::new();
-    nn_0.x = [1.0, 2.0].into();
+
+    let x = [1.0, 2.0];
+
+    nn_0.x = x.into();
 
     nn_0.w_0 = [[1.0, 1.0], [2.0, 2.0]].into();
     nn_0.w_1 = [[1.0, 1.0], [2.0, 2.0]].into();
@@ -42,107 +45,72 @@ fn compare() {
     nn_0.backward(0);
 
 
-    let mut nn_1: NeuralNetworkSimd<16, 16, 3, false, N, L > = NeuralNetworkSimd::new();
+    let mut nn_1: NeuralNetworkLayered<2, 2,2, 2, false> = NeuralNetworkLayered::new();
 
-    let x = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
-    *nn_1.x.0 = x;
+    *nn_1.input.x = x.into();
 
-    nn_1.w[0][0].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
-    nn_1.w[0][1].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
+    nn_1.input.w =     [[1.0, 2.0], [1.0, 2.0]].into();
+    nn_1.layers[0].w = [[1.0, 2.0], [1.0, 2.0]].into();
+    nn_1.layers[1].w = [[1.0, 2.0], [1.0, 2.0]].into();
+    nn_1.output.w =    [[1.0, 2.0], [1.0, 2.0]].into();
 
-    nn_1.w[1][0].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
-    nn_1.w[1][1].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
+    nn_1.input.b =     [1.0, 2.0].into();
+    nn_1.layers[0].b = [1.0, 2.0].into();
+    nn_1.layers[1].b = [1.0, 2.0].into();
+    nn_1.output.b =    [1.0, 2.0].into();
 
-    nn_1.w[2][0].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
-    nn_1.w[2][1].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
 
-    nn_1.w_y[0].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
-    nn_1.w_y[1].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
+    let val = nn_1.forward(&x);
+    nn_1.backward(&[1.0, 0.0]);
 
-    *nn_1.b[0].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
-    *nn_1.b[1].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
-    *nn_1.b[2].0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
+    println!("nn_0: {:}", nn_0);
+    println!("nn_1: {:}", nn_1);
 
-    *nn_1.b_y.0 = [
-        1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-    ];
+    assert_eq!(nn_0.y[0], nn_1.output.a[0]);
 
-    nn_1.forward(&x);
-    nn_1.backward(0);
+    assert_eq!(nn_0.dy_db0[0], nn_1.input.dl_db[0]);
+    assert_eq!(nn_0.dy_db0[1], nn_1.input.dl_db[1]);
 
-    // println!("nn_0: {:}", nn_0);
-    // println!("nn_1: {:}", nn_1);
+    assert_eq!(nn_0.dy_db1[0], nn_1.layers[0].dl_db[0]);
+    assert_eq!(nn_0.dy_db1[1], nn_1.layers[0].dl_db[1]);
 
-    assert_eq!(nn_0.y[0], nn_1.y[0]);
+    assert_eq!(nn_0.dy_db2[0], nn_1.layers[1].dl_db[0]);
+    assert_eq!(nn_0.dy_db2[1], nn_1.layers[1].dl_db[1]);
 
-    assert_eq!(nn_0.dy_db0[0], nn_1.dy_db[0][0]);
-    assert_eq!(nn_0.dy_db0[1], nn_1.dy_db[0][1]);
+    assert_eq!(nn_0.dy_db3[0], nn_1.output.dl_db[0]);
+    assert_eq!(nn_0.dy_db3[1], nn_1.output.dl_db[1]);
 
-    assert_eq!(nn_0.dy_db1[0], nn_1.dy_db[1][0]);
-    assert_eq!(nn_0.dy_db1[1], nn_1.dy_db[1][1]);
+    assert_eq!(nn_0.dy_dw0[0], nn_1.input.dl_dw[0][0]);
+    assert_eq!(nn_0.dy_dw0[1], nn_1.input.dl_dw[0][1]);
+    assert_eq!(nn_0.dy_dw0[2], nn_1.input.dl_dw[1][0]);
+    assert_eq!(nn_0.dy_dw0[3], nn_1.input.dl_dw[1][1]);
 
-    assert_eq!(nn_0.dy_db2[0], nn_1.dy_db[2][0]);
-    assert_eq!(nn_0.dy_db2[1], nn_1.dy_db[2][1]);
+    assert_eq!(nn_0.dy_dw1[0], nn_1.layers[0].dl_dw[0][0]);
+    assert_eq!(nn_0.dy_dw1[1], nn_1.layers[0].dl_dw[0][1]);
+    assert_eq!(nn_0.dy_dw1[2], nn_1.layers[0].dl_dw[1][0]);
+    assert_eq!(nn_0.dy_dw1[3], nn_1.layers[0].dl_dw[1][1]);
 
-    assert_eq!(nn_0.dy_db3[0], nn_1.dy_db_y[0]);
-    assert_eq!(nn_0.dy_db3[1], nn_1.dy_db_y[1]);
+    assert_eq!(nn_0.dy_dw2[0], nn_1.layers[1].dl_dw[0][0]);
+    assert_eq!(nn_0.dy_dw2[1], nn_1.layers[1].dl_dw[0][1]);
+    assert_eq!(nn_0.dy_dw2[2], nn_1.layers[1].dl_dw[1][0]);
+    assert_eq!(nn_0.dy_dw2[3], nn_1.layers[1].dl_dw[1][1]);
 
-    assert_eq!(nn_0.dy_dw0[0], nn_1.dy_dw[0][0][0]);
-    assert_eq!(nn_0.dy_dw0[1], nn_1.dy_dw[0][0][1]);
-    assert_eq!(nn_0.dy_dw0[2], nn_1.dy_dw[0][1][0]);
-    assert_eq!(nn_0.dy_dw0[3], nn_1.dy_dw[0][1][1]);
-
-    assert_eq!(nn_0.dy_dw1[0], nn_1.dy_dw[1][0][0]);
-    assert_eq!(nn_0.dy_dw1[1], nn_1.dy_dw[1][0][1]);
-    assert_eq!(nn_0.dy_dw1[2], nn_1.dy_dw[1][1][0]);
-    assert_eq!(nn_0.dy_dw1[3], nn_1.dy_dw[1][1][1]);
-
-    assert_eq!(nn_0.dy_dw2[0], nn_1.dy_dw[2][0][0]);
-    assert_eq!(nn_0.dy_dw2[1], nn_1.dy_dw[2][0][1]);
-    assert_eq!(nn_0.dy_dw2[2], nn_1.dy_dw[2][1][0]);
-    assert_eq!(nn_0.dy_dw2[3], nn_1.dy_dw[2][1][1]);
-
-    assert_eq!(nn_0.dy_dw3[0], nn_1.dy_dw_y[0][0]);
-    assert_eq!(nn_0.dy_dw3[1], nn_1.dy_dw_y[0][1]);
-    assert_eq!(nn_0.dy_dw3[2], nn_1.dy_dw_y[1][0]);
-    assert_eq!(nn_0.dy_dw3[3], nn_1.dy_dw_y[1][1]);
+    assert_eq!(nn_0.dy_dw3[0], nn_1.output.dl_dw[0][0]);
+    assert_eq!(nn_0.dy_dw3[1], nn_1.output.dl_dw[0][1]);
+    assert_eq!(nn_0.dy_dw3[2], nn_1.output.dl_dw[1][0]);
+    assert_eq!(nn_0.dy_dw3[3], nn_1.output.dl_dw[1][1]);
 }
 
 #[test]
 fn compare_dfdx() {
-    let mut nn_1: NeuralNetwork16<16, 16, 3, false> = NeuralNetwork16::new_zero_one();
+    let mut nn_1: NeuralNetworkLayered<16, 1, 16, 2, false> = NeuralNetworkLayered::new_zero_one();
 
     let x = [
         1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
     ];
-    *nn_1.x.0 = x;
 
     nn_1.forward(&x);
-    nn_1.backward(0);
+    nn_1.backward(&[1.0]);
 
     let dev = Cpu::default();
     let mut model = dev.build_module::<Model, f32>();
@@ -166,7 +134,7 @@ fn compare_dfdx() {
     ]]);
     let y = model.forward_mut(x.traced(grads));
     let y_vec = y.as_vec();
-    // println!("y: {:?}", y.as_vec());
+    println!("y: {:?}", y.as_vec());
     let loss = y.sum();
 
     grads = loss.backward();
@@ -201,50 +169,50 @@ fn compare_dfdx() {
     let dw_3 = grads.get(&model.3.weight).as_vec();
     let db_3 = grads.get(&model.3.bias).as_vec();
 
-    _assert_f32_eq_(y_vec[0], nn_1.y[0]);
+    _assert_f32_eq_(y_vec[0], nn_1.output.a[0]);
 
-    _assert_f32_eq_(b_0[0], nn_1.b[0][0]);
-    _assert_f32_eq_(b_0[1], nn_1.b[0][1]);
+    _assert_f32_eq_(b_0[0], nn_1.input.b[0]);
+    _assert_f32_eq_(b_0[1], nn_1.input.b[1]);
 
-    _assert_f32_eq_(b_1[0], nn_1.b[1][0]);
-    _assert_f32_eq_(b_1[1], nn_1.b[1][1]);
+    _assert_f32_eq_(b_1[0], nn_1.layers[0].b[0]);
+    _assert_f32_eq_(b_1[1], nn_1.layers[0].b[1]);
 
-    _assert_f32_eq_(b_2[0], nn_1.b[2][0]);
-    _assert_f32_eq_(b_2[1], nn_1.b[2][1]);
+    _assert_f32_eq_(b_2[0], nn_1.layers[1].b[0]);
+    _assert_f32_eq_(b_2[1], nn_1.layers[1].b[1]);
 
-    _assert_f32_eq_(b_3[0], nn_1.b_y[0]);
+    _assert_f32_eq_(b_3[0], nn_1.output.b[0]);
     // assert_f32_eq_(b_3[1], nn_1.b_y[1]);
 
-    _assert_f32_eq_(db_0[0], nn_1.dy_db[0][0]);
-    _assert_f32_eq_(db_0[1], nn_1.dy_db[0][1]);
+    _assert_f32_eq_(db_0[0], nn_1.input.dl_db[0]);
+    _assert_f32_eq_(db_0[1], nn_1.input.dl_db[1]);
 
-    _assert_f32_eq_(db_1[0], nn_1.dy_db[1][0]);
-    _assert_f32_eq_(db_1[1], nn_1.dy_db[1][1]);
+    _assert_f32_eq_(db_1[0], nn_1.layers[0].dl_db[0]);
+    _assert_f32_eq_(db_1[1], nn_1.layers[0].dl_db[1]);
 
-    _assert_f32_eq_(db_2[0], nn_1.dy_db[2][0]);
-    _assert_f32_eq_(db_2[1], nn_1.dy_db[2][1]);
+    _assert_f32_eq_(db_2[0], nn_1.layers[1].dl_db[0]);
+    _assert_f32_eq_(db_2[1], nn_1.layers[1].dl_db[1]);
 
 
-    _assert_f32_eq_(db_3[0], nn_1.dy_db_y[0]);
+    _assert_f32_eq_(db_3[0], nn_1.output.dl_db[0]);
     // assert_f32_eq_(db_3[1], nn_1.dy_db_y[1]);
 
-    _assert_f32_eq_(dw_0[0], nn_1.dy_dw[0][0][0]);
-    _assert_f32_eq_(dw_0[1], nn_1.dy_dw[0][0][1]);
-    _assert_f32_eq_(dw_0[LANES + 0], nn_1.dy_dw[0][1][0]);
-    _assert_f32_eq_(dw_0[LANES + 1], nn_1.dy_dw[0][1][1]);
+    _assert_f32_eq_(dw_0[0], nn_1.input.dl_dw[0][0]);
+    _assert_f32_eq_(dw_0[1], nn_1.input.dl_dw[0][1]);
+    _assert_f32_eq_(dw_0[LANES + 0], nn_1.input.dl_dw[1][0]);
+    _assert_f32_eq_(dw_0[LANES + 1], nn_1.input.dl_dw[1][1]);
 
-    _assert_f32_eq_(dw_1[0], nn_1.dy_dw[1][0][0]);
-    _assert_f32_eq_(dw_1[1], nn_1.dy_dw[1][0][1]);
-    _assert_f32_eq_(dw_1[2], nn_1.dy_dw[1][1][0]);
-    _assert_f32_eq_(dw_1[3], nn_1.dy_dw[1][1][1]);
+    _assert_f32_eq_(dw_1[0], nn_1.layers[0].dl_dw[0][0]);
+    _assert_f32_eq_(dw_1[1], nn_1.layers[0].dl_dw[0][1]);
+    _assert_f32_eq_(dw_1[2], nn_1.layers[0].dl_dw[1][0]);
+    _assert_f32_eq_(dw_1[3], nn_1.layers[0].dl_dw[1][1]);
 
-    _assert_f32_eq_(dw_2[0], nn_1.dy_dw[2][0][0]);
-    _assert_f32_eq_(dw_2[1], nn_1.dy_dw[2][0][1]);
-    _assert_f32_eq_(dw_2[2], nn_1.dy_dw[2][1][0]);
-    _assert_f32_eq_(dw_2[3], nn_1.dy_dw[2][1][1]);
+    _assert_f32_eq_(dw_2[0], nn_1.layers[1].dl_dw[0][0]);
+    _assert_f32_eq_(dw_2[1], nn_1.layers[1].dl_dw[0][1]);
+    _assert_f32_eq_(dw_2[2], nn_1.layers[1].dl_dw[1][0]);
+    _assert_f32_eq_(dw_2[3], nn_1.layers[1].dl_dw[1][1]);
 
-    _assert_f32_eq_(dw_3[0], nn_1.dy_dw_y[0][0]);
-    _assert_f32_eq_(dw_3[1], nn_1.dy_dw_y[0][1]);
+    _assert_f32_eq_(dw_3[0], nn_1.output.dl_dw[0][0]);
+    _assert_f32_eq_(dw_3[1], nn_1.output.dl_dw[0][1]);
     // assert_f32_eq_(dw_3[2], nn_1.dy_dw_y[1][0]);
     // assert_f32_eq_(dw_3[3], nn_1.dy_dw_y[1][1]);
 }

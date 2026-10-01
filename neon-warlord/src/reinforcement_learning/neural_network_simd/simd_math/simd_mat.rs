@@ -20,20 +20,11 @@ impl<const M: usize, const N: usize> SMat16<M, N> {
     }
 }
 
-// Slice
+// From
 
-pub trait SMat16Slice {
-    fn len(&self) -> usize;
-    fn row(&self, index: usize) -> &dyn AlignedVecSlice;
-}
-
-impl<const M: usize, const N: usize> SMat16Slice for SMat16<M, N> {
-    fn len(&self) -> usize {
-        M
-    }
-
-    fn row(&self, index: usize) -> &dyn AlignedVecSlice {
-        &self.0[index]
+impl<const M: usize, const N: usize> From<[[f32; N]; M]> for SMat16<M, N> {
+    fn from(value: [[f32; N]; M]) -> Self {
+        SMat16(value.map(AlignedVec))
     }
 }
 
@@ -79,6 +70,21 @@ impl<'a, const M: usize, const N: usize> IntoIterator for &'a mut SMat16<M, N> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter_mut()
+    }
+}
+
+// Print
+
+impl<const M: usize, const N: usize> fmt::Display for SMat16<M, N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[")?;
+        for (i, row) in self.0.iter().enumerate() {
+            if i > 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", row)?;
+        }
+        write!(f, "]")
     }
 }
 
