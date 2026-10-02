@@ -1001,3 +1001,399 @@ fn test_actor_gradient_checking() {
     );
 }
 
+/// PPO should learn a useful policy in a longer-horizon environment
+/// with noisy rewards.
+///
+/// Environment:
+///
+///     start -> middle_1 -> middle_2 -> middle_3 -> goal
+///
+/// At every state the agent must choose a positive action to continue
+/// toward the goal. A negative action sends it to a terminal failure.
+///
+/// The final reward is noisy:
+///
+///     reward = +2.0 + N(0, 0.5)
+///
+/// Intermediate rewards are noisy as well:
+///
+///     reward = N(0, 0.1)
+///
+/// This test exercises:
+/// - multi-step credit assignment
+/// - GAE
+/// - noisy returns
+/// - stochastic policy learning
+/// - critic value estimation
+#[test]
+fn test_long_noisy_mdp() {
+    const EPISODES: usize = 2_000;
+    const BATCH_SIZE: usize = 32;
+    const EVALUATION_EPISODES: usize = 1_000;
+
+    let mut ppo = Ppo2::<1, 1, 64, 1, false>::new(42);
+
+    let start_state = [0.0];
+    let state_1 = [1.0];
+    let state_2 = [2.0];
+    let state_3 = [3.0];
+    let goal_state = [4.0];
+    let bad_state = [-1.0];
+
+    // Deterministic RNG for reproducible environment noise.
+    let mut rng = fastrand::Rng::with_seed(12345);
+
+    for episode in 0..EPISODES {
+        //
+        // STEP 1
+        //
+        let (action, _mean, log_probability) =
+            ppo.get_action(&start_state);
+
+        let next_state = if action[0] >= 0.0 {
+            state_1
+        } else {
+            bad_state
+        };
+
+        let reward = rng.f32() * 0.2 - 0.1;
+
+        ppo.save_reward(
+            start_state,
+            action,
+            log_probability,
+            reward,
+            false,
+        );
+
+        //
+        // If the agent chose the bad path, terminate.
+        //
+        if next_state == bad_state {
+            let (action, _mean, log_probability) =
+                ppo.get_action(&bad_state);
+
+            let reward = -2.0 + rng.f32() * 0.4 - 0.2;
+
+            ppo.save_reward(
+                bad_state,
+                action,
+                log_probability,
+                reward,
+                true,
+            );
+        } else {
+            //
+            // STEP 2
+            //
+            let (action, _mean, log_probability) =
+                ppo.get_action(&state_1);
+
+            let next_state = if action[0] >= 0.0 {
+                state_2
+            } else {
+                bad_state
+            };
+
+            let reward = rng.f32() * 0.2 - 0.1;
+
+            ppo.save_reward(
+                state_1,
+                action,
+                log_probability,
+                reward,
+                false,
+            );
+
+            if next_state == bad_state {
+                let (action, _mean, log_probability) =
+                    ppo.get_action(&bad_state);
+
+                let reward = -2.0 + rng.f32() * 0.4 - 0.2;
+
+                ppo.save_reward(
+                    bad_state,
+                    action,
+                    log_probability,
+                    reward,
+                    true,
+                );
+            } else {
+                //
+                // STEP 3
+                //
+                let (action, _mean, log_probability) =
+                    ppo.get_action(&state_2);
+
+                let next_state = if action[0] >= 0.0 {
+                    state_3
+                } else {
+                    bad_state
+                };
+
+                let reward = rng.f32() * 0.2 - 0.1;
+
+                ppo.save_reward(
+                    state_2,
+                    action,
+                    log_probability,
+                    reward,
+                    false,
+                );
+
+                if next_state == bad_state {
+                    let (action, _mean, log_probability) =
+                        ppo.get_action(&bad_state);
+
+                    let reward = -2.0 + rng.f32() * 0.4 - 0.2;
+
+                    ppo.save_reward(
+                        bad_state,
+                        action,
+                        log_probability,
+                        reward,
+                        true,
+                    );
+                } else {
+                    //
+                    // STEP 4
+                    //
+                    let (action, _mean, log_probability) =
+                        ppo.get_action(&state_3);
+
+                    let next_state = if action[0] >= 0.0 {
+                        goal_state
+                    } else {
+                        bad_state
+                    };
+
+                    let reward = rng.f32() * 0.2 - 0.1;
+
+                    ppo.save_reward(
+                        state_3,
+                        action,
+                        log_probability,
+                        reward,
+                        false,
+                    );
+
+                    //
+                    // STEP 5
+                    //
+                    let (action, _mean, log_probability) =
+                        ppo.get_action(&next_state);
+
+                    let reward = if next_state == goal_state {
+                        // Large but noisy terminal reward.
+                        2.0 + rng.f32() * 1.0 - 0.5
+                    } else {
+                        -2.0 + rng.f32() * 0.4 - 0.2
+                    };
+
+                    ppo.save_reward(
+                        next_state,
+                        action,
+                        log_probability,
+                        reward,
+                        true,
+                    );
+                }
+            }
+        }
+
+        if (episode + 1) % BATCH_SIZE == 0 {
+            ppo.learn();
+        }
+    }
+
+    //
+    // Evaluate the learned policy.
+    //
+    let mut successful_episodes = 0;
+    let mut total_reward = 0.0;
+
+    for _ in 0..EVALUATION_EPISODES {
+        let mut state = start_state;
+        let mut episode_reward = 0.0;
+        let mut success = true;
+
+        for _ in 0..5 {
+            let (action, _mean, _log_probability) =
+                ppo.get_action(&state);
+
+            let x = action[0];
+
+            if state == goal_state {
+                break;
+            }
+
+            if state == bad_state {
+                success = false;
+                episode_reward -= 2.0;
+                break;
+            }
+
+            if state == start_state {
+                if x >= 0.0 {
+                    state = state_1;
+                } else {
+                    state = bad_state;
+                    success = false;
+                    episode_reward -= 2.0;
+                    break;
+                }
+
+                episode_reward += 0.0;
+            } else if state == state_1 {
+                if x >= 0.0 {
+                    state = state_2;
+                } else {
+                    state = bad_state;
+                    success = false;
+                    episode_reward -= 2.0;
+                    break;
+                }
+            } else if state == state_2 {
+                if x >= 0.0 {
+                    state = state_3;
+                } else {
+                    state = bad_state;
+                    success = false;
+                    episode_reward -= 2.0;
+                    break;
+                }
+            } else if state == state_3 {
+                if x >= 0.0 {
+                    state = goal_state;
+                } else {
+                    state = bad_state;
+                    success = false;
+                    episode_reward -= 2.0;
+                    break;
+                }
+            }
+        }
+
+        if state == goal_state {
+            successful_episodes += 1;
+            episode_reward += 2.0;
+        }
+
+        total_reward += episode_reward;
+
+        // Keep `success` explicit so this remains easy to extend
+        // with additional terminal states.
+        let _ = success;
+    }
+
+    let success_fraction =
+        successful_episodes as f32 / EVALUATION_EPISODES as f32;
+
+    let average_reward =
+        total_reward / EVALUATION_EPISODES as f32;
+
+    println!(
+        "success fraction: {success_fraction:.3}"
+    );
+
+    println!(
+        "average reward: {average_reward:.3}"
+    );
+
+    //
+    // Every state should prefer continuing toward the goal.
+    //
+    let start_mean = ppo.actor.forward(&start_state)[0];
+    let state_1_mean = ppo.actor.forward(&state_1)[0];
+    let state_2_mean = ppo.actor.forward(&state_2)[0];
+    let state_3_mean = ppo.actor.forward(&state_3)[0];
+
+    println!("start mean:   {start_mean}");
+    println!("state 1 mean: {state_1_mean}");
+    println!("state 2 mean: {state_2_mean}");
+    println!("state 3 mean: {state_3_mean}");
+
+    assert!(
+        success_fraction > 0.80,
+        "policy failed to learn the long noisy path: \
+         success fraction = {success_fraction:.3}"
+    );
+
+    assert!(
+        average_reward > 1.0,
+        "policy reward too low: {average_reward:.3}"
+    );
+
+    assert!(
+        start_mean > 0.0,
+        "start-state policy should prefer positive actions: \
+         mean = {start_mean}"
+    );
+
+    assert!(
+        state_1_mean > 0.0,
+        "state-1 policy should prefer positive actions: \
+         mean = {state_1_mean}"
+    );
+
+    assert!(
+        state_2_mean > 0.0,
+        "state-2 policy should prefer positive actions: \
+         mean = {state_2_mean}"
+    );
+
+    assert!(
+        state_3_mean > 0.0,
+        "state-3 policy should prefer positive actions: \
+         mean = {state_3_mean}"
+    );
+
+    assert!(
+        start_mean.abs() < 10.0,
+        "start-state policy mean exploded: {start_mean}"
+    );
+
+    assert!(
+        state_1_mean.abs() < 10.0,
+        "state-1 policy mean exploded: {state_1_mean}"
+    );
+
+    assert!(
+        state_2_mean.abs() < 10.0,
+        "state-2 policy mean exploded: {state_2_mean}"
+    );
+
+    assert!(
+        state_3_mean.abs() < 10.0,
+        "state-3 policy mean exploded: {state_3_mean}"
+    );
+
+    let start_value = ppo.critic.forward(&start_state)[0];
+    let state_1_value = ppo.critic.forward(&state_1)[0];
+    let state_2_value = ppo.critic.forward(&state_2)[0];
+    let state_3_value = ppo.critic.forward(&state_3)[0];
+
+    println!("start value:   {start_value}");
+    println!("state 1 value: {state_1_value}");
+    println!("state 2 value: {state_2_value}");
+    println!("state 3 value: {state_3_value}");
+
+    for (name, value) in [
+        ("start", start_value),
+        ("state 1", state_1_value),
+        ("state 2", state_2_value),
+        ("state 3", state_3_value),
+    ] {
+        assert!(
+            value.is_finite(),
+            "{name} critic value is not finite: {value}"
+        );
+
+        assert!(
+            value.abs() < 10.0,
+            "{name} critic value exploded: {value}"
+        );
+    }
+
+
+}
