@@ -1,10 +1,10 @@
 //! Simulates an inverted pendulum
 
-mod graph_lines;
+pub mod graph_lines;
 #[allow(dead_code)]
 mod neural_network_drawer;
-mod pendulum_cart;
-mod verlet_physics_drawer;
+pub mod pendulum_cart;
+pub mod verlet_physics_drawer;
 
 use std::collections::VecDeque;
 
