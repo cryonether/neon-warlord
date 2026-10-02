@@ -30,9 +30,10 @@ pub struct Ppo2<
     
     transitions: Vec<Transition<INPUTS, OUTPUTS>>,
     
-    variance: f32,
+    _variance: f32,
     std_dev: f32,
     gamma: f32,
+    gae_lambda: f32,
     clip: f32,
     nr_updates_per_iteration: usize,
 }
@@ -51,6 +52,7 @@ impl<
 
         // Discount factor, for calculating the discounted reward
         const GAMMA: f32 = 0.95;     
+        const GAE_LAMBDA: f32 = 0.90;
 
         // Threshold to clip the ratio
         const CLIP: f32 = 0.2;
@@ -67,9 +69,10 @@ impl<
             actor, 
             critic,
             transitions,
-            variance: VARIANCE,
+            _variance: VARIANCE,
             std_dev: STD_DEV,
             gamma: GAMMA, 
+            gae_lambda: GAE_LAMBDA,
             clip: CLIP,
             nr_updates_per_iteration: NR_UPDATES_PER_ITERATION,
         }
@@ -109,6 +112,9 @@ impl<
         reward: f32,
         done: bool,
     ) {
+        let value = self.critic.forward(&observation);
+        let value = value[0];
+
         self.transitions.push(
             Transition {
                 observation,
@@ -116,44 +122,66 @@ impl<
                 log_probability,
                 reward,
                 done,
+                value,
             }
         )
     }
 
-    pub fn learn(&mut self) -> (f32, f32) {
-
-        let mut last_discounted_reward = 0.0;
-
-        let mut discounted_rewards = VecDeque::new();
+    fn calculate_gae(
+        &self,
+    ) -> (VecDeque<f32>, VecDeque<f32>) {
         let mut advantages = VecDeque::new();
+        let mut returns = VecDeque::new();
+
+        let mut next_value = 0.0;
+        let mut last_gae = 0.0;
 
         for transition in self.transitions.iter().rev() {
-            if transition.done {
-                last_discounted_reward = 0.0;
-            }
-
-            let observation = transition.observation;
-            let action = transition.action;
-            let log_probability = transition.log_probability;
             let reward = transition.reward;
+            let value = transition.value;
 
-            // GAE should apparently be better
-            // Calculate the discounted reward
-            // let discounted_reward = reward + self.gamma * last_discounted_reward;
-            let discounted_reward = reward + self.gamma * last_discounted_reward;
+            // Terminal states have no bootstrap value.
+            let bootstrap_value = if transition.done {
+                0.0
+            } else {
+                next_value
+            };
 
-            // Query critic network for the quality value
-            let baseline_estimate = self.critic.forward(&observation)[0];
-        
-            // Calculate the advantage
-            // A = Q - V
-            let advantage = discounted_reward - baseline_estimate;
+            let delta =
+                reward
+                + self.gamma * bootstrap_value
+                - value;
 
-            discounted_rewards.push_front(discounted_reward);
-            advantages.push_front(advantage);
+            // Generalized Advantage Estimate:
+            //
+            // A_t = δ_t + γ λ A_{t+1}
+            //
+            // Do not propagate GAE across an episode boundary.
+            last_gae = if transition.done {
+                delta
+            } else {
+                delta + self.gamma * self.gae_lambda * last_gae
+            };
 
-            last_discounted_reward = discounted_reward;
+            advantages.push_front(last_gae);
+
+            // PPO's value target is usually:
+            //
+            // return_t = A_t + V(s_t)
+            //
+            // rather than the recursively calculated discounted reward.
+            let value_target = value + last_gae;
+            returns.push_front(value_target);
+
+            next_value = value;
         }
+
+        (advantages, returns)
+    }
+
+    pub fn learn(&mut self) -> (f32, f32) {
+
+        let (mut advantages, value_targets) = self.calculate_gae();
 
         // Normalizing advantages
         // isn't theoretically necessary, but in practice it decreases the variance of 
@@ -175,7 +203,7 @@ impl<
 
         let n = self.transitions.len();
         assert_eq!(advantages.len(), n);
-        assert_eq!(discounted_rewards.len(), n);
+        assert_eq!(value_targets.len(), n);
         let n = n as f32;
 
         // Update the neural networks for n epochs
@@ -185,7 +213,7 @@ impl<
             let mut critic_loss_sum = 0.0;
             let mut actor_loss_sum = 0.0;
 
-            for (transition, advantage, discounted_reward) in izip!(&self.transitions, &advantages, &discounted_rewards) {
+            for (transition, advantage, returns) in izip!(&self.transitions, &advantages, &value_targets) {
                 let observation = transition.observation;
                 let action = transition.action;
                 let log_probability = transition.log_probability;
@@ -200,7 +228,7 @@ impl<
 
                 // Critic mean square error
                 let mut mse = MeanSquareError::new();
-                let critic_square_error = mse.calc(curr_estimate, *discounted_reward);
+                let critic_square_error = mse.calc(curr_estimate, *returns);
                 let critic_square_error_derivative = mse.derivative();
 
                 critic_loss_sum += critic_square_error;
@@ -270,6 +298,7 @@ struct Transition<
     log_probability: f32,
     reward: f32,
     done: bool,
+    value: f32,
 }
 
 

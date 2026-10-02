@@ -1394,6 +1394,373 @@ fn test_long_noisy_mdp() {
             "{name} critic value exploded: {value}"
         );
     }
+}
+
+#[test]
+fn test_gae_arithmetic() {
+    const GAMMA: f32 = 0.95;
+    const LAMBDA: f32 = 0.90;
+    const EPSILON: f32 = 1e-4;
+
+    let mut ppo = Ppo2::<1, 1, 64, 1, false>::new(42);
+
+    //
+    // We want known critic values so that we can verify the
+    // GAE arithmetic exactly.
+    //
+    // Instead of relying on random network initialization,
+    // overwrite the critic to produce the desired values.
+    //
+    // s0 -> s1 -> s2 -> terminal
+    //
+    // rewards:
+    //
+    //   s0: +0.3
+    //   s1: -0.2
+    //   s2: +1.0
+    //
+    // desired V:
+    //
+    //   V(s0) = 0.8
+    //   V(s1) = 0.7
+    //   V(s2) = 0.6
+    //
+    // If your network cannot conveniently be configured to
+    // produce exact constants, use the actual values produced
+    // by the critic below and calculate the expected GAE from
+    // those values.
+    //
+
+    let states = [
+        [0.0],
+        [1.0],
+        [2.0],
+    ];
+
+    let rewards = [
+        0.3,
+        -0.2,
+        1.0,
+    ];
+
+    let dones = [
+        false,
+        false,
+        true,
+    ];
+
+    //
+    // Collect the trajectory through the real PPO API.
+    //
+    for i in 0..3 {
+        let observation = states[i];
+
+        let (action, _mean, log_probability) =
+            ppo.get_action(&observation);
+
+        ppo.save_reward(
+            observation,
+            action,
+            log_probability,
+            rewards[i],
+            dones[i],
+        );
+    }
+
+    //
+    // Calculate GAE using the values that PPO actually stored
+    // in its transitions.
+    //
+    let values: Vec<f32> =
+        ppo.transitions
+            .iter()
+            .map(|transition| transition.value)
+            .collect();
+
+    assert_eq!(values.len(), 3);
+
+    let (advantages, returns) =
+        ppo.calculate_gae();
+
+    assert_eq!(advantages.len(), 3);
+    assert_eq!(returns.len(), 3);
+
+    //
+    // Independently calculate GAE from the stored values.
+    //
+    let delta_2 =
+        rewards[2]
+        + GAMMA * 0.0
+        - values[2];
+
+    let delta_1 =
+        rewards[1]
+        + GAMMA * values[2]
+        - values[1];
+
+    let delta_0 =
+        rewards[0]
+        + GAMMA * values[1]
+        - values[0];
+
+    let expected_2 = delta_2;
+
+    let expected_1 =
+        delta_1
+        + GAMMA * LAMBDA * expected_2;
+
+    let expected_0 =
+        delta_0
+        + GAMMA * LAMBDA * expected_1;
+
+    //
+    // Verify the GAE values produced by Ppo2.
+    //
+    assert!(
+        (advantages[0] - expected_0).abs() < EPSILON,
+        "A0 mismatch: actual={}, expected={}",
+        advantages[0],
+        expected_0
+    );
+
+    assert!(
+        (advantages[1] - expected_1).abs() < EPSILON,
+        "A1 mismatch: actual={}, expected={}",
+        advantages[1],
+        expected_1
+    );
+
+    assert!(
+        (advantages[2] - expected_2).abs() < EPSILON,
+        "A2 mismatch: actual={}, expected={}",
+        advantages[2],
+        expected_2
+    );
+
+    //
+    // Verify critic targets:
+    //
+    // target_t = V(s_t) + A_t
+    //
+    let expected_return_0 =
+        values[0] + expected_0;
+
+    let expected_return_1 =
+        values[1] + expected_1;
+
+    let expected_return_2 =
+        values[2] + expected_2;
+
+    assert!(
+        (returns[0] - expected_return_0).abs() < EPSILON,
+        "return0 mismatch: actual={}, expected={}",
+        returns[0],
+        expected_return_0
+    );
+
+    assert!(
+        (returns[1] - expected_return_1).abs() < EPSILON,
+        "return1 mismatch: actual={}, expected={}",
+        returns[1],
+        expected_return_1
+    );
+
+    assert!(
+        (returns[2] - expected_return_2).abs() < EPSILON,
+        "return2 mismatch: actual={}, expected={}",
+        returns[2],
+        expected_return_2
+    );
+
+    println!("values:");
+    for value in &values {
+        println!("  {value}");
+    }
+
+    println!("advantages:");
+    for advantage in &advantages {
+        println!("  {advantage}");
+    }
+
+    println!("returns:");
+    for value_target in &returns {
+        println!("  {value_target}");
+    }
+}
+
+#[test]
+fn test_gae_episode_boundary() {
+    let mut ppo = Ppo2::<1, 1, 16, 1, false>::new(42);
+
+    //
+    // Manually construct:
+    //
+    // Episode A:
+    //   reward = 0, terminal
+    //
+    // Episode B:
+    //   reward = 10, terminal
+    //
+    // Both values are zero so the expected GAE is obvious.
+    //
+
+    ppo.transitions.push(Transition {
+        observation: [0.0],
+        action: [0.0],
+        log_probability: 0.0,
+        reward: 0.0,
+        done: true,
+        value: 0.0,
+    });
+
+    ppo.transitions.push(Transition {
+        observation: [1.0],
+        action: [0.0],
+        log_probability: 0.0,
+        reward: 10.0,
+        done: true,
+        value: 0.0,
+    });
+
+    let (advantages, returns) = ppo.calculate_gae();
+
+    println!("advantages: {advantages:?}");
+    println!("returns:    {returns:?}");
+
+    //
+    // Episode B gets its own reward.
+    //
+    assert!((advantages[1] - 10.0).abs() < 1e-6);
+    assert!((returns[1] - 10.0).abs() < 1e-6);
+
+    //
+    // Episode A must NOT receive Episode B's reward.
+    //
+    assert!(advantages[0].abs() < 1e-6);
+    assert!(returns[0].abs() < 1e-6);
+}
 
 
+#[test]
+fn test_gae_propagation() {
+    let mut ppo = Ppo2::<1, 1, 16, 1, false>::new(42);
+
+    ppo.transitions.push(Transition {
+        observation: [0.0],
+        action: [0.0],
+        log_probability: 0.0,
+        reward: 0.0,
+        done: false,
+        value: 0.0,
+    });
+
+    ppo.transitions.push(Transition {
+        observation: [1.0],
+        action: [0.0],
+        log_probability: 0.0,
+        reward: 1.0,
+        done: true,
+        value: 0.0,
+    });
+
+    let (advantages, returns) = ppo.calculate_gae();
+
+    println!("advantages: {advantages:?}");
+    println!("returns:    {returns:?}");
+
+    let expected_a1 = 1.0;
+    let expected_a0 = ppo.gamma * ppo.gae_lambda * expected_a1;
+
+    assert!(
+        (advantages[1] - expected_a1).abs() < 1e-6,
+        "A1 = {}, expected {}",
+        advantages[1],
+        expected_a1
+    );
+
+    assert!(
+        (advantages[0] - expected_a0).abs() < 1e-6,
+        "A0 = {}, expected {}",
+        advantages[0],
+        expected_a0
+    );
+
+    assert!(
+        (returns[0] - expected_a0).abs() < 1e-6
+    );
+
+    assert!(
+        (returns[1] - 1.0).abs() < 1e-6
+    );
+}
+
+#[test]
+fn test_gae_bootstrap_value() {
+    let mut ppo = Ppo2::<1, 1, 16, 1, false>::new(42);
+
+    ppo.transitions.push(Transition {
+        observation: [0.0],
+        action: [0.0],
+        log_probability: 0.0,
+        reward: 0.0,
+        done: false,
+        value: 0.2,
+    });
+
+    ppo.transitions.push(Transition {
+        observation: [1.0],
+        action: [0.0],
+        log_probability: 0.0,
+        reward: 1.0,
+        done: true,
+        value: 0.8,
+    });
+
+    let (advantages, returns) = ppo.calculate_gae();
+
+    println!("advantages: {advantages:?}");
+    println!("returns:    {returns:?}");
+
+    let delta_1 = 1.0 - 0.8;
+    let expected_a1 = delta_1;
+
+    let delta_0 =
+        0.0
+        + ppo.gamma * 0.8
+        - 0.2;
+
+    let expected_a0 =
+        delta_0
+        + ppo.gamma * ppo.gae_lambda * expected_a1;
+
+    let expected_return_0 = expected_a0 + 0.2;
+    let expected_return_1 = expected_a1 + 0.8;
+
+    assert!(
+        (advantages[1] - expected_a1).abs() < 1e-6,
+        "A1 = {}, expected {}",
+        advantages[1],
+        expected_a1
+    );
+
+    assert!(
+        (advantages[0] - expected_a0).abs() < 1e-6,
+        "A0 = {}, expected {}",
+        advantages[0],
+        expected_a0
+    );
+
+    assert!(
+        (returns[0] - expected_return_0).abs() < 1e-6,
+        "return0 = {}, expected {}",
+        returns[0],
+        expected_return_0
+    );
+
+    assert!(
+        (returns[1] - expected_return_1).abs() < 1e-6,
+        "return1 = {}, expected {}",
+        returns[1],
+        expected_return_1
+    );
 }
