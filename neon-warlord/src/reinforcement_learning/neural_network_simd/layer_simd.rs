@@ -12,7 +12,7 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::{
 const LANES: usize = 16;
 
 /// A simd layer
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct LayerSimd<
     const INPUTS: usize,
     const OUTPUTS: usize,

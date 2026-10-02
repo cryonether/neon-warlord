@@ -2,6 +2,7 @@
 
 use crate::reinforcement_learning::neural_network_simd::{layer_simd::LayerSimd, simd_math::simd_vec::SVec16};
 
+#[derive(Clone)]
 pub struct NeuralNetworkLayered<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -24,7 +25,9 @@ impl<
 {
     pub fn new() -> Self {
         let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new();
-        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] = [LayerSimd::new(); NR_LAYERS];
+        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
+            std::array::from_fn(|_| LayerSimd::new()
+        );
         let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new();
 
         Self {
@@ -36,7 +39,9 @@ impl<
 
     pub fn new_rand() -> Self {
         let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new_rand();
-        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] = [LayerSimd::new_rand(); NR_LAYERS];
+        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
+            std::array::from_fn(|_| LayerSimd::new_rand()
+        );
         let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new_rand();
 
         Self {
@@ -48,7 +53,9 @@ impl<
 
     pub fn new_zero_one() -> Self {
         let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new_zero_one();
-        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] = [LayerSimd::new_zero_one(); NR_LAYERS];
+        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
+            std::array::from_fn(|_| LayerSimd::new_zero_one()
+        );
         let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new_zero_one();
 
         Self {
@@ -86,6 +93,14 @@ impl<
         let dx = self.input.backward(&dy);
 
         dx.0.0
+    }
+
+    pub fn subtract_gradients(&mut self, learning_rate: f32) {
+        self.input.subtract_gradients(learning_rate);
+        for layer in &mut self.layers.iter_mut().rev() {
+            layer.subtract_gradients(learning_rate);
+        }
+        self.output.subtract_gradients(learning_rate);
     }
 
 }

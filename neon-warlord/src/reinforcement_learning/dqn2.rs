@@ -2,7 +2,7 @@
 
 use std::collections::VecDeque;
 
-use crate::reinforcement_learning::neural_network_simd::{Gradient64, NeuralNetwork64};
+use crate::reinforcement_learning::neural_network_simd::{Gradient64, NeuralNetwork64, neural_network_layered::NeuralNetworkLayered};
 
 const INPUTS: usize = 4;
 const OUTPUTS: usize = 2;
@@ -17,8 +17,8 @@ struct Transition {
 }
 
 pub struct Dqn2 {
-    q_net: Box<NeuralNetwork64<INPUTS, OUTPUTS, LAYERS, true>>,
-    pub target_net: Box<NeuralNetwork64<INPUTS, OUTPUTS, LAYERS, true>>,
+    q_net: Box<NeuralNetworkLayered<INPUTS, OUTPUTS, 64, LAYERS, false>>,
+    pub target_net: Box<NeuralNetworkLayered<INPUTS, OUTPUTS, 64, LAYERS, false>>,
 
     epsilon: f32,
     epsilon_decay: f32,
@@ -34,7 +34,7 @@ pub struct Dqn2 {
 
 impl Dqn2 {
     pub fn new() -> Self {
-        let q_net = Box::new(NeuralNetwork64::new());
+        let q_net = Box::new(NeuralNetworkLayered::new_rand());
         let target_net = q_net.clone();
 
         let epsilon: f32 = 1.0f32;
@@ -99,7 +99,6 @@ impl Dqn2 {
         }
 
         let mut sum: f32 = 0.0;
-        let mut gradients_loss_sum = Gradient64::new();
         const BATCH_SIZE: usize = 32;
         if self.replay_buffer.len() >= BATCH_SIZE {
             for _i in 0..BATCH_SIZE {
@@ -130,7 +129,6 @@ impl Dqn2 {
 
                 // get current q-value
                 let pred_q_values = self.q_net.forward(&state);
-                let gradients = self.q_net.backward(action);
 
                 let y_pred = pred_q_values[action];
                 let y = target_qs;
@@ -149,7 +147,10 @@ impl Dqn2 {
                 // --------- = --- * (y_pred_i − y_i)
                 // ∂L_pred_i    N
                 let d_loss_dy = 2.0 / BATCH_SIZE as f32 * diff;
-                gradients_loss_sum.add_loss_gradients(&gradients, d_loss_dy);
+
+                let mut backward_vec = [0.0, 0.0];
+                backward_vec[action] = 1.0 * d_loss_dy;
+                self.q_net.backward(&backward_vec);
             }
 
             // loss
@@ -157,9 +158,8 @@ impl Dqn2 {
 
             // optimizer
             /// plain gradient descent
-            const LEARNING_RATE: f32 = 0.01;
-            self.q_net
-                .subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
+            const LEARNING_RATE: f32 = 0.001;
+            self.q_net.subtract_gradients(LEARNING_RATE);
 
             // return self.total_reward;
             return self.loss;
