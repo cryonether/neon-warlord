@@ -15,6 +15,7 @@ mod heightmap_generator;
 mod orb_controller;
 mod orb_storage;
 mod pendulum_cart_simulation;
+mod pendulum_simulation;
 mod physics_simulation_v2;
 #[allow(dead_code)]
 mod physics_simulation_v3;

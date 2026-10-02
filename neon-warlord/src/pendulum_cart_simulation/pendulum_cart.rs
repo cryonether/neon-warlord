@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct Pendulum {
+pub struct PendulumCart {
     pub verlet_physics: VerletPhysicsSimd,
 
     particles_static: [usize; 2],
@@ -24,7 +24,7 @@ pub struct Pendulum {
     pendulum_state: PendulumState,
 }
 
-impl Pendulum {
+impl PendulumCart {
     pub fn new() -> Self {
         let mut verlet_physics = VerletPhysicsSimd::new();
 

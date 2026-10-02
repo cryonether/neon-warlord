@@ -3,7 +3,7 @@
 mod graph_lines;
 #[allow(dead_code)]
 mod neural_network_drawer;
-mod pendulum;
+mod pendulum_cart;
 mod verlet_physics_drawer;
 
 use std::collections::VecDeque;
@@ -14,7 +14,7 @@ use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 use crate::{
     pendulum_cart_simulation::{
         graph_lines::{GraphLines, GraphLinesDrawer},
-        pendulum::{Pendulum, PendulumAction, PendulumState},
+        pendulum_cart::{PendulumCart, PendulumAction, PendulumState},
         verlet_physics_drawer::VerletPhysicsDrawer,
     },
     physics_simulation_v3_drawer::DrawerObjects,
@@ -53,8 +53,8 @@ pub struct PendulumCartSimulation {
     graph_drawer_cart: GraphLinesDrawer<1>,
     graph_drawer_cart_vel: GraphLinesDrawer<1>,
 
-    pendulum: Pendulum,
-    initial_pendulum: Pendulum,
+    pendulum: PendulumCart,
+    initial_pendulum: PendulumCart,
     verlet_physics_drawer: VerletPhysicsDrawer,
     steps: u64,
     episode: u64,
@@ -161,7 +161,7 @@ impl PendulumCartSimulation {
             GraphLinesDrawer::new(scale, pos_graph_cart_vel).colors([to_rgb("#0041d9").into()]);
 
         // Pendulum
-        let pendulum = Pendulum::new();
+        let pendulum = PendulumCart::new();
         let verlet_physics_drawer =
             VerletPhysicsDrawer::new(&pendulum.verlet_physics, scale, pos_pendulum);
 
