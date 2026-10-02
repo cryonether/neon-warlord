@@ -1,10 +1,9 @@
-
-
 use super::*;
 
+/// actor learns a continuous optimum
 #[test]
 fn test_one_armed_bandit() {
-    const EPISODES: usize = 10_000;
+    const EPISODES: usize = 2_000;
     const BATCH_SIZE: usize = 32;
 
     let mut ppo = Ppo2::<1, 1, 64, 1, false>::new(42);
@@ -18,13 +17,7 @@ fn test_one_armed_bandit() {
         // Maximum reward is therefore 0.0.
         let reward = -(action[0] - 2.0).powi(2);
 
-        ppo.save_reward(
-            observation,
-            action,
-            log_probability,
-            reward,
-            true,
-        );
+        ppo.save_reward(observation, action, log_probability, reward, true);
 
         if (episode + 1) % BATCH_SIZE == 0 {
             ppo.learn();
@@ -49,71 +42,962 @@ fn test_one_armed_bandit() {
     );
 }
 
+/// Actor learns to prefer the higher-value region.
 #[test]
 fn test_two_armed_bandit() {
-    const EPISODES: usize = 10_000;
+    const EPISODES: usize = 2_000;
     const BATCH_SIZE: usize = 32;
+    const EVALUATION_SAMPLES: usize = 5_000;
 
     let mut ppo = Ppo2::<1, 1, 64, 1, false>::new(42);
 
     let observation = [1.0];
 
     for episode in 0..EPISODES {
-        let (action, _mean, log_probability) =
-            ppo.get_action(&observation);
+        let (action, _mean, log_probability) = ppo.get_action(&observation);
 
-        let reward = if action[0] >= 0.0 {
-            2.0 - (action[0] - 2.0).powi(2)
+        let x = action[0];
+
+        let reward = if x >= 0.0 {
+            2.0 - (x - 2.0).powi(2)
         } else {
-            1.0 - (action[0] + 2.0).powi(2)
+            1.0 - (x + 2.0).powi(2)
         };
 
-        ppo.save_reward(
-            observation,
-            action,
-            log_probability,
-            reward,
-            true,
-        );
+        ppo.save_reward(observation, action, log_probability, reward, true);
 
         if (episode + 1) % BATCH_SIZE == 0 {
             ppo.learn();
         }
     }
 
-    let mut mean = 0.0;
-
-    for _ in 0..100 {
-        let (_action, action_mean, _log_probability) =
-            ppo.get_action(&observation);
-
-        mean += action_mean[0];
-    }
-
-    mean /= 100.0;
+    let mean = ppo.actor.forward(&observation)[0];
 
     println!("learned mean: {mean}");
 
     let mut better_arm_count = 0;
+    let mut total_reward = 0.0;
 
-    for _ in 0..5000 {
-        let (action, _mean, _log_probability) =
-            ppo.get_action(&observation);
+    for _ in 0..EVALUATION_SAMPLES {
+        let (action, _mean, _log_probability) = ppo.get_action(&observation);
 
-        if action[0] >= 0.0 {
+        let x = action[0];
+
+        let reward = if x >= 0.0 {
             better_arm_count += 1;
-        }
+
+            2.0 - (x - 2.0).powi(2)
+        } else {
+            1.0 - (x + 2.0).powi(2)
+        };
+
+        total_reward += reward;
     }
 
-    let better_arm_fraction =
-        better_arm_count as f32 / 5000.0;
+    let better_arm_fraction = better_arm_count as f32 / EVALUATION_SAMPLES as f32;
 
-    println!("learned mean: {mean}");
+    let average_reward = total_reward / EVALUATION_SAMPLES as f32;
+
     println!("better arm fraction: {better_arm_fraction:.3}");
+
+    println!("average reward: {average_reward:.3}");
 
     assert!(
         better_arm_fraction > 0.70,
         "policy failed to prefer the better arm: {better_arm_fraction:.3}"
     );
 
+    assert!(
+        average_reward > 1.0,
+        "policy reward too low: {average_reward:.3}"
+    );
 }
+
+/// delayed reward propagates backward
+#[test]
+fn test_two_step_mdp() {
+    const EPISODES: usize = 4_000;
+    const BATCH_SIZE: usize = 32;
+
+    let mut ppo = Ppo2::<1, 1, 64, 1, false>::new(42);
+
+    // State 0: the agent must choose a positive action
+    // to reach the rewarding state.
+    let start_state = [0.0];
+
+    // State 1: positive action gives +1.
+    let good_state = [1.0];
+
+    // State 2: negative action from the start state
+    // leads here and eventually gives -1.
+    let bad_state = [-1.0];
+
+    for episode in 0..EPISODES {
+        //
+        // STEP 1
+        //
+        let (action, _mean, log_probability) = ppo.get_action(&start_state);
+
+        // No immediate reward.
+        let reward = 0.0;
+
+        // Positive action leads to the good state.
+        // Negative action leads to the bad state.
+        let next_state = if action[0] >= 0.0 {
+            good_state
+        } else {
+            bad_state
+        };
+
+        ppo.save_reward(start_state, action, log_probability, reward, false);
+
+        //
+        // STEP 2
+        //
+        let (action, _mean, log_probability) = ppo.get_action(&next_state);
+
+        let reward = if next_state == good_state {
+            if action[0] >= 0.0 { 1.0 } else { -1.0 }
+        } else {
+            -1.0
+        };
+
+        ppo.save_reward(next_state, action, log_probability, reward, true);
+
+        //
+        // Update PPO using the complete episode.
+        //
+        if (episode + 1) % BATCH_SIZE == 0 {
+            ppo.learn();
+        }
+    }
+
+        // Evaluate the first decision.
+    let mut good_path_count = 0;
+
+    for _ in 0..5_000 {
+        let (action, _mean, _log_probability) =
+            ppo.get_action(&start_state);
+
+        if action[0] >= 0.0 {
+            good_path_count += 1;
+        }
+    }
+
+    let good_path_fraction =
+        good_path_count as f32 / 5_000.0;
+
+    let start_mean =
+        ppo.actor.forward(&start_state)[0];
+
+    println!("start state mean: {start_mean}");
+    println!("good path fraction: {good_path_fraction:.3}");
+
+    // Evaluate the second decision in the good state.
+    let mut good_action_count = 0;
+
+    for _ in 0..5_000 {
+        let (action, _mean, _log_probability) =
+            ppo.get_action(&good_state);
+
+        if action[0] >= 0.0 {
+            good_action_count += 1;
+        }
+    }
+
+    let good_action_fraction =
+        good_action_count as f32 / 5_000.0;
+
+    let good_state_mean =
+        ppo.actor.forward(&good_state)[0];
+
+    println!("good state mean: {good_state_mean}");
+    println!(
+        "good state positive action fraction: \
+         {good_action_fraction:.3}"
+    );
+
+    // Critic evaluation.
+    //
+    // The good state gives +1 on the next step:
+    //
+    //     V(good_state) ~= 1
+    //
+    // The start state receives zero immediately and
+    // then transitions to the good state:
+    //
+    //     V(start_state) ~= gamma * 1
+    //                    ~= 0.95
+    //
+    let start_value =
+        ppo.critic.forward(&start_state)[0];
+
+    let good_state_value =
+        ppo.critic.forward(&good_state)[0];
+
+    println!("start state value: {start_value}");
+    println!("good state value: {good_state_value}");
+
+    assert!(
+        good_path_fraction > 0.70,
+        "policy failed to learn the good path: \
+         fraction = {good_path_fraction:.3}"
+    );
+
+    assert!(
+        good_action_fraction > 0.70,
+        "policy failed to learn the final action: \
+         fraction = {good_action_fraction:.3}"
+    );
+
+    assert!(
+        (start_value - 0.95).abs() < 0.20,
+        "critic failed to learn start-state value: \
+         value = {start_value}"
+    );
+
+    assert!(
+        (good_state_value - 1.0).abs() < 0.20,
+        "critic failed to learn good-state value: \
+         value = {good_state_value}"
+    );
+
+}
+
+/// done/reset handling works
+#[test]
+fn test_episode_boundaries() {
+    const EPISODES: usize = 4_000;
+    const BATCH_SIZE: usize = 32;
+
+    let mut ppo = Ppo2::<1, 1, 64, 1, false>::new(42);
+
+    let observation = [0.0];
+
+    for episode in 0..EPISODES {
+        let (action, _mean, log_probability) = ppo.get_action(&observation);
+
+        // Each transition is a complete one-step episode.
+        //
+        // Correct return calculation:
+        //
+        //   episode 0: reward = +1 -> return = +1
+        //   episode 1: reward = -1 -> return = -1
+        //   episode 2: reward = +1 -> return = +1
+        //   ...
+        //
+        // Therefore the critic should learn V(s) ~= 0.
+        let reward = if episode % 2 == 0 { 1.0 } else { -1.0 };
+
+        ppo.save_reward(observation, action, log_probability, reward, true);
+
+        if (episode + 1) % BATCH_SIZE == 0 {
+            ppo.learn();
+        }
+    }
+
+    let learned_value = ppo.critic.forward(&observation)[0];
+
+    println!("learned value: {learned_value}");
+
+    // Because positive and negative episodes occur equally often,
+    // the expected value of this state is zero.
+    assert!(
+        learned_value.abs() < 0.1,
+        "episode boundary leakage detected: \
+         learned value = {learned_value}"
+    );
+}
+
+/// Delayed reward propagates backward through multiple steps.
+#[test]
+fn test_multi_step_mdp() {
+    const EPISODES: usize = 6_000;
+    const BATCH_SIZE: usize = 32;
+    const EVALUATION_SAMPLES: usize = 5_000;
+
+    let mut ppo = Ppo2::<1, 1, 64, 1, false>::new(42);
+
+    // State 0: choosing positive leads toward the reward.
+    let start_state = [0.0];
+
+    // State 1: choosing positive continues toward the reward.
+    let middle_state = [1.0];
+
+    // State 2: choosing positive receives +1.
+    let good_state = [2.0];
+
+    // Bad states terminate with -1.
+    let bad_state = [-1.0];
+
+    for episode in 0..EPISODES {
+        //
+        // STEP 1
+        //
+        let (action, _mean, log_probability) =
+            ppo.get_action(&start_state);
+
+        let next_state = if action[0] >= 0.0 {
+            middle_state
+        } else {
+            bad_state
+        };
+
+        ppo.save_reward(
+            start_state,
+            action,
+            log_probability,
+            0.0,
+            false,
+        );
+
+        //
+        // STEP 2
+        //
+        let (action, _mean, log_probability) =
+            ppo.get_action(&next_state);
+
+        if next_state == bad_state {
+            ppo.save_reward(
+                next_state,
+                action,
+                log_probability,
+                -1.0,
+                true,
+            );
+
+            if (episode + 1) % BATCH_SIZE == 0 {
+                ppo.learn();
+            }
+
+            continue;
+        }
+
+        let next_state = if action[0] >= 0.0 {
+            good_state
+        } else {
+            bad_state
+        };
+
+        ppo.save_reward(
+            middle_state,
+            action,
+            log_probability,
+            0.0,
+            false,
+        );
+
+        //
+        // STEP 3
+        //
+        let (action, _mean, log_probability) =
+            ppo.get_action(&next_state);
+
+        let reward = if next_state == good_state {
+            if action[0] >= 0.0 {
+                1.0
+            } else {
+                -1.0
+            }
+        } else {
+            -1.0
+        };
+
+        ppo.save_reward(
+            next_state,
+            action,
+            log_probability,
+            reward,
+            true,
+        );
+
+        //
+        // Update PPO using the complete episode.
+        //
+        if (episode + 1) % BATCH_SIZE == 0 {
+            ppo.learn();
+        }
+    }
+
+    //
+    // Actor evaluation.
+    //
+
+    let mut start_good_count = 0;
+    let mut middle_good_count = 0;
+    let mut final_good_count = 0;
+
+    for _ in 0..EVALUATION_SAMPLES {
+        let (action, _mean, _log_probability) =
+            ppo.get_action(&start_state);
+
+        if action[0] >= 0.0 {
+            start_good_count += 1;
+        }
+
+        let (action, _mean, _log_probability) =
+            ppo.get_action(&middle_state);
+
+        if action[0] >= 0.0 {
+            middle_good_count += 1;
+        }
+
+        let (action, _mean, _log_probability) =
+            ppo.get_action(&good_state);
+
+        if action[0] >= 0.0 {
+            final_good_count += 1;
+        }
+    }
+
+    let start_good_fraction =
+        start_good_count as f32 / EVALUATION_SAMPLES as f32;
+
+    let middle_good_fraction =
+        middle_good_count as f32 / EVALUATION_SAMPLES as f32;
+
+    let final_good_fraction =
+        final_good_count as f32 / EVALUATION_SAMPLES as f32;
+
+    let start_mean =
+        ppo.actor.forward(&start_state)[0];
+
+    let middle_mean =
+        ppo.actor.forward(&middle_state)[0];
+
+    let good_mean =
+        ppo.actor.forward(&good_state)[0];
+
+    println!("start mean: {start_mean}");
+    println!("start good fraction: {start_good_fraction:.3}");
+
+    println!("middle mean: {middle_mean}");
+    println!("middle good fraction: {middle_good_fraction:.3}");
+
+    println!("good mean: {good_mean}");
+    println!("good action fraction: {final_good_fraction:.3}");
+
+    //
+    // Critic evaluation.
+    //
+    let start_value =
+        ppo.critic.forward(&start_state)[0];
+
+    let middle_value =
+        ppo.critic.forward(&middle_state)[0];
+
+    let good_value =
+        ppo.critic.forward(&good_state)[0];
+
+    println!("start value: {start_value}");
+    println!("middle value: {middle_value}");
+    println!("good value: {good_value}");
+
+    //
+    // Expected values:
+    //
+    // V(good)   ~= 1
+    // V(middle) ~= gamma * 1
+    //            ~= 0.95
+    // V(start)  ~= gamma² * 1
+    //            ~= 0.9025
+    //
+
+    assert!(
+        start_good_fraction > 0.70,
+        "policy failed at start: {start_good_fraction:.3}"
+    );
+
+    assert!(
+        middle_good_fraction > 0.70,
+        "policy failed in middle state: {middle_good_fraction:.3}"
+    );
+
+    assert!(
+        final_good_fraction > 0.70,
+        "policy failed in good state: {final_good_fraction:.3}"
+    );
+
+    assert!(
+        (start_value - 0.9025).abs() < 0.25,
+        "critic failed at start: value = {start_value}"
+    );
+
+    assert!(
+        (middle_value - 0.95).abs() < 0.25,
+        "critic failed in middle: value = {middle_value}"
+    );
+
+    assert!(
+        (good_value - 1.0).abs() < 0.25,
+        "critic failed in good state: value = {good_value}"
+    );
+
+    assert!(
+        start_value < middle_value,
+        "critic failed to propagate value from middle to start: \
+        start = {start_value}, middle = {middle_value}"
+    );
+
+    assert!(
+        middle_value < good_value,
+        "critic failed to propagate value from good to middle: \
+        middle = {middle_value}, good = {good_value}"
+    );
+}
+
+#[test]
+fn test_ppo_clipping() {
+    const CLIP: f32 = 0.2;
+    const EPSILON: f32 = 1e-6;
+
+    //
+    // Positive advantage.
+    //
+    {
+        let advantage = 1.0;
+
+        let mut loss = PpoSurrogateLossClipped::new();
+        let value = loss.calc(0.7, advantage, CLIP);
+        let derivative = loss.derivative();
+
+        assert!((value - (-0.7)).abs() < EPSILON);
+        assert!((derivative + 1.0).abs() < EPSILON);
+
+        let mut loss = PpoSurrogateLossClipped::new();
+        let value = loss.calc(1.1, advantage, CLIP);
+        let derivative = loss.derivative();
+
+        assert!((value - (-1.1)).abs() < EPSILON);
+        assert!((derivative + 1.0).abs() < EPSILON);
+
+        // Exact upper clipping boundary.
+        let mut loss = PpoSurrogateLossClipped::new();
+        let value = loss.calc(1.2, advantage, CLIP);
+
+        assert!((value - (-1.2)).abs() < EPSILON);
+
+        // Beyond upper boundary -> clipped.
+        let mut loss = PpoSurrogateLossClipped::new();
+        let value = loss.calc(1.3, advantage, CLIP);
+        let derivative = loss.derivative();
+
+        assert!((value - (-1.2)).abs() < EPSILON);
+        assert!(derivative.abs() < EPSILON);
+    }
+
+    //
+    // Negative advantage.
+    //
+    {
+        let advantage = -1.0;
+
+        // Below lower clipping boundary -> clipped.
+        let mut loss = PpoSurrogateLossClipped::new();
+        let value = loss.calc(0.7, advantage, CLIP);
+        let derivative = loss.derivative();
+
+        assert!((value - 0.8).abs() < EPSILON);
+        assert!(derivative.abs() < EPSILON);
+
+        // Inside clipping range.
+        let mut loss = PpoSurrogateLossClipped::new();
+        let value = loss.calc(0.9, advantage, CLIP);
+        let derivative = loss.derivative();
+
+        assert!((value - 0.9).abs() < EPSILON);
+        assert!((derivative - 1.0).abs() < EPSILON);
+
+        // Exact lower clipping boundary.
+        let mut loss = PpoSurrogateLossClipped::new();
+        let value = loss.calc(0.8, advantage, CLIP);
+
+        assert!((value - 0.8).abs() < EPSILON);
+
+        // Above upper boundary remains unclipped for A < 0.
+        let mut loss = PpoSurrogateLossClipped::new();
+        let value = loss.calc(1.3, advantage, CLIP);
+        let derivative = loss.derivative();
+
+        assert!((value - 1.3).abs() < EPSILON);
+        assert!((derivative - 1.0).abs() < EPSILON);
+    }
+}
+
+#[test]
+fn test_ppo_actor_ratio() {
+    const EPSILON: f32 = 1e-6;
+
+    let mut ratio = PpoActorRatio::new();
+
+    let value = ratio.calc(0.0, 0.0);
+    let derivative = ratio.derivative();
+
+    assert!(
+        (value - 1.0).abs() < EPSILON,
+        "ratio(0, 0) should be 1, got {value}"
+    );
+
+    assert!(
+        (derivative - 1.0).abs() < EPSILON,
+        "d ratio / d current_log_probability should be 1 at ratio=1, got {derivative}"
+    );
+
+    let mut ratio = PpoActorRatio::new();
+
+    let value = ratio.calc(1.0, 0.0);
+    let derivative = ratio.derivative();
+
+    assert!(
+        (value - std::f32::consts::E).abs() < EPSILON,
+        "ratio(1, 0) should be e, got {value}"
+    );
+
+    assert!(
+        (derivative - std::f32::consts::E).abs() < EPSILON,
+        "derivative should equal ratio, got {derivative}"
+    );
+
+    let mut ratio = PpoActorRatio::new();
+
+    let value = ratio.calc(0.0, 1.0);
+    let derivative = ratio.derivative();
+
+    assert!(
+        (value - (-1.0f32).exp()).abs() < EPSILON,
+        "ratio(0, 1) should be exp(-1), got {value}"
+    );
+
+    assert!(
+        (derivative - (-1.0f32).exp()).abs() < EPSILON,
+        "derivative should equal ratio, got {derivative}"
+    );
+}
+
+#[test]
+fn test_gaussian_log_probability() {
+    const EPSILON: f32 = 1e-5;
+
+    let action = [1.0];
+    let mean = [0.0];
+    let std_dev = 1.0;
+
+    let mut glp = GaussianLogProbability::new();
+
+    let value = glp.calc(&action, &mean, std_dev);
+    let derivative = glp.derivative();
+
+    // log N(1 | 0, 1)
+    //
+    // = -0.5 * (1^2)
+    //   - 0.5 * ln(2*pi)
+    //
+    // ≈ -1.4189385
+    let expected = -1.4189385;
+
+    assert!(
+        (value - expected).abs() < EPSILON,
+        "unexpected Gaussian log probability: {value}"
+    );
+
+    // d log p / d mean
+    //
+    // = (action - mean) / variance
+    // = 1 / 1
+    // = 1
+    assert_eq!(derivative.len(), 1);
+
+    assert!(
+        (derivative[0] - 1.0).abs() < EPSILON,
+        "unexpected Gaussian log probability derivative: {}",
+        derivative[0]
+    );
+}
+
+#[test]
+fn test_ppo_ratio_identity() {
+    const EPSILON: f32 = 1e-6;
+
+    let log_probability = -1.2345;
+
+    let mut ratio = PpoActorRatio::new();
+
+    let value = ratio.calc(
+        log_probability,
+        log_probability,
+    );
+
+    let derivative = ratio.derivative();
+
+    // If the old and current policies are identical:
+    //
+    // exp(log_pi - log_pi_old) = exp(0) = 1
+    assert!(
+        (value - 1.0).abs() < EPSILON,
+        "identical policies must have ratio 1, got {value}"
+    );
+
+    // d exp(x) / dx = exp(x)
+    //
+    // At x = 0:
+    //
+    // derivative = 1
+    assert!(
+        (derivative - 1.0).abs() < EPSILON,
+        "ratio derivative should be 1 at ratio=1, got {derivative}"
+    );
+}
+
+#[test]
+fn test_ppo_surrogate_identity() {
+    const CLIP: f32 = 0.2;
+    const EPSILON: f32 = 1e-6;
+
+    // When ratio == 1, clipping should do nothing.
+    for advantage in [-2.0, -1.0, 0.5, 1.0, 2.0] {
+        let mut loss = PpoSurrogateLossClipped::new();
+
+        let value = loss.calc(1.0, advantage, CLIP);
+        let derivative = loss.derivative();
+
+        // Your implementation is minimizing the negative surrogate:
+        //
+        // loss = -(ratio * advantage)
+        //
+        // ratio = 1
+        //
+        // => loss = -advantage
+        assert!(
+            (value + advantage).abs() < EPSILON,
+            "unexpected surrogate at ratio=1: \
+             advantage={advantage}, value={value}"
+        );
+
+        // d loss / d ratio = -advantage
+        assert!(
+            (derivative + advantage).abs() < EPSILON,
+            "unexpected surrogate derivative: \
+             advantage={advantage}, derivative={derivative}"
+        );
+    }
+}
+
+#[test]
+fn test_actor_gradient_checking() {
+    const EPSILON: f32 = 1e-3;
+    const TOLERANCE: f32 = 5e-3;
+
+    const INPUTS: usize = 1;
+    const OUTPUTS: usize = 1;
+    const NEURONS: usize = 4;
+    const LAYERS: usize = 1;
+
+    let observation = [0.7_f32];
+    let action = [1.2_f32];
+
+    // This is the log probability under the OLD policy.
+    // We deliberately choose a fixed value so the PPO ratio
+    // is non-trivial.
+    let old_log_probability = -1.0_f32;
+
+    let advantage = 1.0_f32;
+    let clip = 0.2_f32;
+    let std_dev = 0.70710677_f32;
+
+    //
+    // Create deterministic initial network.
+    //
+    let mut actor =
+        NeuralNetworkLayered::<
+            INPUTS,
+            OUTPUTS,
+            NEURONS,
+            LAYERS,
+            false,
+        >::new_rand(42);
+
+    //
+    // Forward pass.
+    //
+    let mean = actor.forward(&observation);
+
+    //
+    // Calculate the PPO loss.
+    //
+    let mut glp = GaussianLogProbability::new();
+
+    let current_log_probability =
+        glp.calc(&action, &mean, std_dev);
+
+    let mut ratio = PpoActorRatio::new();
+
+    let current_ratio =
+        ratio.calc(current_log_probability, old_log_probability);
+
+    let mut surrogate =
+        PpoSurrogateLossClipped::new();
+
+    let loss =
+        surrogate.calc(current_ratio, advantage, clip);
+
+    let surrogate_derivative =
+        surrogate.derivative();
+
+    let ratio_derivative =
+        ratio.derivative();
+
+    let log_probability_derivative =
+        glp.derivative();
+
+    //
+    // Chain rule:
+    //
+    // dL/dmean
+    //
+    let d_loss_d_mean =
+        surrogate_derivative
+        * ratio_derivative
+        * log_probability_derivative[0];
+
+    //
+    // Backprop through the actor.
+    //
+    actor.backward(&[d_loss_d_mean]);
+
+    //
+    // Grab one parameter's analytical gradient.
+    //
+    let analytical_gradient =
+        actor.output.w[0][0];
+
+    //
+    // IMPORTANT:
+    //
+    // The value stored in output.w is the weight itself,
+    // not its gradient.
+    //
+    // The gradient is stored in:
+    //
+    //     actor.output.dl_dw[0][0]
+    //
+    let analytical_gradient =
+        actor.output.dl_dw[0][0];
+
+    //
+    // Numerical gradient.
+    //
+    let original_weight =
+        actor.output.w[0][0];
+
+    //
+    // L(theta + epsilon)
+    //
+    actor.output.w[0][0] =
+        original_weight + EPSILON;
+
+    let mean_plus =
+        actor.forward(&observation);
+
+    let mut glp_plus =
+        GaussianLogProbability::new();
+
+    let log_probability_plus =
+        glp_plus.calc(
+            &action,
+            &mean_plus,
+            std_dev,
+        );
+
+    let mut ratio_plus =
+        PpoActorRatio::new();
+
+    let ratio_plus_value =
+        ratio_plus.calc(
+            log_probability_plus,
+            old_log_probability,
+        );
+
+    let mut surrogate_plus =
+        PpoSurrogateLossClipped::new();
+
+    let loss_plus =
+        surrogate_plus.calc(
+            ratio_plus_value,
+            advantage,
+            clip,
+        );
+
+    //
+    // L(theta - epsilon)
+    //
+    actor.output.w[0][0] =
+        original_weight - EPSILON;
+
+    let mean_minus =
+        actor.forward(&observation);
+
+    let mut glp_minus =
+        GaussianLogProbability::new();
+
+    let log_probability_minus =
+        glp_minus.calc(
+            &action,
+            &mean_minus,
+            std_dev,
+        );
+
+    let mut ratio_minus =
+        PpoActorRatio::new();
+
+    let ratio_minus_value =
+        ratio_minus.calc(
+            log_probability_minus,
+            old_log_probability,
+        );
+
+    let mut surrogate_minus =
+        PpoSurrogateLossClipped::new();
+
+    let loss_minus =
+        surrogate_minus.calc(
+            ratio_minus_value,
+            advantage,
+            clip,
+        );
+
+    //
+    // Restore parameter.
+    //
+    actor.output.w[0][0] =
+        original_weight;
+
+    //
+    // Central finite difference.
+    //
+    let numerical_gradient =
+        (loss_plus - loss_minus)
+        / (2.0 * EPSILON);
+
+    println!("loss:                {loss}");
+    println!("analytical gradient: {analytical_gradient}");
+    println!("numerical gradient:  {numerical_gradient}");
+
+    let absolute_error =
+        (analytical_gradient - numerical_gradient).abs();
+
+    let relative_error =
+        absolute_error
+        / numerical_gradient.abs().max(1e-6);
+
+    println!("absolute error: {absolute_error}");
+    println!("relative error: {relative_error}");
+
+    assert!(
+        relative_error < TOLERANCE,
+        "actor gradient mismatch: \
+         analytical={analytical_gradient}, \
+         numerical={numerical_gradient}, \
+         relative_error={relative_error}"
+    );
+}
+

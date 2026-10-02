@@ -128,11 +128,16 @@ impl<
         let mut advantages = VecDeque::new();
 
         for transition in self.transitions.iter().rev() {
+            if transition.done {
+                last_discounted_reward = 0.0;
+            }
+
             let observation = transition.observation;
             let action = transition.action;
             let log_probability = transition.log_probability;
             let reward = transition.reward;
 
+            // GAE should apparently be better
             // Calculate the discounted reward
             // let discounted_reward = reward + self.gamma * last_discounted_reward;
             let discounted_reward = reward + self.gamma * last_discounted_reward;
