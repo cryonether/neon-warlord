@@ -14,7 +14,7 @@ mod game_board;
 mod heightmap_generator;
 mod orb_controller;
 mod orb_storage;
-mod pendulum_simulation;
+mod pendulum_cart_simulation;
 mod physics_simulation_v2;
 #[allow(dead_code)]
 mod physics_simulation_v3;
@@ -59,7 +59,7 @@ use crate::{
     ant_storage::AntStorage,
     camera_controller::CameraController,
     debug_overlay::DebugOverlay,
-    pendulum_simulation::{PendulumSimulation, PendulumSimulationThread},
+    pendulum_cart_simulation::{PendulumCartSimulation, PendulumSimulationThread},
     physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
     simple_physics_simulation::SimplePhysicsSimulation,
     sun_storage::SunStorage,
@@ -327,7 +327,7 @@ impl NeonWarlord {
         //     });
 
         let pendulum_simulation_thread = WorkerThread::spawn(PendulumSimulationThread {
-            sim: PendulumSimulation::new(),
+            sim: PendulumCartSimulation::new(),
             producer,
             height_map: _height_map.clone(),
         });

@@ -12,7 +12,7 @@ use forward_renderer::{height_map::HeightMapInterface, to_rgb};
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
 use crate::{
-    pendulum_simulation::{
+    pendulum_cart_simulation::{
         graph_lines::{GraphLines, GraphLinesDrawer},
         pendulum::{Pendulum, PendulumAction, PendulumState},
         verlet_physics_drawer::VerletPhysicsDrawer,
@@ -30,7 +30,7 @@ const OUTPUTS: usize = 2;
 // const NR_LAYERS: usize = 2;
 // const RESIDUAL: bool = false;
 
-pub struct PendulumSimulation {
+pub struct PendulumCartSimulation {
     // Physics
     ticks: u64,
 
@@ -65,9 +65,9 @@ pub struct PendulumSimulation {
     watch_ups: Watch<WATCH_POINTS_SIZE>,
 }
 
-unsafe impl Send for PendulumSimulation {}
+unsafe impl Send for PendulumCartSimulation {}
 
-impl PendulumSimulation {
+impl PendulumCartSimulation {
     pub fn new() -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
@@ -355,7 +355,7 @@ pub struct PendulumSimulationThread<T>
 where
     T: HeightMapInterface,
 {
-    pub sim: PendulumSimulation,
+    pub sim: PendulumCartSimulation,
     pub producer: triple_buffer::Producer<DrawerObjects>,
     pub height_map: T,
 }

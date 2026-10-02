@@ -1,7 +1,7 @@
 //! A pendulum on a cart
 
 use crate::{
-    advanced_composition::motor_linear::MotorLinear, pendulum_simulation::Vec3,
+    advanced_composition::motor_linear::MotorLinear, pendulum_cart_simulation::Vec3,
     verlet_physics_simd::VerletPhysicsSimd,
 };
 

@@ -4,7 +4,7 @@ use cgmath::VectorSpace;
 use forward_renderer::{particle_shader, particle_shader_two_point, to_rgb};
 
 use crate::{
-    pendulum_simulation::Vec3, reinforcement_learning::neural_network_simd::NeuralNetworkSimd,
+    pendulum_cart_simulation::Vec3, reinforcement_learning::neural_network_simd::NeuralNetworkSimd,
 };
 
 pub struct NeuralNetworkDrawer<
