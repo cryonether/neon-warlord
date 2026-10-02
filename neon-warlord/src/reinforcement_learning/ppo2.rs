@@ -48,7 +48,7 @@ impl<
         const STD_DEV: f32 = 0.70710677; // sqrt(0.5)
 
         // Discount factor, for calculating the discounted reward
-        const GAMMA: f32 = 0.99;     
+        const GAMMA: f32 = 0.90;     
 
         // Threshold to clip the ratio
         const CLIP: f32 = 0.2;

@@ -1,0 +1,312 @@
+//! Simulates an inverted pendulum
+
+mod pendulum;
+mod gym;
+pub mod gym_line;
+
+use std::collections::VecDeque;
+
+use forward_renderer::{height_map::HeightMapInterface, to_rgb};
+use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
+
+use crate::{
+    gym_simulation::gym::Gym, pendulum_cart_simulation::{graph_lines::{GraphLines, GraphLinesDrawer}, pendulum_cart::{PendulumAction, PendulumCart, PendulumState}, verlet_physics_drawer::VerletPhysicsDrawer}, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::{dqn2::Dqn2, ppo2::Ppo2}, triple_buffer, worker_thread,
+};
+
+pub const WATCH_POINTS_SIZE: usize = 10;
+type Vec3 = cgmath::Vector3<f32>;
+
+// const INPUTS: usize = 4;
+// const OUTPUTS: usize = 2;
+// const NR_LAYERS: usize = 2;
+// const RESIDUAL: bool = false;
+
+pub struct GymSimulation<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NEURONS: usize,
+    const LAYERS: usize,
+    const RESIDUAL: bool,
+    ENV: Gym<INPUTS, OUTPUTS>,
+>
+{
+    // Physics
+    ticks: u64,
+
+    ppo: Ppo2<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL>,
+
+    graph_actor_loss: GraphLines<1>,
+    graph_critic_loss: GraphLines<1>,
+    graph_outputs: GraphLines<OUTPUTS>,
+    graph_quality: GraphLines<1>,
+    graph_inputs: GraphLines<INPUTS>,
+
+    drawer_graph_actor_loss: GraphLinesDrawer<1>,
+    drawer_graph_critic_loss: GraphLinesDrawer<1>,
+    drawer_graph_outputs: GraphLinesDrawer<OUTPUTS>,
+    drawer_graph_quality: GraphLinesDrawer<1>,
+    drawer_graph_inputs: GraphLinesDrawer<INPUTS>,
+
+    env: ENV,
+    verlet_physics_drawer: VerletPhysicsDrawer,
+    steps: u64,
+    episode: u64,
+
+    // Debug
+    ups: Fps,
+    last_render_time: instant::Instant,
+    watch_ups: Watch<WATCH_POINTS_SIZE>,
+}
+
+// unsafe impl<
+//     const INPUTS: usize,
+//     const OUTPUTS: usize,
+//     const NEURONS: usize,
+//     const LAYERS: usize,
+//     const RESIDUAL: bool,
+//     ENV: Gym<INPUTS, OUTPUTS>,
+// > Send for GymSimulation<
+//     INPUTS,
+//     OUTPUTS,
+//     NEURONS,
+//     LAYERS,
+//     RESIDUAL,
+//     ENV,
+// >{}
+
+impl<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NEURONS: usize,
+    const LAYERS: usize,
+    const RESIDUAL: bool,
+    ENV: Gym<INPUTS, OUTPUTS>,
+> GymSimulation<
+    INPUTS,
+    OUTPUTS,
+    NEURONS,
+    LAYERS,
+    RESIDUAL,
+    ENV,
+> {
+    pub fn new(env: ENV) -> Self {
+        // agent 0
+        let pos = Vec3::new(0.0, 0.0, 2.0);
+
+        let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 1.0);
+        let pos_graph_critic_loss = pos + Vec3::new(-2.0, 1.0, 0.0);
+        let pos_graph_outputs = pos + Vec3::new(-2.0, 1.0, 2.2);
+        let pos_graph_quality = pos + Vec3::new(2.2, 1.0, 0.0);
+
+        let pos_graph_inputs = pos + Vec3::new(2.2, 1.0, 2.2);
+
+        let pos_env = pos + Vec3::new(2.0, -0.5, 1.0);
+
+
+        let scale = 0.1;
+
+        let ppo = Ppo2::new();
+
+        // Debug
+        let ups = Fps::new();
+        let watch_ups = Watch::new();
+
+        // Graph
+        let graph_x: VecDeque<f32> = (0..100).map(|i| i as f32 * 0.1).collect();
+        // let graph_y: VecDeque<f32> = (0..100).map(|i| (i as f32 * 0.1).sin()).collect();
+        let graph_y: VecDeque<f32> = (0..100).map(|_i| 0.0).collect();
+        let graph_actor_loss = GraphLines {
+            x: graph_x.clone(),
+            y: [graph_y.clone()],
+        };
+
+        let graph_critic_loss = GraphLines {
+            x: graph_x.clone(),
+            y: [graph_y.clone()],
+        };
+
+        let y: [VecDeque<f32>; OUTPUTS] =
+            std::array::from_fn(|_| graph_y.clone());
+        let graph_outputs = GraphLines {
+            x: graph_x.clone(),
+            y: y,
+        };
+
+        let graph_quality = GraphLines {
+            x: graph_x.clone(),
+            y: [graph_y.clone()],
+        };
+
+        let y: [VecDeque<f32>; INPUTS] =
+            std::array::from_fn(|_| graph_y.clone());
+        let graph_inputs = GraphLines {
+            x: graph_x.clone(),
+            y: y,
+        };
+
+
+
+        let drawer_graph_actor_loss =
+            GraphLinesDrawer::new(scale, pos_graph_actor_loss).colors([to_rgb("#12d900").into()]);
+        let drawer_graph_critic_loss = GraphLinesDrawer::new(scale, pos_graph_critic_loss)
+            .colors([to_rgb("#b1d900").into()]);
+
+        let colors: [Vec3; OUTPUTS] =
+            std::array::from_fn(|_| to_rgb("#950187").into());
+        let drawer_graph_outputs = GraphLinesDrawer::new(scale, pos_graph_outputs).colors(colors);
+
+        let drawer_graph_quality = GraphLinesDrawer::new(scale, pos_graph_quality)
+            .colors([to_rgb("#d9ae00").into()]);
+
+        let colors: [Vec3; INPUTS] =
+            std::array::from_fn(|_| to_rgb("#7700d9").into());
+        let drawer_graph_inputs = GraphLinesDrawer::new(scale, pos_graph_inputs)
+            .colors(colors);
+
+
+        // Pendulum
+        let verlet_physics_drawer =
+            VerletPhysicsDrawer::new(&env.get_verlet_physics(), scale, pos_env);
+
+        // Dqn
+
+        Self {
+            ticks: 0,
+            steps: 0,
+            episode: 0,
+
+            ups,
+            last_render_time: instant::Instant::now(),
+            watch_ups,
+            ppo,
+            graph_actor_loss,
+            graph_critic_loss,
+            graph_outputs,
+            graph_quality,
+            graph_inputs,
+            drawer_graph_actor_loss,
+            drawer_graph_critic_loss,
+            drawer_graph_outputs,
+            drawer_graph_quality,
+            drawer_graph_inputs,
+            env,
+            verlet_physics_drawer,
+
+ 
+        }
+    }
+
+    pub fn update_physics(&mut self) {
+        let dt = 1.0 / 60.0;
+        self.ticks += 1;
+
+        self.watch_ups.start("Solver");
+        let state = self.env.get_state();
+
+
+        let (action, log_probability) = self.ppo.get_action(&state);
+
+        self.env.update(&action, dt);
+        let new_state = self.env.get_state();
+        let reward = self.env.get_reward();
+
+        self.ppo.save_reward(state, action, log_probability, reward, false);
+
+        for (i, val) in new_state.iter().enumerate() {
+            self.graph_inputs.y_push_pop(i, *val);
+        }
+
+        for (i, val) in action.iter().enumerate() {
+            self.graph_outputs.y_push_pop(i, *val);
+        }
+
+        self.env.update_verlet_physics(dt);
+        self.watch_ups.stop();
+
+        if self.ticks.is_multiple_of(1000) {
+            let (actor_loss, critic_loss) = self.ppo.learn();
+            println!("actor_loss: {}, critic_loss: {}", actor_loss, critic_loss);
+            self.env.reset();
+        }
+
+        // ups
+        let now = instant::Instant::now();
+        let dt = now - self.last_render_time;
+        self.last_render_time = now;
+        self.ups.update(dt);
+    }
+
+    pub fn update_drawer(&mut self, objects: &mut DrawerObjects) {
+        let nodes = &mut objects.genome_nodes;
+        let edges = &mut objects.genome_edges;
+
+        self.watch_ups.start("Draw Model");
+
+        self.drawer_graph_actor_loss.update(&self.graph_actor_loss, edges);
+        self.drawer_graph_critic_loss
+            .update(&self.graph_critic_loss, edges);
+        self.drawer_graph_outputs.update(&self.graph_outputs, edges);
+        self.drawer_graph_quality.update(&self.graph_quality, edges);
+        self.drawer_graph_inputs
+            .update(&self.graph_inputs, edges);
+
+        self.verlet_physics_drawer
+            .update(&self.env.get_verlet_physics(), nodes, edges);
+
+        self.watch_ups.stop();
+
+        objects.ups = self.ups.get();
+        self.watch_ups.update();
+        objects.watch_ups = self.watch_ups.get_viewer_data();
+    }
+}
+
+pub trait GymSimulationInterface {
+    fn update_physics(&mut self);
+    fn update_drawer(&mut self, objects: &mut DrawerObjects);
+}
+
+impl<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NEURONS: usize,
+    const LAYERS: usize,
+    const RESIDUAL: bool,
+    ENV: Gym<INPUTS, OUTPUTS>,
+> GymSimulationInterface for GymSimulation<
+    INPUTS,
+    OUTPUTS,
+    NEURONS,
+    LAYERS,
+    RESIDUAL,
+    ENV,
+> {
+    fn update_physics(&mut self) {
+        self.update_physics();
+    }
+
+    fn update_drawer(&mut self, objects: &mut DrawerObjects) {
+        self.update_drawer(objects);
+    }
+}
+
+pub struct PendulumSimulationThread
+{
+    pub sim: Box<dyn GymSimulationInterface>,
+    pub producer: triple_buffer::Producer<DrawerObjects>,
+}
+
+impl worker_thread::Update for PendulumSimulationThread
+{
+    fn update(&mut self) {
+        let data = self.producer.buffer();
+        data.clear();
+
+        self.sim.update_physics();
+        self.sim.update_drawer(data);
+
+        self.producer.publish();
+    }
+}
+
+unsafe impl<> Send for PendulumSimulationThread<>{}

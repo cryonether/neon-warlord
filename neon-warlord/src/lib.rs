@@ -15,7 +15,7 @@ mod heightmap_generator;
 mod orb_controller;
 mod orb_storage;
 mod pendulum_cart_simulation;
-mod pendulum_simulation;
+mod gym_simulation;
 mod physics_simulation_v2;
 #[allow(dead_code)]
 mod physics_simulation_v3;
@@ -55,7 +55,7 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, pendulum_cart_simulation::{PendulumCartSimulation, PendulumCartSimulationThread}, pendulum_simulation::{PendulumSimulation, PendulumSimulationThread}, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, gym_simulation::{GymSimulation, GymSimulationInterface, PendulumSimulationThread, gym_line::GymLine}, pendulum_cart_simulation::{PendulumCartSimulation, PendulumCartSimulationThread}, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -150,7 +150,7 @@ struct NeonWarlord {
     physics_simulation_v3_drawer: PhysicsSimulationV3Drawer,
 
     // physics_simulation_v3_thread: WorkerThread<PhysicSimThread<HeightMapType>>,
-    pendulum_simulation_thread: WorkerThread<PendulumSimulationThread<HeightMapType>>,
+    gym_simulation_thread: WorkerThread<PendulumSimulationThread>,
 
     // Worker
     worker: WorkerInstance,
@@ -317,11 +317,16 @@ impl NeonWarlord {
         //         sim: PhysicsSimulationV3::new(producer),
         //     });
 
-        let pendulum_simulation_thread = WorkerThread::spawn(PendulumSimulationThread {
-            sim: PendulumSimulation::new(),
+        let gym_simulation: GymSimulation<2, 1, 64, 1, false, GymLine> = GymSimulation::new(
+            GymLine::new()
+        );
+
+        let gym_simulation_thread_ = PendulumSimulationThread {
+            sim: Box::new(gym_simulation),
             producer,
-            height_map: _height_map.clone(),
-        });
+        };
+
+        let gym_simulation_thread = WorkerThread::spawn(gym_simulation_thread_);
 
         // Worker
         let worker = WorkerInstance::new();
@@ -366,7 +371,7 @@ impl NeonWarlord {
             physics_simulation_v3_drawer,
             physics_simulation_consumer: consumer,
             // physics_simulation_v3_thread,
-            pendulum_simulation_thread,
+            gym_simulation_thread,
         }
     }
 }
@@ -596,7 +601,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             {
                 // Physics simulation
                 // self.physics_simulation_v3_thread.update();
-                self.pendulum_simulation_thread.update();
+                self.gym_simulation_thread.update();
 
                 let consumer = &mut self.physics_simulation_consumer;
                 consumer.acquire_latest();
@@ -747,7 +752,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     },
                 ..
             } => {
-                self.pendulum_simulation_thread.limit_ups_toggle();
+                self.gym_simulation_thread.limit_ups_toggle();
                 true
             }
             // #########################################################

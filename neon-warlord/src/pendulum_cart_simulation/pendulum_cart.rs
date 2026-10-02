@@ -168,7 +168,7 @@ impl PendulumCart {
 
     fn apply_cart_constraint(&mut self, action: PendulumAction) {
         self.motor_linear
-            .update_simd(&mut self.verlet_physics.particles);
+            .update(&mut self.verlet_physics.particles);
 
         match action {
             // PendulumAction::Left2 => self.motor_linear.accelerate(-1.6),

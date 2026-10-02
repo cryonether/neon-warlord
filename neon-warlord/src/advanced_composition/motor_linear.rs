@@ -24,7 +24,7 @@ impl MotorLinear {
         }
     }
 
-    pub fn update_simd(&mut self, verlet_particles: &mut VerletParticles) {
+    pub fn update(&mut self, verlet_particles: &mut VerletParticles) {
         // apply constraint
         let radius = verlet_particles.radius[self.node_id];
         let pos = verlet_particles.position(self.node_id);
