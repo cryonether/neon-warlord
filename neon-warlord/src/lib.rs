@@ -317,7 +317,7 @@ impl NeonWarlord {
         //         sim: PhysicsSimulationV3::new(producer),
         //     });
 
-        let gym_simulation: GymSimulation<2, 1, 64, 1, false, GymLine> = GymSimulation::new(
+        let gym_simulation: GymSimulation<2, 1, 16, 1, false, GymLine> = GymSimulation::new(
             GymLine::new()
         );
 

@@ -37,14 +37,16 @@ pub struct GymSimulation<
 
     graph_actor_loss: GraphLines<1>,
     graph_critic_loss: GraphLines<1>,
-    graph_outputs: GraphLines<OUTPUTS>,
-    graph_quality: GraphLines<1>,
+    graph_actions: GraphLines<OUTPUTS>,
+    graph_mean_actions: GraphLines<OUTPUTS>,
+    graph_reward: GraphLines<1>,
     graph_inputs: GraphLines<INPUTS>,
 
     drawer_graph_actor_loss: GraphLinesDrawer<1>,
     drawer_graph_critic_loss: GraphLinesDrawer<1>,
-    drawer_graph_outputs: GraphLinesDrawer<OUTPUTS>,
-    drawer_graph_quality: GraphLinesDrawer<1>,
+    drawer_graph_actions: GraphLinesDrawer<OUTPUTS>,
+    drawer_graph_mean_actions: GraphLinesDrawer<OUTPUTS>,
+    drawer_graph_reward: GraphLinesDrawer<1>,
     drawer_graph_inputs: GraphLinesDrawer<INPUTS>,
 
     env: ENV,
@@ -93,9 +95,10 @@ impl<
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
 
-        let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 1.0);
-        let pos_graph_critic_loss = pos + Vec3::new(-2.0, 1.0, 0.0);
-        let pos_graph_outputs = pos + Vec3::new(-2.0, 1.0, 2.2);
+        let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
+        let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
+        let pos_graph_actions = pos + Vec3::new(-2.0, 1.0, 2.2);
+        let pos_graph_mean_actions = pos + Vec3::new(-2.0, 1.0, 0.0);
         let pos_graph_quality = pos + Vec3::new(2.2, 1.0, 0.0);
 
         let pos_graph_inputs = pos + Vec3::new(2.2, 1.0, 2.2);
@@ -127,12 +130,19 @@ impl<
 
         let y: [VecDeque<f32>; OUTPUTS] =
             std::array::from_fn(|_| graph_y.clone());
-        let graph_outputs = GraphLines {
+        let graph_actions = GraphLines {
             x: graph_x.clone(),
             y: y,
         };
 
-        let graph_quality = GraphLines {
+        let y: [VecDeque<f32>; OUTPUTS] =
+            std::array::from_fn(|_| graph_y.clone());
+        let graph_mean_actions = GraphLines {
+            x: graph_x.clone(),
+            y: y,
+        };
+
+        let graph_reward = GraphLines {
             x: graph_x.clone(),
             y: [graph_y.clone()],
         };
@@ -147,16 +157,21 @@ impl<
 
 
         let drawer_graph_actor_loss =
-            GraphLinesDrawer::new(scale, pos_graph_actor_loss).colors([to_rgb("#12d900").into()]);
+            GraphLinesDrawer::new(scale, pos_graph_actor_loss).colors([to_rgb("#00ff62").into()]);
         let drawer_graph_critic_loss = GraphLinesDrawer::new(scale, pos_graph_critic_loss)
-            .colors([to_rgb("#b1d900").into()]);
+            .colors([to_rgb("#ffd000").into()]);
 
         let colors: [Vec3; OUTPUTS] =
-            std::array::from_fn(|_| to_rgb("#950187").into());
-        let drawer_graph_outputs = GraphLinesDrawer::new(scale, pos_graph_outputs).colors(colors);
+            std::array::from_fn(|_| to_rgb("#ff00e6").into());
+        let drawer_graph_actions = GraphLinesDrawer::new(scale, pos_graph_actions).colors(colors);
 
-        let drawer_graph_quality = GraphLinesDrawer::new(scale, pos_graph_quality)
-            .colors([to_rgb("#d9ae00").into()]);
+        let colors: [Vec3; OUTPUTS] =
+            std::array::from_fn(|_| to_rgb("#ff0932").into());
+        let drawer_graph_mean_actions = GraphLinesDrawer::new(scale, pos_graph_mean_actions).colors(colors);
+
+
+        let drawer_graph_reward = GraphLinesDrawer::new(scale, pos_graph_quality)
+            .colors([to_rgb("#00d9ae").into()]);
 
         let colors: [Vec3; INPUTS] =
             std::array::from_fn(|_| to_rgb("#7700d9").into());
@@ -181,18 +196,19 @@ impl<
             ppo,
             graph_actor_loss,
             graph_critic_loss,
-            graph_outputs,
-            graph_quality,
+            graph_actions,
+            graph_mean_actions,
+            graph_reward,
             graph_inputs,
             drawer_graph_actor_loss,
             drawer_graph_critic_loss,
-            drawer_graph_outputs,
-            drawer_graph_quality,
+            drawer_graph_actions,
+            drawer_graph_mean_actions,
+            drawer_graph_reward,
             drawer_graph_inputs,
             env,
             verlet_physics_drawer,
 
- 
         }
     }
 
@@ -204,7 +220,7 @@ impl<
         let state = self.env.get_state();
 
 
-        let (action, log_probability) = self.ppo.get_action(&state);
+        let (action, mean_action, log_probability) = self.ppo.get_action(&state);
 
         self.env.update(&action, dt);
         let new_state = self.env.get_state();
@@ -217,8 +233,14 @@ impl<
         }
 
         for (i, val) in action.iter().enumerate() {
-            self.graph_outputs.y_push_pop(i, *val);
+            self.graph_actions.y_push_pop(i, *val);
         }
+
+        for (i, val) in mean_action.iter().enumerate() {
+            self.graph_mean_actions.y_push_pop(i, *val);
+        }
+
+        self.graph_reward.y_push_pop(0, reward);
 
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop();
@@ -245,8 +267,9 @@ impl<
         self.drawer_graph_actor_loss.update(&self.graph_actor_loss, edges);
         self.drawer_graph_critic_loss
             .update(&self.graph_critic_loss, edges);
-        self.drawer_graph_outputs.update(&self.graph_outputs, edges);
-        self.drawer_graph_quality.update(&self.graph_quality, edges);
+        self.drawer_graph_actions.update(&self.graph_actions, edges);
+        self.drawer_graph_mean_actions.update(&self.graph_mean_actions, edges);
+        self.drawer_graph_reward.update(&self.graph_reward, edges);
         self.drawer_graph_inputs
             .update(&self.graph_inputs, edges);
 

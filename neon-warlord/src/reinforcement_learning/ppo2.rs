@@ -48,7 +48,7 @@ impl<
         const STD_DEV: f32 = 0.70710677; // sqrt(0.5)
 
         // Discount factor, for calculating the discounted reward
-        const GAMMA: f32 = 0.90;     
+        const GAMMA: f32 = 0.95;     
 
         // Threshold to clip the ratio
         const CLIP: f32 = 0.2;
@@ -84,8 +84,8 @@ impl<
     //       action - the action to take
     //       log_prob - the log probability of the selected action in the distribution
     //
-    pub fn get_action(&mut self, observation: &[f32; INPUTS]) -> ([f32; OUTPUTS], f32)
-    {
+    pub fn get_action(&mut self, observation: &[f32; INPUTS])
+-> ([f32; OUTPUTS], [f32; OUTPUTS], f32)     {
         // Query the actor network for a mean action.
         let mean_action = self.actor.forward(&observation);
 
@@ -97,7 +97,7 @@ impl<
         let mut glp = GaussianLogProbability::new();
         let log_probability = glp.calc(&action, &mean_action, self.std_dev);
 
-        (action, log_probability)
+        (action, mean_action, log_probability)
     }
 
     pub fn save_reward(&mut self, 
@@ -132,6 +132,7 @@ impl<
             let reward = transition.reward;
 
             // Calculate the discounted reward
+            // let discounted_reward = reward + self.gamma * last_discounted_reward;
             let discounted_reward = reward + self.gamma * last_discounted_reward;
 
             // Query critic network for the quality value

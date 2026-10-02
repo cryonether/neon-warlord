@@ -30,12 +30,12 @@ impl GymLine {
         let radius = 0.1;
         let mass = 0.1;
 
-        let particles_static_pos_0 = Vec3::new(-10.0, 0.0, 0.0);
+        let particles_static_pos_0 = Vec3::new(-2.0, 0.0, 0.0);
         let particles_static_0 = verlet_physics.push_particle(particles_static_pos_0, radius, mass);
 
         let particle_cart = verlet_physics.push_particle(Vec3::new(0.0, 0.0, 0.0), radius, mass);
 
-        let particles_static_pos_1 = Vec3::new(10.0, 0.0, 0.0);
+        let particles_static_pos_1 = Vec3::new(2.0, 0.0, 0.0);
         let particles_static_1 = verlet_physics.push_particle(particles_static_pos_1, radius, mass);
 
         verlet_physics.push_constraint_none(particles_static_0, particle_cart);
@@ -123,13 +123,13 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymLine  {
     }
 
     fn get_reward(&self) -> f32 {
-        self.state.cart_pos * self.state.cart_pos
+        f32::max(0.0, 0.8 - self.state.cart_pos * self.state.cart_pos)
     }
 
     fn reset(&mut self) {
         self.verlet_physics.particles.reset_position(self.particle_cart, 
             Vec3::new(
-                (fastrand::f32() - 0.5) * 2.0 * 0.7, 
+                (fastrand::f32() - 0.5) * 2.0 * 1.8, 
                 0.0, 
                 0.0,
             )
