@@ -14,7 +14,7 @@ pub struct EpochSimd<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: u
 
 impl<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_LAYERS: usize> EpochSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS> {
     pub fn new() -> Self {
-        let model = NeuralNetworkLayered::new_rand();
+        let model = NeuralNetworkLayered::new_rand(0);
         let loss = 0.0;
 
         Self { model, loss }

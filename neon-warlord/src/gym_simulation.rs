@@ -108,7 +108,7 @@ impl<
 
         let scale = 0.1;
 
-        let ppo = Ppo2::new();
+        let ppo = Ppo2::new(0);
 
         // Debug
         let ups = Fps::new();

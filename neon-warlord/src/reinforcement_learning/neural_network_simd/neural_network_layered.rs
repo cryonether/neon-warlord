@@ -37,12 +37,17 @@ impl<
         }
     }
 
-    pub fn new_rand() -> Self {
-        let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new_rand();
+    pub fn new_rand(mut seed: u64) -> Self {
+        if seed == 0 {
+            seed = fastrand::u64(..);
+        }
+        let mut rng = fastrand::Rng::with_seed(seed);
+
+        let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new_rand(&mut rng);
         let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
-            std::array::from_fn(|_| LayerSimd::new_rand()
+            std::array::from_fn(|_| LayerSimd::new_rand(&mut rng)
         );
-        let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new_rand();
+        let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new_rand(&mut rng);
 
         Self {
             input,

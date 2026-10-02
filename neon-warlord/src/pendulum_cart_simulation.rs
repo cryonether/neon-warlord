@@ -85,7 +85,7 @@ impl PendulumCartSimulation {
 
         let scale = 0.1;
 
-        let dqn = Dqn2::new();
+        let dqn = Dqn2::new(0);
         // let model_drawer: NeuralNetworkDrawer<4, 2, 1, false, 128, 8> = NeuralNetworkDrawer::new(&dqn.target_net, scale, pos_model);
 
         // Debug

@@ -2,6 +2,8 @@
 //! https://github.com/ericyangyu/PPO-for-Beginners/tree/master
 //! PPO was published in 2017
 
+mod test_ppo2;
+
 use std::{collections::VecDeque, iter::zip};
 
 use cgmath::num_traits::clamp;
@@ -42,7 +44,7 @@ impl<
     const LAYERS: usize,
     const RESIDUAL: bool,
 > Ppo2<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL> {
-    pub fn new() -> Self {
+    pub fn new(seed: u64) -> Self {
         // For choosing an action
         const VARIANCE: f32 = 0.5;
         const STD_DEV: f32 = 0.70710677; // sqrt(0.5)
@@ -56,8 +58,8 @@ impl<
         // Number of times to update the network from the same batch of data
         const NR_UPDATES_PER_ITERATION: usize = 5;  
 
-        let actor = NeuralNetworkLayered::new();
-        let critic = NeuralNetworkLayered::new();
+        let actor = NeuralNetworkLayered::new_rand(seed);
+        let critic = NeuralNetworkLayered::new_rand(seed);
 
         let transitions = Vec::new();
 

@@ -33,8 +33,8 @@ pub struct Dqn2 {
 }
 
 impl Dqn2 {
-    pub fn new() -> Self {
-        let q_net = Box::new(NeuralNetworkLayered::new_rand());
+    pub fn new(seed: u64) -> Self {
+        let q_net = Box::new(NeuralNetworkLayered::new_rand(seed));
         let target_net = q_net.clone();
 
         let epsilon: f32 = 1.0f32;

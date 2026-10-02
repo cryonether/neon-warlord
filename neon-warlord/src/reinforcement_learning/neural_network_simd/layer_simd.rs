@@ -63,7 +63,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         }
     }
 
-    pub fn new_rand() -> Self {
+    pub fn new_rand(rng: &mut fastrand::Rng) -> Self {
         let x = SVec16::zero();
         let mut w = SMat16::zero();
         let mut b = SVec16::zero();
@@ -72,8 +72,6 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         let dl_dw = SMat16::zero();
         let dl_db = SVec16::zero();
         let dx = SVec16::zero();
-
-        let mut rng = fastrand::Rng::with_seed(fastrand::u64(..));
 
         // Kaiming/He-style initialization
         let fan_in: f32 = INPUTS as f32; // fan_in is the number of inputs to the neuron/filter.
