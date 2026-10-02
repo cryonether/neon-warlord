@@ -172,23 +172,20 @@ fn test_two_step_mdp() {
         }
     }
 
-        // Evaluate the first decision.
+    // Evaluate the first decision.
     let mut good_path_count = 0;
 
     for _ in 0..5_000 {
-        let (action, _mean, _log_probability) =
-            ppo.get_action(&start_state);
+        let (action, _mean, _log_probability) = ppo.get_action(&start_state);
 
         if action[0] >= 0.0 {
             good_path_count += 1;
         }
     }
 
-    let good_path_fraction =
-        good_path_count as f32 / 5_000.0;
+    let good_path_fraction = good_path_count as f32 / 5_000.0;
 
-    let start_mean =
-        ppo.actor.forward(&start_state)[0];
+    let start_mean = ppo.actor.forward(&start_state)[0];
 
     println!("start state mean: {start_mean}");
     println!("good path fraction: {good_path_fraction:.3}");
@@ -197,19 +194,16 @@ fn test_two_step_mdp() {
     let mut good_action_count = 0;
 
     for _ in 0..5_000 {
-        let (action, _mean, _log_probability) =
-            ppo.get_action(&good_state);
+        let (action, _mean, _log_probability) = ppo.get_action(&good_state);
 
         if action[0] >= 0.0 {
             good_action_count += 1;
         }
     }
 
-    let good_action_fraction =
-        good_action_count as f32 / 5_000.0;
+    let good_action_fraction = good_action_count as f32 / 5_000.0;
 
-    let good_state_mean =
-        ppo.actor.forward(&good_state)[0];
+    let good_state_mean = ppo.actor.forward(&good_state)[0];
 
     println!("good state mean: {good_state_mean}");
     println!(
@@ -229,11 +223,9 @@ fn test_two_step_mdp() {
     //     V(start_state) ~= gamma * 1
     //                    ~= 0.95
     //
-    let start_value =
-        ppo.critic.forward(&start_state)[0];
+    let start_value = ppo.critic.forward(&start_state)[0];
 
-    let good_state_value =
-        ppo.critic.forward(&good_state)[0];
+    let good_state_value = ppo.critic.forward(&good_state)[0];
 
     println!("start state value: {start_value}");
     println!("good state value: {good_state_value}");
@@ -261,7 +253,6 @@ fn test_two_step_mdp() {
         "critic failed to learn good-state value: \
          value = {good_state_value}"
     );
-
 }
 
 /// done/reset handling works
@@ -334,8 +325,7 @@ fn test_multi_step_mdp() {
         //
         // STEP 1
         //
-        let (action, _mean, log_probability) =
-            ppo.get_action(&start_state);
+        let (action, _mean, log_probability) = ppo.get_action(&start_state);
 
         let next_state = if action[0] >= 0.0 {
             middle_state
@@ -343,28 +333,15 @@ fn test_multi_step_mdp() {
             bad_state
         };
 
-        ppo.save_reward(
-            start_state,
-            action,
-            log_probability,
-            0.0,
-            false,
-        );
+        ppo.save_reward(start_state, action, log_probability, 0.0, false);
 
         //
         // STEP 2
         //
-        let (action, _mean, log_probability) =
-            ppo.get_action(&next_state);
+        let (action, _mean, log_probability) = ppo.get_action(&next_state);
 
         if next_state == bad_state {
-            ppo.save_reward(
-                next_state,
-                action,
-                log_probability,
-                -1.0,
-                true,
-            );
+            ppo.save_reward(next_state, action, log_probability, -1.0, true);
 
             if (episode + 1) % BATCH_SIZE == 0 {
                 ppo.learn();
@@ -379,37 +356,20 @@ fn test_multi_step_mdp() {
             bad_state
         };
 
-        ppo.save_reward(
-            middle_state,
-            action,
-            log_probability,
-            0.0,
-            false,
-        );
+        ppo.save_reward(middle_state, action, log_probability, 0.0, false);
 
         //
         // STEP 3
         //
-        let (action, _mean, log_probability) =
-            ppo.get_action(&next_state);
+        let (action, _mean, log_probability) = ppo.get_action(&next_state);
 
         let reward = if next_state == good_state {
-            if action[0] >= 0.0 {
-                1.0
-            } else {
-                -1.0
-            }
+            if action[0] >= 0.0 { 1.0 } else { -1.0 }
         } else {
             -1.0
         };
 
-        ppo.save_reward(
-            next_state,
-            action,
-            log_probability,
-            reward,
-            true,
-        );
+        ppo.save_reward(next_state, action, log_probability, reward, true);
 
         //
         // Update PPO using the complete episode.
@@ -428,45 +388,36 @@ fn test_multi_step_mdp() {
     let mut final_good_count = 0;
 
     for _ in 0..EVALUATION_SAMPLES {
-        let (action, _mean, _log_probability) =
-            ppo.get_action(&start_state);
+        let (action, _mean, _log_probability) = ppo.get_action(&start_state);
 
         if action[0] >= 0.0 {
             start_good_count += 1;
         }
 
-        let (action, _mean, _log_probability) =
-            ppo.get_action(&middle_state);
+        let (action, _mean, _log_probability) = ppo.get_action(&middle_state);
 
         if action[0] >= 0.0 {
             middle_good_count += 1;
         }
 
-        let (action, _mean, _log_probability) =
-            ppo.get_action(&good_state);
+        let (action, _mean, _log_probability) = ppo.get_action(&good_state);
 
         if action[0] >= 0.0 {
             final_good_count += 1;
         }
     }
 
-    let start_good_fraction =
-        start_good_count as f32 / EVALUATION_SAMPLES as f32;
+    let start_good_fraction = start_good_count as f32 / EVALUATION_SAMPLES as f32;
 
-    let middle_good_fraction =
-        middle_good_count as f32 / EVALUATION_SAMPLES as f32;
+    let middle_good_fraction = middle_good_count as f32 / EVALUATION_SAMPLES as f32;
 
-    let final_good_fraction =
-        final_good_count as f32 / EVALUATION_SAMPLES as f32;
+    let final_good_fraction = final_good_count as f32 / EVALUATION_SAMPLES as f32;
 
-    let start_mean =
-        ppo.actor.forward(&start_state)[0];
+    let start_mean = ppo.actor.forward(&start_state)[0];
 
-    let middle_mean =
-        ppo.actor.forward(&middle_state)[0];
+    let middle_mean = ppo.actor.forward(&middle_state)[0];
 
-    let good_mean =
-        ppo.actor.forward(&good_state)[0];
+    let good_mean = ppo.actor.forward(&good_state)[0];
 
     println!("start mean: {start_mean}");
     println!("start good fraction: {start_good_fraction:.3}");
@@ -480,14 +431,11 @@ fn test_multi_step_mdp() {
     //
     // Critic evaluation.
     //
-    let start_value =
-        ppo.critic.forward(&start_state)[0];
+    let start_value = ppo.critic.forward(&start_state)[0];
 
-    let middle_value =
-        ppo.critic.forward(&middle_state)[0];
+    let middle_value = ppo.critic.forward(&middle_state)[0];
 
-    let good_value =
-        ppo.critic.forward(&good_state)[0];
+    let good_value = ppo.critic.forward(&good_state)[0];
 
     println!("start value: {start_value}");
     println!("middle value: {middle_value}");
@@ -722,10 +670,7 @@ fn test_ppo_ratio_identity() {
 
     let mut ratio = PpoActorRatio::new();
 
-    let value = ratio.calc(
-        log_probability,
-        log_probability,
-    );
+    let value = ratio.calc(log_probability, log_probability);
 
     let derivative = ratio.derivative();
 
@@ -807,14 +752,7 @@ fn test_actor_gradient_checking() {
     //
     // Create deterministic initial network.
     //
-    let mut actor =
-        NeuralNetworkLayered::<
-            INPUTS,
-            OUTPUTS,
-            NEURONS,
-            LAYERS,
-            false,
-        >::new_rand(42);
+    let mut actor = NeuralNetworkLayered::<INPUTS, OUTPUTS, NEURONS, LAYERS, false>::new_rand(42);
 
     //
     // Forward pass.
@@ -826,38 +764,28 @@ fn test_actor_gradient_checking() {
     //
     let mut glp = GaussianLogProbability::new();
 
-    let current_log_probability =
-        glp.calc(&action, &mean, std_dev);
+    let current_log_probability = glp.calc(&action, &mean, std_dev);
 
     let mut ratio = PpoActorRatio::new();
 
-    let current_ratio =
-        ratio.calc(current_log_probability, old_log_probability);
+    let current_ratio = ratio.calc(current_log_probability, old_log_probability);
 
-    let mut surrogate =
-        PpoSurrogateLossClipped::new();
+    let mut surrogate = PpoSurrogateLossClipped::new();
 
-    let loss =
-        surrogate.calc(current_ratio, advantage, clip);
+    let loss = surrogate.calc(current_ratio, advantage, clip);
 
-    let surrogate_derivative =
-        surrogate.derivative();
+    let surrogate_derivative = surrogate.derivative();
 
-    let ratio_derivative =
-        ratio.derivative();
+    let ratio_derivative = ratio.derivative();
 
-    let log_probability_derivative =
-        glp.derivative();
+    let log_probability_derivative = glp.derivative();
 
     //
     // Chain rule:
     //
     // dL/dmean
     //
-    let d_loss_d_mean =
-        surrogate_derivative
-        * ratio_derivative
-        * log_probability_derivative[0];
+    let d_loss_d_mean = surrogate_derivative * ratio_derivative * log_probability_derivative[0];
 
     //
     // Backprop through the actor.
@@ -867,8 +795,7 @@ fn test_actor_gradient_checking() {
     //
     // Grab one parameter's analytical gradient.
     //
-    let analytical_gradient =
-        actor.output.w[0][0];
+    let analytical_gradient = actor.output.w[0][0];
 
     //
     // IMPORTANT:
@@ -880,114 +807,68 @@ fn test_actor_gradient_checking() {
     //
     //     actor.output.dl_dw[0][0]
     //
-    let analytical_gradient =
-        actor.output.dl_dw[0][0];
+    let analytical_gradient = actor.output.dl_dw[0][0];
 
     //
     // Numerical gradient.
     //
-    let original_weight =
-        actor.output.w[0][0];
+    let original_weight = actor.output.w[0][0];
 
     //
     // L(theta + epsilon)
     //
-    actor.output.w[0][0] =
-        original_weight + EPSILON;
+    actor.output.w[0][0] = original_weight + EPSILON;
 
-    let mean_plus =
-        actor.forward(&observation);
+    let mean_plus = actor.forward(&observation);
 
-    let mut glp_plus =
-        GaussianLogProbability::new();
+    let mut glp_plus = GaussianLogProbability::new();
 
-    let log_probability_plus =
-        glp_plus.calc(
-            &action,
-            &mean_plus,
-            std_dev,
-        );
+    let log_probability_plus = glp_plus.calc(&action, &mean_plus, std_dev);
 
-    let mut ratio_plus =
-        PpoActorRatio::new();
+    let mut ratio_plus = PpoActorRatio::new();
 
-    let ratio_plus_value =
-        ratio_plus.calc(
-            log_probability_plus,
-            old_log_probability,
-        );
+    let ratio_plus_value = ratio_plus.calc(log_probability_plus, old_log_probability);
 
-    let mut surrogate_plus =
-        PpoSurrogateLossClipped::new();
+    let mut surrogate_plus = PpoSurrogateLossClipped::new();
 
-    let loss_plus =
-        surrogate_plus.calc(
-            ratio_plus_value,
-            advantage,
-            clip,
-        );
+    let loss_plus = surrogate_plus.calc(ratio_plus_value, advantage, clip);
 
     //
     // L(theta - epsilon)
     //
-    actor.output.w[0][0] =
-        original_weight - EPSILON;
+    actor.output.w[0][0] = original_weight - EPSILON;
 
-    let mean_minus =
-        actor.forward(&observation);
+    let mean_minus = actor.forward(&observation);
 
-    let mut glp_minus =
-        GaussianLogProbability::new();
+    let mut glp_minus = GaussianLogProbability::new();
 
-    let log_probability_minus =
-        glp_minus.calc(
-            &action,
-            &mean_minus,
-            std_dev,
-        );
+    let log_probability_minus = glp_minus.calc(&action, &mean_minus, std_dev);
 
-    let mut ratio_minus =
-        PpoActorRatio::new();
+    let mut ratio_minus = PpoActorRatio::new();
 
-    let ratio_minus_value =
-        ratio_minus.calc(
-            log_probability_minus,
-            old_log_probability,
-        );
+    let ratio_minus_value = ratio_minus.calc(log_probability_minus, old_log_probability);
 
-    let mut surrogate_minus =
-        PpoSurrogateLossClipped::new();
+    let mut surrogate_minus = PpoSurrogateLossClipped::new();
 
-    let loss_minus =
-        surrogate_minus.calc(
-            ratio_minus_value,
-            advantage,
-            clip,
-        );
+    let loss_minus = surrogate_minus.calc(ratio_minus_value, advantage, clip);
 
     //
     // Restore parameter.
     //
-    actor.output.w[0][0] =
-        original_weight;
+    actor.output.w[0][0] = original_weight;
 
     //
     // Central finite difference.
     //
-    let numerical_gradient =
-        (loss_plus - loss_minus)
-        / (2.0 * EPSILON);
+    let numerical_gradient = (loss_plus - loss_minus) / (2.0 * EPSILON);
 
     println!("loss:                {loss}");
     println!("analytical gradient: {analytical_gradient}");
     println!("numerical gradient:  {numerical_gradient}");
 
-    let absolute_error =
-        (analytical_gradient - numerical_gradient).abs();
+    let absolute_error = (analytical_gradient - numerical_gradient).abs();
 
-    let relative_error =
-        absolute_error
-        / numerical_gradient.abs().max(1e-6);
+    let relative_error = absolute_error / numerical_gradient.abs().max(1e-6);
 
     println!("absolute error: {absolute_error}");
     println!("relative error: {relative_error}");
@@ -1047,119 +928,64 @@ fn test_long_noisy_mdp() {
         //
         // STEP 1
         //
-        let (action, _mean, log_probability) =
-            ppo.get_action(&start_state);
+        let (action, _mean, log_probability) = ppo.get_action(&start_state);
 
-        let next_state = if action[0] >= 0.0 {
-            state_1
-        } else {
-            bad_state
-        };
+        let next_state = if action[0] >= 0.0 { state_1 } else { bad_state };
 
         let reward = rng.f32() * 0.2 - 0.1;
 
-        ppo.save_reward(
-            start_state,
-            action,
-            log_probability,
-            reward,
-            false,
-        );
+        ppo.save_reward(start_state, action, log_probability, reward, false);
 
         //
         // If the agent chose the bad path, terminate.
         //
         if next_state == bad_state {
-            let (action, _mean, log_probability) =
-                ppo.get_action(&bad_state);
+            let (action, _mean, log_probability) = ppo.get_action(&bad_state);
 
             let reward = -2.0 + rng.f32() * 0.4 - 0.2;
 
-            ppo.save_reward(
-                bad_state,
-                action,
-                log_probability,
-                reward,
-                true,
-            );
+            ppo.save_reward(bad_state, action, log_probability, reward, true);
         } else {
             //
             // STEP 2
             //
-            let (action, _mean, log_probability) =
-                ppo.get_action(&state_1);
+            let (action, _mean, log_probability) = ppo.get_action(&state_1);
 
-            let next_state = if action[0] >= 0.0 {
-                state_2
-            } else {
-                bad_state
-            };
+            let next_state = if action[0] >= 0.0 { state_2 } else { bad_state };
 
             let reward = rng.f32() * 0.2 - 0.1;
 
-            ppo.save_reward(
-                state_1,
-                action,
-                log_probability,
-                reward,
-                false,
-            );
+            ppo.save_reward(state_1, action, log_probability, reward, false);
 
             if next_state == bad_state {
-                let (action, _mean, log_probability) =
-                    ppo.get_action(&bad_state);
+                let (action, _mean, log_probability) = ppo.get_action(&bad_state);
 
                 let reward = -2.0 + rng.f32() * 0.4 - 0.2;
 
-                ppo.save_reward(
-                    bad_state,
-                    action,
-                    log_probability,
-                    reward,
-                    true,
-                );
+                ppo.save_reward(bad_state, action, log_probability, reward, true);
             } else {
                 //
                 // STEP 3
                 //
-                let (action, _mean, log_probability) =
-                    ppo.get_action(&state_2);
+                let (action, _mean, log_probability) = ppo.get_action(&state_2);
 
-                let next_state = if action[0] >= 0.0 {
-                    state_3
-                } else {
-                    bad_state
-                };
+                let next_state = if action[0] >= 0.0 { state_3 } else { bad_state };
 
                 let reward = rng.f32() * 0.2 - 0.1;
 
-                ppo.save_reward(
-                    state_2,
-                    action,
-                    log_probability,
-                    reward,
-                    false,
-                );
+                ppo.save_reward(state_2, action, log_probability, reward, false);
 
                 if next_state == bad_state {
-                    let (action, _mean, log_probability) =
-                        ppo.get_action(&bad_state);
+                    let (action, _mean, log_probability) = ppo.get_action(&bad_state);
 
                     let reward = -2.0 + rng.f32() * 0.4 - 0.2;
 
-                    ppo.save_reward(
-                        bad_state,
-                        action,
-                        log_probability,
-                        reward,
-                        true,
-                    );
+                    ppo.save_reward(bad_state, action, log_probability, reward, true);
                 } else {
                     //
                     // STEP 4
                     //
-                    let (action, _mean, log_probability) =
-                        ppo.get_action(&state_3);
+                    let (action, _mean, log_probability) = ppo.get_action(&state_3);
 
                     let next_state = if action[0] >= 0.0 {
                         goal_state
@@ -1169,19 +995,12 @@ fn test_long_noisy_mdp() {
 
                     let reward = rng.f32() * 0.2 - 0.1;
 
-                    ppo.save_reward(
-                        state_3,
-                        action,
-                        log_probability,
-                        reward,
-                        false,
-                    );
+                    ppo.save_reward(state_3, action, log_probability, reward, false);
 
                     //
                     // STEP 5
                     //
-                    let (action, _mean, log_probability) =
-                        ppo.get_action(&next_state);
+                    let (action, _mean, log_probability) = ppo.get_action(&next_state);
 
                     let reward = if next_state == goal_state {
                         // Large but noisy terminal reward.
@@ -1190,13 +1009,7 @@ fn test_long_noisy_mdp() {
                         -2.0 + rng.f32() * 0.4 - 0.2
                     };
 
-                    ppo.save_reward(
-                        next_state,
-                        action,
-                        log_probability,
-                        reward,
-                        true,
-                    );
+                    ppo.save_reward(next_state, action, log_probability, reward, true);
                 }
             }
         }
@@ -1218,8 +1031,7 @@ fn test_long_noisy_mdp() {
         let mut success = true;
 
         for _ in 0..5 {
-            let (action, _mean, _log_probability) =
-                ppo.get_action(&state);
+            let (action, _mean, _log_probability) = ppo.get_action(&state);
 
             let x = action[0];
 
@@ -1286,19 +1098,13 @@ fn test_long_noisy_mdp() {
         let _ = success;
     }
 
-    let success_fraction =
-        successful_episodes as f32 / EVALUATION_EPISODES as f32;
+    let success_fraction = successful_episodes as f32 / EVALUATION_EPISODES as f32;
 
-    let average_reward =
-        total_reward / EVALUATION_EPISODES as f32;
+    let average_reward = total_reward / EVALUATION_EPISODES as f32;
 
-    println!(
-        "success fraction: {success_fraction:.3}"
-    );
+    println!("success fraction: {success_fraction:.3}");
 
-    println!(
-        "average reward: {average_reward:.3}"
-    );
+    println!("average reward: {average_reward:.3}");
 
     //
     // Every state should prefer continuing toward the goal.
@@ -1389,10 +1195,7 @@ fn test_long_noisy_mdp() {
             "{name} critic value is not finite: {value}"
         );
 
-        assert!(
-            value.abs() < 10.0,
-            "{name} critic value exploded: {value}"
-        );
+        assert!(value.abs() < 10.0, "{name} critic value exploded: {value}");
     }
 }
 
@@ -1431,23 +1234,11 @@ fn test_gae_arithmetic() {
     // those values.
     //
 
-    let states = [
-        [0.0],
-        [1.0],
-        [2.0],
-    ];
+    let states = [[0.0], [1.0], [2.0]];
 
-    let rewards = [
-        0.3,
-        -0.2,
-        1.0,
-    ];
+    let rewards = [0.3, -0.2, 1.0];
 
-    let dones = [
-        false,
-        false,
-        true,
-    ];
+    let dones = [false, false, true];
 
     //
     // Collect the trajectory through the real PPO API.
@@ -1455,32 +1246,24 @@ fn test_gae_arithmetic() {
     for i in 0..3 {
         let observation = states[i];
 
-        let (action, _mean, log_probability) =
-            ppo.get_action(&observation);
+        let (action, _mean, log_probability) = ppo.get_action(&observation);
 
-        ppo.save_reward(
-            observation,
-            action,
-            log_probability,
-            rewards[i],
-            dones[i],
-        );
+        ppo.save_reward(observation, action, log_probability, rewards[i], dones[i]);
     }
 
     //
     // Calculate GAE using the values that PPO actually stored
     // in its transitions.
     //
-    let values: Vec<f32> =
-        ppo.transitions
-            .iter()
-            .map(|transition| transition.value)
-            .collect();
+    let values: Vec<f32> = ppo
+        .transitions
+        .iter()
+        .map(|transition| transition.value)
+        .collect();
 
     assert_eq!(values.len(), 3);
 
-    let (advantages, returns) =
-        ppo.calculate_gae();
+    let (advantages, returns) = ppo.calculate_gae();
 
     assert_eq!(advantages.len(), 3);
     assert_eq!(returns.len(), 3);
@@ -1488,30 +1271,17 @@ fn test_gae_arithmetic() {
     //
     // Independently calculate GAE from the stored values.
     //
-    let delta_2 =
-        rewards[2]
-        + GAMMA * 0.0
-        - values[2];
+    let delta_2 = rewards[2] + GAMMA * 0.0 - values[2];
 
-    let delta_1 =
-        rewards[1]
-        + GAMMA * values[2]
-        - values[1];
+    let delta_1 = rewards[1] + GAMMA * values[2] - values[1];
 
-    let delta_0 =
-        rewards[0]
-        + GAMMA * values[1]
-        - values[0];
+    let delta_0 = rewards[0] + GAMMA * values[1] - values[0];
 
     let expected_2 = delta_2;
 
-    let expected_1 =
-        delta_1
-        + GAMMA * LAMBDA * expected_2;
+    let expected_1 = delta_1 + GAMMA * LAMBDA * expected_2;
 
-    let expected_0 =
-        delta_0
-        + GAMMA * LAMBDA * expected_1;
+    let expected_0 = delta_0 + GAMMA * LAMBDA * expected_1;
 
     //
     // Verify the GAE values produced by Ppo2.
@@ -1542,14 +1312,11 @@ fn test_gae_arithmetic() {
     //
     // target_t = V(s_t) + A_t
     //
-    let expected_return_0 =
-        values[0] + expected_0;
+    let expected_return_0 = values[0] + expected_0;
 
-    let expected_return_1 =
-        values[1] + expected_1;
+    let expected_return_1 = values[1] + expected_1;
 
-    let expected_return_2 =
-        values[2] + expected_2;
+    let expected_return_2 = values[2] + expected_2;
 
     assert!(
         (returns[0] - expected_return_0).abs() < EPSILON,
@@ -1640,7 +1407,6 @@ fn test_gae_episode_boundary() {
     assert!(returns[0].abs() < 1e-6);
 }
 
-
 #[test]
 fn test_gae_propagation() {
     let mut ppo = Ppo2::<1, 1, 16, 1, false>::new(42);
@@ -1685,13 +1451,9 @@ fn test_gae_propagation() {
         expected_a0
     );
 
-    assert!(
-        (returns[0] - expected_a0).abs() < 1e-6
-    );
+    assert!((returns[0] - expected_a0).abs() < 1e-6);
 
-    assert!(
-        (returns[1] - 1.0).abs() < 1e-6
-    );
+    assert!((returns[1] - 1.0).abs() < 1e-6);
 }
 
 #[test]
@@ -1724,14 +1486,9 @@ fn test_gae_bootstrap_value() {
     let delta_1 = 1.0 - 0.8;
     let expected_a1 = delta_1;
 
-    let delta_0 =
-        0.0
-        + ppo.gamma * 0.8
-        - 0.2;
+    let delta_0 = 0.0 + ppo.gamma * 0.8 - 0.2;
 
-    let expected_a0 =
-        delta_0
-        + ppo.gamma * ppo.gae_lambda * expected_a1;
+    let expected_a0 = delta_0 + ppo.gamma * ppo.gae_lambda * expected_a1;
 
     let expected_return_0 = expected_a0 + 0.2;
     let expected_return_1 = expected_a1 + 0.8;
@@ -1762,5 +1519,65 @@ fn test_gae_bootstrap_value() {
         "return1 = {}, expected {}",
         returns[1],
         expected_return_1
+    );
+}
+
+#[test]
+fn test_continuous_noisy_mdp() {
+    const EPISODES: usize = 2_000;
+    const BATCH_SIZE: usize = 64;
+    const HORIZON: usize = 8;
+
+    let mut ppo = Ppo2::<1, 1, 64, 2, false>::new(42);
+
+    for episode in 0..EPISODES {
+        for step in 0..HORIZON {
+            let state = [step as f32 / HORIZON as f32];
+
+            let (action, _, log_probability) = ppo.get_action(&state);
+
+            let target = 1.0;
+
+            let error = action[0] - target;
+
+            let noise = fastrand::f32() * 0.2 - 0.1;
+
+            let reward = 1.0 - 0.5 * error * error + noise;
+
+            let done = step + 1 == HORIZON;
+
+            ppo.save_reward(state, action, log_probability, reward, done);
+        }
+
+        if (episode + 1) % BATCH_SIZE == 0 {
+            ppo.learn();
+        }
+    }
+
+    //
+    // Evaluate without caring about the sampled action.
+    //
+    let mut mean_squared_error = 0.0;
+
+    for step in 0..HORIZON {
+        let state = [step as f32 / HORIZON as f32];
+
+        let mean = ppo.actor.forward(&state)[0];
+
+        println!("state {step}: mean = {mean}");
+
+        let error = mean - 1.0;
+
+        mean_squared_error += error * error;
+    }
+
+    mean_squared_error /= HORIZON as f32;
+
+    println!("mean squared policy error: {mean_squared_error}");
+
+    assert!(
+        mean_squared_error < 0.25,
+        "policy did not learn the target action: \
+         mse = {mean_squared_error}"
     );
 }
