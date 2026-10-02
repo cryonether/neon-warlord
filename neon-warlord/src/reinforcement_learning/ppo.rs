@@ -11,15 +11,16 @@ mod test_ppo_inverted_pendulum;
 
 use std::{char::MAX, collections::VecDeque, iter::zip};
 
-use crate::reinforcement_learning::neural_network_simd::NeuralNetwork64;
+use crate::reinforcement_learning::neural_network_simd::{NeuralNetwork64, neural_network_layered::NeuralNetworkLayered};
 
 const INPUTS: usize = 4;
 const OUTPUTS: usize = 1;
+const NEURONS: usize = 64;
 const LAYERS: usize = 1;
 
 pub struct Ppo {
-    actor: NeuralNetwork64<INPUTS, OUTPUTS, LAYERS, false>,
-    critic: NeuralNetwork64<INPUTS, 1, LAYERS, false>,
+    actor: NeuralNetworkLayered<INPUTS, OUTPUTS, NEURONS, LAYERS, false>,
+    critic: NeuralNetworkLayered<INPUTS, 1, NEURONS, LAYERS, false>,
 }
 
 impl Ppo {
