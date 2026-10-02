@@ -274,10 +274,12 @@ fn box_mueller_standard_normal() -> f32 {
 ///
 /// ### Mathematical Formula:
 ///
+/// ```text
 ///              1   /  Σ (x_i - μ_i)²                  \
 /// log p(x) = - — * |  ——————————————  + D * ln(2πσ²)  |
 ///              2   \        σ²                        /
-///
+/// ```
+/// 
 /// Where:
 /// - x_i = Elements of the `action` vector
 /// - μ_i = Elements of the `mean` vector

@@ -17,10 +17,12 @@ struct LossFunction {
 ///
 /// ### Mathematical Formula:
 ///
+/// ```text
 ///               1                          D
 /// log p(x) = - ---   *  Σ (x_i - μ_i)²  - --- * ln(2πσ²)  
 ///              2σ²                         2
-///
+/// ```
+/// 
 /// Where:
 /// - x_i = Elements of the `action` vector
 /// - μ_i = Elements of the `mean` vector
@@ -94,11 +96,11 @@ impl PpoActorRatio {
 
 
 
-    ///
+    /// ```text
     ///          π_θ(at∣st)
     /// r_t(θ) = ------------
     ///         π_θ_old(at∣st)
-    /// 
+    /// ```
     /// 
     /// r=e^( log⁡(π_θ) − log(⁡π_old) )
     /// 

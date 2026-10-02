@@ -9,8 +9,6 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::{
     simd_vec::SVec16,
 };
 
-const LANES: usize = 16;
-
 /// A simd layer
 #[derive(Clone)]
 pub struct LayerSimd<
@@ -78,7 +76,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         let mut rng = fastrand::Rng::with_seed(fastrand::u64(..));
 
         // Kaiming/He-style initialization
-        let fan_in: f32 = LANES as f32; // fan_in is the number of inputs to the neuron/filter.
+        let fan_in: f32 = INPUTS as f32; // fan_in is the number of inputs to the neuron/filter.
         let bound = 1.0 / (fan_in).sqrt();
         let mut rand = || (rng.f32() * 2.0 - 1.0) * bound;
 
@@ -227,24 +225,29 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
 
     pub fn subtract_gradients(&mut self, learning_rate: f32) {
         let learning_rate_ = f32x16::splat(learning_rate);
+        let zero = f32x16::splat(0.0);
 
         // b
-        for (b, dl_db) in zip(self.b.simd_iter_mut(), self.dl_db.simd_iter()) {
-            *b -= dl_db * learning_rate_;
+        for (b, dl_db) in zip(self.b.simd_iter_mut(), self.dl_db.simd_iter_mut()) {
+            *b -= *dl_db * learning_rate_;
+            *dl_db = zero;
         }
 
-        for (b, dl_db) in zip(self.b.remainder_mut(), self.dl_db.remainder()) {
-            *b -= dl_db * learning_rate;
+        for (b, dl_db) in zip(self.b.remainder_mut(), self.dl_db.remainder_mut()) {
+            *b -= *dl_db * learning_rate;
+            *dl_db = 0.0;
         }
 
         // w
-        for (w, dl_dw) in zip(&mut self.w, &self.dl_dw) {
-            for (w, dl_dw) in zip(w.simd_iter_mut(), dl_dw.simd_iter()) {
-                *w -= dl_dw * learning_rate_;
+        for (w, dl_dw) in zip(&mut self.w, &mut self.dl_dw) {
+            for (w, dl_dw) in zip(w.simd_iter_mut(), dl_dw.simd_iter_mut()) {
+                *w -= *dl_dw * learning_rate_;
+                *dl_dw = zero;
             }
 
-            for (w, dl_dw) in zip(w.remainder_mut(), dl_dw.remainder()) {
-                *w -= dl_dw * learning_rate;
+            for (w, dl_dw) in zip(w.remainder_mut(), dl_dw.remainder_mut()) {
+                *w -= *dl_dw * learning_rate;
+                *dl_dw = 0.0;
             }
         }
     }
