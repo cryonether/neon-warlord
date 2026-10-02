@@ -10,16 +10,23 @@ use itertools::izip;
 use crate::reinforcement_learning::neural_network_simd::{NeuralNetwork64, loss_function::{GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped}, neural_network_layered::NeuralNetworkLayered};
 
 
-const INPUTS: usize = 4;
-const OUTPUTS: usize = 2;
-const NEURONS: usize = 64;
-const LAYERS: usize = 1;
+// const INPUTS: usize = 4;
+// const OUTPUTS: usize = 2;
+// const NEURONS: usize = 64;
+// const LAYERS: usize = 1;
 
-pub struct Ppo2 {
+pub struct Ppo2<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NEURONS: usize,
+    const LAYERS: usize,
+    const RESIDUAL: bool,
+>
+{
     actor: NeuralNetworkLayered<INPUTS, OUTPUTS, NEURONS, LAYERS, false>,
     critic: NeuralNetworkLayered<INPUTS, 1, NEURONS, LAYERS, false>,
     
-    transitions: Vec<Transition>,
+    transitions: Vec<Transition<INPUTS, OUTPUTS>>,
     
     variance: f32,
     std_dev: f32,
@@ -28,14 +35,20 @@ pub struct Ppo2 {
     nr_updates_per_iteration: usize,
 }
 
-impl Ppo2 {
+impl<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NEURONS: usize,
+    const LAYERS: usize,
+    const RESIDUAL: bool,
+> Ppo2<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL> {
     pub fn new() -> Self {
         // For choosing an action
         const VARIANCE: f32 = 0.5;
         const STD_DEV: f32 = 0.70710677; // sqrt(0.5)
 
         // Discount factor, for calculating the discounted reward
-        const GAMMA: f32 = 0.95;     
+        const GAMMA: f32 = 0.99;     
 
         // Threshold to clip the ratio
         const CLIP: f32 = 0.2;
@@ -105,7 +118,7 @@ impl Ppo2 {
         )
     }
 
-    pub fn learn(&mut self) {
+    pub fn learn(&mut self) -> (f32, f32) {
 
         let mut last_discounted_reward = 0.0;
 
@@ -158,6 +171,8 @@ impl Ppo2 {
         let n = n as f32;
 
         // Update the neural networks for n epochs
+        let mut critic_loss = 0.0;
+        let mut actor_loss = 0.0;
         for _i in 0..self.nr_updates_per_iteration {
             let mut critic_loss_sum = 0.0;
             let mut actor_loss_sum = 0.0;
@@ -221,22 +236,27 @@ impl Ppo2 {
 
             }
 
-            let critic_loss = critic_loss_sum / n;
-            let actor_loss = actor_loss_sum / n;
+            critic_loss = critic_loss_sum / n;
+            actor_loss = actor_loss_sum / n;
 
             const LEARNING_RATE: f32 = 0.001;
             self.critic.subtract_gradients(LEARNING_RATE / n);
-            self.actor.subtract_gradients(LEARNING_RATE / n);
+            self.actor.subtract_gradients(LEARNING_RATE);
 
         }
         
         self.transitions.clear();
+
+        (actor_loss, critic_loss)
     }
 
 }
 
 
-struct Transition {
+struct Transition<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+> {
     observation: [f32; INPUTS],
     action: [f32; OUTPUTS],
     log_probability: f32,

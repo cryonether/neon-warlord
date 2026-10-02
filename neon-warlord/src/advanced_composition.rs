@@ -4,6 +4,7 @@ pub mod advanced_composition_drawer;
 pub mod definition;
 pub mod genome_drawer;
 pub mod motor_linear;
+pub mod motor_rotation;
 pub mod neural_network;
 pub mod sensor_linear;
 pub mod sensor_relative_position;

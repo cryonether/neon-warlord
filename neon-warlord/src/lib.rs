@@ -55,17 +55,7 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition,
-    ant_generator::AntGenerator,
-    ant_storage::AntStorage,
-    camera_controller::CameraController,
-    debug_overlay::DebugOverlay,
-    pendulum_cart_simulation::{PendulumCartSimulation, PendulumSimulationThread},
-    physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
-    simple_physics_simulation::SimplePhysicsSimulation,
-    sun_storage::SunStorage,
-    worker_instance::WorkerInstance,
-    worker_thread::WorkerThread,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, pendulum_cart_simulation::{PendulumCartSimulation, PendulumCartSimulationThread}, pendulum_simulation::{PendulumSimulation, PendulumSimulationThread}, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -328,7 +318,7 @@ impl NeonWarlord {
         //     });
 
         let pendulum_simulation_thread = WorkerThread::spawn(PendulumSimulationThread {
-            sim: PendulumCartSimulation::new(),
+            sim: PendulumSimulation::new(),
             producer,
             height_map: _height_map.clone(),
         });

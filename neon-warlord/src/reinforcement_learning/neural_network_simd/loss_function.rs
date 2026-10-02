@@ -5,11 +5,7 @@ use std::iter::zip;
 
 use itertools::izip;
 
-const OUTPUTS: usize = 2;
-
-struct LossFunction {
-
-}
+// const OUTPUTS: usize = 2;
 
 ///
 /// Calculates the log probability density of a multi-dimensional continuous action
@@ -30,13 +26,13 @@ struct LossFunction {
 /// - σ² (variance) = `std_dev * std_dev`
 /// - D = `num_dimensions` (length of the action vector)
 ///
-pub struct GaussianLogProbability {
+pub struct GaussianLogProbability<const OUTPUTS: usize> {
     action: [f32; OUTPUTS], 
     mean_action: [f32; OUTPUTS], 
     std_dev: f32
 }
 
-impl GaussianLogProbability {
+impl<const OUTPUTS: usize> GaussianLogProbability<OUTPUTS> {
     pub fn new() -> Self {
         Self { action: [0.0; OUTPUTS], mean_action: [0.0; OUTPUTS], std_dev: 0.0 }
     }

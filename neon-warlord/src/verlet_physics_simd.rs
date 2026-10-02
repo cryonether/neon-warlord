@@ -34,7 +34,8 @@ impl VerletPhysicsSimd {
     }
 
     fn apply_gravity(&mut self) {
-        const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -1.0);
+        // const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -1.0);
+        const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -9.81);
         self.particles.apply_gravity(&GRAVITY);
     }
 
