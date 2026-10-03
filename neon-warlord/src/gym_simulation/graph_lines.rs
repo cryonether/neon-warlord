@@ -108,7 +108,7 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
         self
     }
 
-    pub fn y_lim(mut self, y_lim: f32) -> Self {
+    pub fn _y_lim(mut self, y_lim: f32) -> Self {
         self.y_lim_start = -y_lim;
         self.y_lim_end = y_lim;
         self

@@ -212,7 +212,7 @@ impl<
                 let observation = transition.observation;
                 let action = transition.action;
                 let log_probability = transition.log_probability;
-                let reward = transition.reward;
+                let _reward = transition.reward;
 
                 // Calculate V_phi and pi_theta(a_t | s_t)
                 // Estimate the values of each observation, and the log probs of

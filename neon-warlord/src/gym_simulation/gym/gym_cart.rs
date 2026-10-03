@@ -48,7 +48,7 @@ impl GymCart {
             cart_velocity: 0.0,
         };
 
-        let mut obj = Self {
+        let obj = Self {
             verlet_physics,
             particles_static: [particles_static_0, particles_static_1],
             particles_static_pos: [particles_static_pos_0, particles_static_pos_1],

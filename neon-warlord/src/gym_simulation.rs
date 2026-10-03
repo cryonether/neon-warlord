@@ -48,8 +48,8 @@ pub struct GymSimulation<
 
     env: ENV,
     verlet_physics_drawer: VerletPhysicsDrawer,
-    steps: u64,
-    episode: u64,
+    _steps: u64,
+    _episode: u64,
 
     // Debug
     ups: Fps,
@@ -184,8 +184,8 @@ impl<
 
         Self {
             ticks: 0,
-            steps: 0,
-            episode: 0,
+            _steps: 0,
+            _episode: 0,
 
             ups,
             last_render_time: instant::Instant::now(),
