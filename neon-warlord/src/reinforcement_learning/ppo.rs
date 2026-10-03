@@ -1,4 +1,4 @@
-//! Implements the Policy Gradient Decent algorithm
+//! Implements the Proximal Policy Optimization algorithm
 //! https://github.com/ericyangyu/PPO-for-Beginners/tree/master
 //! PPO was published in 2017
 
@@ -11,7 +11,7 @@ use itertools::izip;
 
 use crate::reinforcement_learning::{neural_network_simd::NeuralNetworkSimd, ppo::loss_function::{GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped}};
 
-/// Implements the Policy Gradient Decent algorithm
+/// Implements the Proximal Policy Optimization algorithm
 pub struct Ppo<
     const INPUTS: usize,
     const OUTPUTS: usize,
