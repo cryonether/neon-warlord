@@ -2,6 +2,7 @@
 //! https://github.com/ericyangyu/PPO-for-Beginners/tree/master
 //! PPO was published in 2017
 
+#[cfg(test)]
 mod test_ppo;
 pub mod loss_function;
 
