@@ -18,7 +18,7 @@ use crate::{
         verlet_physics_drawer::VerletPhysicsDrawer,
     },
     physics_simulation_v3_drawer::DrawerObjects,
-    reinforcement_learning::dqn2::Dqn2,
+    reinforcement_learning::dqn::Dqn,
     triple_buffer, worker_thread,
 };
 
@@ -35,7 +35,7 @@ pub struct PendulumCartSimulation {
     ticks: u64,
 
     // model_drawer: NeuralNetworkDrawer<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, 128, 8>,
-    dqn: Dqn2,
+    dqn: Dqn,
 
     graph_loss: GraphLines<1>,
     graph_chosen_action: GraphLines<1>,
@@ -85,7 +85,7 @@ impl PendulumCartSimulation {
 
         let scale = 0.1;
 
-        let dqn = Dqn2::new(0);
+        let dqn = Dqn::new(0);
         // let model_drawer: NeuralNetworkDrawer<4, 2, 1, false, 128, 8> = NeuralNetworkDrawer::new(&dqn.target_net, scale, pos_model);
 
         // Debug

@@ -1,218 +1,187 @@
-//! Deep Q Network (DQN)
+//! A dqn implementation based on the output of gemini
 
-#[cfg(test)]
-mod test_maze;
+use std::collections::VecDeque;
 
-use std::collections::HashMap;
+use crate::reinforcement_learning::neural_network_simd::{neural_network_layered::NeuralNetworkLayered};
 
-use crate::reinforcement_learning::neural_network_simd::{Gradient16, NeuralNetwork16};
+const INPUTS: usize = 4;
+const OUTPUTS: usize = 2;
+const LAYERS: usize = 3;
 
-const LAYERS: usize = 5;
+struct Transition {
+    state: [f32; INPUTS],
+    action: usize,
+    reward: f32,
+    next_state: [f32; INPUTS],
+    done: bool,
+}
 
-pub struct Dqn<const INPUTS: usize, const OUTPUTS: usize> {
-    pub model: NeuralNetwork16<INPUTS, OUTPUTS, LAYERS, true>,
-    steps: Vec<Transition<INPUTS>>,
-
-    replay_buffer: HashMap<ReplayKey<INPUTS>, Transition<INPUTS>>,
+pub struct Dqn {
+    q_net: Box<NeuralNetworkLayered<INPUTS, OUTPUTS, 64, LAYERS, false>>,
+    pub target_net: Box<NeuralNetworkLayered<INPUTS, OUTPUTS, 64, LAYERS, false>>,
 
     epsilon: f32,
+    epsilon_decay: f32,
+    epsilon_min: f32,
+    gamma: f32,
+    replay_buffer_capacity: usize,
 
-    count: usize,
+    replay_buffer: VecDeque<Transition>,
+
+    total_reward: f32,
+    loss: f32,
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize> Dqn<INPUTS, OUTPUTS> {
-    pub fn new() -> Self {
-        let model = NeuralNetwork16::new_rand();
-        let steps = Vec::new();
-        let replay_buffer: HashMap<ReplayKey<INPUTS>, Transition<INPUTS>> = HashMap::new();
-        let epsilon = 1.0;
+impl Dqn {
+    pub fn new(seed: u64) -> Self {
+        let q_net = Box::new(NeuralNetworkLayered::new_rand(seed));
+        let target_net = q_net.clone();
+
+        let epsilon: f32 = 1.0f32;
+        let epsilon_decay: f32 = 0.998;
+        let epsilon_min: f32 = 0.02;
+        // let gamma: f32 = 0.99;
+        let gamma: f32 = 0.90;
+        let replay_buffer_capacity: usize = 200000;
+        let replay_buffer: VecDeque<Transition> = VecDeque::with_capacity(replay_buffer_capacity);
+
+        let total_reward: f32 = 0.0;
+        let loss: f32 = 0.0;
 
         Self {
-            model,
-            steps,
-            replay_buffer,
+            q_net,
+            target_net,
             epsilon,
-            count: 0,
+            epsilon_decay,
+            epsilon_min,
+            gamma,
+            replay_buffer_capacity,
+            replay_buffer,
+            total_reward,
+            loss,
         }
     }
 
-    pub fn choose_action_u8(&mut self, inputs: &[u8; INPUTS]) -> (usize, [f32; OUTPUTS]) {
-        let inputs_f32 = inputs.map(|x| x as f32);
-        self.choose_action(&inputs_f32)
-    }
-
-    pub fn choose_action(&mut self, inputs: &[f32; INPUTS]) -> (usize, [f32; OUTPUTS]) {
-        let q_values: [f32; OUTPUTS] = self.model.forward(inputs);
-
-        let mut action = Self::pick_action(q_values);
-
-        if fastrand::f32() < self.epsilon {
-            action = fastrand::usize(0..OUTPUTS);
-        }
-
-        (action, q_values)
-    }
-
-    fn pick_action(q_values: [f32; OUTPUTS]) -> usize {
-        let mut q_value_max = f32::NEG_INFINITY;
-        let mut max_index = 0;
-        for (i, &q_value) in q_values.iter().enumerate() {
-            if q_value > q_value_max {
-                q_value_max = q_value;
-                max_index = i;
-            }
-        }
-
-        max_index
-    }
-
-    pub fn set_reward_u8(
-        &mut self,
-        inputs: [u8; INPUTS],
-        action: usize,
-        reward: f32,
-        next_inputs: [u8; INPUTS],
-        finished: bool,
-    ) {
-        let inputs_signed: [i8; INPUTS] = inputs.map(|x| x as i8);
-
-        let replay_key: ReplayKey<INPUTS> = ReplayKey {
-            inputs: inputs_signed,
-            action,
+    pub fn choose_action(&mut self, state: &[f32; INPUTS]) -> (usize, [f32; OUTPUTS]) {
+        // Epsilon-Greedy mit fastrand
+        let mut q_values_res = [0.0; 2];
+        let action = if fastrand::f32() < self.epsilon {
+            fastrand::usize(0..2)
+        } else {
+            let q_values = self.q_net.forward(state);
+            let q_arr: [f32; 2] = q_values;
+            q_values_res = q_arr;
+            if q_arr[0] > q_arr[1] { 0 } else { 1 }
         };
 
-        let inputs_f32 = inputs.map(|x| x as f32);
-        let inputs_next_f32 = next_inputs.map(|x| x as f32);
-        self.set_reward(
-            inputs_f32,
+        (action, q_values_res)
+    }
+
+    pub fn set_reward_learn(
+        &mut self,
+        state: [f32; INPUTS],
+        action: usize,
+        reward: f32,
+        next_state: [f32; INPUTS],
+        done: bool,
+    ) -> f32 {
+        self.total_reward += reward;
+
+        self.replay_buffer.push_back(Transition {
+            state,
             action,
             reward,
-            inputs_next_f32,
-            finished,
-            replay_key,
+            next_state,
+            done,
+        });
+        if self.replay_buffer.len() > self.replay_buffer_capacity {
+            self.replay_buffer.pop_front();
+        }
+
+        let mut sum: f32 = 0.0;
+        const BATCH_SIZE: usize = 32;
+        if self.replay_buffer.len() >= BATCH_SIZE {
+            for _i in 0..BATCH_SIZE {
+                let idx = fastrand::usize(0..self.replay_buffer.len());
+                let transition = &self.replay_buffer[idx];
+
+                let state = transition.state;
+                let action = transition.action;
+                let reward = transition.reward;
+                let next_state = transition.next_state;
+                let done = if transition.done { 1.0f32 } else { 0.0f32 };
+
+                // Double dqn implementation
+                // Online network gives best action
+                // Target network gives q-value
+                let next_online_q = self.q_net.forward(&next_state);
+                let next_target_q = self.target_net.forward(&next_state);
+
+                let best_action_next = if next_online_q[0] > next_online_q[1] {
+                    0
+                } else {
+                    1
+                };
+                let max_next_q = next_target_q[best_action_next];
+
+                // reward function
+                let target_qs = reward + self.gamma * max_next_q * (1.0 - done);
+
+                // get current q-value
+                let pred_q_values = self.q_net.forward(&state);
+
+                let y_pred = pred_q_values[action];
+                let y = target_qs;
+                let diff = y_pred - y;
+
+                // Loss function
+                // mean square error
+                //      1    N-1
+                // L = --- * ∑ (y_pred_i − y_i)²
+                //      N    i=0
+                sum += diff * diff;
+
+                // Derivative loss function
+                // derivative mean square error
+                // ∂L           2
+                // --------- = --- * (y_pred_i − y_i)
+                // ∂L_pred_i    N
+                let d_loss_dy = 2.0 / BATCH_SIZE as f32 * diff;
+
+                let mut backward_vec = [0.0, 0.0];
+                backward_vec[action] = 1.0 * d_loss_dy;
+                self.q_net.backward(&backward_vec);
+            }
+
+            // loss
+            self.loss = sum / BATCH_SIZE as f32;
+
+            // optimizer
+            /// plain gradient descent
+            const LEARNING_RATE: f32 = 0.001;
+            self.q_net.subtract_gradients(LEARNING_RATE);
+
+            // return self.total_reward;
+            return self.loss;
+        }
+
+        0.0
+    }
+
+    pub fn update_target_net(&mut self) {
+        self.target_net = self.q_net.clone();
+    }
+
+    pub fn epsilon_decay(&mut self) {
+        if self.epsilon > self.epsilon_min {
+            self.epsilon *= self.epsilon_decay;
+        }
+
+        println!(
+            "Episode: {:4}, Accum. Reward: {:7.1}, Epsilon: {:.3}",
+            0.0, self.total_reward, self.epsilon
         );
+
+        self.total_reward = 0.0;
     }
-
-    pub fn set_reward(
-        &mut self,
-        inputs: [f32; INPUTS],
-        action: usize,
-        reward: f32,
-        inputs_next: [f32; INPUTS],
-        finished: bool,
-        replay_key: ReplayKey<INPUTS>,
-    ) {
-        let step = Transition {
-            inputs,
-            action,
-            reward,
-            inputs_next,
-            finished,
-        };
-
-        self.steps.push(step.clone());
-        self.replay_buffer.insert(replay_key, step);
-    }
-
-    pub fn learn(&mut self) -> f32 {
-        const GAMMA: f32 = 0.5;
-
-        if self.steps.is_empty() {
-            return 0.0;
-        }
-
-        let n = self.steps.len() as f32;
-
-        let mut sum = 0.0;
-        let mut gradients_loss_sum: Gradient16<LAYERS> = Gradient16::new();
-        for step in self.steps.iter().rev() {
-            let inputs = step.inputs;
-            let action = step.action;
-            let reward = step.reward;
-            let inputs_next = step.inputs_next;
-            let finished = step.finished;
-
-            let q_values_next = self.model.forward(&inputs_next);
-            let q_values = self.model.forward(&inputs);
-            let gradients = self.model.backward(action);
-
-            let mut q_value_max_next = f32::NEG_INFINITY;
-            for q_value in q_values_next {
-                if q_value > q_value_max_next {
-                    q_value_max_next = q_value
-                }
-            }
-
-            let reward_2 = match finished {
-                true => reward,
-                false => reward + GAMMA * (q_value_max_next),
-            };
-
-            // let reward_2 = reward + GAMMA * (q_value_max_next - reward);
-
-            let y_pred = q_values[action];
-            let y = reward_2;
-            let diff = y_pred - y;
-
-            // Loss function
-            // mean square error
-            //      1    N-1
-            // L = --- * ∑ (y_pred_i − y_i)²
-            //      N    i=0
-            sum += diff * diff;
-
-            // Derivative loss function
-            // derivative mean square error
-            // ∂L           2
-            // --------- = --- * (y_pred_i − y_i)
-            // ∂L_pred_i    N
-            let d_loss_dy = 2.0 / n * diff;
-            gradients_loss_sum.add_loss_gradients(&gradients, d_loss_dy);
-        }
-
-        // loss
-        let loss = sum / n;
-
-        // optimizer
-        /// plain gradient descent
-        /// w_new = w_old - eta * dw
-        const LEARNING_RATE: f32 = 0.01;
-        self.model
-            .subtract_gradients(&(&gradients_loss_sum * LEARNING_RATE));
-
-        self.steps.clear();
-        self.epsilon = f32::max(self.epsilon * 0.999, 0.01);
-
-        loss
-    }
-
-    pub fn learn_replay(&mut self) -> f32 {
-        let values: Vec<&Transition<INPUTS>> = (0..1000)
-            .map(|_| {
-                let index = fastrand::usize(..self.replay_buffer.len());
-                self.replay_buffer.values().nth(index).unwrap()
-            })
-            .collect();
-
-        for value in values {
-            self.steps.push(value.clone());
-        }
-
-        self.learn()
-    }
-}
-
-#[derive(Clone)]
-pub struct Transition<const INPUTS: usize> {
-    pub inputs: [f32; INPUTS],
-    pub action: usize,
-    pub reward: f32,
-    pub inputs_next: [f32; INPUTS],
-    pub finished: bool,
-}
-
-#[derive(Hash, Eq, PartialEq)]
-pub struct ReplayKey<const INPUTS: usize> {
-    pub inputs: [i8; INPUTS],
-    pub action: usize,
 }

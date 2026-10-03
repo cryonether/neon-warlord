@@ -3,7 +3,7 @@
 use std::iter::zip;
 
 use crate::reinforcement_learning::neural_network_simd::{
-    Gradient16, NeuralNetwork16, gradients_sum::GradientsSum, neural_network_layered::NeuralNetworkLayered,
+    neural_network_layered::NeuralNetworkLayered,
 };
 
 pub struct EpochSimd<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> {

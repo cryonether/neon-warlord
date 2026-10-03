@@ -6,6 +6,7 @@ use super::*;
 
 use dfdx::prelude::*;
 
+const LANES: usize = 16;
 const N: usize = 16;
 const L: usize = 1;
 

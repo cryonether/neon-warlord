@@ -8,7 +8,7 @@ use std::{collections::VecDeque, iter::zip};
 
 use itertools::izip;
 
-use crate::reinforcement_learning::neural_network_simd::{NeuralNetwork64, loss_function::{GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped}, neural_network_layered::NeuralNetworkLayered};
+use crate::reinforcement_learning::neural_network_simd::{loss_function::{GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped}, neural_network_layered::NeuralNetworkLayered};
 
 pub struct Ppo<
     const INPUTS: usize,
