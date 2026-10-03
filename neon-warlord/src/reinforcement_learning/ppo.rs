@@ -87,7 +87,7 @@ impl<
     pub fn get_action(&mut self, observation: &[f32; INPUTS])
 -> ([f32; OUTPUTS], [f32; OUTPUTS], f32)     {
         // Query the actor network for a mean action.
-        let mean_action = self.actor.forward(&observation);
+        let mean_action = self.actor.forward(observation);
 
         let action = mean_action.map(|mu| {
             mu + self.std_dev * box_mueller_standard_normal()

@@ -5,7 +5,7 @@ use itertools::izip;
 use super::*;
 use super::simd_vec::SVec16;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct SMat16<const M: usize, const N: usize>(pub [AlignedVec<N>; M]);
 
 impl<const M: usize, const N: usize> SMat16<M, N> {

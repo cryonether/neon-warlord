@@ -116,9 +116,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             }
         }
 
-        for b in &mut b {
-            *b = 0.1;
-        }
+        b.fill(0.1);
 
         Self {
             x,
@@ -135,7 +133,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
     pub fn forward(&mut self, x: &SVec16<INPUTS>) -> SVec16<OUTPUTS> {
         // self.assert_finite();
 
-        self.x = *x;
+        self.x = x.clone();
 
         // z = W * x + b
         self.z = &(&self.w * x) + &self.b;
@@ -184,7 +182,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         //
         // dz^T * W= (W^T * dz)^T
         //
-        let dz_row = dz.as_row_vec();
+        let dz_row = dz.clone().as_row_vec();
         let mut dx = (&dz_row * &self.w).as_column_vec();
 
         //
@@ -203,22 +201,22 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             assert_eq!(INPUTS, OUTPUTS);
 
             for (dx, dz) in zip(dx.simd_iter_mut(), dz.simd_iter()) {
-                *dx += *dz;
+                *dx += dz;
             }
 
             for (dx, dz) in zip(dx.remainder_mut(), dz.remainder()) {
-                *dx += *dz;
+                *dx += dz;
             }
         }
 
         // Store gradients
         // dL/db = dz
-        let dl_db = dz;
+        let dl_db = &dz;
 
         // dL/dW = dz * x^T
-        let dl_dw = &dz * &self.x.as_row_vec();
+        let dl_dw = &dz * &self.x.clone().as_row_vec();
 
-        self.dx = dx;
+        self.dx = dx.clone();
 
         // Update gradients
         self.dl_db += &dl_db;

@@ -129,14 +129,14 @@ impl<
             std::array::from_fn(|_| graph_y.clone());
         let graph_actions = GraphLines {
             x: graph_x.clone(),
-            y: y,
+            y,
         };
 
         let y: [VecDeque<f32>; OUTPUTS] =
             std::array::from_fn(|_| graph_y.clone());
         let graph_mean_actions = GraphLines {
             x: graph_x.clone(),
-            y: y,
+            y,
         };
 
         let graph_reward = GraphLines {
@@ -148,7 +148,7 @@ impl<
             std::array::from_fn(|_| graph_y.clone());
         let graph_inputs = GraphLines {
             x: graph_x.clone(),
-            y: y,
+            y,
         };
 
 
@@ -178,7 +178,7 @@ impl<
 
         // Pendulum
         let verlet_physics_drawer =
-            VerletPhysicsDrawer::new(&env.get_verlet_physics(), scale, pos_env);
+            VerletPhysicsDrawer::new(env.get_verlet_physics(), scale, pos_env);
 
         // Dqn
 
@@ -302,7 +302,7 @@ impl<
             .update(&self.graph_inputs, edges);
 
         self.verlet_physics_drawer
-            .update(&self.env.get_verlet_physics(), nodes, edges);
+            .update(self.env.get_verlet_physics(), nodes, edges);
 
         self.watch_ups.stop();
 

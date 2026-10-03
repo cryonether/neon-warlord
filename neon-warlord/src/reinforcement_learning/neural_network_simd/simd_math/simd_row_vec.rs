@@ -16,6 +16,7 @@ impl<const N: usize> SRowVec16<N> {
         Self::new([0.0; N])
     }
 
+    #[allow(clippy::wrong_self_convention)]
     pub fn as_column_vec(self) -> SVec16<N> {
         SVec16(self.0)
     }
