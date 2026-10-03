@@ -52,7 +52,7 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, gym_simulation::{GymSimulation, GymSimulationInterface, PendulumSimulationThread, gym::gym_cart::GymCart, }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, gym_simulation::{GymSimulation, GymSimulationInterface, GymSimulationThread, gym::gym_cart::GymCart, }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -147,7 +147,7 @@ struct NeonWarlord {
     physics_simulation_v3_drawer: PhysicsSimulationV3Drawer,
 
     // physics_simulation_v3_thread: WorkerThread<PhysicSimThread<HeightMapType>>,
-    gym_simulation_thread: WorkerThread<PendulumSimulationThread>,
+    gym_simulation_thread: WorkerThread<GymSimulationThread>,
 
     // Worker
     worker: WorkerInstance,
@@ -318,12 +318,10 @@ impl NeonWarlord {
             GymCart::new()
         );
 
-        let gym_simulation_thread_ = PendulumSimulationThread {
+        let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
             sim: Box::new(gym_simulation),
             producer,
-        };
-
-        let gym_simulation_thread = WorkerThread::spawn(gym_simulation_thread_);
+        });
 
         // Worker
         let worker = WorkerInstance::new();

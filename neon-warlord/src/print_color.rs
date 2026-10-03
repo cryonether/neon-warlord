@@ -1,5 +1,6 @@
 //! Prints with a color gradient to the console
 
+#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub enum PrintColor {
     RedYellowGreen,     // intuitive for probabilities / scores
@@ -40,6 +41,7 @@ fn gradient(t: f32, colors: &[(u8, u8, u8)]) -> (u8, u8, u8) {
     )
 }
 
+/// Prints with a color gradient to the console
 pub fn print_color(val: f32, min: f32, max: f32, color: PrintColor) {
     let t = if max > min {
         ((val - min) / (max - min)).clamp(0.0, 1.0)

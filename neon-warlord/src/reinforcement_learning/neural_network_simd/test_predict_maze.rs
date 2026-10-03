@@ -99,8 +99,6 @@ fn predict_logic<const INPUTS: usize, const BATCH_SIZE: usize>(
     let mut y_pred_2 = [0.0; BATCH_SIZE];
     let mut y_pred_3 = [0.0; BATCH_SIZE];
 
-
-
     for epoch in 0..10000 {
         y_pred_0 = model.learn_output(x_data, y_data_0, 0);
         y_pred_1 = model.learn_output(x_data, y_data_1, 1);

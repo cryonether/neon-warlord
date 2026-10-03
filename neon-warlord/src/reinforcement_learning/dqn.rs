@@ -1,8 +1,8 @@
-//! A dqn implementation based on the output of gemini
+//! Implements Deep Q-Learning (DQN)
 
 use std::collections::VecDeque;
 
-use crate::reinforcement_learning::neural_network_simd::{neural_network_layered::NeuralNetworkLayered};
+use crate::reinforcement_learning::neural_network_simd::NeuralNetworkSimd;
 
 const INPUTS: usize = 4;
 const OUTPUTS: usize = 2;
@@ -16,9 +16,10 @@ struct Transition {
     done: bool,
 }
 
+// Implements Deep Q-Learning (DQN)
 pub struct Dqn {
-    q_net: Box<NeuralNetworkLayered<INPUTS, OUTPUTS, 64, LAYERS, false>>,
-    pub target_net: Box<NeuralNetworkLayered<INPUTS, OUTPUTS, 64, LAYERS, false>>,
+    q_net: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, 64, LAYERS, false>>,
+    pub target_net: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, 64, LAYERS, false>>,
 
     epsilon: f32,
     epsilon_decay: f32,
@@ -34,7 +35,7 @@ pub struct Dqn {
 
 impl Dqn {
     pub fn new(seed: u64) -> Self {
-        let q_net = Box::new(NeuralNetworkLayered::new_rand(seed));
+        let q_net = Box::new(NeuralNetworkSimd::new_rand(seed));
         let target_net = q_net.clone();
 
         let epsilon: f32 = 1.0f32;

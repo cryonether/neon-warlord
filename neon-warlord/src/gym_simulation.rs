@@ -1,4 +1,4 @@
-//! Simulates an inverted pendulum
+//! Uses Ppo to estimate a value function for different environments
 
 mod pendulum;
 pub mod gym;
@@ -8,7 +8,7 @@ pub mod graph_lines;
 
 use std::collections::VecDeque;
 
-use forward_renderer::{height_map::HeightMapInterface, to_rgb};
+use forward_renderer::{to_rgb};
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
 use crate::{gym_simulation::{graph_lines::{GraphLines, GraphLinesDrawer}, gym::Gym, verlet_physics_drawer::VerletPhysicsDrawer}, physics_simulation_v3_drawer::DrawerObjects, print_color::print_color, reinforcement_learning::ppo::Ppo, triple_buffer, worker_thread};
@@ -17,11 +17,7 @@ use crate::{gym_simulation::{graph_lines::{GraphLines, GraphLinesDrawer}, gym::G
 pub const WATCH_POINTS_SIZE: usize = 10;
 type Vec3 = cgmath::Vector3<f32>;
 
-// const INPUTS: usize = 4;
-// const OUTPUTS: usize = 2;
-// const NR_LAYERS: usize = 2;
-// const RESIDUAL: bool = false;
-
+/// Uses Ppo to estimate a value function for different environments
 pub struct GymSimulation<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -345,13 +341,13 @@ impl<
     }
 }
 
-pub struct PendulumSimulationThread
+pub struct GymSimulationThread
 {
     pub sim: Box<dyn GymSimulationInterface>,
     pub producer: triple_buffer::Producer<DrawerObjects>,
 }
 
-impl worker_thread::Update for PendulumSimulationThread
+impl worker_thread::Update for GymSimulationThread
 {
     fn update_physics(&mut self) {
         
@@ -369,4 +365,4 @@ impl worker_thread::Update for PendulumSimulationThread
     }
 }
 
-unsafe impl<> Send for PendulumSimulationThread<>{}
+unsafe impl<> Send for GymSimulationThread<>{}

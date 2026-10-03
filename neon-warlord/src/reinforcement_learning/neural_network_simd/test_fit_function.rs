@@ -1,6 +1,6 @@
-//! Tries to learn a function using a neural network
+//! Tries to learn a continuous function using a neural network
 
-use crate::{print_color::{PrintColor, print_color}, reinforcement_learning::neural_network_simd::{epoch::EpochSimd, neural_network_layered::NeuralNetworkLayered}};
+use crate::{print_color::{PrintColor, print_color}, reinforcement_learning::neural_network_simd::{epoch::EpochSimd}};
 
 fn reward(x: f32) -> f32 {
     f32::clamp(1.0 - x.powi(2), 0.0, 1.0)

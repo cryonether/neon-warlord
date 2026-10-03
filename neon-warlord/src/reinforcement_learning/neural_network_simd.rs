@@ -1,4 +1,4 @@
-//! A universal function approximator efficiently implemented using simd
+//! A universal function approximator implemented using simd operations
 
 use crate::reinforcement_learning::neural_network_simd::{layer_simd::LayerSimd, simd_math::simd_vec::SVec16};
 
@@ -6,7 +6,6 @@ pub mod epoch;
 pub mod gradients_sum;
 pub mod simd_math;
 pub mod layer_simd;
-pub mod neural_network_layered;
 
 #[cfg(test)]
 mod test_neural_network_simd;
@@ -19,13 +18,12 @@ mod test_logic_functions3;
 
 #[cfg(test)]
 mod test_predict_maze;
-pub mod loss_function;
 
 #[cfg(test)]
 mod test_fit_function;
 
 
-
+/// A universal function approximator implemented using simd operations
 #[derive(Clone)]
 pub struct NeuralNetworkSimd<
     const INPUTS: usize,

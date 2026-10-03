@@ -1,15 +1,17 @@
-//! Implements a beginner version of policy gradient decent
+//! Implements the Policy Gradient Decent algorithm
 //! https://github.com/ericyangyu/PPO-for-Beginners/tree/master
 //! PPO was published in 2017
 
 mod test_ppo;
+pub mod loss_function;
 
 use std::{collections::VecDeque, iter::zip};
 
 use itertools::izip;
 
-use crate::reinforcement_learning::neural_network_simd::{loss_function::{GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped}, neural_network_layered::NeuralNetworkLayered};
+use crate::reinforcement_learning::{neural_network_simd::NeuralNetworkSimd, ppo::loss_function::{GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped}};
 
+/// Implements the Policy Gradient Decent algorithm
 pub struct Ppo<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -18,8 +20,8 @@ pub struct Ppo<
     const RESIDUAL: bool,
 >
 {
-    pub actor: NeuralNetworkLayered<INPUTS, OUTPUTS, NEURONS, LAYERS, false>,
-    pub critic: NeuralNetworkLayered<INPUTS, 1, NEURONS, LAYERS, false>,
+    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, false>,
+    pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, false>,
     
     transitions: Vec<Transition<INPUTS, OUTPUTS>>,
     
@@ -53,8 +55,8 @@ impl<
         // Number of times to update the network from the same batch of data
         const NR_UPDATES_PER_ITERATION: usize = 5;  
 
-        let actor = NeuralNetworkLayered::new_rand(seed);
-        let critic = NeuralNetworkLayered::new_rand(seed);
+        let actor = NeuralNetworkSimd::new_rand(seed);
+        let critic = NeuralNetworkSimd::new_rand(seed);
 
         let transitions = Vec::new();
 

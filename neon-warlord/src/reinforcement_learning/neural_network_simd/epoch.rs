@@ -2,19 +2,18 @@
 
 use std::iter::zip;
 
-use crate::reinforcement_learning::neural_network_simd::{
-    neural_network_layered::NeuralNetworkLayered,
-};
+use crate::reinforcement_learning::neural_network_simd::NeuralNetworkSimd;
+
 
 pub struct EpochSimd<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> {
-    pub model: NeuralNetworkLayered<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>,
+    pub model: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>,
 
     pub loss: f32,
 }
 
 impl<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> EpochSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL> {
     pub fn new() -> Self {
-        let model = NeuralNetworkLayered::new_rand(0);
+        let model = NeuralNetworkSimd::new_rand(0);
         let loss = 0.0;
 
         Self { model, loss }
