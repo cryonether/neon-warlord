@@ -1,4 +1,4 @@
-//! Functions to calculate a Loss function
+//! Functions to calculate the Loss of PPO
 //! 
 
 use std::iter::zip;

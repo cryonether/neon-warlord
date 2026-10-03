@@ -73,7 +73,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_L
             // sum loss
             let mut backward_vec = [0.0; OUTPUTS];
             backward_vec[output_index] = 1.0 * d_loss_dy;
-            let dx = self.model.backward(&backward_vec);
+            let _dx = self.model.backward(&backward_vec);
         }
 
         let loss = sum / n;

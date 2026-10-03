@@ -3,7 +3,6 @@
 use crate::reinforcement_learning::neural_network_simd::{layer_simd::LayerSimd, simd_math::simd_vec::SVec16};
 
 pub mod epoch;
-pub mod gradients_sum;
 pub mod simd_math;
 pub mod layer_simd;
 
