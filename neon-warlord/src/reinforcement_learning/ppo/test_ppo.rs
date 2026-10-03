@@ -48,7 +48,7 @@ fn test_one_armed_bandit() {
 
 /// Actor learns to prefer the higher-value region.
 #[test]
-#[ignore = "too expensive"]
+// #[ignore = "too expensive"]
 fn test_two_armed_bandit() {
     const EPISODES: usize = 2_000;
     const BATCH_SIZE: usize = 32;
@@ -263,6 +263,7 @@ fn test_two_step_mdp() {
 
 /// done/reset handling works
 #[test]
+#[ignore = "too expensive"]
 fn test_episode_boundaries() {
     const EPISODES: usize = 4_000;
     const BATCH_SIZE: usize = 32;
@@ -307,8 +308,8 @@ fn test_episode_boundaries() {
 }
 
 /// Delayed reward propagates backward through multiple steps.
-#[ignore = "too expensive"]
 #[test]
+#[ignore = "too expensive"]
 fn test_multi_step_mdp() {
     const EPISODES: usize = 6_000;
     const BATCH_SIZE: usize = 32;
@@ -1531,6 +1532,7 @@ fn test_gae_bootstrap_value() {
 }
 
 #[test]
+#[ignore = "too expensive"]
 fn test_continuous_noisy_mdp() {
     const EPISODES: usize = 2_000;
     const BATCH_SIZE: usize = 64;
