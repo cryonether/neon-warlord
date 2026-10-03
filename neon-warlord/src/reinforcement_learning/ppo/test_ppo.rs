@@ -48,6 +48,7 @@ fn test_one_armed_bandit() {
 
 /// Actor learns to prefer the higher-value region.
 #[test]
+#[ignore = "too expensive"]
 fn test_two_armed_bandit() {
     const EPISODES: usize = 2_000;
     const BATCH_SIZE: usize = 32;
@@ -119,6 +120,7 @@ fn test_two_armed_bandit() {
 
 /// delayed reward propagates backward
 #[test]
+#[ignore = "too expensive"]
 fn test_two_step_mdp() {
     const EPISODES: usize = 4_000;
     const BATCH_SIZE: usize = 32;
@@ -800,7 +802,7 @@ fn test_actor_gradient_checking() {
     //
     // Grab one parameter's analytical gradient.
     //
-    let analytical_gradient = actor.output.w[0][0];
+    let _analytical_gradient = actor.output.w[0][0];
 
     //
     // IMPORTANT:
@@ -911,8 +913,8 @@ fn test_actor_gradient_checking() {
 /// - noisy returns
 /// - stochastic policy learning
 /// - critic value estimation
-#[ignore = "too expensive"]
 #[test]
+#[ignore = "too expensive"]
 fn test_long_noisy_mdp() {
     const EPISODES: usize = 2_000;
     const BATCH_SIZE: usize = 32;

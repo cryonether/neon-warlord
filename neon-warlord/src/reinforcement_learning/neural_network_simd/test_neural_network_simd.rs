@@ -61,7 +61,7 @@ fn compare() {
     nn_1.output.b =    [1.0, 2.0].into();
 
 
-    let val = nn_1.forward(&x);
+    let _val = nn_1.forward(&x);
     nn_1.backward(&[1.0, 0.0]);
 
     println!("nn_0: {:}", nn_0);

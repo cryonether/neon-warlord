@@ -12,7 +12,7 @@ fn test_fit_function() {
 
     const BATCH_SIZE: usize = 100;
 
-    for j in 0..1000 {
+    for _j in 0..1000 {
         let mut batch_x: [[f32; 1]; BATCH_SIZE] = [[0.0]; BATCH_SIZE];
         let mut batch_y: [[f32; 1]; BATCH_SIZE] = [[0.0]; BATCH_SIZE];
         for i in 0..BATCH_SIZE {
