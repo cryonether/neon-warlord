@@ -50,18 +50,28 @@ where
             let limit_ups_thread = limit_ups.clone();
             let res = thread::spawn(move || {
                 let mut func_obj = func_obj;
+
+                let mut last_frame_time = Instant::now();
                 loop {
-                    let frame_start = Instant::now();
-
                     // update
-                    func_obj.update();
+                    func_obj.update_physics();
 
-                    // sleep until 16.6 ms have been reached
-                    let frame_time = frame_start.elapsed();
                     let target_frame_time = Duration::from_micros(16_667);
 
-                    if limit_ups_thread.load(Ordering::Relaxed) && frame_time < target_frame_time {
-                        thread::sleep(target_frame_time - frame_time);
+                    let elapsed_frame_time = last_frame_time.elapsed();
+                    if elapsed_frame_time >= target_frame_time {
+                        func_obj.update_drawer();
+                        last_frame_time =  Instant::now();
+                    }
+                    else {
+                        if limit_ups_thread.load(Ordering::Relaxed) {
+                            func_obj.update_drawer();
+
+                            // sleep until 16.6 ms have been reached
+                            thread::sleep(target_frame_time - elapsed_frame_time);
+
+                            last_frame_time =  Instant::now();
+                        }
                     }
                 }
             });
@@ -116,10 +126,12 @@ where
     T: Update,
 {
     fn update(&mut self) {
-        self.func_obj.update();
+        self.func_obj.update_physics();
+        self.func_obj.update_drawer();
     }
 }
 
 pub trait Update {
-    fn update(&mut self);
+    fn update_physics(&mut self);
+    fn update_drawer(&mut self);
 }

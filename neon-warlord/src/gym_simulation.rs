@@ -213,6 +213,8 @@ impl<
     }
 
     pub fn update_physics(&mut self) {
+        self.watch_ups.update();
+
         let dt = 1.0 / 60.0;
         self.ticks += 1;
 
@@ -256,6 +258,7 @@ impl<
                 input
             }
 
+            print!("{}, ", self.ticks / 1000);
             print!("actor: [ ");
             let size = 10;
             for i in 0 .. size {
@@ -307,7 +310,7 @@ impl<
         self.watch_ups.stop();
 
         objects.ups = self.ups.get();
-        self.watch_ups.update();
+        // self.watch_ups.update();
         objects.watch_ups = self.watch_ups.get_viewer_data();
     }
 }
@@ -349,11 +352,16 @@ pub struct PendulumSimulationThread
 
 impl worker_thread::Update for PendulumSimulationThread
 {
-    fn update(&mut self) {
+    fn update_physics(&mut self) {
+        
+        self.sim.update_physics();
+    }
+
+    fn update_drawer(&mut self) {
+
         let data = self.producer.buffer();
         data.clear();
 
-        self.sim.update_physics();
         self.sim.update_drawer(data);
 
         self.producer.publish();
