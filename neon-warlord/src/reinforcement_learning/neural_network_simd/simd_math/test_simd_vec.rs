@@ -322,10 +322,10 @@ fn test_elementwise_mul_commutative() {
         std::array::from_fn(|i| (i * 2 + 1) as f32)
     );
 
-    let ab = &a * &b;
-    let ba = &b * &a;
+    let a_b = &a * &b;
+    let b_a = &b * &a;
 
-    assert_vec_eq(&ab, &ba);
+    assert_vec_eq(&a_b, &b_a);
 }
 
 // -----------------------------------------------------------------------------
@@ -376,10 +376,10 @@ fn test_add_commutative() {
         std::array::from_fn(|i| (i * 2) as f32)
     );
 
-    let ab = &a + &b;
-    let ba = &b + &a;
+    let a_b = &a + &b;
+    let b_a = &b + &a;
 
-    assert_vec_eq(&ab, &ba);
+    assert_vec_eq(&a_b, &b_a);
 }
 
 // -----------------------------------------------------------------------------
