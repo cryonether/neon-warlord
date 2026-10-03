@@ -42,7 +42,6 @@
 //         verlet_physics.push_constraint_distance(particles_static_0, particle_pendulum, 1.0, 0.8);
 //         verlet_physics.push_constraint_none(particles_static_0, particles_static_1);
 
-
 //         let motor_rotation = MotorRotation::new(particle_pendulum, particles_static_0, particles_static_1);
 
 //         let pendulum_state = PendulumState {
@@ -106,12 +105,12 @@
 //     pub fn update_verlet_physics(&mut self, dt: f32) {
 //         self.verlet_physics.update(dt);
 //     }
-    
+
 //     pub(crate) fn rand_pos(&mut self) {
-//         self.verlet_physics.particles.reset_position(self.particle_pendulum, 
+//         self.verlet_physics.particles.reset_position(self.particle_pendulum,
 //             Vec3::new(
 //                 fastrand::f32() * 2.0 - 1.0,
-//                 0.0, 
+//                 0.0,
 //                 fastrand::f32() * 2.0 - 1.0,
 //             ).normalize()
 //         );

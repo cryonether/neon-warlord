@@ -1,18 +1,27 @@
 //! Uses Ppo to estimate a value function for different environments
 
-mod pendulum;
+pub mod graph_lines;
 pub mod gym;
 pub mod neural_network_drawer;
+mod pendulum;
 pub mod verlet_physics_drawer;
-pub mod graph_lines;
 
 use std::collections::VecDeque;
 
-use forward_renderer::{to_rgb};
+use forward_renderer::to_rgb;
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
-use crate::{gym_simulation::{graph_lines::{GraphLines, GraphLinesDrawer}, gym::Gym, verlet_physics_drawer::VerletPhysicsDrawer}, physics_simulation_v3_drawer::DrawerObjects, print_color::print_color, reinforcement_learning::ppo::Ppo, triple_buffer, worker_thread};
-
+use crate::{
+    gym_simulation::{
+        graph_lines::{GraphLines, GraphLinesDrawer},
+        gym::Gym,
+        verlet_physics_drawer::VerletPhysicsDrawer,
+    },
+    physics_simulation_v3_drawer::DrawerObjects,
+    print_color::print_color,
+    reinforcement_learning::ppo::Ppo,
+    triple_buffer, worker_thread,
+};
 
 pub const WATCH_POINTS_SIZE: usize = 10;
 type Vec3 = cgmath::Vector3<f32>;
@@ -25,8 +34,7 @@ pub struct GymSimulation<
     const LAYERS: usize,
     const RESIDUAL: bool,
     ENV: Gym<INPUTS, OUTPUTS>,
->
-{
+> {
     // Physics
     ticks: u64,
 
@@ -80,14 +88,8 @@ impl<
     const LAYERS: usize,
     const RESIDUAL: bool,
     ENV: Gym<INPUTS, OUTPUTS>,
-> GymSimulation<
-    INPUTS,
-    OUTPUTS,
-    NEURONS,
-    LAYERS,
-    RESIDUAL,
-    ENV,
-> {
+> GymSimulation<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>
+{
     pub fn new(env: ENV) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
@@ -101,7 +103,6 @@ impl<
         let pos_graph_inputs = pos + Vec3::new(2.2, 1.0, 2.2);
 
         let pos_env = pos + Vec3::new(2.0, -0.5, 1.0);
-
 
         let scale = 0.1;
 
@@ -125,15 +126,13 @@ impl<
             y: [graph_y.clone()],
         };
 
-        let y: [VecDeque<f32>; OUTPUTS] =
-            std::array::from_fn(|_| graph_y.clone());
+        let y: [VecDeque<f32>; OUTPUTS] = std::array::from_fn(|_| graph_y.clone());
         let graph_actions = GraphLines {
             x: graph_x.clone(),
             y,
         };
 
-        let y: [VecDeque<f32>; OUTPUTS] =
-            std::array::from_fn(|_| graph_y.clone());
+        let y: [VecDeque<f32>; OUTPUTS] = std::array::from_fn(|_| graph_y.clone());
         let graph_mean_actions = GraphLines {
             x: graph_x.clone(),
             y,
@@ -144,37 +143,29 @@ impl<
             y: [graph_y.clone()],
         };
 
-        let y: [VecDeque<f32>; INPUTS] =
-            std::array::from_fn(|_| graph_y.clone());
+        let y: [VecDeque<f32>; INPUTS] = std::array::from_fn(|_| graph_y.clone());
         let graph_inputs = GraphLines {
             x: graph_x.clone(),
             y,
         };
 
-
-
         let drawer_graph_actor_loss =
             GraphLinesDrawer::new(scale, pos_graph_actor_loss).colors([to_rgb("#00ff62").into()]);
-        let drawer_graph_critic_loss = GraphLinesDrawer::new(scale, pos_graph_critic_loss)
-            .colors([to_rgb("#ffd000").into()]);
+        let drawer_graph_critic_loss =
+            GraphLinesDrawer::new(scale, pos_graph_critic_loss).colors([to_rgb("#ffd000").into()]);
 
-        let colors: [Vec3; OUTPUTS] =
-            std::array::from_fn(|_| to_rgb("#ff00e6").into());
+        let colors: [Vec3; OUTPUTS] = std::array::from_fn(|_| to_rgb("#ff00e6").into());
         let drawer_graph_actions = GraphLinesDrawer::new(scale, pos_graph_actions).colors(colors);
 
-        let colors: [Vec3; OUTPUTS] =
-            std::array::from_fn(|_| to_rgb("#ff0932").into());
-        let drawer_graph_mean_actions = GraphLinesDrawer::new(scale, pos_graph_mean_actions).colors(colors);
+        let colors: [Vec3; OUTPUTS] = std::array::from_fn(|_| to_rgb("#ff0932").into());
+        let drawer_graph_mean_actions =
+            GraphLinesDrawer::new(scale, pos_graph_mean_actions).colors(colors);
 
+        let drawer_graph_reward =
+            GraphLinesDrawer::new(scale, pos_graph_quality).colors([to_rgb("#00d9ae").into()]);
 
-        let drawer_graph_reward = GraphLinesDrawer::new(scale, pos_graph_quality)
-            .colors([to_rgb("#00d9ae").into()]);
-
-        let colors: [Vec3; INPUTS] =
-            std::array::from_fn(|_| to_rgb("#7700d9").into());
-        let drawer_graph_inputs = GraphLinesDrawer::new(scale, pos_graph_inputs)
-            .colors(colors);
-
+        let colors: [Vec3; INPUTS] = std::array::from_fn(|_| to_rgb("#7700d9").into());
+        let drawer_graph_inputs = GraphLinesDrawer::new(scale, pos_graph_inputs).colors(colors);
 
         // Pendulum
         let verlet_physics_drawer =
@@ -205,7 +196,6 @@ impl<
             drawer_graph_inputs,
             env,
             verlet_physics_drawer,
-
         }
     }
 
@@ -218,14 +208,14 @@ impl<
         self.watch_ups.start("Solver");
         let state = self.env.get_state();
 
-
         let (action, mean_action, log_probability) = self.ppo.get_action(&state);
 
         self.env.update(&action, dt);
         let new_state = self.env.get_state();
         let reward = self.env.get_reward();
 
-        self.ppo.save_reward(state, action, log_probability, reward, false);
+        self.ppo
+            .save_reward(state, action, log_probability, reward, false);
 
         for (i, val) in new_state.iter().enumerate() {
             self.graph_inputs.y_push_pop(i, *val);
@@ -246,7 +236,6 @@ impl<
 
         if self.ticks.is_multiple_of(1000) {
             let (actor_loss, critic_loss) = self.ppo.learn();
-            
 
             fn create_input<const INPUTS: usize>(i: usize, size: usize) -> [f32; INPUTS] {
                 let x = i as f32 / (size - 1) as f32 * 2.0 - 1.0;
@@ -258,20 +247,30 @@ impl<
             print!("{}, ", self.ticks / 1000);
             print!("actor: [ ");
             let size = 10;
-            for i in 0 .. size {
-                let input = create_input(i, size); 
+            for i in 0..size {
+                let input = create_input(i, size);
                 let y_pred = self.ppo.actor.forward(&input);
 
-                print_color(y_pred[0], 0.0, 1.0, crate::print_color::PrintColor::GreenCyanBlue);
+                print_color(
+                    y_pred[0],
+                    0.0,
+                    1.0,
+                    crate::print_color::PrintColor::GreenCyanBlue,
+                );
             }
 
             print!("], critic: [ ");
             let size = 10;
-            for i in 0 .. size {
-                let input = create_input(i, size); 
+            for i in 0..size {
+                let input = create_input(i, size);
                 let y_pred = self.ppo.critic.forward(&input);
 
-                print_color(y_pred[0], 0.0, 1.0, crate::print_color::PrintColor::BluePurpleRed);
+                print_color(
+                    y_pred[0],
+                    0.0,
+                    1.0,
+                    crate::print_color::PrintColor::BluePurpleRed,
+                );
             }
             print!("], ");
 
@@ -292,14 +291,15 @@ impl<
 
         self.watch_ups.start("Draw Model");
 
-        self.drawer_graph_actor_loss.update(&self.graph_actor_loss, edges);
+        self.drawer_graph_actor_loss
+            .update(&self.graph_actor_loss, edges);
         self.drawer_graph_critic_loss
             .update(&self.graph_critic_loss, edges);
         self.drawer_graph_actions.update(&self.graph_actions, edges);
-        self.drawer_graph_mean_actions.update(&self.graph_mean_actions, edges);
+        self.drawer_graph_mean_actions
+            .update(&self.graph_mean_actions, edges);
         self.drawer_graph_reward.update(&self.graph_reward, edges);
-        self.drawer_graph_inputs
-            .update(&self.graph_inputs, edges);
+        self.drawer_graph_inputs.update(&self.graph_inputs, edges);
 
         self.verlet_physics_drawer
             .update(self.env.get_verlet_physics(), nodes, edges);
@@ -324,14 +324,8 @@ impl<
     const LAYERS: usize,
     const RESIDUAL: bool,
     ENV: Gym<INPUTS, OUTPUTS>,
-> GymSimulationInterface for GymSimulation<
-    INPUTS,
-    OUTPUTS,
-    NEURONS,
-    LAYERS,
-    RESIDUAL,
-    ENV,
-> {
+> GymSimulationInterface for GymSimulation<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>
+{
     fn update_physics(&mut self) {
         self.update_physics();
     }
@@ -341,21 +335,17 @@ impl<
     }
 }
 
-pub struct GymSimulationThread
-{
+pub struct GymSimulationThread {
     pub sim: Box<dyn GymSimulationInterface>,
     pub producer: triple_buffer::Producer<DrawerObjects>,
 }
 
-impl worker_thread::Update for GymSimulationThread
-{
+impl worker_thread::Update for GymSimulationThread {
     fn update_physics(&mut self) {
-        
         self.sim.update_physics();
     }
 
     fn update_drawer(&mut self) {
-
         let data = self.producer.buffer();
         data.clear();
 
@@ -365,4 +355,4 @@ impl worker_thread::Update for GymSimulationThread
     }
 }
 
-unsafe impl<> Send for GymSimulationThread<>{}
+unsafe impl Send for GymSimulationThread {}

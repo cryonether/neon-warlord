@@ -2,8 +2,8 @@
 
 use itertools::izip;
 
-use super::*;
 use super::simd_vec::SVec16;
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct SMat16<const M: usize, const N: usize>(pub [AlignedVec<N>; M]);
@@ -22,10 +22,7 @@ impl<const M: usize, const N: usize> SMat16<M, N> {
     pub fn assert_not_nan(&self, name: &str) {
         for (i, row) in self.0.iter().enumerate() {
             for (j, &x) in row.0.iter().enumerate() {
-                assert!(
-                    !x.is_nan(),
-                    "{name}[{i}][{j}] is NaN"
-                );
+                assert!(!x.is_nan(), "{name}[{i}][{j}] is NaN");
             }
         }
     }
@@ -33,10 +30,7 @@ impl<const M: usize, const N: usize> SMat16<M, N> {
     pub fn assert_finite(&self, name: &str) {
         for (i, row) in self.0.iter().enumerate() {
             for (j, &x) in row.0.iter().enumerate() {
-                assert!(
-                    x.is_finite(),
-                    "{name}[{i}][{j}] is not finite: {x}"
-                );
+                assert!(x.is_finite(), "{name}[{i}][{j}] is not finite: {x}");
             }
         }
     }
@@ -182,12 +176,12 @@ impl<const M: usize, const N: usize> Add<&SMat16<M, N>> for &SMat16<M, N> {
         let a = self;
         let b = rhs;
         let mut res = SMat16::zero();
-        for (a, b, res) in izip!(a, b, &mut res){
-            for (a, b, res) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()){
+        for (a, b, res) in izip!(a, b, &mut res) {
+            for (a, b, res) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()) {
                 *res = a + b;
             }
 
-            for (a, b, res) in izip!(a.remainder(), b.remainder(), res.remainder_mut()){
+            for (a, b, res) in izip!(a.remainder(), b.remainder(), res.remainder_mut()) {
                 *res = a + b;
             }
         }
@@ -195,7 +189,6 @@ impl<const M: usize, const N: usize> Add<&SMat16<M, N>> for &SMat16<M, N> {
         res
     }
 }
-
 
 ///
 /// `c = a - b`
@@ -207,12 +200,12 @@ impl<const M: usize, const N: usize> Sub<&SMat16<M, N>> for &SMat16<M, N> {
         let a = self;
         let b = rhs;
         let mut res = SMat16::zero();
-        for (a, b, res) in izip!(a, b, &mut res){
-            for (a, b, res) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()){
+        for (a, b, res) in izip!(a, b, &mut res) {
+            for (a, b, res) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()) {
                 *res = a - b;
             }
 
-            for (a, b, res) in izip!(a.remainder(), b.remainder(), res.remainder_mut()){
+            for (a, b, res) in izip!(a.remainder(), b.remainder(), res.remainder_mut()) {
                 *res = a - b;
             }
         }

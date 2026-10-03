@@ -61,16 +61,15 @@ where
                     let elapsed_frame_time = last_frame_time.elapsed();
                     if elapsed_frame_time >= target_frame_time {
                         func_obj.update_drawer();
-                        last_frame_time =  Instant::now();
-                    }
-                    else {
+                        last_frame_time = Instant::now();
+                    } else {
                         if limit_ups_thread.load(Ordering::Relaxed) {
                             func_obj.update_drawer();
 
                             // sleep until 16.6 ms have been reached
                             thread::sleep(target_frame_time - elapsed_frame_time);
 
-                            last_frame_time =  Instant::now();
+                            last_frame_time = Instant::now();
                         }
                     }
                 }

@@ -2,15 +2,20 @@
 //! https://github.com/ericyangyu/PPO-for-Beginners/tree/master
 //! PPO was published in 2017
 
+pub mod loss_function;
 #[cfg(test)]
 mod test_ppo;
-pub mod loss_function;
 
 use std::{collections::VecDeque, iter::zip};
 
 use itertools::izip;
 
-use crate::reinforcement_learning::{neural_network_simd::NeuralNetworkSimd, ppo::loss_function::{GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped}};
+use crate::reinforcement_learning::{
+    neural_network_simd::NeuralNetworkSimd,
+    ppo::loss_function::{
+        GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
+    },
+};
 
 /// Implements the Proximal Policy Optimization algorithm
 pub struct Ppo<
@@ -19,13 +24,12 @@ pub struct Ppo<
     const NEURONS: usize,
     const LAYERS: usize,
     const RESIDUAL: bool,
->
-{
+> {
     pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, false>,
     pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, false>,
-    
+
     transitions: Vec<Transition<INPUTS, OUTPUTS>>,
-    
+
     _variance: f32,
     std_dev: f32,
     gamma: f32,
@@ -40,40 +44,40 @@ impl<
     const NEURONS: usize,
     const LAYERS: usize,
     const RESIDUAL: bool,
-> Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL> {
+> Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL>
+{
     pub fn new(seed: u64) -> Self {
         // For choosing an action
         const VARIANCE: f32 = 0.5;
         const STD_DEV: f32 = 0.70710677; // sqrt(0.5)
 
         // Discount factor, for calculating the discounted reward
-        const GAMMA: f32 = 0.95;     
+        const GAMMA: f32 = 0.95;
         const GAE_LAMBDA: f32 = 0.90;
 
         // Threshold to clip the ratio
         const CLIP: f32 = 0.2;
 
         // Number of times to update the network from the same batch of data
-        const NR_UPDATES_PER_ITERATION: usize = 5;  
+        const NR_UPDATES_PER_ITERATION: usize = 5;
 
         let actor = NeuralNetworkSimd::new_rand(seed);
         let critic = NeuralNetworkSimd::new_rand(seed);
 
         let transitions = Vec::new();
 
-        Self { 
-            actor, 
+        Self {
+            actor,
             critic,
             transitions,
             _variance: VARIANCE,
             std_dev: STD_DEV,
-            gamma: GAMMA, 
+            gamma: GAMMA,
             gae_lambda: GAE_LAMBDA,
             clip: CLIP,
             nr_updates_per_iteration: NR_UPDATES_PER_ITERATION,
         }
     }
-
 
     //
     //   Queries an action from the actor network
@@ -85,14 +89,14 @@ impl<
     //       action - the action to take
     //       log_prob - the log probability of the selected action in the distribution
     //
-    pub fn get_action(&mut self, observation: &[f32; INPUTS])
--> ([f32; OUTPUTS], [f32; OUTPUTS], f32)     {
+    pub fn get_action(
+        &mut self,
+        observation: &[f32; INPUTS],
+    ) -> ([f32; OUTPUTS], [f32; OUTPUTS], f32) {
         // Query the actor network for a mean action.
         let mean_action = self.actor.forward(observation);
 
-        let action = mean_action.map(|mu| {
-            mu + self.std_dev * box_mueller_standard_normal()
-        });
+        let action = mean_action.map(|mu| mu + self.std_dev * box_mueller_standard_normal());
 
         // Calculate the log probability over the sampled action
         let mut glp = GaussianLogProbability::new();
@@ -101,9 +105,10 @@ impl<
         (action, mean_action, log_probability)
     }
 
-    pub fn save_reward(&mut self, 
-        observation: [f32; INPUTS], 
-        action: [f32; OUTPUTS], 
+    pub fn save_reward(
+        &mut self,
+        observation: [f32; INPUTS],
+        action: [f32; OUTPUTS],
         log_probability: f32,
         reward: f32,
         done: bool,
@@ -111,21 +116,17 @@ impl<
         let value = self.critic.forward(&observation);
         let value = value[0];
 
-        self.transitions.push(
-            Transition {
-                observation,
-                action,
-                log_probability,
-                reward,
-                done,
-                value,
-            }
-        )
+        self.transitions.push(Transition {
+            observation,
+            action,
+            log_probability,
+            reward,
+            done,
+            value,
+        })
     }
 
-    fn calculate_gae(
-        &self,
-    ) -> (VecDeque<f32>, VecDeque<f32>) {
+    fn calculate_gae(&self) -> (VecDeque<f32>, VecDeque<f32>) {
         let mut advantages = VecDeque::new();
         let mut returns = VecDeque::new();
 
@@ -137,16 +138,9 @@ impl<
             let value = transition.value;
 
             // Terminal states have no bootstrap value.
-            let bootstrap_value = if transition.done {
-                0.0
-            } else {
-                next_value
-            };
+            let bootstrap_value = if transition.done { 0.0 } else { next_value };
 
-            let delta =
-                reward
-                + self.gamma * bootstrap_value
-                - value;
+            let delta = reward + self.gamma * bootstrap_value - value;
 
             // Generalized Advantage Estimate:
             //
@@ -176,26 +170,25 @@ impl<
     }
 
     pub fn learn(&mut self) -> (f32, f32) {
-
         let (mut advantages, value_targets) = self.calculate_gae();
 
         // Normalizing advantages
-        // isn't theoretically necessary, but in practice it decreases the variance of 
+        // isn't theoretically necessary, but in practice it decreases the variance of
         // our advantages and makes convergence much more stable and faster.
         let advantages_mean = advantages.iter().sum::<f32>() / advantages.len() as f32;
         let advantages_variance = advantages
-                .iter()
-                .map(|x| {
-                    let diff = x - advantages_mean;
-                    diff * diff
-                })
-                .sum::<f32>()
-                / advantages.len() as f32;
+            .iter()
+            .map(|x| {
+                let diff = x - advantages_mean;
+                diff * diff
+            })
+            .sum::<f32>()
+            / advantages.len() as f32;
         let advantages_std_dev = advantages_variance.sqrt();
 
         for advantage in &mut advantages {
             *advantage = (*advantage - advantages_mean) / (advantages_std_dev + 1e-10);
-        } 
+        }
 
         let n = self.transitions.len();
         assert_eq!(advantages.len(), n);
@@ -209,7 +202,9 @@ impl<
             let mut critic_loss_sum = 0.0;
             let mut actor_loss_sum = 0.0;
 
-            for (transition, advantage, returns) in izip!(&self.transitions, &advantages, &value_targets) {
+            for (transition, advantage, returns) in
+                izip!(&self.transitions, &advantages, &value_targets)
+            {
                 let observation = transition.observation;
                 let action = transition.action;
                 let log_probability = transition.log_probability;
@@ -228,7 +223,7 @@ impl<
                 let critic_square_error_derivative = mse.derivative();
 
                 critic_loss_sum += critic_square_error;
-                
+
                 // Calculate the log probability over the sampled action
                 let mut glp = GaussianLogProbability::new();
                 let curr_log_probability = glp.calc(&action, &cur_mean_action, self.std_dev);
@@ -241,7 +236,8 @@ impl<
 
                 // Calculate surrogate loss
                 let mut ppo_surrogate_loss_clipped = PpoSurrogateLossClipped::new();
-                let surrogate_loss_clipped = ppo_surrogate_loss_clipped.calc(ratio, *advantage, self.clip);
+                let surrogate_loss_clipped =
+                    ppo_surrogate_loss_clipped.calc(ratio, *advantage, self.clip);
                 let surrogate_loss_clipped_derivative = ppo_surrogate_loss_clipped.derivative();
 
                 actor_loss_sum += surrogate_loss_clipped;
@@ -253,8 +249,12 @@ impl<
                 // ∂μt                          σ2
                 //
                 let mut loss_derivative = [0.0; OUTPUTS];
-                for (curr_log_probability_derivative, loss_derivative) in zip(curr_log_probability_derivative, &mut loss_derivative) {
-                    *loss_derivative = surrogate_loss_clipped_derivative * ratio_derivative * curr_log_probability_derivative;
+                for (curr_log_probability_derivative, loss_derivative) in
+                    zip(curr_log_probability_derivative, &mut loss_derivative)
+                {
+                    *loss_derivative = surrogate_loss_clipped_derivative
+                        * ratio_derivative
+                        * curr_log_probability_derivative;
                 }
 
                 // Calculate gradients
@@ -265,7 +265,6 @@ impl<
                 //
                 let _critic_dx = self.critic.backward(&critic_square_error_derivative);
                 let _actor_dx = self.actor.backward(&loss_derivative);
-
             }
 
             critic_loss = critic_loss_sum / n;
@@ -275,21 +274,15 @@ impl<
             const LEARNING_RATE_CRITIC: f32 = 0.001;
             self.critic.subtract_gradients(LEARNING_RATE_CRITIC / n);
             self.actor.subtract_gradients(LEARNING_RATE_ACTOR / n);
-
         }
-        
+
         self.transitions.clear();
 
         (actor_loss, critic_loss)
     }
-
 }
 
-
-struct Transition<
-    const INPUTS: usize,
-    const OUTPUTS: usize,
-> {
+struct Transition<const INPUTS: usize, const OUTPUTS: usize> {
     observation: [f32; INPUTS],
     action: [f32; OUTPUTS],
     log_probability: f32,
@@ -297,8 +290,6 @@ struct Transition<
     done: bool,
     value: f32,
 }
-
-
 
 ///
 /// Generates a single random sample from a Standard Normal Distribution (mean = 0, std_dev = 1)

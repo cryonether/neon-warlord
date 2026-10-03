@@ -5,8 +5,7 @@ use std::iter::zip;
 use wide::f32x16;
 
 use crate::reinforcement_learning::neural_network_simd::simd_math::{
-    simd_mat::SMat16,
-    simd_vec::SVec16,
+    simd_mat::SMat16, simd_vec::SVec16,
 };
 
 /// A simd layer
@@ -349,5 +348,3 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         }
     }
 }
-
-

@@ -3,17 +3,17 @@
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub enum PrintColor {
-    RedYellowGreen,     // intuitive for probabilities / scores
-    GreenYellowRed, 
-    BlueCyanGreen,      // nice for heatmaps
-    GreenCyanBlue,  
-    BluePurpleRed,      // good for low → high intensity
-    PurplePinkYellow,   // visually bright
-    BlackWhite,         // grayscale
+    RedYellowGreen, // intuitive for probabilities / scores
+    GreenYellowRed,
+    BlueCyanGreen, // nice for heatmaps
+    GreenCyanBlue,
+    BluePurpleRed,    // good for low → high intensity
+    PurplePinkYellow, // visually bright
+    BlackWhite,       // grayscale
     WhiteBlack,
-    Cool,               // blue
-    Warm,               // red
-    Rainbow,            // maximum visual distinction
+    Cool,    // blue
+    Warm,    // red
+    Rainbow, // maximum visual distinction
 }
 
 fn lerp(a: u8, b: u8, t: f32) -> u8 {
@@ -50,61 +50,25 @@ pub fn print_color(val: f32, min: f32, max: f32, color: PrintColor) {
     };
 
     let colors = match color {
-        PrintColor::RedYellowGreen => &[
-            (255, 0, 0),
-            (255, 255, 0),
-            (0, 255, 0),
-        ][..],
+        PrintColor::RedYellowGreen => &[(255, 0, 0), (255, 255, 0), (0, 255, 0)][..],
 
-        PrintColor::GreenYellowRed => &[
-            (0, 255, 0),
-            (255, 255, 0),
-            (255, 0, 0),
-        ][..],
+        PrintColor::GreenYellowRed => &[(0, 255, 0), (255, 255, 0), (255, 0, 0)][..],
 
-        PrintColor::BlueCyanGreen => &[
-            (0, 0, 255),
-            (0, 255, 255),
-            (0, 255, 0),
-        ][..],
+        PrintColor::BlueCyanGreen => &[(0, 0, 255), (0, 255, 255), (0, 255, 0)][..],
 
-        PrintColor::GreenCyanBlue => &[
-            (0, 255, 0),
-            (0, 255, 255),
-            (0, 0, 255),
-        ][..],
+        PrintColor::GreenCyanBlue => &[(0, 255, 0), (0, 255, 255), (0, 0, 255)][..],
 
-        PrintColor::BluePurpleRed => &[
-            (0, 0, 255),
-            (128, 0, 255),
-            (255, 0, 0),
-        ][..],
+        PrintColor::BluePurpleRed => &[(0, 0, 255), (128, 0, 255), (255, 0, 0)][..],
 
-        PrintColor::PurplePinkYellow => &[
-            (128, 0, 255),
-            (255, 0, 128),
-            (255, 255, 0),
-        ][..],
+        PrintColor::PurplePinkYellow => &[(128, 0, 255), (255, 0, 128), (255, 255, 0)][..],
 
-        PrintColor::BlackWhite => &[
-            (0, 0, 0),
-            (255, 255, 255),
-        ][..],
+        PrintColor::BlackWhite => &[(0, 0, 0), (255, 255, 255)][..],
 
-        PrintColor::WhiteBlack => &[
-            (255, 255, 255),
-            (0, 0, 0),
-        ][..],
+        PrintColor::WhiteBlack => &[(255, 255, 255), (0, 0, 0)][..],
 
-        PrintColor::Cool => &[
-            (0, 255, 255),
-            (0, 0, 255),
-        ][..],
+        PrintColor::Cool => &[(0, 255, 255), (0, 0, 255)][..],
 
-        PrintColor::Warm => &[
-            (255, 255, 0),
-            (255, 0, 0),
-        ][..],
+        PrintColor::Warm => &[(255, 255, 0), (255, 0, 0)][..],
 
         PrintColor::Rainbow => &[
             (255, 0, 0),
@@ -118,8 +82,5 @@ pub fn print_color(val: f32, min: f32, max: f32, color: PrintColor) {
 
     let (r, g, b) = gradient(t, colors);
 
-    print!(
-        "\x1b[38;2;{};{};{}m{:.3}\x1b[0m ",
-        r, g, b, val
-    );
+    print!("\x1b[38;2;{};{};{}m{:.3}\x1b[0m ", r, g, b, val);
 }

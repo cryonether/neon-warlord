@@ -6,10 +6,7 @@ use super::simd_vec::SVec16;
 
 const EPS: f32 = 1e-5;
 
-fn assert_row_vec_eq<const N: usize>(
-    a: &SRowVec16<N>,
-    b: &SRowVec16<N>,
-) {
+fn assert_row_vec_eq<const N: usize>(a: &SRowVec16<N>, b: &SRowVec16<N>) {
     for (x, y) in a.iter().zip(b.iter()) {
         assert!(
             (x - y).abs() < EPS,
@@ -18,10 +15,7 @@ fn assert_row_vec_eq<const N: usize>(
     }
 }
 
-fn assert_vec_eq<const N: usize>(
-    a: &SVec16<N>,
-    b: &SVec16<N>,
-) {
+fn assert_vec_eq<const N: usize>(a: &SVec16<N>, b: &SVec16<N>) {
     for (x, y) in a.iter().zip(b.iter()) {
         assert!(
             (x - y).abs() < EPS,
@@ -194,11 +188,7 @@ fn test_matrix_mul_zero_matrix() {
 
 #[test]
 fn test_matrix_mul_known_values() {
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            (i + j + 1) as f32
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| (i + j + 1) as f32));
 
     let mat = SMat16::<16, 16>::new(matrix);
 
@@ -211,11 +201,8 @@ fn test_matrix_mul_known_values() {
     //
     // result[j] = sum_i(row[i] * matrix[i][j])
     //
-    let expected_values = std::array::from_fn(|j| {
-        (0..16)
-            .map(|i| values[i] * matrix[i][j])
-            .sum::<f32>()
-    });
+    let expected_values =
+        std::array::from_fn(|j| (0..16).map(|i| values[i] * matrix[i][j]).sum::<f32>());
 
     let expected = SRowVec16::<16>::new(expected_values);
 
@@ -240,8 +227,7 @@ fn test_matrix_mul_single_nonzero() {
 
     let result = &row * &mat;
 
-    let expected_values =
-        std::array::from_fn(|j| 5.0 * (j + 1) as f32);
+    let expected_values = std::array::from_fn(|j| 5.0 * (j + 1) as f32);
 
     let expected = SRowVec16::<16>::new(expected_values);
 
@@ -264,9 +250,7 @@ fn test_matrix_mul_single_nonzero_column() {
 
     let result = &row * &mat;
 
-    let expected_sum = (0..16)
-        .map(|i| values[i] * matrix[i][7])
-        .sum::<f32>();
+    let expected_sum = (0..16).map(|i| values[i] * matrix[i][7]).sum::<f32>();
 
     assert!(
         (result[7] - expected_sum).abs() < EPS,
@@ -312,9 +296,7 @@ fn test_row_vector_mul_identity_is_unchanged() {
 
     let mat = SMat16::<16, 16>::new(matrix);
 
-    let values = std::array::from_fn(|i| {
-        (i * 7 + 3) as f32
-    });
+    let values = std::array::from_fn(|i| (i * 7 + 3) as f32);
 
     let row = SRowVec16::<16>::new(values);
 
@@ -325,18 +307,13 @@ fn test_row_vector_mul_identity_is_unchanged() {
 
 #[test]
 fn test_row_vector_mul_zero_is_zero() {
-    let row = SRowVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let row = SRowVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let zero = SMat16::<16, 16>::zero();
 
     let result = &row * &zero;
 
-    assert_row_vec_eq(
-        &result,
-        &SRowVec16::<16>::zero(),
-    );
+    assert_row_vec_eq(&result, &SRowVec16::<16>::zero());
 }
 
 // -----------------------------------------------------------------------------
@@ -348,26 +325,18 @@ fn test_matrix_mul_with_remainder_columns() {
     const M: usize = 16;
     const N: usize = 17;
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            (i + j + 1) as f32
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| (i + j + 1) as f32));
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let values = std::array::from_fn(|i| (i + 1) as f32);
 
     let row = SRowVec16::<M>::new(values);
 
     let result = &row * &mat;
 
-    let expected_values = std::array::from_fn(|j| {
-        (0..M)
-            .map(|i| values[i] * matrix[i][j])
-            .sum::<f32>()
-    });
+    let expected_values =
+        std::array::from_fn(|j| (0..M).map(|i| values[i] * matrix[i][j]).sum::<f32>());
 
     let expected = SRowVec16::<N>::new(expected_values);
 
@@ -379,26 +348,18 @@ fn test_matrix_mul_with_remainder_columns_large() {
     const M: usize = 17;
     const N: usize = 19;
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            ((i + 1) * (j + 2)) as f32
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| ((i + 1) * (j + 2)) as f32));
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let values = std::array::from_fn(|i| (i + 1) as f32);
 
     let row = SRowVec16::<M>::new(values);
 
     let result = &row * &mat;
 
-    let expected_values = std::array::from_fn(|j| {
-        (0..M)
-            .map(|i| values[i] * matrix[i][j])
-            .sum::<f32>()
-    });
+    let expected_values =
+        std::array::from_fn(|j| (0..M).map(|i| values[i] * matrix[i][j]).sum::<f32>());
 
     let expected = SRowVec16::<N>::new(expected_values);
 
@@ -410,17 +371,11 @@ fn test_matrix_mul_exactly_one_simd_block() {
     const M: usize = 16;
     const N: usize = 16;
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            if i == j { 1.0 } else { 0.0 }
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| if i == j { 1.0 } else { 0.0 }));
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let row = SRowVec16::<M>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let row = SRowVec16::<M>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let result = &row * &mat;
 
@@ -432,17 +387,11 @@ fn test_matrix_mul_two_simd_blocks() {
     const M: usize = 32;
     const N: usize = 32;
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            if i == j { 1.0 } else { 0.0 }
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| if i == j { 1.0 } else { 0.0 }));
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let row = SRowVec16::<M>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let row = SRowVec16::<M>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let result = &row * &mat;
 
@@ -458,26 +407,18 @@ fn test_matrix_mul_15_by_15() {
     const M: usize = 15;
     const N: usize = 15;
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            (i + j + 1) as f32
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| (i + j + 1) as f32));
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let values = std::array::from_fn(|i| (i + 1) as f32);
 
     let row = SRowVec16::<M>::new(values);
 
     let result = &row * &mat;
 
-    let expected_values = std::array::from_fn(|j| {
-        (0..M)
-            .map(|i| values[i] * matrix[i][j])
-            .sum::<f32>()
-    });
+    let expected_values =
+        std::array::from_fn(|j| (0..M).map(|i| values[i] * matrix[i][j]).sum::<f32>());
 
     let expected = SRowVec16::<N>::new(expected_values);
 
@@ -489,26 +430,18 @@ fn test_matrix_mul_17_by_17() {
     const M: usize = 17;
     const N: usize = 17;
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            (i + j + 1) as f32
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| (i + j + 1) as f32));
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let values = std::array::from_fn(|i| (i + 1) as f32);
 
     let row = SRowVec16::<M>::new(values);
 
     let result = &row * &mat;
 
-    let expected_values = std::array::from_fn(|j| {
-        (0..M)
-            .map(|i| values[i] * matrix[i][j])
-            .sum::<f32>()
-    });
+    let expected_values =
+        std::array::from_fn(|j| (0..M).map(|i| values[i] * matrix[i][j]).sum::<f32>());
 
     let expected = SRowVec16::<N>::new(expected_values);
 
@@ -523,32 +456,18 @@ fn test_matrix_mul_17_by_17() {
 fn test_matrix_mul_diagonal() {
     const N: usize = 17;
 
-    let diagonal: [f32; N] =
-        std::array::from_fn(|i| (i + 2) as f32);
+    let diagonal: [f32; N] = std::array::from_fn(|i| (i + 2) as f32);
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            if i == j {
-                diagonal[i]
-            } else {
-                0.0
-            }
-        })
-    });
+    let matrix =
+        std::array::from_fn(|i| std::array::from_fn(|j| if i == j { diagonal[i] } else { 0.0 }));
 
     let mat = SMat16::<N, N>::new(matrix);
 
-    let row = SRowVec16::<N>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let row = SRowVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let result = &row * &mat;
 
-    let expected = SRowVec16::<N>::new(
-        std::array::from_fn(|i| {
-            (i + 1) as f32 * diagonal[i]
-        })
-    );
+    let expected = SRowVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32 * diagonal[i]));
 
     assert_row_vec_eq(&result, &expected);
 }
@@ -558,13 +477,9 @@ fn test_matrix_mul_constant_matrix() {
     const M: usize = 17;
     const N: usize = 19;
 
-    let mat = SMat16::<M, N>::new(
-        [[2.0; N]; M]
-    );
+    let mat = SMat16::<M, N>::new([[2.0; N]; M]);
 
-    let row = SRowVec16::<M>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let row = SRowVec16::<M>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let result = &row * &mat;
 
@@ -574,9 +489,7 @@ fn test_matrix_mul_constant_matrix() {
     //
     // = 2 * 153
     // = 306
-    let expected = SRowVec16::<N>::new(
-        [306.0; N]
-    );
+    let expected = SRowVec16::<N>::new([306.0; N]);
 
     assert_row_vec_eq(&result, &expected);
 }
@@ -601,11 +514,7 @@ fn test_matrix_mul_single_nonzero_row_with_remainder() {
 
     let result = &row * &mat;
 
-    let expected = SRowVec16::<N>::new(
-        std::array::from_fn(|j| {
-            5.0 * (j + 1) as f32
-        })
-    );
+    let expected = SRowVec16::<N>::new(std::array::from_fn(|j| 5.0 * (j + 1) as f32));
 
     assert_row_vec_eq(&result, &expected);
 }
@@ -623,17 +532,11 @@ fn test_matrix_mul_single_nonzero_column_with_remainder() {
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let row = SRowVec16::<M>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let row = SRowVec16::<M>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let result = &row * &mat;
 
-    let expected_sum = (0..M)
-        .map(|i| {
-            (i + 1) as f32 * (i + 1) as f32
-        })
-        .sum::<f32>();
+    let expected_sum = (0..M).map(|i| (i + 1) as f32 * (i + 1) as f32).sum::<f32>();
 
     assert!(
         (result[18] - expected_sum).abs() < EPS,
@@ -658,37 +561,24 @@ fn test_zero_row_vector_times_any_matrix() {
 
     let row = SRowVec16::<M>::zero();
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            (i * 3 + j + 1) as f32
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| (i * 3 + j + 1) as f32));
 
     let mat = SMat16::<M, N>::new(matrix);
 
     let result = &row * &mat;
 
-    assert_row_vec_eq(
-        &result,
-        &SRowVec16::<N>::zero(),
-    );
+    assert_row_vec_eq(&result, &SRowVec16::<N>::zero());
 }
 
 #[test]
 fn test_row_vector_times_identity_with_remainder() {
     const N: usize = 17;
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            if i == j { 1.0 } else { 0.0 }
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| if i == j { 1.0 } else { 0.0 }));
 
     let mat = SMat16::<N, N>::new(matrix);
 
-    let row = SRowVec16::<N>::new(
-        std::array::from_fn(|i| (i * 3 + 1) as f32)
-    );
+    let row = SRowVec16::<N>::new(std::array::from_fn(|i| (i * 3 + 1) as f32));
 
     let result = &row * &mat;
 
@@ -716,39 +606,35 @@ fn test_matrix_mul_negative_values() {
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let row = SRowVec16::<M>::new(
-        std::array::from_fn(|i| {
-            if i % 2 == 0 {
-                (i + 1) as f32
-            } else {
-                -((i + 1) as f32)
-            }
-        })
-    );
+    let row = SRowVec16::<M>::new(std::array::from_fn(|i| {
+        if i % 2 == 0 {
+            (i + 1) as f32
+        } else {
+            -((i + 1) as f32)
+        }
+    }));
 
     let result = &row * &mat;
 
-    let expected = SRowVec16::<N>::new(
-        std::array::from_fn(|j| {
-            (0..M)
-                .map(|i| {
-                    let x = if i % 2 == 0 {
-                        (i + 1) as f32
-                    } else {
-                        -((i + 1) as f32)
-                    };
+    let expected = SRowVec16::<N>::new(std::array::from_fn(|j| {
+        (0..M)
+            .map(|i| {
+                let x = if i % 2 == 0 {
+                    (i + 1) as f32
+                } else {
+                    -((i + 1) as f32)
+                };
 
-                    let y = if (i + j) % 2 == 0 {
-                        (i + j + 1) as f32
-                    } else {
-                        -((i + j + 1) as f32)
-                    };
+                let y = if (i + j) % 2 == 0 {
+                    (i + j + 1) as f32
+                } else {
+                    -((i + j + 1) as f32)
+                };
 
-                    x * y
-                })
-                .sum::<f32>()
-        })
-    );
+                x * y
+            })
+            .sum::<f32>()
+    }));
 
     assert_row_vec_eq(&result, &expected);
 }
@@ -761,8 +647,7 @@ fn test_matrix_mul_negative_values() {
 fn test_column_row_round_trip_with_remainder() {
     const N: usize = 17;
 
-    let values =
-        std::array::from_fn(|i| (i * 3 + 1) as f32);
+    let values = std::array::from_fn(|i| (i * 3 + 1) as f32);
 
     let row = SRowVec16::<N>::new(values);
     let column = row.as_column_vec();
@@ -775,8 +660,7 @@ fn test_column_row_round_trip_with_remainder() {
 fn test_row_vector_mutation_after_conversion() {
     const N: usize = 17;
 
-    let values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let values = std::array::from_fn(|i| (i + 1) as f32);
 
     let row = SRowVec16::<N>::new(values);
 
@@ -788,9 +672,7 @@ fn test_row_vector_mutation_after_conversion() {
 
     let row = column.as_row_vec();
 
-    let expected = SRowVec16::<N>::new(
-        std::array::from_fn(|i| ((i + 1) * 2) as f32)
-    );
+    let expected = SRowVec16::<N>::new(std::array::from_fn(|i| ((i + 1) * 2) as f32));
 
     assert_row_vec_eq(&row, &expected);
 }
@@ -828,14 +710,9 @@ fn test_iterator_length_without_remainder() {
 fn test_remainder_values() {
     const N: usize = 19;
 
-    let row = SRowVec16::<N>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let row = SRowVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32));
 
-    assert_eq!(
-        row.remainder(),
-        &[17.0, 18.0, 19.0]
-    );
+    assert_eq!(row.remainder(), &[17.0, 18.0, 19.0]);
 }
 
 // -----------------------------------------------------------------------------
@@ -847,39 +724,25 @@ fn test_matrix_mul_distributivity() {
     const M: usize = 17;
     const N: usize = 19;
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            (i + j + 1) as f32
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| (i + j + 1) as f32));
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let a = SRowVec16::<M>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SRowVec16::<M>::new(std::array::from_fn(|i| (i + 1) as f32));
 
-    let b = SRowVec16::<M>::new(
-        std::array::from_fn(|i| (i * 2) as f32)
-    );
+    let b = SRowVec16::<M>::new(std::array::from_fn(|i| (i * 2) as f32));
 
     // (a + b)A = aA + bA
     //
     // There is no row-vector Add implementation in the supplied
     // implementation, so calculate the sum explicitly.
-    let summed = SRowVec16::<M>::new(
-        std::array::from_fn(|i| a[i] + b[i])
-    );
+    let summed = SRowVec16::<M>::new(std::array::from_fn(|i| a[i] + b[i]));
 
     let lhs = &summed * &mat;
     let a_result = &a * &mat;
     let b_result = &b * &mat;
 
-    let rhs = SRowVec16::<N>::new(
-        std::array::from_fn(|j| {
-            a_result[j] + b_result[j]
-        })
-    );
+    let rhs = SRowVec16::<N>::new(std::array::from_fn(|j| a_result[j] + b_result[j]));
 
     assert_row_vec_eq(&lhs, &rhs);
 }
@@ -889,27 +752,18 @@ fn test_matrix_mul_zero_plus_matrix() {
     const M: usize = 17;
     const N: usize = 19;
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            (i * 2 + j + 1) as f32
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| (i * 2 + j + 1) as f32));
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let row = SRowVec16::<M>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let row = SRowVec16::<M>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let zero = SRowVec16::<M>::zero();
 
     let lhs = &row * &mat;
     let rhs = &zero * &mat;
 
-    assert_row_vec_eq(
-        &rhs,
-        &SRowVec16::<N>::zero(),
-    );
+    assert_row_vec_eq(&rhs, &SRowVec16::<N>::zero());
 
     assert!(
         lhs.iter().any(|x| x.abs() > EPS),
@@ -926,21 +780,11 @@ fn test_large_matrix_multiplication() {
     const M: usize = 33;
     const N: usize = 35;
 
-    let matrix = std::array::from_fn(|i| {
-        std::array::from_fn(|j| {
-            if i == j {
-                1.0
-            } else {
-                0.0
-            }
-        })
-    });
+    let matrix = std::array::from_fn(|i| std::array::from_fn(|j| if i == j { 1.0 } else { 0.0 }));
 
     let mat = SMat16::<M, N>::new(matrix);
 
-    let row = SRowVec16::<M>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let row = SRowVec16::<M>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let result = &row * &mat;
 

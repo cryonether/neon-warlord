@@ -69,10 +69,7 @@ impl MotorRotation {
         self.sin_alpha = radial.dot(basis_y);
 
         // a = α × r
-        particles.accelerate(
-            self.node_id,
-            axis.cross(perpendicular) * self.acceleration,
-        );
+        particles.accelerate(self.node_id, axis.cross(perpendicular) * self.acceleration);
     }
 
     pub fn accelerate(&mut self, acceleration: f32) {
@@ -80,11 +77,10 @@ impl MotorRotation {
     }
 
     pub fn get_sin_alpha(&self) -> f32 {
-        - self.cos_alpha
-        
+        -self.cos_alpha
     }
 
     pub fn get_cos_alpha(&self) -> f32 {
-        - self.sin_alpha
+        -self.sin_alpha
     }
 }

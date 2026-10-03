@@ -4,14 +4,26 @@ use std::iter::zip;
 
 use crate::reinforcement_learning::neural_network_simd::NeuralNetworkSimd;
 
-
-pub struct EpochSimd<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> {
+pub struct EpochSimd<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NEURONS: usize,
+    const NR_LAYERS: usize,
+    const RESIDUAL: bool,
+> {
     pub model: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>,
 
     pub loss: f32,
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> EpochSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL> {
+impl<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NEURONS: usize,
+    const NR_LAYERS: usize,
+    const RESIDUAL: bool,
+> EpochSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>
+{
     pub fn new() -> Self {
         let model = NeuralNetworkSimd::new_rand(0);
         let loss = 0.0;
@@ -41,10 +53,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_L
         let mut sum = 0.0;
         // evaluate
         for (input, output) in zip(input, output) {
-
-
             let y_pred_ = self.model.forward(&input);
-            
 
             let y_pred = y_pred_[output_index];
             y_pred_vec.push(y_pred);

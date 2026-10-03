@@ -1,10 +1,13 @@
 //! Tries to learn a continuous function using a neural network
 
-use crate::{print_color::{PrintColor, print_color}, reinforcement_learning::neural_network_simd::{epoch::EpochSimd}};
+use crate::{
+    print_color::{PrintColor, print_color},
+    reinforcement_learning::neural_network_simd::epoch::EpochSimd,
+};
 
 fn reward(x: f32) -> f32 {
     f32::clamp(1.0 - x.powi(2), 0.0, 1.0)
-} 
+}
 
 #[test]
 fn test_fit_function() {
@@ -29,7 +32,5 @@ fn test_fit_function() {
         }
 
         println!("loss: {}", epoch.loss);
-        
     }
 }
-

@@ -45,21 +45,19 @@ fn compare() {
     nn_0.forward();
     nn_0.backward(0);
 
-
-    let mut nn_1: NeuralNetworkSimd<2, 2,2, 2, false> = NeuralNetworkSimd::new();
+    let mut nn_1: NeuralNetworkSimd<2, 2, 2, 2, false> = NeuralNetworkSimd::new();
 
     *nn_1.input.x = x.into();
 
-    nn_1.input.w =     [[1.0, 2.0], [1.0, 2.0]].into();
+    nn_1.input.w = [[1.0, 2.0], [1.0, 2.0]].into();
     nn_1.layers[0].w = [[1.0, 2.0], [1.0, 2.0]].into();
     nn_1.layers[1].w = [[1.0, 2.0], [1.0, 2.0]].into();
-    nn_1.output.w =    [[1.0, 2.0], [1.0, 2.0]].into();
+    nn_1.output.w = [[1.0, 2.0], [1.0, 2.0]].into();
 
-    nn_1.input.b =     [1.0, 2.0].into();
+    nn_1.input.b = [1.0, 2.0].into();
     nn_1.layers[0].b = [1.0, 2.0].into();
     nn_1.layers[1].b = [1.0, 2.0].into();
-    nn_1.output.b =    [1.0, 2.0].into();
-
+    nn_1.output.b = [1.0, 2.0].into();
 
     let _val = nn_1.forward(&x);
     nn_1.backward(&[1.0, 0.0]);
@@ -192,7 +190,6 @@ fn compare_dfdx() {
 
     _assert_f32_eq_(db_2[0], nn_1.layers[1].dl_db[0]);
     _assert_f32_eq_(db_2[1], nn_1.layers[1].dl_db[1]);
-
 
     _assert_f32_eq_(db_3[0], nn_1.output.dl_db[0]);
     // assert_f32_eq_(db_3[1], nn_1.dy_db_y[1]);

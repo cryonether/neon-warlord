@@ -108,7 +108,6 @@ where
 {
     fn update_physics(&mut self) {
         self.sim.update_physics(&self.height_map);
-        
     }
 
     fn update_drawer(&mut self) {

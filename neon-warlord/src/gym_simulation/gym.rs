@@ -6,11 +6,7 @@ pub mod gym_pendulum_cart;
 
 use crate::verlet_physics_simd::VerletPhysicsSimd;
 
-pub trait Gym<
-    const OBSERVATIONS: usize,
-    const ACTIONS: usize
->
-{
+pub trait Gym<const OBSERVATIONS: usize, const ACTIONS: usize> {
     fn get_verlet_physics(&self) -> &VerletPhysicsSimd;
     fn update_verlet_physics(&mut self, dt: f32);
 

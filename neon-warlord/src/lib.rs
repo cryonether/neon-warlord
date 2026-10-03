@@ -11,13 +11,14 @@ mod ant_storage;
 mod camera_controller;
 mod debug_overlay;
 mod game_board;
+mod gym_simulation;
 mod heightmap_generator;
 mod orb_controller;
 mod orb_storage;
-mod gym_simulation;
 #[allow(dead_code)]
 mod physics_simulation_v3;
 mod physics_simulation_v3_drawer;
+mod print_color;
 mod procedural_tree;
 mod reinforcement_learning;
 mod settings;
@@ -29,7 +30,6 @@ mod verlet_physics_simd;
 mod worker;
 mod worker_instance;
 mod worker_thread;
-mod print_color;
 
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
@@ -52,7 +52,17 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, gym_simulation::{GymSimulation, GymSimulationThread, gym::gym_cart::GymCart, }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
+    ant_controller::AntPosition,
+    ant_generator::AntGenerator,
+    ant_storage::AntStorage,
+    camera_controller::CameraController,
+    debug_overlay::DebugOverlay,
+    gym_simulation::{GymSimulation, GymSimulationThread, gym::gym_cart::GymCart},
+    physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
+    simple_physics_simulation::SimplePhysicsSimulation,
+    sun_storage::SunStorage,
+    worker_instance::WorkerInstance,
+    worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -314,9 +324,8 @@ impl NeonWarlord {
         //         sim: PhysicsSimulationV3::new(producer),
         //     });
 
-        let gym_simulation: GymSimulation<2, 1, 16, 1, false, GymCart> = GymSimulation::new(
-            GymCart::new()
-        );
+        let gym_simulation: GymSimulation<2, 1, 16, 1, false, GymCart> =
+            GymSimulation::new(GymCart::new());
 
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
             sim: Box::new(gym_simulation),

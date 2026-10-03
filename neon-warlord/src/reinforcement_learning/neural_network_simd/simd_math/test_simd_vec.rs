@@ -10,10 +10,7 @@ const EPS: f32 = 1e-5;
 // Helpers
 // -----------------------------------------------------------------------------
 
-fn assert_vec_eq<const N: usize>(
-    a: &SVec16<N>,
-    b: &SVec16<N>,
-) {
+fn assert_vec_eq<const N: usize>(a: &SVec16<N>, b: &SVec16<N>) {
     for (x, y) in a.iter().zip(b.iter()) {
         assert!(
             (x - y).abs() < EPS,
@@ -22,10 +19,7 @@ fn assert_vec_eq<const N: usize>(
     }
 }
 
-fn assert_row_vec_eq<const N: usize>(
-    a: &SRowVec16<N>,
-    b: &SRowVec16<N>,
-) {
+fn assert_row_vec_eq<const N: usize>(a: &SRowVec16<N>, b: &SRowVec16<N>) {
     for (x, y) in a.iter().zip(b.iter()) {
         assert!(
             (x - y).abs() < EPS,
@@ -34,10 +28,7 @@ fn assert_row_vec_eq<const N: usize>(
     }
 }
 
-fn assert_matrix_eq<const M: usize, const N: usize>(
-    a: &SMat16<M, N>,
-    b: &SMat16<M, N>,
-) {
+fn assert_matrix_eq<const M: usize, const N: usize>(a: &SMat16<M, N>, b: &SMat16<M, N>) {
     for (row_a, row_b) in a.iter().zip(b.iter()) {
         for (x, y) in row_a.iter().zip(row_b.iter()) {
             assert!(
@@ -187,13 +178,9 @@ fn test_outer_product() {
 
     let result = &a * &b;
 
-    let expected = SMat16::<16, 16>::new(
-        std::array::from_fn(|i| {
-            std::array::from_fn(|j| {
-                a_values[i] * b_values[j]
-            })
-        })
-    );
+    let expected = SMat16::<16, 16>::new(std::array::from_fn(|i| {
+        std::array::from_fn(|j| a_values[i] * b_values[j])
+    }));
 
     assert_matrix_eq(&result, &expected);
 }
@@ -202,9 +189,7 @@ fn test_outer_product() {
 fn test_outer_product_zero_vector() {
     let a = SVec16::<16>::zero();
 
-    let b = SRowVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let b = SRowVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let result = &a * &b;
 
@@ -215,9 +200,7 @@ fn test_outer_product_zero_vector() {
 
 #[test]
 fn test_outer_product_zero_row_vector() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let b = SRowVec16::<16>::zero();
 
@@ -243,11 +226,7 @@ fn test_outer_product_single_nonzero() {
 
     for i in 0..16 {
         for j in 0..16 {
-            let expected = if i == 3 && j == 7 {
-                35.0
-            } else {
-                0.0
-            };
+            let expected = if i == 3 && j == 7 { 35.0 } else { 0.0 };
 
             assert!(
                 (result[i][j] - expected).abs() < EPS,
@@ -264,19 +243,16 @@ fn test_outer_product_single_nonzero() {
 
 #[test]
 fn test_elementwise_mul() {
-    let a_values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let a_values = std::array::from_fn(|i| (i + 1) as f32);
 
-    let b_values =
-        std::array::from_fn(|i| (i * 2 + 1) as f32);
+    let b_values = std::array::from_fn(|i| (i * 2 + 1) as f32);
 
     let a = SVec16::<16>::new(a_values);
     let b = SVec16::<16>::new(b_values);
 
     let result = &a * &b;
 
-    let expected_values =
-        std::array::from_fn(|i| a_values[i] * b_values[i]);
+    let expected_values = std::array::from_fn(|i| a_values[i] * b_values[i]);
 
     let expected = SVec16::<16>::new(expected_values);
 
@@ -285,25 +261,18 @@ fn test_elementwise_mul() {
 
 #[test]
 fn test_elementwise_mul_zero() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let b = SVec16::<16>::zero();
 
     let result = &a * &b;
 
-    assert_vec_eq(
-        &result,
-        &SVec16::<16>::zero(),
-    );
+    assert_vec_eq(&result, &SVec16::<16>::zero());
 }
 
 #[test]
 fn test_elementwise_mul_one() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i * 3 + 1) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i * 3 + 1) as f32));
 
     let b = SVec16::<16>::new([1.0; 16]);
 
@@ -314,13 +283,9 @@ fn test_elementwise_mul_one() {
 
 #[test]
 fn test_elementwise_mul_commutative() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 2) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i + 2) as f32));
 
-    let b = SVec16::<16>::new(
-        std::array::from_fn(|i| (i * 2 + 1) as f32)
-    );
+    let b = SVec16::<16>::new(std::array::from_fn(|i| (i * 2 + 1) as f32));
 
     let a_b = &a * &b;
     let b_a = &b * &a;
@@ -334,19 +299,16 @@ fn test_elementwise_mul_commutative() {
 
 #[test]
 fn test_add() {
-    let a_values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let a_values = std::array::from_fn(|i| (i + 1) as f32);
 
-    let b_values =
-        std::array::from_fn(|i| (i * 2) as f32);
+    let b_values = std::array::from_fn(|i| (i * 2) as f32);
 
     let a = SVec16::<16>::new(a_values);
     let b = SVec16::<16>::new(b_values);
 
     let result = &a + &b;
 
-    let expected_values =
-        std::array::from_fn(|i| a_values[i] + b_values[i]);
+    let expected_values = std::array::from_fn(|i| a_values[i] + b_values[i]);
 
     let expected = SVec16::<16>::new(expected_values);
 
@@ -355,9 +317,7 @@ fn test_add() {
 
 #[test]
 fn test_add_zero() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let zero = SVec16::<16>::zero();
 
@@ -368,13 +328,9 @@ fn test_add_zero() {
 
 #[test]
 fn test_add_commutative() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
-    let b = SVec16::<16>::new(
-        std::array::from_fn(|i| (i * 2) as f32)
-    );
+    let b = SVec16::<16>::new(std::array::from_fn(|i| (i * 2) as f32));
 
     let a_b = &a + &b;
     let b_a = &b + &a;
@@ -388,19 +344,16 @@ fn test_add_commutative() {
 
 #[test]
 fn test_sub() {
-    let a_values =
-        std::array::from_fn(|i| (i * 3 + 10) as f32);
+    let a_values = std::array::from_fn(|i| (i * 3 + 10) as f32);
 
-    let b_values =
-        std::array::from_fn(|i| (i + 2) as f32);
+    let b_values = std::array::from_fn(|i| (i + 2) as f32);
 
     let a = SVec16::<16>::new(a_values);
     let b = SVec16::<16>::new(b_values);
 
     let result = &a - &b;
 
-    let expected_values =
-        std::array::from_fn(|i| a_values[i] - b_values[i]);
+    let expected_values = std::array::from_fn(|i| a_values[i] - b_values[i]);
 
     let expected = SVec16::<16>::new(expected_values);
 
@@ -409,9 +362,7 @@ fn test_sub() {
 
 #[test]
 fn test_sub_zero() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let zero = SVec16::<16>::zero();
 
@@ -422,16 +373,11 @@ fn test_sub_zero() {
 
 #[test]
 fn test_sub_self() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let result = &a - &a;
 
-    assert_vec_eq(
-        &result,
-        &SVec16::<16>::zero(),
-    );
+    assert_vec_eq(&result, &SVec16::<16>::zero());
 }
 
 // -----------------------------------------------------------------------------
@@ -440,11 +386,9 @@ fn test_sub_self() {
 
 #[test]
 fn test_add_assign() {
-    let a_values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let a_values = std::array::from_fn(|i| (i + 1) as f32);
 
-    let b_values =
-        std::array::from_fn(|i| (i * 2) as f32);
+    let b_values = std::array::from_fn(|i| (i * 2) as f32);
 
     let mut actual = SVec16::<16>::new(a_values);
 
@@ -452,8 +396,7 @@ fn test_add_assign() {
 
     actual += &b;
 
-    let expected_values =
-        std::array::from_fn(|i| a_values[i] + b_values[i]);
+    let expected_values = std::array::from_fn(|i| a_values[i] + b_values[i]);
 
     let expected = SVec16::<16>::new(expected_values);
 
@@ -462,9 +405,7 @@ fn test_add_assign() {
 
 #[test]
 fn test_add_assign_zero() {
-    let mut a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let mut a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let original = a.clone();
 
@@ -475,9 +416,7 @@ fn test_add_assign_zero() {
 
 #[test]
 fn test_add_assign_self() {
-    let mut a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let mut a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let original = a.clone();
 
@@ -494,11 +433,9 @@ fn test_add_assign_self() {
 
 #[test]
 fn test_sub_assign() {
-    let a_values =
-        std::array::from_fn(|i| (i * 3 + 10) as f32);
+    let a_values = std::array::from_fn(|i| (i * 3 + 10) as f32);
 
-    let b_values =
-        std::array::from_fn(|i| (i + 2) as f32);
+    let b_values = std::array::from_fn(|i| (i + 2) as f32);
 
     let mut actual = SVec16::<16>::new(a_values);
 
@@ -506,8 +443,7 @@ fn test_sub_assign() {
 
     actual -= &b;
 
-    let expected_values =
-        std::array::from_fn(|i| a_values[i] - b_values[i]);
+    let expected_values = std::array::from_fn(|i| a_values[i] - b_values[i]);
 
     let expected = SVec16::<16>::new(expected_values);
 
@@ -516,9 +452,7 @@ fn test_sub_assign() {
 
 #[test]
 fn test_sub_assign_zero() {
-    let mut a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let mut a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let original = a.clone();
 
@@ -529,18 +463,13 @@ fn test_sub_assign_zero() {
 
 #[test]
 fn test_sub_assign_self() {
-    let mut a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let mut a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let original = a.clone();
 
     a -= &original;
 
-    assert_vec_eq(
-        &a,
-        &SVec16::<16>::zero(),
-    );
+    assert_vec_eq(&a, &SVec16::<16>::zero());
 }
 
 // -----------------------------------------------------------------------------
@@ -549,13 +478,9 @@ fn test_sub_assign_self() {
 
 #[test]
 fn test_add_sub_consistency() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i * 3 + 1) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i * 3 + 1) as f32));
 
-    let b = SVec16::<16>::new(
-        std::array::from_fn(|i| (i * 2 + 5) as f32)
-    );
+    let b = SVec16::<16>::new(std::array::from_fn(|i| (i * 2 + 5) as f32));
 
     let c = &a + &b;
     let result = &c - &b;
@@ -565,13 +490,9 @@ fn test_add_sub_consistency() {
 
 #[test]
 fn test_add_assign_matches_add() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i + 1) as f32));
 
-    let b = SVec16::<16>::new(
-        std::array::from_fn(|i| (i * 2) as f32)
-    );
+    let b = SVec16::<16>::new(std::array::from_fn(|i| (i * 2) as f32));
 
     let expected = &a + &b;
 
@@ -583,13 +504,9 @@ fn test_add_assign_matches_add() {
 
 #[test]
 fn test_sub_assign_matches_sub() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| (i * 3 + 10) as f32)
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| (i * 3 + 10) as f32));
 
-    let b = SVec16::<16>::new(
-        std::array::from_fn(|i| (i + 2) as f32)
-    );
+    let b = SVec16::<16>::new(std::array::from_fn(|i| (i + 2) as f32));
 
     let expected = &a - &b;
 
@@ -605,11 +522,9 @@ fn test_sub_assign_matches_sub() {
 
 #[test]
 fn test_outer_product_matches_elementwise_scaling() {
-    let a_values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let a_values = std::array::from_fn(|i| (i + 1) as f32);
 
-    let b_values =
-        std::array::from_fn(|i| (i * 2 + 1) as f32);
+    let b_values = std::array::from_fn(|i| (i * 2 + 1) as f32);
 
     let a = SVec16::<16>::new(a_values);
     let b = SRowVec16::<16>::new(b_values);
@@ -634,21 +549,13 @@ fn test_outer_product_matches_elementwise_scaling() {
 fn test_add_with_remainder() {
     const N: usize = 17;
 
-    let a = SVec16::<N>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32));
 
-    let b = SVec16::<N>::new(
-        std::array::from_fn(|i| (i * 3) as f32)
-    );
+    let b = SVec16::<N>::new(std::array::from_fn(|i| (i * 3) as f32));
 
     let result = &a + &b;
 
-    let expected = SVec16::<N>::new(
-        std::array::from_fn(|i| {
-            (i + 1) as f32 + (i * 3) as f32
-        })
-    );
+    let expected = SVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32 + (i * 3) as f32));
 
     assert_vec_eq(&result, &expected);
 }
@@ -657,21 +564,15 @@ fn test_add_with_remainder() {
 fn test_sub_with_remainder() {
     const N: usize = 17;
 
-    let a = SVec16::<N>::new(
-        std::array::from_fn(|i| (i * 4 + 10) as f32)
-    );
+    let a = SVec16::<N>::new(std::array::from_fn(|i| (i * 4 + 10) as f32));
 
-    let b = SVec16::<N>::new(
-        std::array::from_fn(|i| (i + 2) as f32)
-    );
+    let b = SVec16::<N>::new(std::array::from_fn(|i| (i + 2) as f32));
 
     let result = &a - &b;
 
-    let expected = SVec16::<N>::new(
-        std::array::from_fn(|i| {
-            (i * 4 + 10) as f32 - (i + 2) as f32
-        })
-    );
+    let expected = SVec16::<N>::new(std::array::from_fn(|i| {
+        (i * 4 + 10) as f32 - (i + 2) as f32
+    }));
 
     assert_vec_eq(&result, &expected);
 }
@@ -680,21 +581,13 @@ fn test_sub_with_remainder() {
 fn test_mul_with_remainder() {
     const N: usize = 17;
 
-    let a = SVec16::<N>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32));
 
-    let b = SVec16::<N>::new(
-        std::array::from_fn(|i| (i * 2 + 1) as f32)
-    );
+    let b = SVec16::<N>::new(std::array::from_fn(|i| (i * 2 + 1) as f32));
 
     let result = &a * &b;
 
-    let expected = SVec16::<N>::new(
-        std::array::from_fn(|i| {
-            (i + 1) as f32 * (i * 2 + 1) as f32
-        })
-    );
+    let expected = SVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32 * (i * 2 + 1) as f32));
 
     assert_vec_eq(&result, &expected);
 }
@@ -703,21 +596,15 @@ fn test_mul_with_remainder() {
 fn test_add_assign_with_remainder() {
     const N: usize = 17;
 
-    let a_values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let a_values = std::array::from_fn(|i| (i + 1) as f32);
 
-    let b_values =
-        std::array::from_fn(|i| (i * 2) as f32);
+    let b_values = std::array::from_fn(|i| (i * 2) as f32);
 
     let mut actual = SVec16::<N>::new(a_values);
 
     actual += &SVec16::<N>::new(b_values);
 
-    let expected = SVec16::<N>::new(
-        std::array::from_fn(|i| {
-            a_values[i] + b_values[i]
-        })
-    );
+    let expected = SVec16::<N>::new(std::array::from_fn(|i| a_values[i] + b_values[i]));
 
     assert_vec_eq(&actual, &expected);
 }
@@ -726,21 +613,15 @@ fn test_add_assign_with_remainder() {
 fn test_sub_assign_with_remainder() {
     const N: usize = 17;
 
-    let a_values =
-        std::array::from_fn(|i| (i * 3 + 10) as f32);
+    let a_values = std::array::from_fn(|i| (i * 3 + 10) as f32);
 
-    let b_values =
-        std::array::from_fn(|i| (i + 2) as f32);
+    let b_values = std::array::from_fn(|i| (i + 2) as f32);
 
     let mut actual = SVec16::<N>::new(a_values);
 
     actual -= &SVec16::<N>::new(b_values);
 
-    let expected = SVec16::<N>::new(
-        std::array::from_fn(|i| {
-            a_values[i] - b_values[i]
-        })
-    );
+    let expected = SVec16::<N>::new(std::array::from_fn(|i| a_values[i] - b_values[i]));
 
     assert_vec_eq(&actual, &expected);
 }
@@ -758,27 +639,20 @@ fn test_exactly_one_simd_block() {
 
     let result = &a * &b;
 
-    assert_vec_eq(
-        &result,
-        &SVec16::<N>::new([6.0; N]),
-    );
+    assert_vec_eq(&result, &SVec16::<N>::new([6.0; N]));
 }
 
 #[test]
 fn test_two_simd_blocks() {
     const N: usize = 32;
 
-    let a = SVec16::<N>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let b = SVec16::<N>::new([2.0; N]);
 
     let result = &a * &b;
 
-    let expected = SVec16::<N>::new(
-        std::array::from_fn(|i| ((i + 1) * 2) as f32)
-    );
+    let expected = SVec16::<N>::new(std::array::from_fn(|i| ((i + 1) * 2) as f32));
 
     assert_vec_eq(&result, &expected);
 }
@@ -791,9 +665,7 @@ fn test_two_simd_blocks() {
 fn test_remainder_one_element() {
     const N: usize = 17;
 
-    let a = SVec16::<N>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let b = SVec16::<N>::new([2.0; N]);
 
@@ -852,37 +724,24 @@ fn test_single_element_vector() {
     let a = SVec16::<1>::new([6.0]);
     let b = SVec16::<1>::new([7.0]);
 
-    assert_vec_eq(
-        &(&a + &b),
-        &SVec16::<1>::new([13.0]),
-    );
+    assert_vec_eq(&(&a + &b), &SVec16::<1>::new([13.0]));
 
-    assert_vec_eq(
-        &(&a - &b),
-        &SVec16::<1>::new([-1.0]),
-    );
+    assert_vec_eq(&(&a - &b), &SVec16::<1>::new([-1.0]));
 
-    assert_vec_eq(
-        &(&a * &b),
-        &SVec16::<1>::new([42.0]),
-    );
+    assert_vec_eq(&(&a * &b), &SVec16::<1>::new([42.0]));
 }
 
 #[test]
 fn test_fifteen_element_vector() {
     const N: usize = 15;
 
-    let a = SVec16::<N>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let b = SVec16::<N>::new([2.0; N]);
 
     let result = &a * &b;
 
-    let expected = SVec16::<N>::new(
-        std::array::from_fn(|i| ((i + 1) * 2) as f32)
-    );
+    let expected = SVec16::<N>::new(std::array::from_fn(|i| ((i + 1) * 2) as f32));
 
     assert_vec_eq(&result, &expected);
 }
@@ -891,17 +750,13 @@ fn test_fifteen_element_vector() {
 fn test_seventeen_element_vector() {
     const N: usize = 17;
 
-    let a = SVec16::<N>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<N>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let b = SVec16::<N>::new([2.0; N]);
 
     let result = &a * &b;
 
-    let expected = SVec16::<N>::new(
-        std::array::from_fn(|i| ((i + 1) * 2) as f32)
-    );
+    let expected = SVec16::<N>::new(std::array::from_fn(|i| ((i + 1) * 2) as f32));
 
     assert_vec_eq(&result, &expected);
 }
@@ -917,10 +772,7 @@ fn test_negative_values_add() {
 
     let result = &a + &b;
 
-    assert_vec_eq(
-        &result,
-        &SVec16::<16>::new([3.0; 16]),
-    );
+    assert_vec_eq(&result, &SVec16::<16>::new([3.0; 16]));
 }
 
 #[test]
@@ -930,10 +782,7 @@ fn test_negative_values_sub() {
 
     let result = &a - &b;
 
-    assert_vec_eq(
-        &result,
-        &SVec16::<16>::new([-7.0; 16]),
-    );
+    assert_vec_eq(&result, &SVec16::<16>::new([-7.0; 16]));
 }
 
 #[test]
@@ -943,39 +792,28 @@ fn test_negative_values_mul() {
 
     let result = &a * &b;
 
-    assert_vec_eq(
-        &result,
-        &SVec16::<16>::new([-10.0; 16]),
-    );
+    assert_vec_eq(&result, &SVec16::<16>::new([-10.0; 16]));
 }
 
 #[test]
 fn test_mixed_signs() {
-    let a = SVec16::<16>::new(
-        std::array::from_fn(|i| {
-            if i % 2 == 0 {
-                i as f32
-            } else {
-                -(i as f32)
-            }
-        })
-    );
+    let a = SVec16::<16>::new(std::array::from_fn(|i| {
+        if i % 2 == 0 { i as f32 } else { -(i as f32) }
+    }));
 
     let b = SVec16::<16>::new([2.0; 16]);
 
     let result = &a * &b;
 
-    let expected = SVec16::<16>::new(
-        std::array::from_fn(|i| {
-            let value = i as f32;
+    let expected = SVec16::<16>::new(std::array::from_fn(|i| {
+        let value = i as f32;
 
-            if i % 2 == 0 {
-                value * 2.0
-            } else {
-                -value * 2.0
-            }
-        })
-    );
+        if i % 2 == 0 {
+            value * 2.0
+        } else {
+            -value * 2.0
+        }
+    }));
 
     assert_vec_eq(&result, &expected);
 }
@@ -1044,14 +882,9 @@ fn test_remainder_length() {
 
 #[test]
 fn test_remainder_values() {
-    let vec = SVec16::<19>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let vec = SVec16::<19>::new(std::array::from_fn(|i| (i + 1) as f32));
 
-    assert_eq!(
-        vec.remainder(),
-        &[17.0, 18.0, 19.0]
-    );
+    assert_eq!(vec.remainder(), &[17.0, 18.0, 19.0]);
 }
 
 // -----------------------------------------------------------------------------
@@ -1063,11 +896,9 @@ fn test_outer_product_non_square() {
     const M: usize = 17;
     const N: usize = 19;
 
-    let a_values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let a_values = std::array::from_fn(|i| (i + 1) as f32);
 
-    let b_values =
-        std::array::from_fn(|i| (i + 1) as f32);
+    let b_values = std::array::from_fn(|i| (i + 1) as f32);
 
     let a = SVec16::<M>::new(a_values);
     let b = SRowVec16::<N>::new(b_values);
@@ -1157,9 +988,7 @@ fn test_add_associativity() {
 
 #[test]
 fn test_additive_identity() {
-    let a = SVec16::<17>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<17>::new(std::array::from_fn(|i| (i + 1) as f32));
 
     let zero = SVec16::<17>::zero();
 
@@ -1172,13 +1001,9 @@ fn test_additive_identity() {
 
 #[test]
 fn test_subtraction_inverse() {
-    let a = SVec16::<17>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<17>::new(std::array::from_fn(|i| (i + 1) as f32));
 
-    let b = SVec16::<17>::new(
-        std::array::from_fn(|i| (i * 2) as f32)
-    );
+    let b = SVec16::<17>::new(std::array::from_fn(|i| (i * 2) as f32));
 
     let result = &(&a - &b) + &b;
 
@@ -1187,17 +1012,11 @@ fn test_subtraction_inverse() {
 
 #[test]
 fn test_elementwise_mul_distributive_over_add() {
-    let a = SVec16::<17>::new(
-        std::array::from_fn(|i| (i + 1) as f32)
-    );
+    let a = SVec16::<17>::new(std::array::from_fn(|i| (i + 1) as f32));
 
-    let b = SVec16::<17>::new(
-        std::array::from_fn(|i| (i * 2) as f32)
-    );
+    let b = SVec16::<17>::new(std::array::from_fn(|i| (i * 2) as f32));
 
-    let c = SVec16::<17>::new(
-        std::array::from_fn(|i| (i * 3 + 1) as f32)
-    );
+    let c = SVec16::<17>::new(std::array::from_fn(|i| (i * 3 + 1) as f32));
 
     let lhs = &a * &(&b + &c);
     let rhs = &(&a * &b) + &(&a * &c);
@@ -1213,19 +1032,14 @@ fn test_elementwise_mul_distributive_over_add() {
 fn test_large_vector() {
     const N: usize = 1001;
 
-    let a = SVec16::<N>::new(
-        std::array::from_fn(|i| (i % 17) as f32)
-    );
+    let a = SVec16::<N>::new(std::array::from_fn(|i| (i % 17) as f32));
 
-    let b = SVec16::<N>::new(
-        std::array::from_fn(|i| (i % 11) as f32)
-    );
+    let b = SVec16::<N>::new(std::array::from_fn(|i| (i % 11) as f32));
 
     let result = &a * &b;
 
     for i in 0..N {
-        let expected =
-            (i % 17) as f32 * (i % 11) as f32;
+        let expected = (i % 17) as f32 * (i % 11) as f32;
 
         assert!(
             (result[i] - expected).abs() < EPS,

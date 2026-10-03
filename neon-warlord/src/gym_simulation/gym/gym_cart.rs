@@ -1,7 +1,9 @@
 //! A pendulum on a cart
 
 use crate::{
-    advanced_composition::motor_linear::MotorLinear, gym_simulation::{Vec3, gym::Gym}, verlet_physics_simd::VerletPhysicsSimd,
+    advanced_composition::motor_linear::MotorLinear,
+    gym_simulation::{Vec3, gym::Gym},
+    verlet_physics_simd::VerletPhysicsSimd,
 };
 
 const OBSERVATIONS: usize = 2;
@@ -98,7 +100,7 @@ impl GymCart {
     }
 }
 
-impl Gym<OBSERVATIONS, ACTIONS> for GymCart  {
+impl Gym<OBSERVATIONS, ACTIONS> for GymCart {
     fn get_verlet_physics(&self) -> &VerletPhysicsSimd {
         &self.verlet_physics
     }
@@ -124,7 +126,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymCart  {
         //     self.reset();
         // }
 
-        self.state = State { cart_pos, cart_velocity };
+        self.state = State {
+            cart_pos,
+            cart_velocity,
+        };
     }
 
     fn get_reward(&self) -> f32 {
@@ -132,12 +137,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymCart  {
     }
 
     fn reset(&mut self) {
-        self.verlet_physics.particles.reset_position(self.particle_cart, 
-            Vec3::new(
-                (fastrand::f32() - 0.5) * 2.0 * 1.8, 
-                0.0, 
-                0.0,
-            )
+        self.verlet_physics.particles.reset_position(
+            self.particle_cart,
+            Vec3::new((fastrand::f32() - 0.5) * 2.0 * 1.8, 0.0, 0.0),
         );
     }
 }
@@ -147,5 +149,3 @@ pub struct State {
     pub cart_pos: f32,
     pub cart_velocity: f32,
 }
-
-

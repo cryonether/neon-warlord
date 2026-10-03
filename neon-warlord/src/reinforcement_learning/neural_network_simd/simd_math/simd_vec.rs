@@ -2,12 +2,12 @@
 
 use itertools::izip;
 
-use super::*;
-use super::simd_row_vec::SRowVec16;
 use super::simd_mat::SMat16;
+use super::simd_row_vec::SRowVec16;
+use super::*;
 
 #[derive(Debug, Clone)]
-pub struct SVec16<const N: usize>(pub  AlignedVec<N>);
+pub struct SVec16<const N: usize>(pub AlignedVec<N>);
 
 impl<const N: usize> SVec16<N> {
     pub fn new(a: [f32; N]) -> Self {
@@ -17,7 +17,7 @@ impl<const N: usize> SVec16<N> {
     pub fn zero() -> Self {
         Self::new([0.0; N])
     }
-    
+
     #[allow(clippy::wrong_self_convention)]
     pub fn as_row_vec(self) -> SRowVec16<N> {
         SRowVec16(self.0)
@@ -25,19 +25,13 @@ impl<const N: usize> SVec16<N> {
 
     pub fn assert_not_nan(&self, name: &str) {
         for (i, &x) in self.0.iter().enumerate() {
-            assert!(
-                !x.is_nan(),
-                "{name}[{i}] is NaN"
-            );
+            assert!(!x.is_nan(), "{name}[{i}] is NaN");
         }
     }
 
     pub fn assert_finite(&self, name: &str) {
         for (i, &x) in self.0.iter().enumerate() {
-            assert!(
-                x.is_finite(),
-                "{name}[{i}] is not finite: {x}"
-            );
+            assert!(x.is_finite(), "{name}[{i}] is not finite: {x}");
         }
     }
 }
@@ -146,19 +140,11 @@ impl<const N: usize> Mul<&SVec16<N>> for &SVec16<N> {
         let b = rhs;
 
         let mut res = SVec16::zero();
-        for(a, b, res) in izip!(
-            a.simd_iter(), 
-            b.simd_iter(), 
-            res.simd_iter_mut())
-        {
+        for (a, b, res) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()) {
             *res = a * b
         }
 
-        for(a, b, res) in izip!(
-            a.remainder(), 
-            b.remainder(), 
-            res.remainder_mut())
-        {
+        for (a, b, res) in izip!(a.remainder(), b.remainder(), res.remainder_mut()) {
             *res = a * b
         }
 
@@ -205,11 +191,11 @@ impl<const N: usize> Add<&SVec16<N>> for &SVec16<N> {
         let b = rhs;
         let mut res = SVec16::zero();
 
-        for( a, b, res ) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()) {
+        for (a, b, res) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()) {
             *res = a + b;
         }
 
-        for( a, b, res ) in izip!(a.remainder(), b.remainder(), res.remainder_mut()) {
+        for (a, b, res) in izip!(a.remainder(), b.remainder(), res.remainder_mut()) {
             *res = a + b;
         }
 
@@ -226,11 +212,11 @@ impl<const N: usize> Sub<&SVec16<N>> for &SVec16<N> {
         let b = rhs;
         let mut res = SVec16::zero();
 
-        for( a, b, res ) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()) {
+        for (a, b, res) in izip!(a.simd_iter(), b.simd_iter(), res.simd_iter_mut()) {
             *res = a - b;
         }
 
-        for( a, b, res ) in izip!(a.remainder(), b.remainder(), res.remainder_mut()) {
+        for (a, b, res) in izip!(a.remainder(), b.remainder(), res.remainder_mut()) {
             *res = a - b;
         }
 

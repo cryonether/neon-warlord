@@ -1,8 +1,8 @@
 //! N row vector
 
-use super::*;
-use super::simd_vec::SVec16;
 use super::simd_mat::SMat16;
+use super::simd_vec::SVec16;
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct SRowVec16<const N: usize>(pub AlignedVec<N>);

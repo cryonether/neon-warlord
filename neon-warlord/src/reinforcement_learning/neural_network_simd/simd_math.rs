@@ -1,15 +1,15 @@
 //! Implements matrix multiplication with simd operations
 
 pub mod simd_mat;
-pub mod simd_vec;
 pub mod simd_row_vec;
+pub mod simd_vec;
 
 #[cfg(test)]
 mod test_simd_mat;
 #[cfg(test)]
-mod test_simd_vec;
-#[cfg(test)]
 mod test_simd_row_vec;
+#[cfg(test)]
+mod test_simd_vec;
 
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
@@ -30,13 +30,7 @@ impl<const N: usize> AlignedVec<N> {
             assert!(std::mem::align_of::<f32x16>() <= 64);
         };
 
-        unsafe {
-            std::slice::from_raw_parts(
-                self.0.as_ptr() as *const f32x16,
-                N / LANES,
-            )
-            .iter()
-        }
+        unsafe { std::slice::from_raw_parts(self.0.as_ptr() as *const f32x16, N / LANES).iter() }
     }
 
     pub fn simd_iter_mut(&mut self) -> impl Iterator<Item = &mut f32x16> {
@@ -46,11 +40,7 @@ impl<const N: usize> AlignedVec<N> {
         };
 
         unsafe {
-            std::slice::from_raw_parts_mut(
-                self.0.as_mut_ptr() as *mut f32x16,
-                N / LANES,
-            )
-            .iter_mut()
+            std::slice::from_raw_parts_mut(self.0.as_mut_ptr() as *mut f32x16, N / LANES).iter_mut()
         }
     }
 

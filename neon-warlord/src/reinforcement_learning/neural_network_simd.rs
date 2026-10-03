@@ -1,10 +1,12 @@
 //! A universal function approximator implemented using simd operations
 
-use crate::reinforcement_learning::neural_network_simd::{layer_simd::LayerSimd, simd_math::simd_vec::SVec16};
+use crate::reinforcement_learning::neural_network_simd::{
+    layer_simd::LayerSimd, simd_math::simd_vec::SVec16,
+};
 
 pub mod epoch;
-pub mod simd_math;
 pub mod layer_simd;
+pub mod simd_math;
 
 #[cfg(test)]
 mod test_neural_network_simd;
@@ -20,7 +22,6 @@ mod test_predict_maze;
 
 #[cfg(test)]
 mod test_fit_function;
-
 
 /// A universal function approximator implemented using simd operations
 #[derive(Clone)]
@@ -47,8 +48,7 @@ impl<
     pub fn new() -> Self {
         let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new();
         let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
-            std::array::from_fn(|_| LayerSimd::new()
-        );
+            std::array::from_fn(|_| LayerSimd::new());
         let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new();
 
         Self {
@@ -66,8 +66,7 @@ impl<
 
         let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new_rand(&mut rng);
         let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
-            std::array::from_fn(|_| LayerSimd::new_rand(&mut rng)
-        );
+            std::array::from_fn(|_| LayerSimd::new_rand(&mut rng));
         let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new_rand(&mut rng);
 
         Self {
@@ -80,8 +79,7 @@ impl<
     pub fn new_zero_one() -> Self {
         let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new_zero_one();
         let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
-            std::array::from_fn(|_| LayerSimd::new_zero_one()
-        );
+            std::array::from_fn(|_| LayerSimd::new_zero_one());
         let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new_zero_one();
 
         Self {
@@ -92,7 +90,6 @@ impl<
     }
 
     pub fn forward(&mut self, input: &[f32; INPUTS]) -> [f32; OUTPUTS] {
-
         let x = SVec16::new(*input);
 
         let mut x = self.input.forward(&x);
@@ -107,7 +104,6 @@ impl<
     }
 
     pub fn backward(&mut self, output: &[f32; OUTPUTS]) -> [f32; INPUTS] {
-
         let dy = SVec16::new(*output);
 
         let mut dy = self.output.backward(&dy);
@@ -128,9 +124,7 @@ impl<
         }
         self.output.subtract_gradients(learning_rate);
     }
-
 }
-
 
 impl<
     const INPUTS: usize,
@@ -138,53 +132,52 @@ impl<
     const NEURONS: usize,
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
-> std::fmt::Display
-    for NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>
+> std::fmt::Display for NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                writeln!(f, "NeuralNetworkLayered {{")?;
+        writeln!(f, "NeuralNetworkLayered {{")?;
 
         writeln!(f, "input.x: {}", self.input.x)?;
         writeln!(f,)?;
 
         writeln!(f, "input.w:     {}", self.input.w)?;
         for (i, layer) in self.layers.iter().enumerate() {
-            writeln!(f, "layers[{}].w: {}", i,layer.w)?;
+            writeln!(f, "layers[{}].w: {}", i, layer.w)?;
         }
         writeln!(f, "output.w:    {}", self.output.w)?;
         writeln!(f,)?;
 
         writeln!(f, "input.b:     {}", self.input.b)?;
         for (i, layer) in self.layers.iter().enumerate() {
-            writeln!(f, "layers[{}].b: {}", i,layer.b)?;
+            writeln!(f, "layers[{}].b: {}", i, layer.b)?;
         }
         writeln!(f, "output.b:    {}", self.output.b)?;
         writeln!(f,)?;
 
         writeln!(f, "input.z:     {}", self.input.z)?;
         for (i, layer) in self.layers.iter().enumerate() {
-            writeln!(f, "layers[{}].z: {}", i,layer.z)?;
+            writeln!(f, "layers[{}].z: {}", i, layer.z)?;
         }
         writeln!(f, "output.z:    {}", self.output.z)?;
         writeln!(f,)?;
 
         writeln!(f, "input.a:     {}", self.input.a)?;
         for (i, layer) in self.layers.iter().enumerate() {
-            writeln!(f, "layers[{}].a: {}", i,layer.a)?;
+            writeln!(f, "layers[{}].a: {}", i, layer.a)?;
         }
         writeln!(f, "output.a:    {}", self.output.a)?;
         writeln!(f,)?;
 
         writeln!(f, "input.dl_dw:     {}", self.input.dl_dw)?;
         for (i, layer) in self.layers.iter().enumerate() {
-            writeln!(f, "layers[{}].dl_dw: {}", i,layer.dl_dw)?;
+            writeln!(f, "layers[{}].dl_dw: {}", i, layer.dl_dw)?;
         }
         writeln!(f, "output.dl_dw:    {}", self.output.dl_dw)?;
         writeln!(f,)?;
 
         writeln!(f, "input.dl_db:     {}", self.input.dl_db)?;
         for (i, layer) in self.layers.iter().enumerate() {
-            writeln!(f, "layers[{}].dl_db: {}", i,layer.dl_db)?;
+            writeln!(f, "layers[{}].dl_db: {}", i, layer.dl_db)?;
         }
         writeln!(f, "output.dl_db:    {}", self.output.dl_db)?;
         writeln!(f,)?;
