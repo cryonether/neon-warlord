@@ -304,10 +304,10 @@ fn test_add_commutative() {
         })
     );
 
-    let ab = &a + &b;
-    let ba = &b + &a;
+    let a_b = &a + &b;
+    let b_a = &b + &a;
 
-    assert_matrix_eq(&ab, &ba);
+    assert_matrix_eq(&a_b, &b_a);
 }
 
 // -----------------------------------------------------------------------------
