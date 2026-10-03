@@ -219,7 +219,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         self.dx = dx.clone();
 
         // Update gradients
-        self.dl_db += &dl_db;
+        self.dl_db += dl_db;
         self.dl_dw += &dl_dw;
 
         // self.assert_finite();
