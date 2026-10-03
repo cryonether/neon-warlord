@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 
 use forward_renderer::{particle_shader_two_point, to_rgb};
 
-use crate::pendulum_cart_simulation::Vec3;
+use crate::gym_simulation::Vec3;
 
 pub struct GraphLines<const SIZE: usize> {
     pub x: VecDeque<f32>,

@@ -14,9 +14,7 @@ mod game_board;
 mod heightmap_generator;
 mod orb_controller;
 mod orb_storage;
-mod pendulum_cart_simulation;
 mod gym_simulation;
-mod physics_simulation_v2;
 #[allow(dead_code)]
 mod physics_simulation_v3;
 mod physics_simulation_v3_drawer;
@@ -27,7 +25,6 @@ mod simple_physics_simulation;
 mod sun_storage;
 mod triple_buffer;
 mod verlet_physics;
-#[allow(dead_code)]
 mod verlet_physics_simd;
 mod worker;
 mod worker_instance;
@@ -55,7 +52,7 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, gym_simulation::{GymSimulation, GymSimulationInterface, PendulumSimulationThread, gym_line::GymLine}, pendulum_cart_simulation::{PendulumCartSimulation, PendulumCartSimulationThread}, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, gym_simulation::{GymSimulation, GymSimulationInterface, PendulumSimulationThread, gym::gym_cart::GymCart, }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -317,8 +314,8 @@ impl NeonWarlord {
         //         sim: PhysicsSimulationV3::new(producer),
         //     });
 
-        let gym_simulation: GymSimulation<2, 1, 16, 1, false, GymLine> = GymSimulation::new(
-            GymLine::new()
+        let gym_simulation: GymSimulation<2, 1, 16, 1, false, GymCart> = GymSimulation::new(
+            GymCart::new()
         );
 
         let gym_simulation_thread_ = PendulumSimulationThread {

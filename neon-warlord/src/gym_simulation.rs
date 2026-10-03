@@ -1,17 +1,18 @@
 //! Simulates an inverted pendulum
 
 mod pendulum;
-mod gym;
-pub mod gym_line;
+pub mod gym;
+pub mod neural_network_drawer;
+pub mod verlet_physics_drawer;
+pub mod graph_lines;
 
 use std::collections::VecDeque;
 
 use forward_renderer::{height_map::HeightMapInterface, to_rgb};
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
-use crate::{
-    gym_simulation::gym::Gym, pendulum_cart_simulation::{graph_lines::{GraphLines, GraphLinesDrawer}, pendulum_cart::{PendulumAction, PendulumCart, PendulumState}, verlet_physics_drawer::VerletPhysicsDrawer}, physics_simulation_v3_drawer::DrawerObjects, print_color::print_color, reinforcement_learning::{dqn::Dqn, ppo::Ppo}, triple_buffer, worker_thread,
-};
+use crate::{gym_simulation::{graph_lines::{GraphLines, GraphLinesDrawer}, gym::Gym, verlet_physics_drawer::VerletPhysicsDrawer}, physics_simulation_v3_drawer::DrawerObjects, print_color::print_color, reinforcement_learning::ppo::Ppo, triple_buffer, worker_thread};
+
 
 pub const WATCH_POINTS_SIZE: usize = 10;
 type Vec3 = cgmath::Vector3<f32>;

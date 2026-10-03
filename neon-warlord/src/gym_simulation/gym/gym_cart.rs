@@ -8,7 +8,7 @@ const OBSERVATIONS: usize = 2;
 const ACTIONS: usize = 1;
 
 #[derive(Clone)]
-pub struct GymLine {
+pub struct GymCart {
     pub verlet_physics: VerletPhysicsSimd,
 
     particles_static: [usize; 2],
@@ -23,7 +23,7 @@ pub struct GymLine {
     state: State,
 }
 
-impl GymLine {
+impl GymCart {
     pub fn new() -> Self {
         let mut verlet_physics = VerletPhysicsSimd::new();
 
@@ -98,7 +98,7 @@ impl GymLine {
     }
 }
 
-impl Gym<OBSERVATIONS, ACTIONS> for GymLine  {
+impl Gym<OBSERVATIONS, ACTIONS> for GymCart  {
     fn get_verlet_physics(&self) -> &VerletPhysicsSimd {
         &self.verlet_physics
     }
