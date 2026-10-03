@@ -10,7 +10,7 @@ use forward_renderer::{height_map::HeightMapInterface, to_rgb};
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
 use crate::{
-    gym_simulation::gym::Gym, pendulum_cart_simulation::{graph_lines::{GraphLines, GraphLinesDrawer}, pendulum_cart::{PendulumAction, PendulumCart, PendulumState}, verlet_physics_drawer::VerletPhysicsDrawer}, physics_simulation_v3_drawer::DrawerObjects, print_color::print_color, reinforcement_learning::{dqn2::Dqn2, ppo2::Ppo2}, triple_buffer, worker_thread,
+    gym_simulation::gym::Gym, pendulum_cart_simulation::{graph_lines::{GraphLines, GraphLinesDrawer}, pendulum_cart::{PendulumAction, PendulumCart, PendulumState}, verlet_physics_drawer::VerletPhysicsDrawer}, physics_simulation_v3_drawer::DrawerObjects, print_color::print_color, reinforcement_learning::{dqn2::Dqn2, ppo::Ppo}, triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
@@ -33,7 +33,7 @@ pub struct GymSimulation<
     // Physics
     ticks: u64,
 
-    ppo: Ppo2<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL>,
+    ppo: Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL>,
 
     graph_actor_loss: GraphLines<1>,
     graph_critic_loss: GraphLines<1>,
@@ -108,7 +108,7 @@ impl<
 
         let scale = 0.1;
 
-        let ppo = Ppo2::new(0);
+        let ppo = Ppo::new(0);
 
         // Debug
         let ups = Fps::new();
