@@ -252,6 +252,20 @@ impl VerletParticles {
         self.z[index] = pos.z;
     }
 
+    pub fn reset_position(&mut self, index: usize, pos: Vec3) {
+        self.x[index] = pos.x;
+        self.y[index] = pos.y;
+        self.z[index] = pos.z;
+
+        self.prev_x[index] = pos.x;
+        self.prev_y[index] = pos.y;
+        self.prev_z[index] = pos.z;
+
+        self.acc_x[index] = 0.0;
+        self.acc_y[index] = 0.0;
+        self.acc_z[index] = 0.0;
+    }
+
     pub fn accelerate(&mut self, index: usize, acc: Vec3) {
         self.acc_x[index] = acc.x;
         self.acc_y[index] = acc.y;

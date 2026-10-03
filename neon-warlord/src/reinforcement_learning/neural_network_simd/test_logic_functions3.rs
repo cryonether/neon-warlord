@@ -398,18 +398,18 @@ fn nand_3() {
     )
 }
 
-fn predict_logic<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
-    x_data: [[f32; INPUT_SIZE]; BATCH_SIZE],
+fn predict_logic<const INPUTS: usize, const BATCH_SIZE: usize>(
+    x_data: [[f32; INPUTS]; BATCH_SIZE],
     y_data: [[f32; 1]; BATCH_SIZE],
 ) {
-    let mut model: EpochSimd<3> = EpochSimd::new();
+    let mut model: EpochSimd<INPUTS, 1, 16, 3, false> = EpochSimd::new();
 
     // println!("model: {}", model.model);
 
     let mut y_pred = [0.0; BATCH_SIZE];
 
     for epoch in 0..10000 {
-        y_pred = model.learn::<INPUT_SIZE, BATCH_SIZE>(x_data, y_data);
+        y_pred = model.learn(x_data, y_data);
 
         if epoch % 10 == 0 {
             println!(

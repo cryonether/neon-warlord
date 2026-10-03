@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "Deque",
+        "Unclipped",
         "verlet"
     ],
     "rust-analyzer.testExplorer": true,

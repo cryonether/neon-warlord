@@ -280,7 +280,7 @@ impl AdvancedCompositionSimd {
         for actor in &mut self.actors {
             match actor {
                 Actor::MotorLinear(motor_linear) => {
-                    motor_linear.update_simd(&mut self.verlet_physics.particles);
+                    motor_linear.update(&mut self.verlet_physics.particles);
                 }
             }
         }

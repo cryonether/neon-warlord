@@ -11,14 +11,14 @@ mod ant_storage;
 mod camera_controller;
 mod debug_overlay;
 mod game_board;
+mod gym_simulation;
 mod heightmap_generator;
 mod orb_controller;
 mod orb_storage;
-mod pendulum_simulation;
-mod physics_simulation_v2;
 #[allow(dead_code)]
 mod physics_simulation_v3;
 mod physics_simulation_v3_drawer;
+mod print_color;
 mod procedural_tree;
 mod reinforcement_learning;
 mod settings;
@@ -26,8 +26,6 @@ mod simple_physics_simulation;
 mod sun_storage;
 mod triple_buffer;
 mod verlet_physics;
-
-#[allow(dead_code)]
 mod verlet_physics_simd;
 mod worker;
 mod worker_instance;
@@ -59,7 +57,7 @@ use crate::{
     ant_storage::AntStorage,
     camera_controller::CameraController,
     debug_overlay::DebugOverlay,
-    pendulum_simulation::{PendulumSimulation, PendulumSimulationThread},
+    gym_simulation::{GymSimulation, GymSimulationThread, gym::gym_cart::GymCart},
     physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
     simple_physics_simulation::SimplePhysicsSimulation,
     sun_storage::SunStorage,
@@ -159,7 +157,7 @@ struct NeonWarlord {
     physics_simulation_v3_drawer: PhysicsSimulationV3Drawer,
 
     // physics_simulation_v3_thread: WorkerThread<PhysicSimThread<HeightMapType>>,
-    pendulum_simulation_thread: WorkerThread<PendulumSimulationThread<HeightMapType>>,
+    gym_simulation_thread: WorkerThread<GymSimulationThread>,
 
     // Worker
     worker: WorkerInstance,
@@ -326,10 +324,12 @@ impl NeonWarlord {
         //         sim: PhysicsSimulationV3::new(producer),
         //     });
 
-        let pendulum_simulation_thread = WorkerThread::spawn(PendulumSimulationThread {
-            sim: PendulumSimulation::new(),
+        let gym_simulation: GymSimulation<2, 1, 16, 1, false, GymCart> =
+            GymSimulation::new(GymCart::new());
+
+        let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
+            sim: Box::new(gym_simulation),
             producer,
-            height_map: _height_map.clone(),
         });
 
         // Worker
@@ -375,7 +375,7 @@ impl NeonWarlord {
             physics_simulation_v3_drawer,
             physics_simulation_consumer: consumer,
             // physics_simulation_v3_thread,
-            pendulum_simulation_thread,
+            gym_simulation_thread,
         }
     }
 }
@@ -605,7 +605,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             {
                 // Physics simulation
                 // self.physics_simulation_v3_thread.update();
-                self.pendulum_simulation_thread.update();
+                self.gym_simulation_thread.update();
 
                 let consumer = &mut self.physics_simulation_consumer;
                 consumer.acquire_latest();
@@ -756,7 +756,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     },
                 ..
             } => {
-                self.pendulum_simulation_thread.limit_ups_toggle();
+                self.gym_simulation_thread.limit_ups_toggle();
                 true
             }
             // #########################################################

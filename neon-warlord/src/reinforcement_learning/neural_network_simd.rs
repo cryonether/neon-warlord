@@ -1,7 +1,11 @@
-//! A universal function approximator efficiently implemented using simd
+//! A universal function approximator implemented using simd operations
+
+use crate::reinforcement_learning::neural_network_simd::{
+    layer_simd::LayerSimd, simd_math::simd_vec::SVec16,
+};
 
 pub mod epoch;
-pub mod gradients_sum;
+pub mod layer_simd;
 pub mod simd_math;
 
 #[cfg(test)]
@@ -16,445 +20,170 @@ mod test_logic_functions3;
 #[cfg(test)]
 mod test_predict_maze;
 
-use std::iter::zip;
+#[cfg(test)]
+mod test_fit_function;
 
-use itertools::izip;
-use wide::f32x16;
-
-use crate::reinforcement_learning::neural_network_simd::{
-    gradients_sum::GradientsSum,
-    simd_math::{SMat, SVec},
-};
-
-const LANES: usize = 16;
-const NR_NEURONS: usize = 128;
-const NR_LANES: usize = NR_NEURONS / LANES;
-
-pub type NeuralNetwork16<
-    const INPUTS: usize,
-    const OUTPUTS: usize,
-    const NR_LAYERS: usize,
-    const RESIDUAL: bool,
-> = NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, 16, 1>;
-
-pub type Gradient16<const SIZE: usize> = GradientsSum<SIZE, 16, 1>;
-
-pub type NeuralNetwork32<
-    const INPUTS: usize,
-    const OUTPUTS: usize,
-    const NR_LAYERS: usize,
-    const RESIDUAL: bool,
-> = NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, 32, 2>;
-
-pub type Gradient32<const SIZE: usize> = GradientsSum<SIZE, 32, 2>;
-
-pub type NeuralNetwork64<
-    const INPUTS: usize,
-    const OUTPUTS: usize,
-    const NR_LAYERS: usize,
-    const RESIDUAL: bool,
-> = NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, 64, 4>;
-
-pub type Gradient64<const SIZE: usize> = GradientsSum<SIZE, 64, 4>;
-
-pub type NeuralNetwork128<
-    const INPUTS: usize,
-    const OUTPUTS: usize,
-    const NR_LAYERS: usize,
-    const RESIDUAL: bool,
-> = NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, 128, 8>;
-
-pub type Gradient128<const SIZE: usize> = GradientsSum<SIZE, 128, 8>;
-
+/// A universal function approximator implemented using simd operations
 #[derive(Clone)]
 pub struct NeuralNetworkSimd<
     const INPUTS: usize,
     const OUTPUTS: usize,
+    const NEURONS: usize,
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
-    const N: usize,
-    const L: usize,
 > {
-    // input
-    pub x: SVec<N, L>,
-
-    // parameters
-    pub w: [SMat<N, L>; NR_LAYERS],
-    b: [SVec<N, L>; NR_LAYERS],
-
-    // output
-    pub w_y: SMat<N, L>,
-    b_y: SVec<N, L>,
-    pub y: SVec<N, L>,
-
-    // intermediate products
-
-    // a = f(z)
-    a: [SVec<N, L>; NR_LAYERS],
-
-    // z = W*a + b
-    z: [SVec<N, L>; NR_LAYERS],
-
-    // back propagation
-    dy_dw: [SMat<N, L>; NR_LAYERS],
-    dy_db: [SVec<N, L>; NR_LAYERS],
-
-    dy_dw_y: SMat<N, L>,
-    dy_db_y: SVec<N, L>,
+    pub input: LayerSimd<INPUTS, NEURONS, true, false>,
+    pub layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS],
+    pub output: LayerSimd<NEURONS, OUTPUTS, false, false>,
 }
 
 impl<
     const INPUTS: usize,
     const OUTPUTS: usize,
+    const NEURONS: usize,
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
-    const N: usize,
-    const L: usize,
-> NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, N, L>
+> NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>
 {
     pub fn new() -> Self {
-        let x = SVec::new([0.0; N]);
-
-        let w = [SMat::new([[0.0; N]; N]); NR_LAYERS];
-        let b = [SVec::new([0.0; N]); NR_LAYERS];
-        let w_y = SMat::new([[0.0; N]; N]);
-        let b_y = SVec::new([0.0; N]);
-
-        let y = SVec::new([0.0; N]);
-
-        let a = [SVec::new([0.0; N]); NR_LAYERS];
-        let z = [SVec::new([0.0; N]); NR_LAYERS];
-
-        let dy_dw = [SMat::new([[0.0; N]; N]); NR_LAYERS];
-        let dy_db = [SVec::new([0.0; N]); NR_LAYERS];
-
-        let dy_dw_y = SMat::new([[0.0; N]; N]);
-        let dy_db_y = SVec::new([0.0; N]);
+        let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new();
+        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
+            std::array::from_fn(|_| LayerSimd::new());
+        let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new();
 
         Self {
-            x,
-            w,
-            b,
-            w_y,
-            b_y,
-            y,
-            a,
-            z,
-            dy_dw,
-            dy_db,
-            dy_dw_y,
-            dy_db_y,
+            input,
+            layers,
+            output,
         }
     }
 
-    pub fn new_rand() -> Self {
-        let mut rng = fastrand::Rng::with_seed(fastrand::u64(..));
-
-        // Kaiming/He-style initialization
-        let fan_in: f32 = LANES as f32; // fan_in is the number of inputs to the neuron/filter.
-        let bound = 1.0 / (fan_in).sqrt();
-        let mut rand = || (rng.f32() * 2.0 - 1.0) * bound;
-
-        let mut model = Self::new();
-
-        for w in &mut model.w {
-            for w in w.as_mut_array() {
-                for w in w {
-                    *w = rand();
-                }
-            }
+    pub fn new_rand(mut seed: u64) -> Self {
+        if seed == 0 {
+            seed = fastrand::u64(..);
         }
+        let mut rng = fastrand::Rng::with_seed(seed);
 
-        for b in &mut model.b {
-            for b in b.as_mut_array() {
-                *b = rand();
-            }
+        let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new_rand(&mut rng);
+        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
+            std::array::from_fn(|_| LayerSimd::new_rand(&mut rng));
+        let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new_rand(&mut rng);
+
+        Self {
+            input,
+            layers,
+            output,
         }
-
-        for w in model.w_y.as_mut_array() {
-            for w in w {
-                *w = rand();
-            }
-        }
-
-        for b in model.b_y.as_mut_array() {
-            *b = rand();
-        }
-
-        model
     }
 
     pub fn new_zero_one() -> Self {
-        let mut model = Self::new();
+        let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new_zero_one();
+        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
+            std::array::from_fn(|_| LayerSimd::new_zero_one());
+        let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new_zero_one();
 
-        for w in &mut model.w {
-            for w in w.as_mut_array() {
-                w.fill(0.1);
-            }
-        }
-
-        for b in &mut model.b {
-            b.as_mut_array().fill(0.1);
-        }
-
-        for w in model.w_y.as_mut_array() {
-            w.fill(0.1);
-        }
-
-        model.b_y.as_mut_array().fill(0.1);
-
-        model
-    }
-
-    pub fn forward(&mut self, x: &[f32; INPUTS]) -> [f32; OUTPUTS] {
-        assert!(INPUTS <= LANES);
-        assert!(OUTPUTS <= LANES);
-
-        let mut padded = [0.0; N];
-        padded[..INPUTS].copy_from_slice(x);
-
-        let output = self.forward_full(padded);
-
-        output[..OUTPUTS].try_into().unwrap()
-    }
-
-    fn forward_full(&mut self, x: [f32; N]) -> [f32; N] {
-        self.x = SVec::new(x);
-
-        let mut input_ = &self.x;
-
-        for (w, b, a, z) in izip!(&self.w, &self.b, &mut self.a, &mut self.z) {
-            // z = W * input + b + input
-            *z = w * input_ + b;
-
-            // transposed representation
-            // *z = w.transpose_mul(input_) + b;
-
-            if RESIDUAL {
-                *z += input_;
-            }
-
-            // a = f(z)
-            *a = Self::activation_re_lu_vec(z);
-
-            input_ = a;
-        }
-
-        // y
-        // z = W * a + b
-        self.y = &self.w_y * input_ + &self.b_y;
-
-        *self.y.as_array()
-    }
-
-    pub fn backward<'a>(&'a mut self, index: usize) -> GradientsRef<'a, NR_LAYERS, N, L> {
-        assert!(index < N);
-
-        let mut z_iter = self.z.iter().rev();
-        let mut a_iter = self.a.iter().rev().chain([&self.x]);
-        let w_iter = self.w.iter().rev();
-        let mut dy_db_iter = self.dy_db.iter_mut().rev();
-        let mut dy_dw_iter = self.dy_dw.iter_mut().rev();
-
-        // last element
-        let mut dy_db_y = [0.0; N];
-        dy_db_y[index] = 1.0; // choose weight
-        self.dy_db_y = SVec::new(dy_db_y);
-
-        let mut dy_dw_y = SMat::new([[0.0; N]; N]);
-        dy_dw_y.as_mut_array()[index] = *a_iter.next().unwrap().as_array(); // choose weight
-        self.dy_dw_y = dy_dw_y;
-
-        // last element -1
-        let z = z_iter.next().unwrap();
-        let a = a_iter.next().unwrap();
-        let w = &self.w_y.as_array()[index]; // choose weight
-        let dy_db = dy_db_iter.next().unwrap();
-        let dy_dw = dy_dw_iter.next().unwrap();
-        let mut delta_previous_;
-        {
-            let dz_ = Self::derivative_re_lu_vec(z);
-            let delta_ = &SVec::new(*w) * &dz_;
-
-            delta_previous_ = delta_;
-
-            let dy_dw_ = &delta_ * &a.as_row_vec();
-
-            *dy_db = delta_;
-            *dy_dw = dy_dw_;
-        }
-
-        // other elements
-        for (z, a, w, dy_db, dy_dw) in izip!(z_iter, a_iter, w_iter, dy_db_iter, dy_dw_iter,) {
-            // Gradient through W
-            let delta_previous_row_vec = delta_previous_.as_row_vec();
-            let w_ = w;
-            let mut delta_ = (&delta_previous_row_vec * w_).as_column_vec();
-
-            // transposed representation
-            // let mut delta_ = w * &delta_previous_;
-
-            // Gradient through residual connection
-            if RESIDUAL {
-                delta_ += &delta_previous_;
-            }
-
-            // Gradient through ReLU
-            let dz_ = Self::derivative_re_lu_vec(z);
-            let delta_ = &delta_ * &dz_;
-
-            let dy_dw_ = &delta_ * &a.as_row_vec();
-
-            // transposed representation
-            // let dy_dw_ = a * &delta_.as_row_vec();
-
-            delta_previous_ = delta_;
-
-            *dy_db = delta_;
-            *dy_dw = dy_dw_;
-        }
-
-        GradientsRef {
-            dy_dw: &self.dy_dw,
-            dy_db: &self.dy_db,
-            dy_dw_y: &self.dy_dw_y,
-            dy_db_y: &self.dy_db_y,
+        Self {
+            input,
+            layers,
+            output,
         }
     }
 
-    pub fn subtract_gradients(&mut self, gradients: &GradientsSum<NR_LAYERS, N, L>) {
-        // w
-        for (w, dw) in zip(&mut self.w, &gradients.dl_dw) {
-            *w -= dw;
+    pub fn forward(&mut self, input: &[f32; INPUTS]) -> [f32; OUTPUTS] {
+        let x = SVec16::new(*input);
+
+        let mut x = self.input.forward(&x);
+
+        for layer in &mut self.layers {
+            x = layer.forward(&x);
         }
 
-        // b
-        for (b, db) in zip(&mut self.b, &gradients.dl_db) {
-            *b -= db;
-        }
+        let y = self.output.forward(&x);
 
-        // w_y
-        let w_y = &mut self.w_y;
-        let dy_dw_y = &gradients.dl_dw_y;
-        *w_y -= dy_dw_y;
-
-        // b_y
-        let b_y = &mut self.b_y;
-        let dy_by_y = &gradients.dl_db_y;
-        *b_y -= dy_by_y;
+        y.0.0
     }
 
-    const LEAKY_RELU_ALPHA: f32 = 0.01;
+    pub fn backward(&mut self, output: &[f32; OUTPUTS]) -> [f32; INPUTS] {
+        let dy = SVec16::new(*output);
 
-    #[inline]
-    fn activation_re_lu_vec(x: &SVec<N, L>) -> SVec<N, L> {
-        let mut res = SVec::new([0.0; N]);
-        let zero = f32x16::ZERO;
-        let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
+        let mut dy = self.output.backward(&dy);
 
-        for (x, res) in zip(x.a, &mut res.a) {
-            *res = x.simd_gt(zero).select(x, x * alpha);
+        for layer in &mut self.layers.iter_mut().rev() {
+            dy = layer.backward(&dy);
         }
 
-        res
+        let dx = self.input.backward(&dy);
+
+        dx.0.0
     }
 
-    #[inline]
-    fn derivative_re_lu_vec(x: &SVec<N, L>) -> SVec<N, L> {
-        let mut res = SVec::new([0.0; N]);
-        let zero = f32x16::ZERO;
-        let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
-        let one = f32x16::splat(1.0);
-
-        for (x, res) in zip(x.a, &mut res.a) {
-            *res = x.simd_gt(zero).select(one, alpha);
+    pub fn subtract_gradients(&mut self, learning_rate: f32) {
+        self.input.subtract_gradients(learning_rate);
+        for layer in &mut self.layers.iter_mut().rev() {
+            layer.subtract_gradients(learning_rate);
         }
-
-        res
-    }
-
-    #[inline]
-    fn activation_re_lu(value: f32) -> f32 {
-        if value > 0.0 {
-            value
-        } else {
-            Self::LEAKY_RELU_ALPHA * value
-        }
-    }
-
-    #[inline]
-    fn derivative_re_lu(value: f32) -> f32 {
-        if value > 0.0 {
-            1.0
-        } else {
-            Self::LEAKY_RELU_ALPHA
-        }
+        self.output.subtract_gradients(learning_rate);
     }
 }
 
 impl<
     const INPUTS: usize,
     const OUTPUTS: usize,
+    const NEURONS: usize,
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
-    const NR_NEURONS: usize,
-    const NR_LANES: usize,
-> std::fmt::Display
-    for NeuralNetworkSimd<INPUTS, OUTPUTS, NR_LAYERS, RESIDUAL, NR_NEURONS, NR_LANES>
+> std::fmt::Display for NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "NeuralNetworkSimd {{")?;
+        writeln!(f, "NeuralNetworkLayered {{")?;
 
-        writeln!(f, "x: {:?}", self.x)?;
-        writeln!(f)?;
+        writeln!(f, "input.x: {}", self.input.x)?;
+        writeln!(f,)?;
 
-        for (i, w) in self.w.iter().enumerate() {
-            for (j, w) in w.as_array().iter().enumerate() {
-                writeln!(f, "w_{}_{:02}: {:?}", i, j, w)?;
-            }
+        writeln!(f, "input.w:     {}", self.input.w)?;
+        for (i, layer) in self.layers.iter().enumerate() {
+            writeln!(f, "layers[{}].w: {}", i, layer.w)?;
         }
-        writeln!(f)?;
+        writeln!(f, "output.w:    {}", self.output.w)?;
+        writeln!(f,)?;
 
-        for (i, b) in self.b.iter().enumerate() {
-            writeln!(f, "b_{}: {:?}", i, b)?;
+        writeln!(f, "input.b:     {}", self.input.b)?;
+        for (i, layer) in self.layers.iter().enumerate() {
+            writeln!(f, "layers[{}].b: {}", i, layer.b)?;
         }
-        writeln!(f)?;
+        writeln!(f, "output.b:    {}", self.output.b)?;
+        writeln!(f,)?;
 
-        for (i, z) in self.z.iter().enumerate() {
-            writeln!(f, "z_{}: {:?}", i, z)?;
+        writeln!(f, "input.z:     {}", self.input.z)?;
+        for (i, layer) in self.layers.iter().enumerate() {
+            writeln!(f, "layers[{}].z: {}", i, layer.z)?;
         }
-        writeln!(f)?;
+        writeln!(f, "output.z:    {}", self.output.z)?;
+        writeln!(f,)?;
 
-        for (i, a) in self.a.iter().enumerate() {
-            writeln!(f, "a_{}: {:?}", i, a)?;
+        writeln!(f, "input.a:     {}", self.input.a)?;
+        for (i, layer) in self.layers.iter().enumerate() {
+            writeln!(f, "layers[{}].a: {}", i, layer.a)?;
         }
-        writeln!(f)?;
+        writeln!(f, "output.a:    {}", self.output.a)?;
+        writeln!(f,)?;
 
-        writeln!(f, "y: {:?}", self.y)?;
-        writeln!(f)?;
-
-        for (i, dy_dw) in self.dy_dw.iter().enumerate() {
-            for (j, dy_dw) in dy_dw.as_array().iter().enumerate() {
-                writeln!(f, "dy_dw_{}_{:02}: {:?}", i, j, dy_dw)?;
-            }
+        writeln!(f, "input.dl_dw:     {}", self.input.dl_dw)?;
+        for (i, layer) in self.layers.iter().enumerate() {
+            writeln!(f, "layers[{}].dl_dw: {}", i, layer.dl_dw)?;
         }
-        writeln!(f, "dy_dw_y: {:?}", self.dy_dw_y)?;
-        writeln!(f)?;
+        writeln!(f, "output.dl_dw:    {}", self.output.dl_dw)?;
+        writeln!(f,)?;
 
-        for (i, dy_db) in self.dy_db.iter().enumerate() {
-            writeln!(f, "dy_db_{}: {:?}", i, dy_db)?;
+        writeln!(f, "input.dl_db:     {}", self.input.dl_db)?;
+        for (i, layer) in self.layers.iter().enumerate() {
+            writeln!(f, "layers[{}].dl_db: {}", i, layer.dl_db)?;
         }
-        writeln!(f, "dy_db_y: {:?}", self.dy_db_y)?;
-        writeln!(f)?;
+        writeln!(f, "output.dl_db:    {}", self.output.dl_db)?;
+        writeln!(f,)?;
+
+        writeln!(f,)?;
 
         write!(f, "}}")
     }
-}
-
-pub struct GradientsRef<'a, const NR_LAYERS: usize, const N: usize, const L: usize> {
-    pub dy_dw: &'a [SMat<N, L>; NR_LAYERS],
-    pub dy_db: &'a [SVec<N, L>; NR_LAYERS],
-
-    pub dy_dw_y: &'a SMat<N, L>,
-    pub dy_db_y: &'a SVec<N, L>,
 }

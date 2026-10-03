@@ -2,11 +2,6 @@
 
 #[allow(dead_code)]
 pub mod dqn;
-pub mod dqn2;
-#[allow(dead_code)]
-pub mod dqn_dfdx;
-#[allow(dead_code)]
-pub mod dqn_dfdx2;
 #[allow(dead_code)]
 pub mod neat;
 #[allow(dead_code)]
@@ -15,7 +10,6 @@ pub mod neural_network;
 pub mod neural_network_dfdx;
 #[allow(dead_code)]
 pub mod neural_network_simd;
-#[allow(dead_code)]
 pub mod ppo;
 #[allow(dead_code)]
 pub mod q_learning;

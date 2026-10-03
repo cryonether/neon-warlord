@@ -60,7 +60,7 @@ impl Solver {
 
             // gravity
             Self::apply_gravity(verlet_objects);
-            Self::apply_map_constraint(verlet_objects, height_map);
+            Self::_apply_map_constraint(verlet_objects, height_map);
 
             // constraints
             for elem in &composition.fixed {
@@ -125,22 +125,22 @@ impl Solver {
             let to_obj = elem.position() - POSITION;
             let dist = to_obj.magnitude();
 
-            if dist > RADIUS - elem.radius() {
+            if dist > RADIUS - elem._radius() {
                 let n = to_obj / dist;
-                let new_pos = POSITION + n * (RADIUS - elem.radius());
+                let new_pos = POSITION + n * (RADIUS - elem._radius());
 
                 elem.set_position(new_pos);
             }
         }
     }
 
-    fn apply_map_constraint(
+    fn _apply_map_constraint(
         verlet_objects: &mut [VerletObject],
         height_map: &impl HeightMapInterface,
     ) {
         for elem in verlet_objects {
             let pos = elem.position();
-            let radius = elem.radius();
+            let radius = elem._radius();
             let height = height_map.get_height(&pos);
 
             if pos.z - radius < height {
@@ -164,7 +164,7 @@ impl Solver {
 
                 let collision_axis = object_1.position() - object_2.position();
                 let dist = collision_axis.magnitude();
-                let min_dist = object_1.radius + object_2.radius;
+                let min_dist = object_1._radius + object_2._radius;
                 if dist < min_dist {
                     let n = collision_axis / dist;
                     let delta = min_dist - dist;

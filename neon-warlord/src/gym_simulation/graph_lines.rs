@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 
 use forward_renderer::{particle_shader_two_point, to_rgb};
 
-use crate::pendulum_simulation::Vec3;
+use crate::gym_simulation::Vec3;
 
 pub struct GraphLines<const SIZE: usize> {
     pub x: VecDeque<f32>,
@@ -108,7 +108,7 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
         self
     }
 
-    pub fn y_lim(mut self, y_lim: f32) -> Self {
+    pub fn _y_lim(mut self, y_lim: f32) -> Self {
         self.y_lim_start = -y_lim;
         self.y_lim_end = y_lim;
         self

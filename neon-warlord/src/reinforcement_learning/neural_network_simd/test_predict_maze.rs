@@ -83,14 +83,14 @@ fn test_3x3() {
     )
 }
 
-fn predict_logic<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
-    x_data: [[f32; INPUT_SIZE]; BATCH_SIZE],
+fn predict_logic<const INPUTS: usize, const BATCH_SIZE: usize>(
+    x_data: [[f32; INPUTS]; BATCH_SIZE],
     y_data_0: [[f32; 1]; BATCH_SIZE],
     y_data_1: [[f32; 1]; BATCH_SIZE],
     y_data_2: [[f32; 1]; BATCH_SIZE],
     y_data_3: [[f32; 1]; BATCH_SIZE],
 ) {
-    let mut model: EpochSimd<3> = EpochSimd::new();
+    let mut model: EpochSimd<INPUTS, 4, 16, 3, false> = EpochSimd::new();
 
     // println!("model: {}", model.model);
 
@@ -100,10 +100,10 @@ fn predict_logic<const INPUT_SIZE: usize, const BATCH_SIZE: usize>(
     let mut y_pred_3 = [0.0; BATCH_SIZE];
 
     for epoch in 0..10000 {
-        y_pred_0 = model.learn_output::<INPUT_SIZE, BATCH_SIZE>(x_data, y_data_0, 0);
-        y_pred_1 = model.learn_output::<INPUT_SIZE, BATCH_SIZE>(x_data, y_data_1, 1);
-        y_pred_2 = model.learn_output::<INPUT_SIZE, BATCH_SIZE>(x_data, y_data_2, 2);
-        y_pred_3 = model.learn_output::<INPUT_SIZE, BATCH_SIZE>(x_data, y_data_3, 3);
+        y_pred_0 = model.learn_output(x_data, y_data_0, 0);
+        y_pred_1 = model.learn_output(x_data, y_data_1, 1);
+        y_pred_2 = model.learn_output(x_data, y_data_2, 2);
+        y_pred_3 = model.learn_output(x_data, y_data_3, 3);
 
         if epoch % 10 == 0 {
             println!(
