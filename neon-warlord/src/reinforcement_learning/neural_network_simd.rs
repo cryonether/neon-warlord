@@ -19,6 +19,9 @@ mod test_logic_functions3;
 mod test_predict_maze;
 pub mod loss_function;
 
+#[cfg(test)]
+mod test_fit_function;
+
 use std::iter::zip;
 
 use itertools::izip;

@@ -402,7 +402,7 @@ fn predict_logic<const INPUTS: usize, const BATCH_SIZE: usize>(
     x_data: [[f32; INPUTS]; BATCH_SIZE],
     y_data: [[f32; 1]; BATCH_SIZE],
 ) {
-    let mut model: EpochSimd<INPUTS, 1, 16, 3> = EpochSimd::new();
+    let mut model: EpochSimd<INPUTS, 1, 16, 3, false> = EpochSimd::new();
 
     // println!("model: {}", model.model);
 

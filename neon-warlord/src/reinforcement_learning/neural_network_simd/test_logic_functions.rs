@@ -98,7 +98,7 @@ fn model_nand() {
 }
 
 fn predict_logic(x_data: [[f32; 2]; 4], y_data: [[f32; 1]; 4]) {
-    let mut model: EpochSimd<2, 1, 16, 3> = EpochSimd::new();
+    let mut model: EpochSimd<2, 1, 16, 3, false> = EpochSimd::new();
 
     // println!("model: {}", model.model);
 

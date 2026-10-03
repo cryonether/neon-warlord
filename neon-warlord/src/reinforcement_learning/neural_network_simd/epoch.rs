@@ -6,13 +6,13 @@ use crate::reinforcement_learning::neural_network_simd::{
     Gradient16, NeuralNetwork16, gradients_sum::GradientsSum, neural_network_layered::NeuralNetworkLayered,
 };
 
-pub struct EpochSimd<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_LAYERS: usize> {
-    pub model: NeuralNetworkLayered<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, false>,
+pub struct EpochSimd<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> {
+    pub model: NeuralNetworkLayered<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>,
 
     pub loss: f32,
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_LAYERS: usize> EpochSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS> {
+impl<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const NR_LAYERS: usize, const RESIDUAL: bool> EpochSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL> {
     pub fn new() -> Self {
         let model = NeuralNetworkLayered::new_rand(0);
         let loss = 0.0;

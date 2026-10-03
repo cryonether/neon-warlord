@@ -21,6 +21,24 @@ impl<const N: usize> SVec16<N> {
     pub fn as_row_vec(self) -> SRowVec16<N> {
         SRowVec16(self.0)
     }
+
+    pub fn assert_not_nan(&self, name: &str) {
+        for (i, &x) in self.0.iter().enumerate() {
+            assert!(
+                !x.is_nan(),
+                "{name}[{i}] is NaN"
+            );
+        }
+    }
+
+    pub fn assert_finite(&self, name: &str) {
+        for (i, &x) in self.0.iter().enumerate() {
+            assert!(
+                x.is_finite(),
+                "{name}[{i}] is not finite: {x}"
+            );
+        }
+    }
 }
 
 // From

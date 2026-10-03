@@ -1581,3 +1581,14 @@ fn test_continuous_noisy_mdp() {
          mse = {mean_squared_error}"
     );
 }
+
+
+#[test]
+fn test_surrogate_loss() {
+    let mut ppo = PpoSurrogateLossClipped::new();
+
+    let loss = ppo.calc(1.0, 1.0, 0.2);
+    let derivative = ppo.derivative();
+
+    println!("loss = {loss}, derivative = {derivative}");
+}

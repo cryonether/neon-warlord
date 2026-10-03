@@ -25,8 +25,8 @@ pub struct Ppo2<
     const RESIDUAL: bool,
 >
 {
-    actor: NeuralNetworkLayered<INPUTS, OUTPUTS, NEURONS, LAYERS, false>,
-    critic: NeuralNetworkLayered<INPUTS, 1, NEURONS, LAYERS, false>,
+    pub actor: NeuralNetworkLayered<INPUTS, OUTPUTS, NEURONS, LAYERS, false>,
+    pub critic: NeuralNetworkLayered<INPUTS, 1, NEURONS, LAYERS, false>,
     
     transitions: Vec<Transition<INPUTS, OUTPUTS>>,
     
@@ -275,9 +275,10 @@ impl<
             critic_loss = critic_loss_sum / n;
             actor_loss = actor_loss_sum / n;
 
-            const LEARNING_RATE: f32 = 0.001;
-            self.critic.subtract_gradients(LEARNING_RATE / n);
-            self.actor.subtract_gradients(LEARNING_RATE);
+            const LEARNING_RATE_ACTOR: f32 = 0.01;
+            const LEARNING_RATE_CRITIC: f32 = 0.001;
+            self.critic.subtract_gradients(LEARNING_RATE_CRITIC / n);
+            self.actor.subtract_gradients(LEARNING_RATE_ACTOR / n);
 
         }
         

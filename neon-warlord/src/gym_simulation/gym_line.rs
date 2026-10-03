@@ -119,6 +119,11 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymLine  {
 
         let (cart_pos, cart_velocity) = self.calculate_cart_position(dt);
 
+        // if self.state.cart_pos.abs() > 1.5 {
+        //     // something went wrong, just rest as workaround
+        //     self.reset();
+        // }
+
         self.state = State { cart_pos, cart_velocity };
     }
 

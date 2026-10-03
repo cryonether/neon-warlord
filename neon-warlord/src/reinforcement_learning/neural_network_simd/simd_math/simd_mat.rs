@@ -18,6 +18,28 @@ impl<const M: usize, const N: usize> SMat16<M, N> {
     pub fn zero() -> Self {
         Self::new([[0.0; N]; M])
     }
+
+    pub fn assert_not_nan(&self, name: &str) {
+        for (i, row) in self.0.iter().enumerate() {
+            for (j, &x) in row.0.iter().enumerate() {
+                assert!(
+                    !x.is_nan(),
+                    "{name}[{i}][{j}] is NaN"
+                );
+            }
+        }
+    }
+
+    pub fn assert_finite(&self, name: &str) {
+        for (i, row) in self.0.iter().enumerate() {
+            for (j, &x) in row.0.iter().enumerate() {
+                assert!(
+                    x.is_finite(),
+                    "{name}[{i}][{j}] is not finite: {x}"
+                );
+            }
+        }
+    }
 }
 
 // From

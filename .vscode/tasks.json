@@ -45,6 +45,9 @@
 			"args": [
 				"--release"
 			],
+			"env": {
+            	"RUST_BACKTRACE": "full"
+        	},
 			"problemMatcher": [
 				"$rustc"
 			],

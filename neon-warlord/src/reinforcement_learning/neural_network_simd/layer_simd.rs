@@ -133,6 +133,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
     }
 
     pub fn forward(&mut self, x: &SVec16<INPUTS>) -> SVec16<OUTPUTS> {
+        // self.assert_finite();
+
         self.x = *x;
 
         // z = W * x + b
@@ -157,10 +159,14 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             self.z.clone()
         };
 
+        // self.assert_finite();
+
         self.a.clone()
     }
 
     pub fn backward(&mut self, delta: &SVec16<OUTPUTS>) -> SVec16<INPUTS> {
+        // self.assert_finite();
+
         //
         // Gradient through activation
         //
@@ -218,10 +224,14 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         self.dl_db += &dl_db;
         self.dl_dw += &dl_dw;
 
+        // self.assert_finite();
+
         dx
     }
 
     pub fn subtract_gradients(&mut self, learning_rate: f32) {
+        // self.assert_finite();
+
         let learning_rate_ = f32x16::splat(learning_rate);
         let zero = f32x16::splat(0.0);
 
@@ -248,6 +258,34 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
                 *dl_dw = 0.0;
             }
         }
+
+        self.assert_finite();
+    }
+
+    pub fn assert_not_nan(&self) {
+        self.x.assert_not_nan("x");
+
+        self.w.assert_not_nan("w");
+        self.b.assert_not_nan("b");
+
+        self.z.assert_not_nan("z");
+        self.a.assert_not_nan("a");
+
+        self.dl_dw.assert_not_nan("dl_dw");
+        self.dl_db.assert_not_nan("dl_db");
+
+        self.dx.assert_not_nan("dx");
+    }
+
+    pub fn assert_finite(&self) {
+        self.x.assert_finite("x");
+        self.w.assert_finite("w");
+        self.b.assert_finite("b");
+        self.z.assert_finite("z");
+        self.a.assert_finite("a");
+        self.dl_dw.assert_finite("dl_dw");
+        self.dl_db.assert_finite("dl_db");
+        self.dx.assert_finite("dx");
     }
 
     const LEAKY_RELU_ALPHA: f32 = 0.01;

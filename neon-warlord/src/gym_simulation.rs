@@ -10,7 +10,7 @@ use forward_renderer::{height_map::HeightMapInterface, to_rgb};
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
 use crate::{
-    gym_simulation::gym::Gym, pendulum_cart_simulation::{graph_lines::{GraphLines, GraphLinesDrawer}, pendulum_cart::{PendulumAction, PendulumCart, PendulumState}, verlet_physics_drawer::VerletPhysicsDrawer}, physics_simulation_v3_drawer::DrawerObjects, reinforcement_learning::{dqn2::Dqn2, ppo2::Ppo2}, triple_buffer, worker_thread,
+    gym_simulation::gym::Gym, pendulum_cart_simulation::{graph_lines::{GraphLines, GraphLinesDrawer}, pendulum_cart::{PendulumAction, PendulumCart, PendulumState}, verlet_physics_drawer::VerletPhysicsDrawer}, physics_simulation_v3_drawer::DrawerObjects, print_color::print_color, reinforcement_learning::{dqn2::Dqn2, ppo2::Ppo2}, triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
@@ -247,6 +247,34 @@ impl<
 
         if self.ticks.is_multiple_of(1000) {
             let (actor_loss, critic_loss) = self.ppo.learn();
+            
+
+            fn create_input<const INPUTS: usize>(i: usize, size: usize) -> [f32; INPUTS] {
+                let x = i as f32 / (size - 1) as f32 * 2.0 - 1.0;
+                let mut input: [f32; INPUTS] = [0.0; INPUTS];
+                input[0] = x;
+                input
+            }
+
+            print!("actor: [ ");
+            let size = 10;
+            for i in 0 .. size {
+                let input = create_input(i, size); 
+                let y_pred = self.ppo.actor.forward(&input);
+
+                print_color(y_pred[0], 0.0, 1.0, crate::print_color::PrintColor::GreenCyanBlue);
+            }
+
+            print!("], critic: [ ");
+            let size = 10;
+            for i in 0 .. size {
+                let input = create_input(i, size); 
+                let y_pred = self.ppo.critic.forward(&input);
+
+                print_color(y_pred[0], 0.0, 1.0, crate::print_color::PrintColor::BluePurpleRed);
+            }
+            print!("], ");
+
             println!("actor_loss: {}, critic_loss: {}", actor_loss, critic_loss);
             self.env.reset();
         }

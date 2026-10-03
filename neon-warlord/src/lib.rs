@@ -27,12 +27,12 @@ mod simple_physics_simulation;
 mod sun_storage;
 mod triple_buffer;
 mod verlet_physics;
-
 #[allow(dead_code)]
 mod verlet_physics_simd;
 mod worker;
 mod worker_instance;
 mod worker_thread;
+mod print_color;
 
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
