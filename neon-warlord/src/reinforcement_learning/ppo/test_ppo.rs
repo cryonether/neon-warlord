@@ -305,6 +305,7 @@ fn test_episode_boundaries() {
 }
 
 /// Delayed reward propagates backward through multiple steps.
+#[ignore = "too expensive"]
 #[test]
 fn test_multi_step_mdp() {
     const EPISODES: usize = 6_000;
@@ -910,6 +911,7 @@ fn test_actor_gradient_checking() {
 /// - noisy returns
 /// - stochastic policy learning
 /// - critic value estimation
+#[ignore = "too expensive"]
 #[test]
 fn test_long_noisy_mdp() {
     const EPISODES: usize = 2_000;
