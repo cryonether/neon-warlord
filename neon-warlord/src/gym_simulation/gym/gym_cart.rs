@@ -60,8 +60,6 @@ impl GymCart {
             state,
         };
 
-        // obj.update(PendulumAction::Left0, 0.0);
-
         obj
     }
 
@@ -123,11 +121,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymCart {
         self.motor_linear.update(&mut self.verlet_physics.particles);
 
         let (cart_pos, cart_velocity) = self.calculate_cart_position(dt);
-
-        // if self.state.cart_pos.abs() > 1.5 {
-        //     // something went wrong, just rest as workaround
-        //     self.reset();
-        // }
 
         self.state = State {
             cart_pos,

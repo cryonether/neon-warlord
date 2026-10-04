@@ -13,7 +13,7 @@ use itertools::izip;
 use crate::reinforcement_learning::{
     neural_network_simd::NeuralNetworkSimd,
     ppo::loss_function::{
-        GaussianLogProbabilityTanH, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
+        GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
     },
 };
 
@@ -99,7 +99,7 @@ impl<
         let action = mean_action.map(|mu| mu + self.std_dev * box_mueller_standard_normal());
 
         // Calculate the log probability over the sampled action
-        let mut glp = GaussianLogProbabilityTanH::new();
+        let mut glp = GaussianLogProbability::new();
         let log_probability = glp.calc(&action, &mean_action, self.std_dev);
 
         (action, mean_action, log_probability)
@@ -225,7 +225,7 @@ impl<
                 critic_loss_sum += critic_square_error;
 
                 // Calculate the log probability over the sampled action
-                let mut glp = GaussianLogProbabilityTanH::new();
+                let mut glp = GaussianLogProbability::new();
                 let curr_log_probability = glp.calc(&action, &cur_mean_action, self.std_dev);
                 let curr_log_probability_derivative = glp.derivative();
 

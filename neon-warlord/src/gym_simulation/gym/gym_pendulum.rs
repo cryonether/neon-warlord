@@ -126,14 +126,17 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPendulum {
     fn update(&mut self, actions: &[f32; ACTIONS], dt: f32) {
         self.apply_static_constraint();
 
-        let force = actions[0];
+        let force = actions[0] * 0.1;
         self.state = self.update(force, dt);
     }
 
     fn get_reward(&self) -> f32 {
         let sin = self.state.pol_sin_alpha;
+        let vel = self.state.angular_velocity;
 
-        (sin + 1.0) / 2.0
+        let reward = (sin + 1.0) / 2.0 - 0.01 * vel * vel;
+
+        reward
     }
 
     fn reset(&mut self) {
