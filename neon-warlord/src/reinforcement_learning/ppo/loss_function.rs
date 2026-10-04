@@ -85,7 +85,6 @@ impl<const OUTPUTS: usize> GaussianLogProbability<OUTPUTS> {
     }
 }
 
-
 pub struct PpoActorRatio {
     ratio: f32,
 }

@@ -1,6 +1,5 @@
 
-//! A pendulum
-
+//! A pendulum, try to balance it
 
 use cgmath::InnerSpace;
 
