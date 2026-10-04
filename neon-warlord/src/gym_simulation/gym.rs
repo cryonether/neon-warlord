@@ -2,7 +2,7 @@
 
 pub mod gym_cart;
 pub mod gym_pendulum;
-pub mod gym_pendulum_cart;
+pub mod gym_pendulum_on_cart;
 
 use crate::verlet_physics_simd::VerletPhysicsSimd;
 
