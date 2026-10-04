@@ -85,6 +85,97 @@ impl<const OUTPUTS: usize> GaussianLogProbability<OUTPUTS> {
     }
 }
 
+pub struct GaussianLogProbabilityTanH<const OUTPUTS: usize> {
+    z: [f32; OUTPUTS],
+    mean_action: [f32; OUTPUTS],
+    std_dev: f32,
+}
+
+impl<const OUTPUTS: usize> GaussianLogProbabilityTanH<OUTPUTS> {
+    pub fn new() -> Self {
+        Self {
+            z: [0.0; OUTPUTS],
+            mean_action: [0.0; OUTPUTS],
+            std_dev: 0.0,
+        }
+    }
+
+    /// Calculates:
+    ///
+    /// log π(a|s)
+    /// =
+    /// log N(z | μ, σ)
+    /// -
+    /// Σ log(1 - tanh(z)^2)
+    ///
+    /// where:
+    ///
+    /// a = tanh(z)
+    ///
+    /// `z` is the unsquashed Gaussian sample.
+    pub fn calc(
+        &mut self,
+        z: &[f32; OUTPUTS],
+        mean_action: &[f32; OUTPUTS],
+        std_dev: f32,
+    ) -> f32 {
+        const PI: f32 = std::f32::consts::PI;
+        const EPSILON: f32 = 1e-6;
+
+        let variance = std_dev * std_dev;
+
+        let mut log_probability = 0.0;
+
+        for (z, mean) in zip(z, mean_action) {
+            // Gaussian log probability.
+            let diff = z - mean;
+
+            log_probability +=
+                -0.5 * diff * diff / variance
+                -0.5 * f32::ln(2.0 * PI * variance);
+
+            // tanh change-of-variables correction.
+            let action = z.tanh();
+
+            log_probability -=
+                (1.0 - action * action + EPSILON).ln();
+        }
+
+        self.z = *z;
+        self.mean_action = *mean_action;
+        self.std_dev = std_dev;
+
+        log_probability
+    }
+
+    /// Derivative of the squashed Gaussian log probability
+    /// with respect to the mean μ.
+    ///
+    /// For:
+    ///
+    /// log N(z | μ, σ)
+    ///
+    /// we have:
+    ///
+    /// ∂log p / ∂μ = (z - μ) / σ²
+    ///
+    /// The tanh correction does not directly depend on μ when
+    /// differentiating with respect to μ while z is treated
+    /// as the sampled value.
+    pub fn derivative(&self) -> [f32; OUTPUTS] {
+        let variance = self.std_dev * self.std_dev;
+
+        let mut res = [0.0; OUTPUTS];
+
+        for (z, mean, res) in izip!(self.z, self.mean_action, &mut res) {
+            *res = (z - mean) / variance;
+        }
+
+        res
+    }
+}
+
+
 pub struct PpoActorRatio {
     ratio: f32,
 }
