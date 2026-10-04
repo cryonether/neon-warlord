@@ -50,7 +50,7 @@ impl GymCart {
             cart_velocity: 0.0,
         };
 
-        let obj = Self {
+        Self {
             verlet_physics,
             particles_static: [particles_static_0, particles_static_1],
             particles_static_pos: [particles_static_pos_0, particles_static_pos_1],
@@ -58,9 +58,7 @@ impl GymCart {
             motor_linear,
             previous_cart_position: 0.0,
             state,
-        };
-
-        obj
+        }
     }
 
     // Calculates the position of the cart ranging from -1.0 to 1.0 and the velocity

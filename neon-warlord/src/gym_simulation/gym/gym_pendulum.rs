@@ -43,15 +43,13 @@ impl GymPendulum {
             angular_velocity: 0.0,
         };
 
-        let obj = Self {
+        Self {
             verlet_physics,
             particles_static,
             particles_static_pos,
             particle_pole,
             state,
-        };
-
-        obj
+        }
     }
 
     // Calculates the sin_x and cos_x of the pole and the velocities
@@ -63,7 +61,7 @@ impl GymPendulum {
 
         // move to the center
         let pos_pole = pos_pole - pos_static;
-        let _pos_static = pos_static - pos_static;
+        // let _pos_static = pos_static - pos_static;
 
         // normalize
         let pos_pole = pos_pole.normalize();
@@ -133,9 +131,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPendulum {
         let sin = self.state.pol_sin_alpha;
         let vel = self.state.angular_velocity;
 
-        let reward = (sin + 1.0) / 2.0 - 0.01 * vel * vel;
-
-        reward
+        (sin + 1.0) / 2.0 - 0.01 * vel * vel
     }
 
     fn reset(&mut self) {
