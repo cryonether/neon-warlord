@@ -57,7 +57,10 @@ use crate::{
     ant_storage::AntStorage,
     camera_controller::CameraController,
     debug_overlay::DebugOverlay,
-    gym_simulation::{GymSimulation, GymSimulationThread, gym::gym_cart::GymCart},
+    gym_simulation::{
+        GymSimulation, GymSimulationThread,
+        gym::{gym_cart::GymCart, gym_pendulum::GymPendulum},
+    },
     physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
     simple_physics_simulation::SimplePhysicsSimulation,
     sun_storage::SunStorage,
@@ -324,9 +327,13 @@ impl NeonWarlord {
         //         sim: PhysicsSimulationV3::new(producer),
         //     });
 
-        let gym_simulation: GymSimulation<2, 1, 16, 1, false, GymCart> =
+        let _gym_simulation_0: GymSimulation<2, 1, 16, 1, false, GymCart> =
             GymSimulation::new(GymCart::new());
 
+        let _gym_simulation_1: GymSimulation<3, 1, 16, 1, false, GymPendulum> =
+            GymSimulation::new(GymPendulum::new());
+
+        let gym_simulation = _gym_simulation_1;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
             sim: Box::new(gym_simulation),
             producer,

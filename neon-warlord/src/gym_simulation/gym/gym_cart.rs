@@ -1,4 +1,4 @@
-//! A pendulum on a cart
+//! A cart movable between two fixed points
 
 use crate::{
     advanced_composition::motor_linear::MotorLinear,
@@ -50,7 +50,7 @@ impl GymCart {
             cart_velocity: 0.0,
         };
 
-        let obj = Self {
+        Self {
             verlet_physics,
             particles_static: [particles_static_0, particles_static_1],
             particles_static_pos: [particles_static_pos_0, particles_static_pos_1],
@@ -58,11 +58,7 @@ impl GymCart {
             motor_linear,
             previous_cart_position: 0.0,
             state,
-        };
-
-        // obj.update(PendulumAction::Left0, 0.0);
-
-        obj
+        }
     }
 
     // Calculates the position of the cart ranging from -1.0 to 1.0 and the velocity
@@ -115,16 +111,13 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymCart {
     }
 
     fn update(&mut self, actions: &[f32; ACTIONS], dt: f32) {
+        let force = actions[0];
+
         self.apply_static_constraint();
-        self.motor_linear.accelerate(actions[0]);
+        self.motor_linear.accelerate(force);
         self.motor_linear.update(&mut self.verlet_physics.particles);
 
         let (cart_pos, cart_velocity) = self.calculate_cart_position(dt);
-
-        // if self.state.cart_pos.abs() > 1.5 {
-        //     // something went wrong, just rest as workaround
-        //     self.reset();
-        // }
 
         self.state = State {
             cart_pos,

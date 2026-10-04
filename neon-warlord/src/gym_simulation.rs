@@ -3,7 +3,6 @@
 pub mod graph_lines;
 pub mod gym;
 pub mod neural_network_drawer;
-mod pendulum;
 pub mod verlet_physics_drawer;
 
 use std::collections::VecDeque;
