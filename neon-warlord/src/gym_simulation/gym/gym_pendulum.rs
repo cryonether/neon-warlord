@@ -1,4 +1,3 @@
-
 //! A pendulum, try to balance it
 
 use cgmath::InnerSpace;
@@ -66,7 +65,7 @@ impl GymPendulum {
         // normalize
         let pos_pole = pos_pole.normalize();
 
-        // tangent 
+        // tangent
         let tangent = cgmath::Vector3::new(-pos_pole.z, 0.0, pos_pole.x);
 
         // apply force
@@ -86,11 +85,8 @@ impl GymPendulum {
         // d cos(α)/dt = -sin(α) α'
         //
         // cos(α) · (cos(α) α') - sin(α) · (-sin(α) α') = α'
-        // 
-        let angular_velocity =
-            pol_cos_alpha * pol_sin_alpha_v
-            - pol_sin_alpha * pol_cos_alpha_v;
-
+        //
+        let angular_velocity = pol_cos_alpha * pol_sin_alpha_v - pol_sin_alpha * pol_cos_alpha_v;
 
         State {
             pol_sin_alpha,
@@ -117,7 +113,11 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPendulum {
 
     fn get_state(&self) -> [f32; OBSERVATIONS] {
         let state = &self.state;
-        [state.pol_sin_alpha, state.pol_cos_alpha, state.angular_velocity]
+        [
+            state.pol_sin_alpha,
+            state.pol_cos_alpha,
+            state.angular_velocity,
+        ]
     }
 
     fn update(&mut self, actions: &[f32; ACTIONS], dt: f32) {

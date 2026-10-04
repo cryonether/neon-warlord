@@ -111,7 +111,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymCart {
     }
 
     fn update(&mut self, actions: &[f32; ACTIONS], dt: f32) {
-
         let force = actions[0];
 
         self.apply_static_constraint();
