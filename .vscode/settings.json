@@ -6,4 +6,5 @@
     ],
     "rust-analyzer.testExplorer": true,
     "explorer.sortOrder": "mixed",
+    "terminal.integrated.scrollback": 10000,
 }

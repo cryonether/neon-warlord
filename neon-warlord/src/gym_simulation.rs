@@ -15,11 +15,7 @@ use crate::{
         graph_lines::{GraphLines, GraphLinesDrawer},
         gym::Gym,
         verlet_physics_drawer::VerletPhysicsDrawer,
-    },
-    physics_simulation_v3_drawer::DrawerObjects,
-    print_color::print_color,
-    reinforcement_learning::ppo::Ppo,
-    triple_buffer, worker_thread,
+    }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::ppo::Ppo, triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
@@ -57,6 +53,10 @@ pub struct GymSimulation<
     verlet_physics_drawer: VerletPhysicsDrawer,
     _steps: u64,
     _episode: u64,
+
+    reward_sum: f32,
+    reward_sum_long: f32,
+    reward_sum_super_long: f32,
 
     // Debug
     ups: Fps,
@@ -163,7 +163,7 @@ impl<
         let drawer_graph_reward =
             GraphLinesDrawer::new(scale, pos_graph_quality).colors([to_rgb("#00d9ae").into()]);
 
-        let colors: [Vec3; INPUTS] = std::array::from_fn(|_| to_rgb("#7700d9").into());
+        let colors: [Vec3; INPUTS] = PrintColor::Rainbow.into_vec();
         let drawer_graph_inputs = GraphLinesDrawer::new(scale, pos_graph_inputs).colors(colors);
 
         // Pendulum
@@ -176,6 +176,9 @@ impl<
             ticks: 0,
             _steps: 0,
             _episode: 0,
+            reward_sum: 0.0,
+            reward_sum_long: 0.0,
+            reward_sum_super_long: 0.0,
 
             ups,
             last_render_time: instant::Instant::now(),
@@ -212,6 +215,9 @@ impl<
         self.env.update(&action, dt);
         let new_state = self.env.get_state();
         let reward = self.env.get_reward();
+        self.reward_sum += reward;
+        self.reward_sum_long += reward;
+        self.reward_sum_super_long += reward;
 
         self.ppo
             .save_reward(state, action, log_probability, reward, false);
@@ -233,6 +239,19 @@ impl<
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop();
 
+        if self.ticks.is_multiple_of(1_000_000) {
+            let reward = self.reward_sum_long / 1000.0;
+            self.graph_actor_loss.y_push_pop(0, reward / 1000.0);
+            self.reward_sum_long = 0.0;
+        }
+
+        if self.ticks.is_multiple_of(10_000_000) {
+            let reward = self.reward_sum_super_long / 10_000.0;
+            self.graph_critic_loss.y_push_pop(0, reward / 1000.0);
+            self.reward_sum_super_long = 0.0;
+        }
+
+
         if self.ticks.is_multiple_of(1000) {
             let (actor_loss, critic_loss) = self.ppo.learn();
 
@@ -244,6 +263,17 @@ impl<
             }
 
             print!("{}, ", self.ticks / 1000);
+
+            print!("reward: ");
+            print_color(
+                self.reward_sum,
+                0.0,
+                1000.0,
+                PrintColor::PurplePinkYellow,
+            );
+            print!(", ");
+            self.reward_sum = 0.0;
+
             print!("actor: [ ");
             let size = 10;
             for i in 0..size {
@@ -252,9 +282,9 @@ impl<
 
                 print_color(
                     y_pred[0],
-                    0.0,
+                    -1.0,
                     1.0,
-                    crate::print_color::PrintColor::GreenCyanBlue,
+                    PrintColor::GreenCyanBlue,
                 );
             }
 
@@ -267,8 +297,8 @@ impl<
                 print_color(
                     y_pred[0],
                     0.0,
-                    1.0,
-                    crate::print_color::PrintColor::BluePurpleRed,
+                    10.0,
+                    PrintColor::BluePurpleRed,
                 );
             }
             print!("], ");

@@ -30,11 +30,12 @@ pub struct NeuralNetworkSimd<
     const OUTPUTS: usize,
     const NEURONS: usize,
     const NR_LAYERS: usize,
+    const OUTPUT_ACTIVATION: usize,
     const RESIDUAL: bool,
 > {
-    pub input: LayerSimd<INPUTS, NEURONS, true, false>,
-    pub layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS],
-    pub output: LayerSimd<NEURONS, OUTPUTS, false, false>,
+    pub input: LayerSimd<INPUTS, NEURONS, 1, false>,
+    pub layers: [LayerSimd<NEURONS, NEURONS, 1, RESIDUAL>; NR_LAYERS],
+    pub output: LayerSimd<NEURONS, OUTPUTS, OUTPUT_ACTIVATION, false>,
 }
 
 impl<
@@ -43,13 +44,14 @@ impl<
     const NEURONS: usize,
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
-> NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>
+    const OUTPUT_ACTIVATION: usize,
+> NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, OUTPUT_ACTIVATION, RESIDUAL>
 {
     pub fn new() -> Self {
-        let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new();
-        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
+        let input: LayerSimd<INPUTS, NEURONS, 1, false> = LayerSimd::new();
+        let layers: [LayerSimd<NEURONS, NEURONS, 1, RESIDUAL>; NR_LAYERS] =
             std::array::from_fn(|_| LayerSimd::new());
-        let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new();
+        let output: LayerSimd<NEURONS, OUTPUTS, OUTPUT_ACTIVATION, false> = LayerSimd::new();
 
         Self {
             input,
@@ -64,10 +66,10 @@ impl<
         }
         let mut rng = fastrand::Rng::with_seed(seed);
 
-        let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new_rand(&mut rng);
-        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
+        let input: LayerSimd<INPUTS, NEURONS, 1, false> = LayerSimd::new_rand(&mut rng);
+        let layers: [LayerSimd<NEURONS, NEURONS, 1, RESIDUAL>; NR_LAYERS] =
             std::array::from_fn(|_| LayerSimd::new_rand(&mut rng));
-        let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new_rand(&mut rng);
+        let output: LayerSimd<NEURONS, OUTPUTS, OUTPUT_ACTIVATION, false> = LayerSimd::new_rand(&mut rng);
 
         Self {
             input,
@@ -77,10 +79,10 @@ impl<
     }
 
     pub fn new_zero_one() -> Self {
-        let input: LayerSimd<INPUTS, NEURONS, true, false> = LayerSimd::new_zero_one();
-        let layers: [LayerSimd<NEURONS, NEURONS, true, RESIDUAL>; NR_LAYERS] =
+        let input: LayerSimd<INPUTS, NEURONS, 1, false> = LayerSimd::new_zero_one();
+        let layers: [LayerSimd<NEURONS, NEURONS, 1, RESIDUAL>; NR_LAYERS] =
             std::array::from_fn(|_| LayerSimd::new_zero_one());
-        let output: LayerSimd<NEURONS, OUTPUTS, false, false> = LayerSimd::new_zero_one();
+        let output: LayerSimd<NEURONS, OUTPUTS, OUTPUT_ACTIVATION, false> = LayerSimd::new_zero_one();
 
         Self {
             input,
@@ -131,8 +133,9 @@ impl<
     const OUTPUTS: usize,
     const NEURONS: usize,
     const NR_LAYERS: usize,
+    const OUTPUT_ACTIVATION: usize,
     const RESIDUAL: bool,
-> std::fmt::Display for NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>
+> std::fmt::Display for NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, OUTPUT_ACTIVATION, RESIDUAL>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "NeuralNetworkLayered {{")?;

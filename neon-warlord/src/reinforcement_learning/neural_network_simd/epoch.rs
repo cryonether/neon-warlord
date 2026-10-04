@@ -11,7 +11,7 @@ pub struct EpochSimd<
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
 > {
-    pub model: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL>,
+    pub model: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, 0, RESIDUAL>,
 
     pub loss: f32,
 }

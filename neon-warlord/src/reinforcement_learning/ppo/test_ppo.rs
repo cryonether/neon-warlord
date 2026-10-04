@@ -764,7 +764,7 @@ fn test_actor_gradient_checking() {
     //
     // Create deterministic initial network.
     //
-    let mut actor = NeuralNetworkSimd::<INPUTS, OUTPUTS, NEURONS, LAYERS, false>::new_rand(42);
+    let mut actor = NeuralNetworkSimd::<INPUTS, OUTPUTS, NEURONS, LAYERS, 0, false>::new_rand(42);
 
     //
     // Forward pass.

@@ -10,12 +10,12 @@ use std::{collections::VecDeque, iter::zip};
 
 use itertools::izip;
 
-use crate::reinforcement_learning::{
+use crate::{print_color::{color::PrintColor, print_color}, reinforcement_learning::{
     neural_network_simd::NeuralNetworkSimd,
     ppo::loss_function::{
         GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
     },
-};
+}};
 
 /// Implements the Proximal Policy Optimization algorithm
 pub struct Ppo<
@@ -25,8 +25,8 @@ pub struct Ppo<
     const LAYERS: usize,
     const RESIDUAL: bool,
 > {
-    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, false>,
-    pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, false>,
+    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, 2, false>,
+    pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, 0, false>,
 
     transitions: Vec<Transition<INPUTS, OUTPUTS>>,
 
@@ -170,25 +170,25 @@ impl<
     }
 
     pub fn learn(&mut self) -> (f32, f32) {
-        let (mut advantages, value_targets) = self.calculate_gae();
+        let (advantages, value_targets) = self.calculate_gae();
 
         // Normalizing advantages
         // isn't theoretically necessary, but in practice it decreases the variance of
         // our advantages and makes convergence much more stable and faster.
-        let advantages_mean = advantages.iter().sum::<f32>() / advantages.len() as f32;
-        let advantages_variance = advantages
-            .iter()
-            .map(|x| {
-                let diff = x - advantages_mean;
-                diff * diff
-            })
-            .sum::<f32>()
-            / advantages.len() as f32;
-        let advantages_std_dev = advantages_variance.sqrt();
+        // let advantages_mean = advantages.iter().sum::<f32>() / advantages.len() as f32;
+        // let advantages_variance = advantages
+        //     .iter()
+        //     .map(|x| {
+        //         let diff = x - advantages_mean;
+        //         diff * diff
+        //     })
+        //     .sum::<f32>()
+        //     / advantages.len() as f32;
+        // let advantages_std_dev = advantages_variance.sqrt();
 
-        for advantage in &mut advantages {
-            *advantage = (*advantage - advantages_mean) / (advantages_std_dev + 1e-10);
-        }
+        // for advantage in &mut advantages {
+        //     *advantage = (*advantage - advantages_mean) / (advantages_std_dev + 1e-10);
+        // }
 
         let n = self.transitions.len();
         assert_eq!(advantages.len(), n);

@@ -45,7 +45,7 @@ fn compare() {
     nn_0.forward();
     nn_0.backward(0);
 
-    let mut nn_1: NeuralNetworkSimd<2, 2, 2, 2, false> = NeuralNetworkSimd::new();
+    let mut nn_1: NeuralNetworkSimd<2, 2, 2, 2, 0, false> = NeuralNetworkSimd::new();
 
     *nn_1.input.x = x.into();
 
@@ -102,7 +102,7 @@ fn compare() {
 
 #[test]
 fn compare_dfdx() {
-    let mut nn_1: NeuralNetworkSimd<16, 1, 16, 2, false> = NeuralNetworkSimd::new_zero_one();
+    let mut nn_1: NeuralNetworkSimd<16, 1, 16, 2, 0, false> = NeuralNetworkSimd::new_zero_one();
 
     let x = [
         1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,

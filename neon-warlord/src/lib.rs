@@ -319,13 +319,13 @@ impl NeonWarlord {
         let _gym_simulation_0: GymSimulation<2, 1, 16, 1, false, GymCart> =
             GymSimulation::new(GymCart::new());
 
-        let _gym_simulation_1: GymSimulation<3, 1, 16, 1, false, GymPendulum> =
+        let _gym_simulation_1: GymSimulation<3, 1, 32, 2, false, GymPendulum> =
             GymSimulation::new(GymPendulum::new());
 
-        let _gym_simulation_2: GymSimulation<5, 1, 16, 1, false, GymPendulumOnCart> =
+        let _gym_simulation_2: GymSimulation<5, 1, 64, 2, false, GymPendulumOnCart> =
             GymSimulation::new(GymPendulumOnCart::new());
 
-        let gym_simulation = _gym_simulation_1;
+        let gym_simulation = _gym_simulation_2;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
             sim: Box::new(gym_simulation),
             producer,

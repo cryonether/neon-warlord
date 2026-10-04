@@ -227,7 +227,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPendulumOnCart {
         self.apply_static_constraint();
 
         // Cart control.
-        let force = actions[0];
+        let force = actions[0] * 20.0;
 
         self.motor_linear.accelerate(force);
         self.motor_linear
@@ -260,13 +260,11 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPendulumOnCart {
         let upright_reward =
             (self.state.pol_sin_alpha + 1.0) / 2.0;
 
-        let cart_penalty = 0.05 * cart_pos * cart_pos;
-        let velocity_penalty = 0.01 * angular_velocity * angular_velocity;
+        let cart_penalty = 0.001 * cart_pos * cart_pos;
+        let velocity_penalty = 0.0001 * angular_velocity * angular_velocity;
 
-        f32::max(
-            0.0,
-            upright_reward - cart_penalty - velocity_penalty,
-        )
+
+        upright_reward - cart_penalty - velocity_penalty
     }
 
     fn reset(&mut self) {

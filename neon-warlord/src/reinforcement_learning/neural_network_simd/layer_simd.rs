@@ -13,7 +13,7 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::{
 pub struct LayerSimd<
     const INPUTS: usize,
     const OUTPUTS: usize,
-    const ACTIVATION: bool,
+    const ACTIVATION: usize,
     const RESIDUAL: bool,
 > {
     pub x: SVec16<INPUTS>,
@@ -37,7 +37,7 @@ pub struct LayerSimd<
     dx: SVec16<INPUTS>,
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RESIDUAL: bool>
+impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: usize, const RESIDUAL: bool>
     LayerSimd<INPUTS, OUTPUTS, ACTIVATION, RESIDUAL>
 {
     pub fn new() -> Self {
@@ -150,8 +150,10 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         }
 
         // a = f(z)
-        self.a = if ACTIVATION {
+        self.a = if ACTIVATION == 1 {   
             Self::activation_re_lu_vec(&self.z)
+        } else if ACTIVATION == 2 {
+            Self::activation_tanh_vec(&self.z)
         } else {
             self.z.clone()
         };
@@ -169,8 +171,10 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         //
         // dz = delta ⊙ f'(z)
         //
-        let dz = if ACTIVATION {
+        let dz = if ACTIVATION == 1 {
             delta * &Self::derivative_re_lu_vec(&self.z)
+        } else if ACTIVATION == 2 {
+            delta * &Self::derivative_tanh_vec(&self.z)
         } else {
             delta.clone()
         };
@@ -274,7 +278,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         self.dx.assert_not_nan("dx");
     }
 
-    pub fn assert_finite(&self) {
+    pub fn assert_finite(&mut self) {
         self.x.assert_finite("x");
         self.w.assert_finite("w");
         self.b.assert_finite("b");
@@ -325,6 +329,39 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             } else {
                 Self::LEAKY_RELU_ALPHA
             };
+        }
+
+        res
+    }
+
+    #[inline]
+    fn activation_tanh_vec(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+        let mut res = SVec16::zero();
+
+        for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
+            *res = x.tanh();
+        }
+
+        for (x, res) in zip(x.remainder(), res.remainder_mut()) {
+            *res = x.tanh();
+        }
+
+        res
+    }
+
+    #[inline]
+    fn derivative_tanh_vec(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+        let mut res = SVec16::zero();
+        let one = f32x16::splat(1.0);
+
+        for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
+            let tanh_x = x.tanh();
+            *res = one - tanh_x * tanh_x;
+        }
+
+        for (x, res) in zip(x.remainder(), res.remainder_mut()) {
+            let tanh_x = x.tanh();
+            *res = 1.0 - tanh_x * tanh_x;
         }
 
         res

@@ -18,8 +18,8 @@ struct Transition {
 
 // Implements Deep Q-Learning (DQN)
 pub struct Dqn {
-    q_net: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, 64, LAYERS, false>>,
-    pub target_net: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, 64, LAYERS, false>>,
+    q_net: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, 64, LAYERS, 0, false>>,
+    pub target_net: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, 64, LAYERS, 0, false>>,
 
     epsilon: f32,
     epsilon_decay: f32,
