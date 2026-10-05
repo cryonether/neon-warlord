@@ -2,7 +2,7 @@
 
 use std::collections::VecDeque;
 
-use crate::reinforcement_learning::neural_network_simd::NeuralNetworkSimd;
+use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, layer_simd::ActivationNone};
 
 const INPUTS: usize = 4;
 const OUTPUTS: usize = 2;
@@ -18,8 +18,8 @@ struct Transition {
 
 // Implements Deep Q-Learning (DQN)
 pub struct Dqn {
-    q_net: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, 64, LAYERS, 0, false>>,
-    pub target_net: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, 64, LAYERS, 0, false>>,
+    q_net: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, 64, LAYERS, false, ActivationNone>>,
+    pub target_net: Box<NeuralNetworkSimd<INPUTS, OUTPUTS, 64, LAYERS, false, ActivationNone>>,
 
     epsilon: f32,
     epsilon_decay: f32,

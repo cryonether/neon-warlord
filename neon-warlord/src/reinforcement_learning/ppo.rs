@@ -11,8 +11,7 @@ use std::{collections::VecDeque, iter::zip};
 use itertools::izip;
 
 use crate::{print_color::{color::PrintColor, print_color}, reinforcement_learning::{
-    neural_network_simd::NeuralNetworkSimd,
-    ppo::loss_function::{
+    neural_network_simd::{NeuralNetworkSimd, layer_simd::{ActivationNone, ActivationTanH}}, ppo::loss_function::{
         GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
     },
 }};
@@ -25,8 +24,8 @@ pub struct Ppo<
     const LAYERS: usize,
     const RESIDUAL: bool,
 > {
-    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, 2, false>,
-    pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, 0, false>,
+    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, false, ActivationTanH>,
+    pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, false, ActivationNone>,
 
     transitions: Vec<Transition<INPUTS, OUTPUTS>>,
 
