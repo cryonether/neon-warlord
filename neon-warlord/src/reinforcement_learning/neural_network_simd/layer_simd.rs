@@ -1,6 +1,6 @@
 //! A layer of a neural network
 
-use std::iter::zip;
+use std::{iter::zip, marker::PhantomData};
 
 use wide::f32x16;
 
@@ -13,8 +13,8 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::{
 pub struct LayerSimd<
     const INPUTS: usize,
     const OUTPUTS: usize,
-    const ACTIVATION: bool,
     const RESIDUAL: bool,
+    ACTIVATION: ActivationFunction<OUTPUTS>,
 > {
     pub x: SVec16<INPUTS>,
 
@@ -35,10 +35,16 @@ pub struct LayerSimd<
 
     // intermediate products
     dx: SVec16<INPUTS>,
+
+    phantom_data: PhantomData<ACTIVATION>,
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RESIDUAL: bool>
-    LayerSimd<INPUTS, OUTPUTS, ACTIVATION, RESIDUAL>
+impl<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const RESIDUAL: bool,
+    ACTIVATION: ActivationFunction<OUTPUTS>,
+> LayerSimd<INPUTS, OUTPUTS, RESIDUAL, ACTIVATION>
 {
     pub fn new() -> Self {
         let x = SVec16::zero();
@@ -59,6 +65,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             dl_dw,
             dl_db,
             dx,
+
+            phantom_data: PhantomData,
         }
     }
 
@@ -96,6 +104,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             dl_dw,
             dl_db,
             dx,
+
+            phantom_data: PhantomData,
         }
     }
 
@@ -126,6 +136,8 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
             dl_dw,
             dl_db,
             dx,
+
+            phantom_data: PhantomData,
         }
     }
 
@@ -150,11 +162,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         }
 
         // a = f(z)
-        self.a = if ACTIVATION {
-            Self::activation_re_lu_vec(&self.z)
-        } else {
-            self.z.clone()
-        };
+        self.a = ACTIVATION::activation(&self.z);
 
         // self.assert_finite();
 
@@ -169,11 +177,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         //
         // dz = delta ⊙ f'(z)
         //
-        let dz = if ACTIVATION {
-            delta * &Self::derivative_re_lu_vec(&self.z)
-        } else {
-            delta.clone()
-        };
+        let dz = delta * &ACTIVATION::derivative(&self.z);
 
         // W^T * dz
         //
@@ -274,7 +278,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         self.dx.assert_not_nan("dx");
     }
 
-    pub fn assert_finite(&self) {
+    pub fn assert_finite(&mut self) {
         self.x.assert_finite("x");
         self.w.assert_finite("w");
         self.b.assert_finite("b");
@@ -284,35 +288,60 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         self.dl_db.assert_finite("dl_db");
         self.dx.assert_finite("dx");
     }
+}
 
-    const LEAKY_RELU_ALPHA: f32 = 0.01;
+// Activation Function
 
-    #[inline]
-    fn activation_re_lu_vec(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+pub trait ActivationFunction<const OUTPUTS: usize> {
+    fn activation(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS>;
+    fn derivative(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS>;
+}
+
+// Activation Function None
+
+#[derive(Clone)]
+pub struct ActivationNone {}
+
+impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationNone {
+    fn activation(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+        x.clone()
+    }
+
+    fn derivative(_x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+        SVec16::one()
+    }
+}
+
+// Activation Function Leaky ReLu
+
+#[derive(Clone)]
+pub struct ActivationLeakyReLu {}
+
+impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationLeakyReLu {
+    fn activation(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+        const LEAKY_RELU_ALPHA: f32 = 0.01;
+
         let mut res = SVec16::zero();
         let zero = f32x16::ZERO;
-        let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
+        let alpha = f32x16::splat(LEAKY_RELU_ALPHA);
 
         for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
             *res = x.simd_gt(zero).select(*x, x * alpha);
         }
 
         for (x, res) in zip(x.remainder(), res.remainder_mut()) {
-            *res = if *x > 0.0 {
-                *x
-            } else {
-                x * Self::LEAKY_RELU_ALPHA
-            };
+            *res = if *x > 0.0 { *x } else { x * LEAKY_RELU_ALPHA };
         }
 
         res
     }
 
-    #[inline]
-    fn derivative_re_lu_vec(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+    fn derivative(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+        const LEAKY_RELU_ALPHA: f32 = 0.01;
+
         let mut res = SVec16::zero();
         let zero = f32x16::ZERO;
-        let alpha = f32x16::splat(Self::LEAKY_RELU_ALPHA);
+        let alpha = f32x16::splat(LEAKY_RELU_ALPHA);
         let one = f32x16::splat(1.0);
 
         for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
@@ -320,31 +349,67 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const ACTIVATION: bool, const RE
         }
 
         for (x, res) in zip(x.remainder(), res.remainder_mut()) {
-            *res = if *x > 0.0 {
-                1.0
-            } else {
-                Self::LEAKY_RELU_ALPHA
-            };
+            *res = if *x > 0.0 { 1.0 } else { LEAKY_RELU_ALPHA };
+        }
+
+        res
+    }
+}
+
+// Activation Function TanH
+
+#[derive(Clone)]
+pub struct ActivationTanH {}
+
+impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationTanH {
+    fn activation(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+        let mut res = SVec16::zero();
+
+        for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
+            *res = x.tanh();
+        }
+
+        for (x, res) in zip(x.remainder(), res.remainder_mut()) {
+            *res = x.tanh();
         }
 
         res
     }
 
-    #[inline]
-    fn activation_re_lu(value: f32) -> f32 {
-        if value > 0.0 {
-            value
-        } else {
-            Self::LEAKY_RELU_ALPHA * value
-        }
-    }
+    fn derivative(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+        let mut res = SVec16::zero();
+        let one = f32x16::splat(1.0);
 
-    #[inline]
-    fn derivative_re_lu(value: f32) -> f32 {
-        if value > 0.0 {
-            1.0
-        } else {
-            Self::LEAKY_RELU_ALPHA
+        for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
+            let tanh_x = x.tanh();
+            *res = one - tanh_x * tanh_x;
         }
+
+        for (x, res) in zip(x.remainder(), res.remainder_mut()) {
+            let tanh_x = x.tanh();
+            *res = 1.0 - tanh_x * tanh_x;
+        }
+
+        res
     }
 }
+
+// Activation Function ReLu
+
+// #[inline]
+// fn activation_re_lu(value: f32) -> f32 {
+//     if value > 0.0 {
+//         value
+//     } else {
+//         Self::LEAKY_RELU_ALPHA * value
+//     }
+// }
+
+// #[inline]
+// fn derivative_re_lu(value: f32) -> f32 {
+//     if value > 0.0 {
+//         1.0
+//     } else {
+//         Self::LEAKY_RELU_ALPHA
+//     }
+// }

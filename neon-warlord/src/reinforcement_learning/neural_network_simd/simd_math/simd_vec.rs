@@ -18,6 +18,10 @@ impl<const N: usize> SVec16<N> {
         Self::new([0.0; N])
     }
 
+    pub fn one() -> Self {
+        Self::new([1.0; N])
+    }
+
     #[allow(clippy::wrong_self_convention)]
     pub fn as_row_vec(self) -> SRowVec16<N> {
         SRowVec16(self.0)

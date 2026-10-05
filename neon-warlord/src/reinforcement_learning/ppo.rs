@@ -11,7 +11,10 @@ use std::{collections::VecDeque, iter::zip};
 use itertools::izip;
 
 use crate::reinforcement_learning::{
-    neural_network_simd::NeuralNetworkSimd,
+    neural_network_simd::{
+        NeuralNetworkSimd,
+        layer_simd::{ActivationFunction, ActivationNone},
+    },
     ppo::loss_function::{
         GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
     },
@@ -24,9 +27,10 @@ pub struct Ppo<
     const NEURONS: usize,
     const LAYERS: usize,
     const RESIDUAL: bool,
+    OutputActivationActor: ActivationFunction<OUTPUTS>,
 > {
-    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, false>,
-    pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, false>,
+    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, false, OutputActivationActor>,
+    pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, false, ActivationNone>,
 
     transitions: Vec<Transition<INPUTS, OUTPUTS>>,
 
@@ -44,7 +48,8 @@ impl<
     const NEURONS: usize,
     const LAYERS: usize,
     const RESIDUAL: bool,
-> Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL>
+    OutputActivationActor: ActivationFunction<OUTPUTS>,
+> Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>
 {
     pub fn new(seed: u64) -> Self {
         // For choosing an action
@@ -170,25 +175,25 @@ impl<
     }
 
     pub fn learn(&mut self) -> (f32, f32) {
-        let (mut advantages, value_targets) = self.calculate_gae();
+        let (advantages, value_targets) = self.calculate_gae();
 
         // Normalizing advantages
         // isn't theoretically necessary, but in practice it decreases the variance of
         // our advantages and makes convergence much more stable and faster.
-        let advantages_mean = advantages.iter().sum::<f32>() / advantages.len() as f32;
-        let advantages_variance = advantages
-            .iter()
-            .map(|x| {
-                let diff = x - advantages_mean;
-                diff * diff
-            })
-            .sum::<f32>()
-            / advantages.len() as f32;
-        let advantages_std_dev = advantages_variance.sqrt();
+        // let advantages_mean = advantages.iter().sum::<f32>() / advantages.len() as f32;
+        // let advantages_variance = advantages
+        //     .iter()
+        //     .map(|x| {
+        //         let diff = x - advantages_mean;
+        //         diff * diff
+        //     })
+        //     .sum::<f32>()
+        //     / advantages.len() as f32;
+        // let advantages_std_dev = advantages_variance.sqrt();
 
-        for advantage in &mut advantages {
-            *advantage = (*advantage - advantages_mean) / (advantages_std_dev + 1e-10);
-        }
+        // for advantage in &mut advantages {
+        //     *advantage = (*advantage - advantages_mean) / (advantages_std_dev + 1e-10);
+        // }
 
         let n = self.transitions.len();
         assert_eq!(advantages.len(), n);
