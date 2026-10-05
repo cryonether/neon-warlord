@@ -3,6 +3,7 @@ type Vec3 = cgmath::Vector3<f32>;
 
 
 #[derive(Clone, Copy, Debug)]
+#[allow(dead_code)]
 pub enum PrintColor {
     RedYellowGreen,
     GreenYellowRed,

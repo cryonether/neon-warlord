@@ -135,8 +135,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPendulum {
     }
 
     fn reset(&mut self) {
-        // let alpha = (fastrand::f32() * 2.0 - 1.0) * std::f32::consts::PI;
-        let alpha = -std::f32::consts::PI * 0.5  + (fastrand::f32() * 2.0 - 1.0) * 0.3;
+        let alpha = (fastrand::f32() * 2.0 - 1.0) * std::f32::consts::PI;
+        // let alpha = -std::f32::consts::PI * 0.5  + (fastrand::f32() * 2.0 - 1.0) * 0.3;
 
         let pol_sin_alpha = alpha.sin();
         let pol_cos_alpha = alpha.cos();
