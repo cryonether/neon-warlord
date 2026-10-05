@@ -11,7 +11,7 @@ use std::{collections::VecDeque, iter::zip};
 use itertools::izip;
 
 use crate::reinforcement_learning::{
-    neural_network_simd::{NeuralNetworkSimd, layer_simd::{ActivationFunction, ActivationNone, ActivationTanH}}, ppo::loss_function::{
+    neural_network_simd::{NeuralNetworkSimd, layer_simd::{ActivationFunction, ActivationNone}}, ppo::loss_function::{
         GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
     },
 };
