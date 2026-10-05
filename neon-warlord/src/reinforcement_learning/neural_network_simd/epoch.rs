@@ -2,7 +2,9 @@
 
 use std::iter::zip;
 
-use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, layer_simd::ActivationNone};
+use crate::reinforcement_learning::neural_network_simd::{
+    NeuralNetworkSimd, layer_simd::ActivationNone,
+};
 
 pub struct EpochSimd<
     const INPUTS: usize,

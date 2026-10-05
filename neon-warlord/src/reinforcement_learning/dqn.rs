@@ -2,7 +2,9 @@
 
 use std::collections::VecDeque;
 
-use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, layer_simd::ActivationNone};
+use crate::reinforcement_learning::neural_network_simd::{
+    NeuralNetworkSimd, layer_simd::ActivationNone,
+};
 
 const INPUTS: usize = 4;
 const OUTPUTS: usize = 2;

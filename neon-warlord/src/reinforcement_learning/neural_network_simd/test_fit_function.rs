@@ -1,7 +1,8 @@
 //! Tries to learn a continuous function using a neural network
 
 use crate::{
-    print_color::{color::PrintColor, print_color}, reinforcement_learning::neural_network_simd::epoch::EpochSimd,
+    print_color::{color::PrintColor, print_color},
+    reinforcement_learning::neural_network_simd::epoch::EpochSimd,
 };
 
 fn reward(x: f32) -> f32 {

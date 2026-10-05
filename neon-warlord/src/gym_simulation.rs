@@ -15,7 +15,11 @@ use crate::{
         graph_lines::{GraphLines, GraphLinesDrawer},
         gym::Gym,
         verlet_physics_drawer::VerletPhysicsDrawer,
-    }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::{neural_network_simd::layer_simd::ActivationTanH, ppo::Ppo}, triple_buffer, worker_thread,
+    },
+    physics_simulation_v3_drawer::DrawerObjects,
+    print_color::{color::PrintColor, print_color},
+    reinforcement_learning::{neural_network_simd::layer_simd::ActivationTanH, ppo::Ppo},
+    triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
@@ -251,7 +255,6 @@ impl<
             self.reward_sum_super_long = 0.0;
         }
 
-
         if self.ticks.is_multiple_of(1000) {
             let (actor_loss, critic_loss) = self.ppo.learn();
 
@@ -265,12 +268,7 @@ impl<
             print!("{}, ", self.ticks / 1000);
 
             print!("reward: ");
-            print_color(
-                self.reward_sum,
-                0.0,
-                1000.0,
-                PrintColor::PurplePinkYellow,
-            );
+            print_color(self.reward_sum, 0.0, 1000.0, PrintColor::PurplePinkYellow);
             print!(", ");
             self.reward_sum = 0.0;
 
@@ -280,12 +278,7 @@ impl<
                 let input = create_input(i, size);
                 let y_pred = self.ppo.actor.forward(&input);
 
-                print_color(
-                    y_pred[0],
-                    -1.0,
-                    1.0,
-                    PrintColor::GreenCyanBlue,
-                );
+                print_color(y_pred[0], -1.0, 1.0, PrintColor::GreenCyanBlue);
             }
 
             print!("], critic: [ ");
@@ -294,12 +287,7 @@ impl<
                 let input = create_input(i, size);
                 let y_pred = self.ppo.critic.forward(&input);
 
-                print_color(
-                    y_pred[0],
-                    0.0,
-                    10.0,
-                    PrintColor::BluePurpleRed,
-                );
+                print_color(y_pred[0], 0.0, 10.0, PrintColor::BluePurpleRed);
             }
             print!("], ");
 

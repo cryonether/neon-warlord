@@ -1,6 +1,4 @@
-
 type Vec3 = cgmath::Vector3<f32>;
-
 
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]
@@ -19,6 +17,7 @@ pub enum PrintColor {
 }
 
 impl PrintColor {
+    #[rustfmt::skip]
     pub const fn stops(self) -> &'static [(u8, u8, u8)] {
         match self {
             Self::RedYellowGreen => &[
@@ -91,11 +90,7 @@ impl PrintColor {
     pub fn at(self, t: f32) -> Vec3 {
         let (r, g, b) = gradient(t, self.stops());
 
-        Vec3::new(
-            r as f32 / 255.0,
-            g as f32 / 255.0,
-            b as f32 / 255.0,
-        )
+        Vec3::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0)
     }
 
     pub fn into_vec<const N: usize>(self) -> [Vec3; N] {

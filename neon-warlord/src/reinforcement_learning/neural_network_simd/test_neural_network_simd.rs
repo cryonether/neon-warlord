@@ -1,6 +1,8 @@
 //! Tests for NeuralNetworkSimd
 
-use crate::reinforcement_learning::{_assert_f32_eq_, neural_network::NeuralNetwork, neural_network_simd::layer_simd::ActivationNone};
+use crate::reinforcement_learning::{
+    _assert_f32_eq_, neural_network::NeuralNetwork, neural_network_simd::layer_simd::ActivationNone,
+};
 
 use super::*;
 
@@ -102,7 +104,8 @@ fn compare() {
 
 #[test]
 fn compare_dfdx() {
-    let mut nn_1: NeuralNetworkSimd<16, 1, 16, 2, false, ActivationNone> = NeuralNetworkSimd::new_zero_one();
+    let mut nn_1: NeuralNetworkSimd<16, 1, 16, 2, false, ActivationNone> =
+        NeuralNetworkSimd::new_zero_one();
 
     let x = [
         1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,

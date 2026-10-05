@@ -61,23 +61,14 @@ impl GymPendulumOnCart {
         verlet_physics.push_constraint_none(particles_static_1, particle_cart);
 
         // Linear motor controlling the cart.
-        let motor_linear =
-            MotorLinear::new(particle_cart, particles_static_0, particles_static_1);
+        let motor_linear = MotorLinear::new(particle_cart, particles_static_0, particles_static_1);
 
         // Pendulum starts pointing straight down.
-        let particle_pole = verlet_physics.push_particle(
-            Vec3::new(0.0, 0.0, -POLE_LENGTH),
-            radius,
-            POLE_MASS,
-        );
+        let particle_pole =
+            verlet_physics.push_particle(Vec3::new(0.0, 0.0, -POLE_LENGTH), radius, POLE_MASS);
 
         // Pendulum is attached to the cart.
-        verlet_physics.push_constraint_distance(
-            particle_cart,
-            particle_pole,
-            POLE_LENGTH,
-            0.8,
-        );
+        verlet_physics.push_constraint_distance(particle_cart, particle_pole, POLE_LENGTH, 0.8);
 
         let state = State {
             cart_pos: 0.0,
@@ -105,10 +96,7 @@ impl GymPendulumOnCart {
 
     /// Calculate cart position in [-1, 1] and cart velocity.
     fn calculate_cart_state(&mut self, dt: f32) -> (f32, f32) {
-        let cart = self
-            .verlet_physics
-            .particles
-            .position(self.particle_cart);
+        let cart = self.verlet_physics.particles.position(self.particle_cart);
 
         let left = self
             .verlet_physics
@@ -135,15 +123,9 @@ impl GymPendulumOnCart {
 
     /// Calculate pendulum sin/cos and angular velocity.
     fn calculate_pendulum_state(&self, dt: f32) -> State {
-        let pole = self
-            .verlet_physics
-            .particles
-            .position(self.particle_pole);
+        let pole = self.verlet_physics.particles.position(self.particle_pole);
 
-        let cart = self
-            .verlet_physics
-            .particles
-            .position(self.particle_cart);
+        let cart = self.verlet_physics.particles.position(self.particle_cart);
 
         // Pendulum position relative to cart.
         let direction = (pole - cart).normalize();
@@ -151,19 +133,17 @@ impl GymPendulumOnCart {
         let pol_sin_alpha = direction.z;
         let pol_cos_alpha = direction.x;
 
-        let pol_sin_alpha_v =
-            if dt > 0.0 {
-                (pol_sin_alpha - self.state.pol_sin_alpha) / dt
-            } else {
-                0.0
-            };
+        let pol_sin_alpha_v = if dt > 0.0 {
+            (pol_sin_alpha - self.state.pol_sin_alpha) / dt
+        } else {
+            0.0
+        };
 
-        let pol_cos_alpha_v =
-            if dt > 0.0 {
-                (pol_cos_alpha - self.state.pol_cos_alpha) / dt
-            } else {
-                0.0
-            };
+        let pol_cos_alpha_v = if dt > 0.0 {
+            (pol_cos_alpha - self.state.pol_cos_alpha) / dt
+        } else {
+            0.0
+        };
 
         //
         // d sin(α)/dt = cos(α) α'
@@ -174,9 +154,7 @@ impl GymPendulumOnCart {
         //
         // = α'
         //
-        let angular_velocity =
-            pol_cos_alpha * pol_sin_alpha_v
-                - pol_sin_alpha * pol_cos_alpha_v;
+        let angular_velocity = pol_cos_alpha * pol_sin_alpha_v - pol_sin_alpha * pol_cos_alpha_v;
 
         State {
             cart_pos: self.state.cart_pos,
@@ -190,17 +168,11 @@ impl GymPendulumOnCart {
     fn apply_static_constraint(&mut self) {
         self.verlet_physics
             .particles
-            .set_position(
-                self.particles_static[0],
-                self.particles_static_pos[0],
-            );
+            .set_position(self.particles_static[0], self.particles_static_pos[0]);
 
         self.verlet_physics
             .particles
-            .set_position(
-                self.particles_static[1],
-                self.particles_static_pos[1],
-            );
+            .set_position(self.particles_static[1], self.particles_static_pos[1]);
     }
 }
 
@@ -230,16 +202,13 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPendulumOnCart {
         let force = actions[0] * 20.0;
 
         self.motor_linear.accelerate(force);
-        self.motor_linear
-            .update(&mut self.verlet_physics.particles);
+        self.motor_linear.update(&mut self.verlet_physics.particles);
 
         // Calculate cart state.
-        let (cart_pos, cart_velocity) =
-            self.calculate_cart_state(dt);
+        let (cart_pos, cart_velocity) = self.calculate_cart_state(dt);
 
         // Calculate pendulum state.
-        let pendulum_state =
-            self.calculate_pendulum_state(dt);
+        let pendulum_state = self.calculate_pendulum_state(dt);
 
         self.state = State {
             cart_pos,
@@ -257,46 +226,36 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPendulumOnCart {
         // sin(alpha) = -1 when the pendulum is pointing straight down.
         // sin(alpha) =  0 when horizontal.
         // sin(alpha) =  1 when pointing straight up.
-        let upright_reward =
-            (self.state.pol_sin_alpha + 1.0) / 2.0;
+        let upright_reward = (self.state.pol_sin_alpha + 1.0) / 2.0;
 
         let cart_penalty = 0.001 * cart_pos * cart_pos;
         let velocity_penalty = 0.0001 * angular_velocity * angular_velocity;
-
 
         upright_reward - cart_penalty - velocity_penalty
     }
 
     fn reset(&mut self) {
         // Random cart position.
-        let cart_pos =
-            (fastrand::f32() - 0.5) * 2.0 * 1.8;
+        let cart_pos = (fastrand::f32() - 0.5) * 2.0 * 1.8;
 
         self.verlet_physics
             .particles
-            .reset_position(
-                self.particle_cart,
-                Vec3::new(cart_pos, 0.0, 0.0),
-            );
+            .reset_position(self.particle_cart, Vec3::new(cart_pos, 0.0, 0.0));
 
         // Random pendulum angle.
-        let alpha =
-            (fastrand::f32() * 2.0 - 1.0)
-                * std::f32::consts::PI;
+        let alpha = (fastrand::f32() * 2.0 - 1.0) * std::f32::consts::PI;
 
         let pol_sin_alpha = alpha.sin();
         let pol_cos_alpha = alpha.cos();
 
-        self.verlet_physics
-            .particles
-            .reset_position(
-                self.particle_pole,
-                Vec3::new(
-                    cart_pos + pol_cos_alpha * POLE_LENGTH,
-                    0.0,
-                    pol_sin_alpha * POLE_LENGTH,
-                ),
-            );
+        self.verlet_physics.particles.reset_position(
+            self.particle_pole,
+            Vec3::new(
+                cart_pos + pol_cos_alpha * POLE_LENGTH,
+                0.0,
+                pol_sin_alpha * POLE_LENGTH,
+            ),
+        );
 
         // Reset velocity/state tracking.
         self.previous_cart_position = cart_pos / 2.0;

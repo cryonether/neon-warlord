@@ -36,11 +36,15 @@ pub struct LayerSimd<
     // intermediate products
     dx: SVec16<INPUTS>,
 
-    phantom_data: PhantomData<ACTIVATION>
+    phantom_data: PhantomData<ACTIVATION>,
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize, const RESIDUAL: bool, ACTIVATION: ActivationFunction<OUTPUTS>>
-    LayerSimd<INPUTS, OUTPUTS, RESIDUAL, ACTIVATION>
+impl<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const RESIDUAL: bool,
+    ACTIVATION: ActivationFunction<OUTPUTS>,
+> LayerSimd<INPUTS, OUTPUTS, RESIDUAL, ACTIVATION>
 {
     pub fn new() -> Self {
         let x = SVec16::zero();
@@ -61,7 +65,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const RESIDUAL: bool, ACTIVATION
             dl_dw,
             dl_db,
             dx,
-            
+
             phantom_data: PhantomData,
         }
     }
@@ -100,7 +104,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const RESIDUAL: bool, ACTIVATION
             dl_dw,
             dl_db,
             dx,
-            
+
             phantom_data: PhantomData,
         }
     }
@@ -173,7 +177,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const RESIDUAL: bool, ACTIVATION
         //
         // dz = delta ⊙ f'(z)
         //
-        let dz =  delta * &ACTIVATION::derivative(&self.z);
+        let dz = delta * &ACTIVATION::derivative(&self.z);
 
         // W^T * dz
         //
@@ -284,10 +288,6 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const RESIDUAL: bool, ACTIVATION
         self.dl_db.assert_finite("dl_db");
         self.dx.assert_finite("dx");
     }
-
-    
-
- 
 }
 
 // Activation Function
@@ -318,7 +318,6 @@ impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationNone {
 pub struct ActivationLeakyReLu {}
 
 impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationLeakyReLu {
-
     fn activation(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
         const LEAKY_RELU_ALPHA: f32 = 0.01;
 
@@ -331,11 +330,7 @@ impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationLeakyReLu {
         }
 
         for (x, res) in zip(x.remainder(), res.remainder_mut()) {
-            *res = if *x > 0.0 {
-                *x
-            } else {
-                x * LEAKY_RELU_ALPHA
-            };
+            *res = if *x > 0.0 { *x } else { x * LEAKY_RELU_ALPHA };
         }
 
         res
@@ -354,11 +349,7 @@ impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationLeakyReLu {
         }
 
         for (x, res) in zip(x.remainder(), res.remainder_mut()) {
-            *res = if *x > 0.0 {
-                1.0
-            } else {
-                LEAKY_RELU_ALPHA
-            };
+            *res = if *x > 0.0 { 1.0 } else { LEAKY_RELU_ALPHA };
         }
 
         res
@@ -403,7 +394,6 @@ impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationTanH {
     }
 }
 
-
 // Activation Function ReLu
 
 // #[inline]
@@ -423,5 +413,3 @@ impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationTanH {
 //         Self::LEAKY_RELU_ALPHA
 //     }
 // }
-
-
