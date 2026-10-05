@@ -165,7 +165,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const RESIDUAL: bool, ACTIVATION
         self.a.clone()
     }
 
-    pub fn backward(&mut self, delta: &SVec16<OUTPUTS>) -> SVec16<INPUTS> {
+    pub fn backward(&mut self, _delta: &SVec16<OUTPUTS>) -> SVec16<INPUTS> {
         // self.assert_finite();
 
         //
