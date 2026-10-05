@@ -11,7 +11,7 @@ use std::{collections::VecDeque, iter::zip};
 use itertools::izip;
 
 use crate::reinforcement_learning::{
-    neural_network_simd::{NeuralNetworkSimd, layer_simd::{ActivationNone, ActivationTanH}}, ppo::loss_function::{
+    neural_network_simd::{NeuralNetworkSimd, layer_simd::{ActivationFunction, ActivationNone, ActivationTanH}}, ppo::loss_function::{
         GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
     },
 };
@@ -23,8 +23,9 @@ pub struct Ppo<
     const NEURONS: usize,
     const LAYERS: usize,
     const RESIDUAL: bool,
+    OutputActivationActor: ActivationFunction<OUTPUTS>,
 > {
-    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, false, ActivationTanH>,
+    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, false, OutputActivationActor>,
     pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, false, ActivationNone>,
 
     transitions: Vec<Transition<INPUTS, OUTPUTS>>,
@@ -43,7 +44,8 @@ impl<
     const NEURONS: usize,
     const LAYERS: usize,
     const RESIDUAL: bool,
-> Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL>
+    OutputActivationActor: ActivationFunction<OUTPUTS>,
+> Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>
 {
     pub fn new(seed: u64) -> Self {
         // For choosing an action

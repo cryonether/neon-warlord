@@ -165,7 +165,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const RESIDUAL: bool, ACTIVATION
         self.a.clone()
     }
 
-    pub fn backward(&mut self, _delta: &SVec16<OUTPUTS>) -> SVec16<INPUTS> {
+    pub fn backward(&mut self, delta: &SVec16<OUTPUTS>) -> SVec16<INPUTS> {
         // self.assert_finite();
 
         //
@@ -173,7 +173,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const RESIDUAL: bool, ACTIVATION
         //
         // dz = delta ⊙ f'(z)
         //
-        let dz = ACTIVATION::derivative(&self.z);
+        let dz =  delta * &ACTIVATION::derivative(&self.z);
 
         // W^T * dz
         //
@@ -307,8 +307,8 @@ impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationNone {
         x.clone()
     }
 
-    fn derivative(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
-        x.clone()
+    fn derivative(_x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
+        SVec16::one()
     }
 }
 
