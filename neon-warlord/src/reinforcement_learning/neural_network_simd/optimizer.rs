@@ -1,3 +1,4 @@
 //! Optimizer for gradient descend
 
-mod adam;
+pub mod adam;
+pub mod gradient_descend;
