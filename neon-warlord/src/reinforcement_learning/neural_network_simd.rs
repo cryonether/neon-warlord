@@ -8,6 +8,7 @@ use crate::reinforcement_learning::neural_network_simd::{
 pub mod epoch;
 pub mod layer_simd;
 pub mod simd_math;
+mod optimizer;
 
 #[cfg(test)]
 mod test_neural_network_simd;
