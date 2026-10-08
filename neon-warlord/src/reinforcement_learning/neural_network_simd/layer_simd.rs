@@ -2,9 +2,7 @@
 
 use std::{iter::zip, marker::PhantomData};
 
-use wide::f32x16;
-
-use crate::reinforcement_learning::neural_network_simd::{activation_function::ActivationFunction, optimizer::adam::Adam, simd_math::{
+use crate::reinforcement_learning::neural_network_simd::{activation_function::ActivationFunction, optimizer::{adam::Adam}, simd_math::{
     simd_mat::SMat16, simd_vec::SVec16,
 }};
 
@@ -239,35 +237,41 @@ impl<
         dx
     }
 
-    pub fn subtract_gradients(&mut self, learning_rate: f32) {
+    pub fn subtract_gradients(&mut self) {
         // self.assert_finite();
 
-        let learning_rate_ = f32x16::splat(learning_rate);
-        let zero = f32x16::splat(0.0);
+        // let optimizer = &mut self.optimizer;
 
-        // b
-        for (b, dl_db) in zip(self.b.simd_iter_mut(), self.dl_db.simd_iter_mut()) {
-            *b -= *dl_db * learning_rate_;
-            *dl_db = zero;
-        }
+        self.optimizer.step(&mut self.w, &mut self.b, &mut self.dl_dw, &mut self.dl_db);
 
-        for (b, dl_db) in zip(self.b.remainder_mut(), self.dl_db.remainder_mut()) {
-            *b -= *dl_db * learning_rate;
-            *dl_db = 0.0;
-        }
 
-        // w
-        for (w, dl_dw) in zip(&mut self.w, &mut self.dl_dw) {
-            for (w, dl_dw) in zip(w.simd_iter_mut(), dl_dw.simd_iter_mut()) {
-                *w -= *dl_dw * learning_rate_;
-                *dl_dw = zero;
-            }
 
-            for (w, dl_dw) in zip(w.remainder_mut(), dl_dw.remainder_mut()) {
-                *w -= *dl_dw * learning_rate;
-                *dl_dw = 0.0;
-            }
-        }
+        // let learning_rate_ = f32x16::splat(learning_rate);
+        // let zero = f32x16::splat(0.0);
+
+        // // b
+        // for (b, dl_db) in zip(self.b.simd_iter_mut(), self.dl_db.simd_iter_mut()) {
+        //     *b -= *dl_db * learning_rate_;
+        //     *dl_db = zero;
+        // }
+
+        // for (b, dl_db) in zip(self.b.remainder_mut(), self.dl_db.remainder_mut()) {
+        //     *b -= *dl_db * learning_rate;
+        //     *dl_db = 0.0;
+        // }
+
+        // // w
+        // for (w, dl_dw) in zip(&mut self.w, &mut self.dl_dw) {
+        //     for (w, dl_dw) in zip(w.simd_iter_mut(), dl_dw.simd_iter_mut()) {
+        //         *w -= *dl_dw * learning_rate_;
+        //         *dl_dw = zero;
+        //     }
+
+        //     for (w, dl_dw) in zip(w.remainder_mut(), dl_dw.remainder_mut()) {
+        //         *w -= *dl_dw * learning_rate;
+        //         *dl_dw = 0.0;
+        //     }
+        // }
 
         self.assert_finite();
     }

@@ -160,9 +160,7 @@ impl Dqn {
             self.loss = sum / BATCH_SIZE as f32;
 
             // optimizer
-            /// plain gradient descent
-            const LEARNING_RATE: f32 = 0.001;
-            self.q_net.subtract_gradients(LEARNING_RATE);
+            self.q_net.subtract_gradients();
 
             // return self.total_reward;
             return self.loss;

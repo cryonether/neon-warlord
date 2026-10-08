@@ -223,9 +223,10 @@ impl<
                 // Critic mean square error
                 let mut mse = MeanSquareError::new();
                 let critic_square_error = mse.calc(curr_estimate, *returns);
-                let critic_square_error_derivative = mse.derivative();
+                let mut critic_square_error_derivative = mse.derivative();
+                critic_square_error_derivative[0] *= 1.0 / n;
 
-                critic_loss_sum += critic_square_error;
+                critic_loss_sum += critic_square_error * (1.0 / n);
 
                 // Calculate the log probability over the sampled action
                 let mut glp = GaussianLogProbability::new();
@@ -243,7 +244,7 @@ impl<
                     ppo_surrogate_loss_clipped.calc(ratio, *advantage, self.clip);
                 let surrogate_loss_clipped_derivative = ppo_surrogate_loss_clipped.derivative();
 
-                actor_loss_sum += surrogate_loss_clipped;
+                actor_loss_sum += surrogate_loss_clipped * (1.0 / n);
 
                 // dL / dy
                 //
@@ -257,7 +258,7 @@ impl<
                 {
                     *loss_derivative = surrogate_loss_clipped_derivative
                         * ratio_derivative
-                        * curr_log_probability_derivative;
+                        * curr_log_probability_derivative * (1.0 / n);
                 }
 
                 // Calculate gradients
@@ -273,10 +274,8 @@ impl<
             critic_loss = critic_loss_sum / n;
             actor_loss = actor_loss_sum / n;
 
-            const LEARNING_RATE_ACTOR: f32 = 0.01;
-            const LEARNING_RATE_CRITIC: f32 = 0.001;
-            self.critic.subtract_gradients(LEARNING_RATE_CRITIC / n);
-            self.actor.subtract_gradients(LEARNING_RATE_ACTOR / n);
+            self.critic.subtract_gradients();
+            self.actor.subtract_gradients();
         }
 
         self.transitions.clear();

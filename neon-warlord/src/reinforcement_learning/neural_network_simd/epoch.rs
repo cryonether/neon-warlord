@@ -91,10 +91,7 @@ impl<
         self.loss = loss;
 
         // optimizer
-        /// plain gradient descent
-        /// w_new = w_old - eta * dw
-        const LEARNING_RATE: f32 = 0.1;
-        self.model.subtract_gradients(LEARNING_RATE);
+        self.model.subtract_gradients();
 
         let res: [f32; BATCH_SIZE] = y_pred_vec.try_into().unwrap();
 

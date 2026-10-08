@@ -118,12 +118,12 @@ impl<
         dx.0.0
     }
 
-    pub fn subtract_gradients(&mut self, learning_rate: f32) {
-        self.input.subtract_gradients(learning_rate);
+    pub fn subtract_gradients(&mut self) {
+        self.input.subtract_gradients();
         for layer in &mut self.layers.iter_mut().rev() {
-            layer.subtract_gradients(learning_rate);
+            layer.subtract_gradients();
         }
-        self.output.subtract_gradients(learning_rate);
+        self.output.subtract_gradients();
     }
 }
 
