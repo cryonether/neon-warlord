@@ -9,6 +9,7 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::{
 };
 
 /// Plain gradient descend
+#[derive(Clone)]
 pub struct GradientDescend<const INPUTS: usize, const OUTPUTS: usize> {
     /// Step size
     alpha: f32,

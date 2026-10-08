@@ -1,7 +1,7 @@
 //! Tests for NeuralNetworkSimd
 
 use crate::reinforcement_learning::{
-    _assert_f32_eq_, neural_network::NeuralNetwork, neural_network_simd::layer_simd::ActivationNone,
+    _assert_f32_eq_, neural_network::NeuralNetwork, neural_network_simd::activation_function::activation_none::ActivationNone,
 };
 
 use super::*;

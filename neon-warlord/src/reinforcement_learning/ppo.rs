@@ -12,10 +12,8 @@ use itertools::izip;
 
 use crate::reinforcement_learning::{
     neural_network_simd::{
-        NeuralNetworkSimd,
-        layer_simd::{ActivationFunction, ActivationNone},
-    },
-    ppo::loss_function::{
+        NeuralNetworkSimd, activation_function::{ActivationFunction, activation_none::ActivationNone}
+    }, ppo::loss_function::{
         GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
     },
 };

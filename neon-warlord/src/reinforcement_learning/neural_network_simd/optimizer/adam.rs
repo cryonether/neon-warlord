@@ -19,6 +19,7 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::{
 ///     AdaGrad (Duchi et al., 2011): works well with sparse gradients
 ///     RMSProp (Tieleman & Hinton, 2012): works well in on-line and non-stationary settings
 ///
+#[derive(Clone)]
 pub struct Adam<const INPUTS: usize, const OUTPUTS: usize> {
     /// Step size
     alpha: f32,

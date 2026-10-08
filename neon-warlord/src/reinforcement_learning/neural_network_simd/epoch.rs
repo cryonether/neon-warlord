@@ -3,7 +3,7 @@
 use std::iter::zip;
 
 use crate::reinforcement_learning::neural_network_simd::{
-    NeuralNetworkSimd, layer_simd::ActivationNone,
+    NeuralNetworkSimd, activation_function::activation_none::ActivationNone,
 };
 
 pub struct EpochSimd<
