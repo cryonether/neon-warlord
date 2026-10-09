@@ -4,6 +4,7 @@ use std::{sync::mpsc::{Receiver, SyncSender, sync_channel}, thread};
 
 use crate::reinforcement_learning::{neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_none::ActivationNone}}, ppo::{Transition}};
 
+/// Runs the learning threads in parallel learning PPO
 pub struct PpoWorker <
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -24,8 +25,6 @@ impl<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const LAYE
 where
     OutputActivationActor: std::clone::Clone + Send + 'static,
 {
-
-   
     pub fn new(
         std_dev: f32,
         clip: f32,
@@ -69,7 +68,6 @@ where
             None
         };
 
-
         Self {
             request_tx: request_tx,
             result_rx: result_rx,
@@ -80,6 +78,7 @@ where
 
 }
 
+/// Data to send from and to the thread
 pub struct PpoWorkerData<
     const INPUTS: usize,
     const OUTPUTS: usize,
