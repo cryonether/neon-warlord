@@ -37,7 +37,6 @@ pub struct LayerSimd<
     optimizer: Adam<INPUTS, OUTPUTS>,
 
     phantom_data: PhantomData<ACTIVATION>,
-
 }
 
 impl<
