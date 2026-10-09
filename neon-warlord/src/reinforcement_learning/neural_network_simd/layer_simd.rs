@@ -2,9 +2,11 @@
 
 use std::{iter::zip, marker::PhantomData};
 
-use crate::reinforcement_learning::neural_network_simd::{activation_function::ActivationFunction, optimizer::{adam::Adam}, simd_math::{
-    simd_mat::SMat16, simd_vec::SVec16,
-}};
+use crate::reinforcement_learning::neural_network_simd::{
+    activation_function::ActivationFunction,
+    optimizer::adam::Adam,
+    simd_math::{simd_mat::SMat16, simd_vec::SVec16},
+};
 
 /// A simd layer
 #[derive(Clone)]
@@ -241,9 +243,8 @@ impl<
 
         // let optimizer = &mut self.optimizer;
 
-        self.optimizer.step(&mut self.w, &mut self.b, &mut self.dl_dw, &mut self.dl_db);
-
-
+        self.optimizer
+            .step(&mut self.w, &mut self.b, &mut self.dl_dw, &mut self.dl_db);
 
         // let learning_rate_ = f32x16::splat(learning_rate);
         // let zero = f32x16::splat(0.0);

@@ -125,7 +125,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymCart {
         };
     }
 
-    fn get_reward(&self) -> (f32, bool)  {
+    fn get_reward(&self) -> (f32, bool) {
         let reward = f32::max(0.0, 0.8 - self.state.cart_pos * self.state.cart_pos);
 
         (reward, false)

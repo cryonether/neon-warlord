@@ -3,7 +3,7 @@
 use std::collections::VecDeque;
 
 use crate::reinforcement_learning::neural_network_simd::{
-    NeuralNetworkSimd, activation_function::activation_none::ActivationNone
+    NeuralNetworkSimd, activation_function::activation_none::ActivationNone,
 };
 
 const INPUTS: usize = 4;

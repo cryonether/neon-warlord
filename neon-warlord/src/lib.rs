@@ -59,9 +59,7 @@ use crate::{
     debug_overlay::DebugOverlay,
     gym_simulation::{
         GymSimulation, GymSimulationThread,
-        gym::{
-            gym_cart::GymCart, gym_pendulum::GymPendulum, gym_cart_pole::GymCartPole,
-        },
+        gym::{gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_pendulum::GymPendulum},
     },
     physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
     simple_physics_simulation::SimplePhysicsSimulation,

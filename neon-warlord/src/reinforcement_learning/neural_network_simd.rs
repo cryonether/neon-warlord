@@ -1,14 +1,16 @@
 //! A universal function approximator implemented using simd operations
 
-use crate::reinforcement_learning::neural_network_simd::{activation_function::{ActivationFunction, activation_leaky_relu::ActivationLeakyReLu}, layer_simd::LayerSimd, simd_math::simd_vec::SVec16};
+use crate::reinforcement_learning::neural_network_simd::{
+    activation_function::{ActivationFunction, activation_leaky_relu::ActivationLeakyReLu},
+    layer_simd::LayerSimd,
+    simd_math::simd_vec::SVec16,
+};
 
-
-
+pub mod activation_function;
 pub mod epoch;
 pub mod layer_simd;
-pub mod simd_math;
 pub mod optimizer;
-pub mod activation_function;
+pub mod simd_math;
 
 #[cfg(test)]
 mod test_neural_network_simd;

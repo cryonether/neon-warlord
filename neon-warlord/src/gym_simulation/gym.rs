@@ -1,8 +1,8 @@
 //! Environment for simulations
 
 pub mod gym_cart;
-pub mod gym_pendulum;
 pub mod gym_cart_pole;
+pub mod gym_pendulum;
 
 use crate::verlet_physics_simd::VerletPhysicsSimd;
 

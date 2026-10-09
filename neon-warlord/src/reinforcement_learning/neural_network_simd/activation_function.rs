@@ -2,9 +2,9 @@
 
 use crate::reinforcement_learning::neural_network_simd::simd_math::simd_vec::SVec16;
 
-pub mod activation_tan_h;
 pub mod activation_leaky_relu;
 pub mod activation_none;
+pub mod activation_tan_h;
 
 /// Activation Function
 pub trait ActivationFunction<const OUTPUTS: usize> {

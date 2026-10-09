@@ -45,7 +45,6 @@ pub struct Adam<const INPUTS: usize, const OUTPUTS: usize> {
 
 impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
     pub fn new() -> Self {
-
         let alpha = 0.001;
         let beta_1 = 0.9;
         let beta_2 = 0.999;
@@ -74,9 +73,9 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn do_step<const N: usize>( 
-        theta: &mut AlignedVec<N>, 
-        d_theta: &mut AlignedVec<N>, 
+    fn do_step<const N: usize>(
+        theta: &mut AlignedVec<N>,
+        d_theta: &mut AlignedVec<N>,
         m: &mut AlignedVec<N>,
         v: &mut AlignedVec<N>,
         alpha: f32,
@@ -85,8 +84,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
         epsilon: f32,
         beta_1_pow_t: f32,
         beta_2_pow_t: f32,
-    ) 
-    {
+    ) {
         let zero_ = f32x16::splat(0.0);
         let one_ = f32x16::splat(1.0);
         let alpha_ = f32x16::splat(alpha);
@@ -96,14 +94,13 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
         let beta_1_pow_t_ = f32x16::splat(beta_1_pow_t);
         let beta_2_pow_t_ = f32x16::splat(beta_2_pow_t);
 
-
         let zero = 0.0;
         let one = 1.0;
-    
+
         for (theta_, d_theta_, m, v) in izip!(
-            theta.simd_iter_mut(), 
-            d_theta.simd_iter_mut(), 
-            m.simd_iter_mut(), 
+            theta.simd_iter_mut(),
+            d_theta.simd_iter_mut(),
+            m.simd_iter_mut(),
             v.simd_iter_mut()
         ) {
             // mt ← β1 · mt−1 + (1 − β1) · gt (Update biased first moment estimate)
@@ -125,9 +122,9 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
         }
 
         for (theta, d_theta, m, v) in izip!(
-            theta.remainder_mut(), 
-            d_theta.remainder_mut(), 
-            m.remainder_mut(), 
+            theta.remainder_mut(),
+            d_theta.remainder_mut(),
+            m.remainder_mut(),
             v.remainder_mut()
         ) {
             // mt ← β1 · mt−1 + (1 − β1) · gt (Update biased first moment estimate)
@@ -147,21 +144,42 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
 
             *d_theta = zero;
         }
-    
     }
 
-    pub fn step(&mut self, 
+    pub fn step(
+        &mut self,
         w: &mut SMat16<OUTPUTS, INPUTS>,
         b: &mut SVec16<OUTPUTS>,
         d_w: &mut SMat16<OUTPUTS, INPUTS>,
         d_b: &mut SVec16<OUTPUTS>,
-    )
-    {
+    ) {
         for (w, d_w, m, v) in izip!(w, d_w, &mut self.m_w, &mut self.v_w) {
-           Self::do_step(w, d_w, m, v, self.alpha, self.beta_1, self.beta_2, self.epsilon, self.beta_1_pow_t, self.beta_2_pow_t);
+            Self::do_step(
+                w,
+                d_w,
+                m,
+                v,
+                self.alpha,
+                self.beta_1,
+                self.beta_2,
+                self.epsilon,
+                self.beta_1_pow_t,
+                self.beta_2_pow_t,
+            );
         }
 
-        Self::do_step(b, d_b, &mut self.m_b, &mut self.v_b, self.alpha, self.beta_1, self.beta_2, self.epsilon, self.beta_1_pow_t, self.beta_2_pow_t);
+        Self::do_step(
+            b,
+            d_b,
+            &mut self.m_b,
+            &mut self.v_b,
+            self.alpha,
+            self.beta_1,
+            self.beta_2,
+            self.epsilon,
+            self.beta_1_pow_t,
+            self.beta_2_pow_t,
+        );
 
         self.beta_1_pow_t *= self.beta_1;
         self.beta_2_pow_t *= self.beta_2;

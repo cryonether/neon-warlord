@@ -1,6 +1,8 @@
 //! Activation Function None
 
-use crate::reinforcement_learning::neural_network_simd::{activation_function::ActivationFunction, simd_math::simd_vec::SVec16};
+use crate::reinforcement_learning::neural_network_simd::{
+    activation_function::ActivationFunction, simd_math::simd_vec::SVec16,
+};
 
 /// Activation Function None
 #[derive(Clone)]

@@ -12,8 +12,10 @@ use itertools::izip;
 
 use crate::reinforcement_learning::{
     neural_network_simd::{
-        NeuralNetworkSimd, activation_function::{ActivationFunction, activation_none::ActivationNone}
-    }, ppo::loss_function::{
+        NeuralNetworkSimd,
+        activation_function::{ActivationFunction, activation_none::ActivationNone},
+    },
+    ppo::loss_function::{
         GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
     },
 };
@@ -258,7 +260,8 @@ impl<
                 {
                     *loss_derivative = surrogate_loss_clipped_derivative
                         * ratio_derivative
-                        * curr_log_probability_derivative * (1.0 / n);
+                        * curr_log_probability_derivative
+                        * (1.0 / n);
                 }
 
                 // Calculate gradients

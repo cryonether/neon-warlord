@@ -4,7 +4,9 @@ use std::iter::zip;
 
 use wide::f32x16;
 
-use crate::reinforcement_learning::neural_network_simd::{activation_function::ActivationFunction, simd_math::simd_vec::SVec16};
+use crate::reinforcement_learning::neural_network_simd::{
+    activation_function::ActivationFunction, simd_math::simd_vec::SVec16,
+};
 
 #[derive(Clone)]
 pub struct ActivationLeakyReLu {}
@@ -48,7 +50,6 @@ impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationLeakyReLu {
     }
 }
 
-
 // Activation Function ReLu
 
 // #[inline]
@@ -68,4 +69,3 @@ impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationLeakyReLu {
 //         Self::LEAKY_RELU_ALPHA
 //     }
 // }
-
