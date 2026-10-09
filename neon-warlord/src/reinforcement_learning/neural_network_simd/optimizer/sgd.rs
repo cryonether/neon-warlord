@@ -1,4 +1,4 @@
-//! Plain gradient descend
+//! Stochastic Gradient Descend
 //!
 
 use itertools::izip;
@@ -8,14 +8,14 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::{
     AlignedVec, simd_mat::SMat16, simd_vec::SVec16,
 };
 
-/// Plain gradient descend
+/// Stochastic Gradient Descend
 #[derive(Clone)]
-pub struct GradientDescend<const INPUTS: usize, const OUTPUTS: usize> {
+pub struct Sgd<const INPUTS: usize, const OUTPUTS: usize> {
     /// Step size
     alpha: f32,
 }
 
-impl<const INPUTS: usize, const OUTPUTS: usize> GradientDescend<INPUTS, OUTPUTS> {
+impl<const INPUTS: usize, const OUTPUTS: usize> Sgd<INPUTS, OUTPUTS> {
     pub fn new() -> Self {
 
         let alpha = 0.001;
