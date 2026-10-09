@@ -1,5 +1,7 @@
 // N column vector
 
+use std::ops::MulAssign;
+
 use itertools::izip;
 
 use super::simd_mat::SMat16;
@@ -182,6 +184,23 @@ impl<const N: usize> SubAssign<&SVec16<N>> for SVec16<N> {
 
         for (a, b) in std::iter::zip(self.remainder_mut(), rhs.remainder()) {
             *a -= *b;
+        }
+    }
+}
+
+///
+/// `a *= b`
+///
+impl<const N: usize> MulAssign<f32> for SVec16<N> {
+    fn mul_assign(&mut self, rhs: f32) {
+        let rhs_ = f32x16::splat(rhs);
+
+        for a in self.simd_iter_mut() {
+            *a *= rhs_;
+        }
+
+        for a in self.remainder_mut() {
+            *a *= rhs;
         }
     }
 }
