@@ -3,9 +3,9 @@
 //! PPO was published in 2017
 
 pub mod loss_function;
+mod ppo_worker;
 #[cfg(test)]
 mod test_ppo;
-mod ppo_worker;
 
 use std::{collections::VecDeque, iter::zip};
 
@@ -15,9 +15,13 @@ use crate::reinforcement_learning::{
     neural_network_simd::{
         NeuralNetworkSimd,
         activation_function::{ActivationFunction, activation_none::ActivationNone},
-    }, ppo::{loss_function::{
-        GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
-    }, ppo_worker::{PpoWorker, PpoWorkerData}},
+    },
+    ppo::{
+        loss_function::{
+            GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
+        },
+        ppo_worker::{PpoWorker, PpoWorkerData},
+    },
 };
 
 const NR_THREADS: usize = 8;
@@ -46,8 +50,11 @@ pub struct Ppo<
     nr_updates_per_iteration: usize,
 
     // parallel
-    ppo_worker: [PpoWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>; NR_THREADS],
-    ppo_worker_data: [Option<Box<PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>>>; NR_THREADS],
+    ppo_worker:
+        [PpoWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>; NR_THREADS],
+    ppo_worker_data: [Option<
+        Box<PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>>,
+    >; NR_THREADS],
 }
 
 impl<
@@ -82,7 +89,7 @@ where
         let transitions = Vec::new();
 
         let ppo_worker = core::array::from_fn(|_| PpoWorker::new(STD_DEV, CLIP));
-        let ppo_worker_data = core::array::from_fn(|_|
+        let ppo_worker_data = core::array::from_fn(|_| {
             Some(Box::new(PpoWorkerData {
                 actor: actor.clone(),
                 critic: critic.clone(),
@@ -92,7 +99,7 @@ where
                 actor_loss_sum: 0.0,
                 critic_loss_sum: 0.0,
             }))
-        );
+        });
 
         Self {
             actor,
@@ -200,7 +207,6 @@ where
     }
 
     pub fn learn_parallel(&mut self) -> (f32, f32) {
-
         let transitions = &self.transitions;
         let (mut advantages, mut value_targets) = self.calculate_gae();
         let advantages = advantages.make_contiguous();
@@ -214,7 +220,6 @@ where
 
         let (mut actor_loss, mut critic_loss) = (0.0, 0.0);
         for _i in 0..self.nr_updates_per_iteration {
-
             // calculate gradients
             for (worker, worker_data, transitions, advantages, value_targets) in izip!(
                 &mut self.ppo_worker,
@@ -261,7 +266,7 @@ where
                 self.actor.add_gradients(&data.actor);
                 self.critic.add_gradients(&data.critic);
 
-                *worker_data = Some(data);  // store chunk for later reuse
+                *worker_data = Some(data); // store chunk for later reuse
             }
 
             let inv_n = 1.0 / transitions.len() as f32;
@@ -288,7 +293,6 @@ where
     }
 
     pub fn learn_sequential(&mut self) -> (f32, f32) {
-
         let transitions = &self.transitions;
         let (mut advantages, mut value_targets) = self.calculate_gae();
         let advantages = advantages.make_contiguous();
@@ -330,9 +334,7 @@ where
         (actor_loss, critic_loss)
     }
 
-
     pub fn learn(&mut self) -> (f32, f32) {
-
         #[allow(unused)]
         let mut single_threaded = false;
         #[cfg(target_arch = "wasm32")]
@@ -342,8 +344,7 @@ where
 
         if single_threaded {
             self.learn_sequential()
-        }   
-        else {
+        } else {
             // self.learn_sequential()
             self.learn_parallel()
         }
@@ -373,9 +374,7 @@ where
         let mut critic_loss_sum = 0.0;
         let mut actor_loss_sum = 0.0;
 
-        for (transition, advantage, returns) in
-            izip!(transitions, advantages, value_targets)
-        {
+        for (transition, advantage, returns) in izip!(transitions, advantages, value_targets) {
             let observation = transition.observation;
             let action = transition.action;
             let log_probability = transition.log_probability;
@@ -407,8 +406,7 @@ where
 
             // Calculate surrogate loss
             let mut ppo_surrogate_loss_clipped = PpoSurrogateLossClipped::new();
-            let surrogate_loss_clipped =
-                ppo_surrogate_loss_clipped.calc(ratio, *advantage, clip);
+            let surrogate_loss_clipped = ppo_surrogate_loss_clipped.calc(ratio, *advantage, clip);
             let surrogate_loss_clipped_derivative = ppo_surrogate_loss_clipped.derivative();
 
             actor_loss_sum += surrogate_loss_clipped;
@@ -480,8 +478,6 @@ fn box_mueller_standard_normal() -> f32 {
 
     (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).cos()
 }
-
-
 
 // Normalizing advantages
 // isn't theoretically necessary, but in practice it decreases the variance of

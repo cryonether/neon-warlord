@@ -3,7 +3,9 @@
 use std::iter::zip;
 
 use crate::reinforcement_learning::neural_network_simd::{
-    activation_function::{ActivationFunction, activation_leaky_relu::ActivationLeakyReLu}, layer_simd::LayerSimd, simd_math::{simd_mat::SMat16, simd_vec::SVec16},
+    activation_function::{ActivationFunction, activation_leaky_relu::ActivationLeakyReLu},
+    layer_simd::LayerSimd,
+    simd_math::{simd_mat::SMat16, simd_vec::SVec16},
 };
 
 pub mod activation_function;
@@ -36,9 +38,7 @@ pub struct NeuralNetworkSimd<
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
     OutputActivation: ActivationFunction<OUTPUTS>,
-> 
-
-{
+> {
     pub input: LayerSimd<INPUTS, NEURONS, RESIDUAL, ActivationLeakyReLu>,
     pub layers: [LayerSimd<NEURONS, NEURONS, RESIDUAL, ActivationLeakyReLu>; NR_LAYERS],
     pub output: LayerSimd<NEURONS, OUTPUTS, RESIDUAL, OutputActivation>,
@@ -130,9 +130,7 @@ impl<
         self.output.subtract_gradients();
     }
 
-    pub fn copy_weights(&mut self,
-        other: &Self
-    ) {
+    pub fn copy_weights(&mut self, other: &Self) {
         self.input.w = other.input.w.clone();
         self.input.b = other.input.b.clone();
 
@@ -170,7 +168,7 @@ impl<
         self.output.dl_dw = SMat16::zero();
         self.output.dl_db = SVec16::zero();
     }
-    
+
     pub fn multiply_gradients_const(&mut self, inv_n: f32) {
         self.input.dl_dw *= inv_n;
         self.input.dl_db *= inv_n;
@@ -182,7 +180,6 @@ impl<
         self.output.dl_dw *= inv_n;
         self.output.dl_db *= inv_n;
     }
-
 }
 
 impl<
