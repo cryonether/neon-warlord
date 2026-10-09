@@ -36,7 +36,9 @@ pub struct NeuralNetworkSimd<
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
     OutputActivation: ActivationFunction<OUTPUTS>,
-> {
+> 
+
+{
     pub input: LayerSimd<INPUTS, NEURONS, RESIDUAL, ActivationLeakyReLu>,
     pub layers: [LayerSimd<NEURONS, NEURONS, RESIDUAL, ActivationLeakyReLu>; NR_LAYERS],
     pub output: LayerSimd<NEURONS, OUTPUTS, RESIDUAL, OutputActivation>,

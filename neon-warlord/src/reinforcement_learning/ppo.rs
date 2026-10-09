@@ -6,7 +6,7 @@ pub mod loss_function;
 #[cfg(test)]
 mod test_ppo;
 
-use std::{collections::VecDeque, iter::zip};
+use std::{collections::VecDeque, iter::zip, thread};
 
 use itertools::izip;
 
@@ -28,9 +28,11 @@ pub struct Ppo<
     const LAYERS: usize,
     const RESIDUAL: bool,
     OutputActivationActor: ActivationFunction<OUTPUTS>,
-> {
-    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, false, OutputActivationActor>,
-    pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, false, ActivationNone>,
+> where
+    OutputActivationActor: std::clone::Clone + Send,
+{
+    pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>,
+    pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, RESIDUAL, ActivationNone>,
 
     transitions: Vec<Transition<INPUTS, OUTPUTS>>,
 
@@ -50,6 +52,8 @@ impl<
     const RESIDUAL: bool,
     OutputActivationActor: ActivationFunction<OUTPUTS>,
 > Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>
+where
+    OutputActivationActor: std::clone::Clone + Send,
 {
     pub fn new(seed: u64) -> Self {
         // For choosing an action
@@ -174,108 +178,78 @@ impl<
         (advantages, returns)
     }
 
-    pub fn learn(&mut self) -> (f32, f32) {
-        let (advantages, value_targets) = self.calculate_gae();
+    pub fn learn_parallel(&mut self) -> (f32, f32) {
+        const N: usize = 8;
 
-        // Normalizing advantages
-        // isn't theoretically necessary, but in practice it decreases the variance of
-        // our advantages and makes convergence much more stable and faster.
-        // let advantages_mean = advantages.iter().sum::<f32>() / advantages.len() as f32;
-        // let advantages_variance = advantages
-        //     .iter()
-        //     .map(|x| {
-        //         let diff = x - advantages_mean;
-        //         diff * diff
-        //     })
-        //     .sum::<f32>()
-        //     / advantages.len() as f32;
-        // let advantages_std_dev = advantages_variance.sqrt();
 
-        // for advantage in &mut advantages {
-        //     *advantage = (*advantage - advantages_mean) / (advantages_std_dev + 1e-10);
-        // }
+        let transitions = &self.transitions;
+        let (mut advantages, mut value_targets) = self.calculate_gae();
+        let advantages = advantages.make_contiguous();
+        let value_targets = value_targets.make_contiguous();
+        let std_dev = self.std_dev;
+        let clip = self.clip;
 
-        let n = self.transitions.len();
-        assert_eq!(advantages.len(), n);
-        assert_eq!(value_targets.len(), n);
-        let n = n as f32;
+        assert_eq!(transitions.len(), advantages.len());
+        assert_eq!(transitions.len(), value_targets.len());
 
-        // Update the neural networks for n epochs
-        let mut critic_loss = 0.0;
-        let mut actor_loss = 0.0;
+        let chunk_size = transitions.len().div_ceil(N);
+
+        let (mut actor_loss, mut critic_loss) = (0.0, 0.0);
         for _i in 0..self.nr_updates_per_iteration {
-            let mut critic_loss_sum = 0.0;
-            let mut actor_loss_sum = 0.0;
 
-            for (transition, advantage, returns) in
-                izip!(&self.transitions, &advantages, &value_targets)
-            {
-                let observation = transition.observation;
-                let action = transition.action;
-                let log_probability = transition.log_probability;
-                let _reward = transition.reward;
+            let mut actor: [_; N] = core::array::from_fn(|_| self.actor.clone());
+            let mut critic: [_; N] = core::array::from_fn(|_| self.critic.clone());
+            let mut actor_loss_vec: [f32; N] = [0.0; N];
+            let mut critic_loss_vec: [f32; N] = [0.0; N];
 
-                // Calculate V_phi and pi_theta(a_t | s_t)
-                // Estimate the values of each observation, and the log probs of
-                // each action in the most recent batch with the most recent
-                // iteration of the actor network.
-                let curr_estimate = self.critic.forward(&observation);
-                let cur_mean_action = self.actor.forward(&observation);
+            thread::scope(|s| {
+                for (actor, critic, transitions, advantages, value_targets, actor_loss, critic_loss) in izip!(
+                    &mut actor,
+                    &mut critic,
+                    transitions.chunks(chunk_size),
+                    advantages.chunks(chunk_size),
+                    value_targets.chunks(chunk_size),
+                    &mut actor_loss_vec,
+                    &mut critic_loss_vec,
+                ) {
+                    s.spawn(move || {
+                        (*actor_loss, *critic_loss) = Self::calculate_gradients(actor, critic, transitions, advantages, value_targets, std_dev, clip);
 
-                // Critic mean square error
-                let mut mse = MeanSquareError::new();
-                let critic_square_error = mse.calc(curr_estimate, *returns);
-                let mut critic_square_error_derivative = mse.derivative();
-                critic_square_error_derivative[0] *= 1.0 / n;
-
-                critic_loss_sum += critic_square_error * (1.0 / n);
-
-                // Calculate the log probability over the sampled action
-                let mut glp = GaussianLogProbability::new();
-                let curr_log_probability = glp.calc(&action, &cur_mean_action, self.std_dev);
-                let curr_log_probability_derivative = glp.derivative();
-
-                // Calculate the ratio pi_theta(a_t | s_t) / pi_theta_k(a_t | s_t)
-                let mut ppo_actor_ratio = PpoActorRatio::new();
-                let ratio = ppo_actor_ratio.calc(curr_log_probability, log_probability);
-                let ratio_derivative = ppo_actor_ratio.derivative();
-
-                // Calculate surrogate loss
-                let mut ppo_surrogate_loss_clipped = PpoSurrogateLossClipped::new();
-                let surrogate_loss_clipped =
-                    ppo_surrogate_loss_clipped.calc(ratio, *advantage, self.clip);
-                let surrogate_loss_clipped_derivative = ppo_surrogate_loss_clipped.derivative();
-
-                actor_loss_sum += surrogate_loss_clipped * (1.0 / n);
-
-                // dL / dy
-                //
-                // ∂L_t                      a_t − μ_t
-                // ----- = - − A_t * r_t * --------------
-                // ∂μt                          σ2
-                //
-                let mut loss_derivative = [0.0; OUTPUTS];
-                for (curr_log_probability_derivative, loss_derivative) in
-                    zip(curr_log_probability_derivative, &mut loss_derivative)
-                {
-                    *loss_derivative = surrogate_loss_clipped_derivative
-                        * ratio_derivative
-                        * curr_log_probability_derivative
-                        * (1.0 / n);
+                        println!("transitions: {:?}", transitions);
+                    });
                 }
+            });
 
-                // Calculate gradients
-                //
-                //  ∂Lt        ∂L_t
-                // ----- = Jᵀ -----
-                //  ∂θ         ∂μ_t
-                //
-                let _critic_dx = self.critic.backward(&critic_square_error_derivative);
-                let _actor_dx = self.actor.backward(&loss_derivative);
+            // sum up results
+            actor_loss = actor_loss_vec.iter().sum();
+            critic_loss = critic_loss_vec.iter().sum();
+
+            for actor in actor {
+                // self.actor.
             }
 
-            critic_loss = critic_loss_sum;
-            actor_loss = actor_loss_sum;
+        }
+
+        (actor_loss, critic_loss)
+    }
+
+    pub fn learn(&mut self) -> (f32, f32) {
+        let transitions = &self.transitions;
+        let (mut advantages, mut value_targets) = self.calculate_gae();
+        let advantages = advantages.make_contiguous();
+        let value_targets = value_targets.make_contiguous();
+
+        let (mut actor_loss, mut critic_loss) = (0.0, 0.0);
+        for _i in 0..self.nr_updates_per_iteration {
+           (actor_loss, critic_loss) = Self::calculate_gradients(
+                &mut self.actor,
+                &mut self.critic,
+                &transitions,
+                &advantages,
+                &value_targets,
+                self.std_dev,
+                self.clip,
+            );
 
             self.critic.subtract_gradients();
             self.actor.subtract_gradients();
@@ -285,8 +259,103 @@ impl<
 
         (actor_loss, critic_loss)
     }
+
+    fn calculate_gradients(
+        actor: &mut NeuralNetworkSimd<
+            INPUTS,
+            OUTPUTS,
+            NEURONS,
+            LAYERS,
+            RESIDUAL,
+            OutputActivationActor,
+        >,
+        critic: &mut NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, RESIDUAL, ActivationNone>,
+        transitions: &[Transition<INPUTS, OUTPUTS>],
+        advantages: &[f32],
+        value_targets: &[f32],
+        std_dev: f32,
+        clip: f32,
+    ) -> (f32, f32) {
+        let n = transitions.len();
+        assert_eq!(advantages.len(), n);
+        assert_eq!(value_targets.len(), n);
+        let n = n as f32;
+
+        let mut critic_loss_sum = 0.0;
+        let mut actor_loss_sum = 0.0;
+
+        for (transition, advantage, returns) in
+            izip!(transitions, advantages, value_targets)
+        {
+            let observation = transition.observation;
+            let action = transition.action;
+            let log_probability = transition.log_probability;
+            let _reward = transition.reward;
+
+            // Calculate V_phi and pi_theta(a_t | s_t)
+            // Estimate the values of each observation, and the log probs of
+            // each action in the most recent batch with the most recent
+            // iteration of the actor network.
+            let curr_estimate = critic.forward(&observation);
+            let cur_mean_action = actor.forward(&observation);
+
+            // Critic mean square error
+            let mut mse = MeanSquareError::new();
+            let critic_square_error = mse.calc(curr_estimate, *returns);
+            let mut critic_square_error_derivative = mse.derivative();
+            critic_square_error_derivative[0] *= 1.0 / n;
+
+            critic_loss_sum += critic_square_error * (1.0 / n);
+
+            // Calculate the log probability over the sampled action
+            let mut glp = GaussianLogProbability::new();
+            let curr_log_probability = glp.calc(&action, &cur_mean_action, std_dev);
+            let curr_log_probability_derivative = glp.derivative();
+
+            // Calculate the ratio pi_theta(a_t | s_t) / pi_theta_k(a_t | s_t)
+            let mut ppo_actor_ratio = PpoActorRatio::new();
+            let ratio = ppo_actor_ratio.calc(curr_log_probability, log_probability);
+            let ratio_derivative = ppo_actor_ratio.derivative();
+
+            // Calculate surrogate loss
+            let mut ppo_surrogate_loss_clipped = PpoSurrogateLossClipped::new();
+            let surrogate_loss_clipped =
+                ppo_surrogate_loss_clipped.calc(ratio, *advantage, clip);
+            let surrogate_loss_clipped_derivative = ppo_surrogate_loss_clipped.derivative();
+
+            actor_loss_sum += surrogate_loss_clipped * (1.0 / n);
+
+            // dL / dy
+            //
+            // ∂L_t                      a_t − μ_t
+            // ----- = - − A_t * r_t * --------------
+            // ∂μt                          σ2
+            //
+            let mut loss_derivative = [0.0; OUTPUTS];
+            for (curr_log_probability_derivative, loss_derivative) in
+                zip(curr_log_probability_derivative, &mut loss_derivative)
+            {
+                *loss_derivative = surrogate_loss_clipped_derivative
+                    * ratio_derivative
+                    * curr_log_probability_derivative
+                    * (1.0 / n);
+            }
+
+            // Calculate gradients
+            //
+            //  ∂Lt        ∂L_t
+            // ----- = Jᵀ -----
+            //  ∂θ         ∂μ_t
+            //
+            let _critic_dx = critic.backward(&critic_square_error_derivative);
+            let _actor_dx = actor.backward(&loss_derivative);
+        }
+
+        (actor_loss_sum, critic_loss_sum)
+    }
 }
 
+#[derive(Debug)]
 struct Transition<const INPUTS: usize, const OUTPUTS: usize> {
     observation: [f32; INPUTS],
     action: [f32; OUTPUTS],
@@ -324,3 +393,23 @@ fn box_mueller_standard_normal() -> f32 {
 
     (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).cos()
 }
+
+
+
+// Normalizing advantages
+// isn't theoretically necessary, but in practice it decreases the variance of
+// our advantages and makes convergence much more stable and faster.
+// let advantages_mean = advantages.iter().sum::<f32>() / advantages.len() as f32;
+// let advantages_variance = advantages
+//     .iter()
+//     .map(|x| {
+//         let diff = x - advantages_mean;
+//         diff * diff
+//     })
+//     .sum::<f32>()
+//     / advantages.len() as f32;
+// let advantages_std_dev = advantages_variance.sqrt();
+
+// for advantage in &mut advantages {
+//     *advantage = (*advantage - advantages_mean) / (advantages_std_dev + 1e-10);
+// }
