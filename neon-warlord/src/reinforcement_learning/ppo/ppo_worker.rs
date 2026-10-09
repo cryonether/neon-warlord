@@ -1,6 +1,6 @@
 //! Worker thread for parallel learning
 
-use std::{sync::{Arc, mpsc::{Receiver, SyncSender, sync_channel}}, thread};
+use std::{sync::mpsc::{Receiver, SyncSender, sync_channel}, thread};
 
 use crate::reinforcement_learning::{neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_none::ActivationNone}}, ppo::{Ppo, Transition}};
 
@@ -17,7 +17,7 @@ pub struct PpoWorker <
     pub request_tx: SyncSender<Box<PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>>>,
     pub result_rx: Receiver<Box<PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>>>,
 
-    pub thread: Option<thread::JoinHandle<()>>,
+    pub _thread: Option<thread::JoinHandle<()>>,
 }
 
 impl<const INPUTS: usize, const OUTPUTS: usize, const NEURONS: usize, const LAYERS: usize, const RESIDUAL: bool, OutputActivationActor: ActivationFunction<OUTPUTS>> PpoWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>
@@ -65,7 +65,7 @@ where
         Self {
             request_tx: request_tx,
             result_rx: result_rx,
-            thread: thread,
+            _thread: thread,
         }
 
     }

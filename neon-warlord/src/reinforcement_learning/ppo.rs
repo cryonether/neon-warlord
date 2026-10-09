@@ -7,7 +7,7 @@ pub mod loss_function;
 mod test_ppo;
 mod ppo_worker;
 
-use std::{collections::VecDeque, iter::zip, thread};
+use std::{collections::VecDeque, iter::zip};
 
 use itertools::izip;
 
@@ -42,7 +42,7 @@ pub struct Ppo<
     std_dev: f32,
     gamma: f32,
     gae_lambda: f32,
-    clip: f32,
+    _clip: f32,
     nr_updates_per_iteration: usize,
 
     // parallel
@@ -102,7 +102,7 @@ where
             std_dev: STD_DEV,
             gamma: GAMMA,
             gae_lambda: GAE_LAMBDA,
-            clip: CLIP,
+            _clip: CLIP,
             nr_updates_per_iteration: NR_UPDATES_PER_ITERATION,
             ppo_worker,
             ppo_worker_data,
@@ -281,7 +281,7 @@ where
         (actor_loss, critic_loss)
     }
 
-    pub fn learn_sequential(&mut self) -> (f32, f32) {
+    pub fn _learn_sequential(&mut self) -> (f32, f32) {
 
         let transitions = &self.transitions;
         let (mut advantages, mut value_targets) = self.calculate_gae();
@@ -298,7 +298,7 @@ where
                 &advantages,
                 &value_targets,
                 self.std_dev,
-                self.clip,
+                self._clip,
             );
 
             // subtract gradients
