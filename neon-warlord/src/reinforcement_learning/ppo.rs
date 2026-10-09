@@ -209,6 +209,7 @@ where
         assert_eq!(transitions.len(), advantages.len());
         assert_eq!(transitions.len(), value_targets.len());
 
+        assert!(transitions.len() >= NR_THREADS);
         let chunk_size = transitions.len().div_ceil(NR_THREADS);
 
         let (mut actor_loss, mut critic_loss) = (0.0, 0.0);
