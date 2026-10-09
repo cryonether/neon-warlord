@@ -73,6 +73,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn do_step<const N: usize>( 
         theta: &mut AlignedVec<N>, 
         d_theta: &mut AlignedVec<N>, 
@@ -118,7 +119,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
             let v_ = *v / (one_ - beta_2_pow_t_);
 
             // θt ← θt−1 − α ·̂ mt/(√̂ vt + epsilon) (Update parameters)
-            *theta_ = *theta_ - alpha_ * m_ / (v_.sqrt() + epsilon_);
+            *theta_ -= alpha_ * m_ / (v_.sqrt() + epsilon_);
 
             *d_theta_ = zero_;
         }
@@ -142,7 +143,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
             let v_ = *v / (one - beta_2_pow_t);
 
             // θt ← θt−1 − α ·̂ mt/(√̂ vt + epsilon) (Update parameters)
-            *theta = *theta - alpha * m_ / (v_.sqrt() + epsilon);
+            *theta -= alpha * m_ / (v_.sqrt() + epsilon);
 
             *d_theta = zero;
         }

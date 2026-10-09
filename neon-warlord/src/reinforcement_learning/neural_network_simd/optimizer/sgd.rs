@@ -40,7 +40,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Sgd<INPUTS, OUTPUTS> {
             theta.simd_iter_mut(), 
             d_theta.simd_iter_mut(), 
         ) {
-            *theta_ = *theta_ - alpha_ * *d_theta_;
+            *theta_ -= alpha_ * *d_theta_;
 
             *d_theta_ = zero_;
         }
@@ -49,7 +49,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Sgd<INPUTS, OUTPUTS> {
             theta.remainder_mut(), 
             d_theta.remainder_mut(), 
         ) {
-            *theta = *theta - alpha * *d_theta;
+            *theta -= alpha * *d_theta;
 
             *d_theta = zero;
         }
