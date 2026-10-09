@@ -7,7 +7,7 @@ pub mod loss_function;
 mod test_ppo;
 mod ppo_worker;
 
-use std::{collections::VecDeque, iter::zip};
+use std::{collections::VecDeque, iter::zip, mem::transmute};
 
 use itertools::izip;
 
@@ -263,12 +263,17 @@ where
                 *worker_data = Some(data);  // store chunk for later reuse
             }
 
-            // loss
-            actor_loss = actor_loss_sum;
-            critic_loss = critic_loss_sum;
+            let inv_n = 1.0 / transitions.len() as f32;
+
+            // calculate loss
+            actor_loss = actor_loss_sum * inv_n;
+            critic_loss = critic_loss_sum * inv_n;
 
             // subtract gradients
+            self.actor.multiply_gradients_const(inv_n);
             self.actor.subtract_gradients();
+
+            self.critic.multiply_gradients_const(inv_n);
             self.critic.subtract_gradients();
 
             // reset gradients
@@ -281,7 +286,7 @@ where
         (actor_loss, critic_loss)
     }
 
-    pub fn _learn_sequential(&mut self) -> (f32, f32) {
+    pub fn learn_sequential(&mut self) -> (f32, f32) {
 
         let transitions = &self.transitions;
         let (mut advantages, mut value_targets) = self.calculate_gae();
@@ -301,9 +306,18 @@ where
                 self._clip,
             );
 
+            let inv_n = 1.0 / transitions.len() as f32;
+
+            // calculate loss
+            actor_loss *= inv_n;
+            critic_loss *= inv_n;
+
             // subtract gradients
-            self.critic.subtract_gradients();
+            self.actor.multiply_gradients_const(inv_n);
             self.actor.subtract_gradients();
+
+            self.critic.multiply_gradients_const(inv_n);
+            self.critic.subtract_gradients();
 
             // reset gradients
             self.actor.zero_grad();
@@ -318,13 +332,18 @@ where
 
     pub fn learn(&mut self) -> (f32, f32) {
 
+        #[allow(unused)]
+        let mut single_threaded = false;
         #[cfg(target_arch = "wasm32")]
         {
-            self.learn_sequential()
+            single_threaded = true;
         }
 
-        #[cfg(not(target_arch = "wasm32"))]
-        {
+        if single_threaded {
+            self.learn_sequential()
+        }   
+        else {
+            // self.learn_sequential()
             self.learn_parallel()
         }
     }
@@ -371,10 +390,9 @@ where
             // Critic mean square error
             let mut mse = MeanSquareError::new();
             let critic_square_error = mse.calc(curr_estimate, *returns);
-            let mut critic_square_error_derivative = mse.derivative();
-            critic_square_error_derivative[0] *= 1.0 / n;
+            let critic_square_error_derivative = mse.derivative();
 
-            critic_loss_sum += critic_square_error * (1.0 / n);
+            critic_loss_sum += critic_square_error;
 
             // Calculate the log probability over the sampled action
             let mut glp = GaussianLogProbability::new();
@@ -392,7 +410,7 @@ where
                 ppo_surrogate_loss_clipped.calc(ratio, *advantage, clip);
             let surrogate_loss_clipped_derivative = ppo_surrogate_loss_clipped.derivative();
 
-            actor_loss_sum += surrogate_loss_clipped * (1.0 / n);
+            actor_loss_sum += surrogate_loss_clipped;
 
             // dL / dy
             //
@@ -406,8 +424,7 @@ where
             {
                 *loss_derivative = surrogate_loss_clipped_derivative
                     * ratio_derivative
-                    * curr_log_probability_derivative
-                    * (1.0 / n);
+                    * curr_log_probability_derivative;
             }
 
             // Calculate gradients

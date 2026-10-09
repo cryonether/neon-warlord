@@ -2,7 +2,7 @@
 
 use std::{sync::mpsc::{Receiver, SyncSender, sync_channel}, thread};
 
-use crate::reinforcement_learning::{neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_none::ActivationNone}}, ppo::{Ppo, Transition}};
+use crate::reinforcement_learning::{neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_none::ActivationNone}}, ppo::{Transition}};
 
 pub struct PpoWorker <
     const INPUTS: usize,
@@ -25,26 +25,32 @@ where
     OutputActivationActor: std::clone::Clone + Send + 'static,
 {
 
+   
     pub fn new(
         std_dev: f32,
         clip: f32,
     ) -> Self {
+
         let (request_tx, request_rx) = sync_channel::<Box<PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>>>(1);
         let (result_tx, result_rx) = sync_channel::<Box<PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>>>(1);
 
         let builder = thread::Builder::new()
             .name("PpoWorker".into());
 
-        let thread;
+
+        #[allow(unused)]
+        let mut single_threaded = false;
         #[cfg(target_arch = "wasm32")]
         {
-            thread = None;
+            single_threaded = true;
         }
 
-        #[cfg(not(target_arch = "wasm32"))]
+        let thread = if !single_threaded
         {
-            thread = Some(builder.spawn(move || {
+            Some(builder.spawn(move || {
             while let Ok(mut data) = request_rx.recv() {
+                use crate::reinforcement_learning::ppo::Ppo;
+
                 
                     (data.actor_loss_sum, data.critic_loss_sum) = Ppo::calculate_gradients(
                         &mut data.actor,
@@ -58,8 +64,10 @@ where
 
                     result_tx.send(data).unwrap();
                 }
-            }).unwrap());
-        }
+            }).unwrap())
+        } else {
+            None
+        };
 
 
         Self {

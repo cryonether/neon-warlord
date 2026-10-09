@@ -1,5 +1,7 @@
 //! MxN Matrix
 
+use std::ops::MulAssign;
+
 use itertools::izip;
 
 use super::simd_vec::SVec16;
@@ -162,6 +164,25 @@ impl<const M: usize, const N: usize> SubAssign<&SMat16<M, N>> for SMat16<M, N> {
 
             for (a, b) in zip(a.remainder_mut(), b.remainder()) {
                 *a -= *b;
+            }
+        }
+    }
+}
+
+///
+/// `a *= b`
+///
+impl<const M: usize, const N: usize> MulAssign<f32> for SMat16<M, N> {
+    fn mul_assign(&mut self, rhs: f32) {
+        let rhs_ = f32x16::splat(rhs);
+
+        for a in self {
+            for a in a.simd_iter_mut() {
+                *a *= rhs_;
+            }
+
+            for a in a.remainder_mut() {
+                *a *= rhs;
             }
         }
     }

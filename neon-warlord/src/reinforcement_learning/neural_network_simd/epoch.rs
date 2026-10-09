@@ -91,6 +91,7 @@ impl<
         self.loss = loss;
 
         // optimizer
+        self.model.multiply_gradients_const(1.0 / n);
         self.model.subtract_gradients();
 
         let res: [f32; BATCH_SIZE] = y_pred_vec.try_into().unwrap();

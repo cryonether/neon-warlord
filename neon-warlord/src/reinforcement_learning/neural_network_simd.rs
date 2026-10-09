@@ -170,6 +170,18 @@ impl<
         self.output.dl_dw = SMat16::zero();
         self.output.dl_db = SVec16::zero();
     }
+    
+    pub fn multiply_gradients_const(&mut self, inv_n: f32) {
+        self.input.dl_dw *= inv_n;
+        self.input.dl_db *= inv_n;
+
+        for layer_self in &mut self.layers {
+            layer_self.dl_dw *= inv_n;
+            layer_self.dl_db *= inv_n;
+        }
+        self.output.dl_dw *= inv_n;
+        self.output.dl_db *= inv_n;
+    }
 
 }
 
