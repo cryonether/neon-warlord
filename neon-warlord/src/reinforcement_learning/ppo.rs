@@ -7,7 +7,7 @@ pub mod loss_function;
 mod test_ppo;
 mod ppo_worker;
 
-use std::{collections::VecDeque, iter::zip, mem::transmute};
+use std::{collections::VecDeque, iter::zip};
 
 use itertools::izip;
 
@@ -368,7 +368,7 @@ where
         let n = transitions.len();
         assert_eq!(advantages.len(), n);
         assert_eq!(value_targets.len(), n);
-        let n = n as f32;
+        let _n = n as f32;
 
         let mut critic_loss_sum = 0.0;
         let mut actor_loss_sum = 0.0;
