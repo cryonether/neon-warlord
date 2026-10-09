@@ -19,7 +19,7 @@ const CART_RIGHT_X: f32 = 4.0;
 const POLE_LENGTH: f32 = 1.0;
 
 #[derive(Clone)]
-pub struct GymPendulumOnCart {
+pub struct GymCartPole {
     pub verlet_physics: VerletPhysicsSimd,
 
     // Cart
@@ -37,7 +37,7 @@ pub struct GymPendulumOnCart {
     state: State,
 }
 
-impl GymPendulumOnCart {
+impl GymCartPole {
     pub fn new() -> Self {
         let mut verlet_physics = VerletPhysicsSimd::new();
 
@@ -176,7 +176,7 @@ impl GymPendulumOnCart {
     }
 }
 
-impl Gym<OBSERVATIONS, ACTIONS> for GymPendulumOnCart {
+impl Gym<OBSERVATIONS, ACTIONS> for GymCartPole {
     fn get_verlet_physics(&self) -> &VerletPhysicsSimd {
         &self.verlet_physics
     }

@@ -60,7 +60,7 @@ use crate::{
     gym_simulation::{
         GymSimulation, GymSimulationThread,
         gym::{
-            gym_cart::GymCart, gym_pendulum::GymPendulum, gym_pendulum_on_cart::GymPendulumOnCart,
+            gym_cart::GymCart, gym_pendulum::GymPendulum, gym_cart_pole::GymCartPole,
         },
     },
     physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
@@ -335,8 +335,8 @@ impl NeonWarlord {
         let _gym_simulation_1: GymSimulation<3, 1, 16, 1, false, GymPendulum> =
             GymSimulation::new(GymPendulum::new());
 
-        let _gym_simulation_2: GymSimulation<5, 1, 16, 1, false, GymPendulumOnCart> =
-            GymSimulation::new(GymPendulumOnCart::new());
+        let _gym_simulation_2: GymSimulation<5, 1, 16, 1, false, GymCartPole> =
+            GymSimulation::new(GymCartPole::new());
 
         let gym_simulation = _gym_simulation_2;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
