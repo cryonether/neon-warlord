@@ -300,9 +300,9 @@ where
             (actor_loss, critic_loss) = Self::calculate_gradients(
                 &mut self.actor,
                 &mut self.critic,
-                &transitions,
-                &advantages,
-                &value_targets,
+                transitions,
+                advantages,
+                value_targets,
                 self.std_dev,
                 self._clip,
             );

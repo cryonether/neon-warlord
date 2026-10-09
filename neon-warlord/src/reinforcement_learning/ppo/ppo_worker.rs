@@ -69,8 +69,8 @@ where
         };
 
         Self {
-            request_tx: request_tx,
-            result_rx: result_rx,
+            request_tx,
+            result_rx,
             _thread: thread,
         }
 
