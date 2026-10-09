@@ -5,6 +5,7 @@
 pub mod loss_function;
 #[cfg(test)]
 mod test_ppo;
+mod ppo_worker;
 
 use std::{collections::VecDeque, iter::zip, thread};
 
@@ -14,11 +15,12 @@ use crate::reinforcement_learning::{
     neural_network_simd::{
         NeuralNetworkSimd,
         activation_function::{ActivationFunction, activation_none::ActivationNone},
-    },
-    ppo::loss_function::{
+    }, ppo::{loss_function::{
         GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
-    },
+    }, ppo_worker::{PpoWorker, PpoWorkerData}},
 };
+
+const NR_THREADS: usize = 8;
 
 /// Implements the Proximal Policy Optimization algorithm
 pub struct Ppo<
@@ -42,6 +44,10 @@ pub struct Ppo<
     gae_lambda: f32,
     clip: f32,
     nr_updates_per_iteration: usize,
+
+    // parallel
+    ppo_worker: [PpoWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>; NR_THREADS],
+    ppo_worker_data: [Option<Box<PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>>>; NR_THREADS],
 }
 
 impl<
@@ -53,7 +59,7 @@ impl<
     OutputActivationActor: ActivationFunction<OUTPUTS>,
 > Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>
 where
-    OutputActivationActor: std::clone::Clone + Send,
+    OutputActivationActor: std::clone::Clone + Send + 'static,
 {
     pub fn new(seed: u64) -> Self {
         // For choosing an action
@@ -75,6 +81,19 @@ where
 
         let transitions = Vec::new();
 
+        let ppo_worker = core::array::from_fn(|_| PpoWorker::new(STD_DEV, CLIP));
+        let ppo_worker_data = core::array::from_fn(|_|
+            Some(Box::new(PpoWorkerData {
+                actor: actor.clone(),
+                critic: critic.clone(),
+                transitions: Vec::new(),
+                advantages: Vec::new(),
+                value_targets: Vec::new(),
+                actor_loss_sum: 0.0,
+                critic_loss_sum: 0.0,
+            }))
+        );
+
         Self {
             actor,
             critic,
@@ -85,6 +104,8 @@ where
             gae_lambda: GAE_LAMBDA,
             clip: CLIP,
             nr_updates_per_iteration: NR_UPDATES_PER_ITERATION,
+            ppo_worker,
+            ppo_worker_data,
         }
     }
 
@@ -179,61 +200,89 @@ where
     }
 
     pub fn learn_parallel(&mut self) -> (f32, f32) {
-        const N: usize = 8;
-
 
         let transitions = &self.transitions;
         let (mut advantages, mut value_targets) = self.calculate_gae();
         let advantages = advantages.make_contiguous();
         let value_targets = value_targets.make_contiguous();
-        let std_dev = self.std_dev;
-        let clip = self.clip;
 
         assert_eq!(transitions.len(), advantages.len());
         assert_eq!(transitions.len(), value_targets.len());
 
-        let chunk_size = transitions.len().div_ceil(N);
+        let chunk_size = transitions.len().div_ceil(NR_THREADS);
 
         let (mut actor_loss, mut critic_loss) = (0.0, 0.0);
         for _i in 0..self.nr_updates_per_iteration {
 
-            let mut actor: [_; N] = core::array::from_fn(|_| self.actor.clone());
-            let mut critic: [_; N] = core::array::from_fn(|_| self.critic.clone());
-            let mut actor_loss_vec: [f32; N] = [0.0; N];
-            let mut critic_loss_vec: [f32; N] = [0.0; N];
+            // calculate gradients
+            for (worker, worker_data, transitions, advantages, value_targets) in izip!(
+                &mut self.ppo_worker,
+                &mut self.ppo_worker_data,
+                transitions.chunks(chunk_size),
+                advantages.chunks(chunk_size),
+                value_targets.chunks(chunk_size),
+            ) {
+                let mut worker_data = worker_data.take().unwrap();
 
-            thread::scope(|s| {
-                for (actor, critic, transitions, advantages, value_targets, actor_loss, critic_loss) in izip!(
-                    &mut actor,
-                    &mut critic,
-                    transitions.chunks(chunk_size),
-                    advantages.chunks(chunk_size),
-                    value_targets.chunks(chunk_size),
-                    &mut actor_loss_vec,
-                    &mut critic_loss_vec,
-                ) {
-                    s.spawn(move || {
-                        (*actor_loss, *critic_loss) = Self::calculate_gradients(actor, critic, transitions, advantages, value_targets, std_dev, clip);
+                worker_data.actor.zero_grad();
+                worker_data.actor.copy_weights(&self.actor);
 
-                        println!("transitions: {:?}", transitions);
-                    });
-                }
-            });
+                worker_data.critic.zero_grad();
+                worker_data.critic.copy_weights(&self.critic);
 
-            // sum up results
-            actor_loss = actor_loss_vec.iter().sum();
-            critic_loss = critic_loss_vec.iter().sum();
+                worker_data.transitions.clear();
+                worker_data.transitions.extend_from_slice(transitions);
 
-            for actor in actor {
-                // self.actor.
+                worker_data.advantages.clear();
+                worker_data.advantages.extend_from_slice(advantages);
+
+                worker_data.value_targets.clear();
+                worker_data.value_targets.extend_from_slice(value_targets);
+
+                worker_data.actor_loss_sum = 0.0;
+                worker_data.critic_loss_sum = 0.0;
+
+                // send worker request
+                worker.request_tx.send(worker_data).unwrap();
             }
 
+            let mut actor_loss_sum = 0.0;
+            let mut critic_loss_sum = 0.0;
+            for (worker, worker_data) in zip(&mut self.ppo_worker, &mut self.ppo_worker_data) {
+                // get worker result
+                let data = worker.result_rx.recv().unwrap();
+
+                // sum loss
+                actor_loss_sum += data.actor_loss_sum;
+                critic_loss_sum += data.critic_loss_sum;
+
+                // sum gradients
+                self.actor.add_gradients(&data.actor);
+                self.critic.add_gradients(&data.critic);
+
+                *worker_data = Some(data);  // store chunk for later reuse
+            }
+
+            // loss
+            actor_loss = actor_loss_sum;
+            critic_loss = critic_loss_sum;
+
+            // subtract gradients
+            self.actor.subtract_gradients();
+            self.critic.subtract_gradients();
+
+            // reset gradients
+            self.actor.zero_grad();
+            self.critic.zero_grad();
         }
+
+        self.transitions.clear();
 
         (actor_loss, critic_loss)
     }
 
-    pub fn learn(&mut self) -> (f32, f32) {
+    pub fn learn_sequential(&mut self) -> (f32, f32) {
+
         let transitions = &self.transitions;
         let (mut advantages, mut value_targets) = self.calculate_gae();
         let advantages = advantages.make_contiguous();
@@ -241,7 +290,8 @@ where
 
         let (mut actor_loss, mut critic_loss) = (0.0, 0.0);
         for _i in 0..self.nr_updates_per_iteration {
-           (actor_loss, critic_loss) = Self::calculate_gradients(
+            // calculate gradients
+            (actor_loss, critic_loss) = Self::calculate_gradients(
                 &mut self.actor,
                 &mut self.critic,
                 &transitions,
@@ -251,8 +301,13 @@ where
                 self.clip,
             );
 
+            // subtract gradients
             self.critic.subtract_gradients();
             self.actor.subtract_gradients();
+
+            // reset gradients
+            self.actor.zero_grad();
+            self.critic.zero_grad();
         }
 
         self.transitions.clear();
@@ -260,7 +315,21 @@ where
         (actor_loss, critic_loss)
     }
 
-    fn calculate_gradients(
+
+    pub fn learn(&mut self) -> (f32, f32) {
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.learn_sequential()
+        }
+
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.learn_parallel()
+        }
+    }
+
+    pub fn calculate_gradients(
         actor: &mut NeuralNetworkSimd<
             INPUTS,
             OUTPUTS,
@@ -355,8 +424,8 @@ where
     }
 }
 
-#[derive(Debug)]
-struct Transition<const INPUTS: usize, const OUTPUTS: usize> {
+#[derive(Clone, Debug)]
+pub struct Transition<const INPUTS: usize, const OUTPUTS: usize> {
     observation: [f32; INPUTS],
     action: [f32; OUTPUTS],
     log_probability: f32,

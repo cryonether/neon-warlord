@@ -1,9 +1,9 @@
 //! A universal function approximator implemented using simd operations
 
+use std::iter::zip;
+
 use crate::reinforcement_learning::neural_network_simd::{
-    activation_function::{ActivationFunction, activation_leaky_relu::ActivationLeakyReLu},
-    layer_simd::LayerSimd,
-    simd_math::simd_vec::SVec16,
+    activation_function::{ActivationFunction, activation_leaky_relu::ActivationLeakyReLu}, layer_simd::LayerSimd, simd_math::{simd_mat::SMat16, simd_vec::SVec16},
 };
 
 pub mod activation_function;
@@ -129,6 +129,48 @@ impl<
         }
         self.output.subtract_gradients();
     }
+
+    pub fn copy_weights(&mut self,
+        other: &Self
+    ) {
+        self.input.w = other.input.w.clone();
+        self.input.b = other.input.b.clone();
+
+        for (layer_self, layer) in zip(&mut self.layers, &other.layers) {
+            layer_self.w = layer.w.clone();
+            layer_self.b = layer.b.clone();
+        }
+
+        self.output.w = other.output.w.clone();
+        self.output.b = other.output.b.clone();
+    }
+
+    pub fn add_gradients(&mut self, other: &Self) {
+        self.input.dl_dw += &other.input.dl_dw;
+        self.input.dl_db += &other.input.dl_db;
+
+        for (layer_self, layer) in zip(&mut self.layers, &other.layers) {
+            layer_self.dl_dw += &layer.dl_dw;
+            layer_self.dl_db += &layer.dl_db;
+        }
+
+        self.output.dl_dw += &other.output.dl_dw;
+        self.output.dl_db += &other.output.dl_db;
+    }
+
+    pub fn zero_grad(&mut self) {
+        self.input.dl_dw = SMat16::zero();
+        self.input.dl_db = SVec16::zero();
+
+        for layer_self in &mut self.layers {
+            layer_self.dl_dw = SMat16::zero();
+            layer_self.dl_db = SVec16::zero();
+        }
+
+        self.output.dl_dw = SMat16::zero();
+        self.output.dl_db = SVec16::zero();
+    }
+
 }
 
 impl<
