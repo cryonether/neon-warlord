@@ -2,10 +2,10 @@
 
 use std::{iter::zip, marker::PhantomData};
 
-use wide::f32x16;
-
-use crate::reinforcement_learning::neural_network_simd::simd_math::{
-    simd_mat::SMat16, simd_vec::SVec16,
+use crate::reinforcement_learning::neural_network_simd::{
+    activation_function::ActivationFunction,
+    optimizer::adam::Adam,
+    simd_math::{simd_mat::SMat16, simd_vec::SVec16},
 };
 
 /// A simd layer
@@ -36,6 +36,8 @@ pub struct LayerSimd<
     // intermediate products
     dx: SVec16<INPUTS>,
 
+    optimizer: Adam<INPUTS, OUTPUTS>,
+
     phantom_data: PhantomData<ACTIVATION>,
 }
 
@@ -55,6 +57,7 @@ impl<
         let dl_dw = SMat16::zero();
         let dl_db = SVec16::zero();
         let dx = SVec16::zero();
+        let optimizer = Adam::new();
 
         Self {
             x,
@@ -65,6 +68,7 @@ impl<
             dl_dw,
             dl_db,
             dx,
+            optimizer,
 
             phantom_data: PhantomData,
         }
@@ -79,6 +83,7 @@ impl<
         let dl_dw = SMat16::zero();
         let dl_db = SVec16::zero();
         let dx = SVec16::zero();
+        let optimizer = Adam::new();
 
         // Kaiming/He-style initialization
         let fan_in: f32 = INPUTS as f32; // fan_in is the number of inputs to the neuron/filter.
@@ -104,6 +109,7 @@ impl<
             dl_dw,
             dl_db,
             dx,
+            optimizer,
 
             phantom_data: PhantomData,
         }
@@ -118,6 +124,7 @@ impl<
         let dl_dw = SMat16::zero();
         let dl_db = SVec16::zero();
         let dx = SVec16::zero();
+        let optimizer = Adam::new();
 
         for w in &mut w {
             for w in w {
@@ -136,6 +143,7 @@ impl<
             dl_dw,
             dl_db,
             dx,
+            optimizer,
 
             phantom_data: PhantomData,
         }
@@ -230,35 +238,40 @@ impl<
         dx
     }
 
-    pub fn subtract_gradients(&mut self, learning_rate: f32) {
+    pub fn subtract_gradients(&mut self) {
         // self.assert_finite();
 
-        let learning_rate_ = f32x16::splat(learning_rate);
-        let zero = f32x16::splat(0.0);
+        // let optimizer = &mut self.optimizer;
 
-        // b
-        for (b, dl_db) in zip(self.b.simd_iter_mut(), self.dl_db.simd_iter_mut()) {
-            *b -= *dl_db * learning_rate_;
-            *dl_db = zero;
-        }
+        self.optimizer
+            .step(&mut self.w, &mut self.b, &mut self.dl_dw, &mut self.dl_db);
 
-        for (b, dl_db) in zip(self.b.remainder_mut(), self.dl_db.remainder_mut()) {
-            *b -= *dl_db * learning_rate;
-            *dl_db = 0.0;
-        }
+        // let learning_rate_ = f32x16::splat(learning_rate);
+        // let zero = f32x16::splat(0.0);
 
-        // w
-        for (w, dl_dw) in zip(&mut self.w, &mut self.dl_dw) {
-            for (w, dl_dw) in zip(w.simd_iter_mut(), dl_dw.simd_iter_mut()) {
-                *w -= *dl_dw * learning_rate_;
-                *dl_dw = zero;
-            }
+        // // b
+        // for (b, dl_db) in zip(self.b.simd_iter_mut(), self.dl_db.simd_iter_mut()) {
+        //     *b -= *dl_db * learning_rate_;
+        //     *dl_db = zero;
+        // }
 
-            for (w, dl_dw) in zip(w.remainder_mut(), dl_dw.remainder_mut()) {
-                *w -= *dl_dw * learning_rate;
-                *dl_dw = 0.0;
-            }
-        }
+        // for (b, dl_db) in zip(self.b.remainder_mut(), self.dl_db.remainder_mut()) {
+        //     *b -= *dl_db * learning_rate;
+        //     *dl_db = 0.0;
+        // }
+
+        // // w
+        // for (w, dl_dw) in zip(&mut self.w, &mut self.dl_dw) {
+        //     for (w, dl_dw) in zip(w.simd_iter_mut(), dl_dw.simd_iter_mut()) {
+        //         *w -= *dl_dw * learning_rate_;
+        //         *dl_dw = zero;
+        //     }
+
+        //     for (w, dl_dw) in zip(w.remainder_mut(), dl_dw.remainder_mut()) {
+        //         *w -= *dl_dw * learning_rate;
+        //         *dl_dw = 0.0;
+        //     }
+        // }
 
         self.assert_finite();
     }
@@ -289,127 +302,3 @@ impl<
         self.dx.assert_finite("dx");
     }
 }
-
-// Activation Function
-
-pub trait ActivationFunction<const OUTPUTS: usize> {
-    fn activation(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS>;
-    fn derivative(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS>;
-}
-
-// Activation Function None
-
-#[derive(Clone)]
-pub struct ActivationNone {}
-
-impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationNone {
-    fn activation(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
-        x.clone()
-    }
-
-    fn derivative(_x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
-        SVec16::one()
-    }
-}
-
-// Activation Function Leaky ReLu
-
-#[derive(Clone)]
-pub struct ActivationLeakyReLu {}
-
-impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationLeakyReLu {
-    fn activation(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
-        const LEAKY_RELU_ALPHA: f32 = 0.01;
-
-        let mut res = SVec16::zero();
-        let zero = f32x16::ZERO;
-        let alpha = f32x16::splat(LEAKY_RELU_ALPHA);
-
-        for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
-            *res = x.simd_gt(zero).select(*x, x * alpha);
-        }
-
-        for (x, res) in zip(x.remainder(), res.remainder_mut()) {
-            *res = if *x > 0.0 { *x } else { x * LEAKY_RELU_ALPHA };
-        }
-
-        res
-    }
-
-    fn derivative(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
-        const LEAKY_RELU_ALPHA: f32 = 0.01;
-
-        let mut res = SVec16::zero();
-        let zero = f32x16::ZERO;
-        let alpha = f32x16::splat(LEAKY_RELU_ALPHA);
-        let one = f32x16::splat(1.0);
-
-        for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
-            *res = x.simd_gt(zero).select(one, alpha);
-        }
-
-        for (x, res) in zip(x.remainder(), res.remainder_mut()) {
-            *res = if *x > 0.0 { 1.0 } else { LEAKY_RELU_ALPHA };
-        }
-
-        res
-    }
-}
-
-// Activation Function TanH
-
-#[derive(Clone)]
-pub struct ActivationTanH {}
-
-impl<const OUTPUTS: usize> ActivationFunction<OUTPUTS> for ActivationTanH {
-    fn activation(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
-        let mut res = SVec16::zero();
-
-        for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
-            *res = x.tanh();
-        }
-
-        for (x, res) in zip(x.remainder(), res.remainder_mut()) {
-            *res = x.tanh();
-        }
-
-        res
-    }
-
-    fn derivative(x: &SVec16<OUTPUTS>) -> SVec16<OUTPUTS> {
-        let mut res = SVec16::zero();
-        let one = f32x16::splat(1.0);
-
-        for (x, res) in zip(x.simd_iter(), res.simd_iter_mut()) {
-            let tanh_x = x.tanh();
-            *res = one - tanh_x * tanh_x;
-        }
-
-        for (x, res) in zip(x.remainder(), res.remainder_mut()) {
-            let tanh_x = x.tanh();
-            *res = 1.0 - tanh_x * tanh_x;
-        }
-
-        res
-    }
-}
-
-// Activation Function ReLu
-
-// #[inline]
-// fn activation_re_lu(value: f32) -> f32 {
-//     if value > 0.0 {
-//         value
-//     } else {
-//         Self::LEAKY_RELU_ALPHA * value
-//     }
-// }
-
-// #[inline]
-// fn derivative_re_lu(value: f32) -> f32 {
-//     if value > 0.0 {
-//         1.0
-//     } else {
-//         Self::LEAKY_RELU_ALPHA
-//     }
-// }

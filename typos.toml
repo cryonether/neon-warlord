@@ -4,3 +4,4 @@ extend-exclude = ["market_economy_simulation/res", "piston_collada/test_assets"]
 [default.extend-words]
 lod = "lod"
 gae = "gae"
+Ba = "Ba"

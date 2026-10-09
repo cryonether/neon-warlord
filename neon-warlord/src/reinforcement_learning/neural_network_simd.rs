@@ -1,12 +1,15 @@
 //! A universal function approximator implemented using simd operations
 
 use crate::reinforcement_learning::neural_network_simd::{
-    layer_simd::{ActivationFunction, ActivationLeakyReLu, LayerSimd},
+    activation_function::{ActivationFunction, activation_leaky_relu::ActivationLeakyReLu},
+    layer_simd::LayerSimd,
     simd_math::simd_vec::SVec16,
 };
 
+pub mod activation_function;
 pub mod epoch;
 pub mod layer_simd;
+pub mod optimizer;
 pub mod simd_math;
 
 #[cfg(test)]
@@ -117,12 +120,12 @@ impl<
         dx.0.0
     }
 
-    pub fn subtract_gradients(&mut self, learning_rate: f32) {
-        self.input.subtract_gradients(learning_rate);
+    pub fn subtract_gradients(&mut self) {
+        self.input.subtract_gradients();
         for layer in &mut self.layers.iter_mut().rev() {
-            layer.subtract_gradients(learning_rate);
+            layer.subtract_gradients();
         }
-        self.output.subtract_gradients(learning_rate);
+        self.output.subtract_gradients();
     }
 }
 

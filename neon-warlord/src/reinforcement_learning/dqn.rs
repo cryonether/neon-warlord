@@ -3,7 +3,7 @@
 use std::collections::VecDeque;
 
 use crate::reinforcement_learning::neural_network_simd::{
-    NeuralNetworkSimd, layer_simd::ActivationNone,
+    NeuralNetworkSimd, activation_function::activation_none::ActivationNone,
 };
 
 const INPUTS: usize = 4;
@@ -160,9 +160,7 @@ impl Dqn {
             self.loss = sum / BATCH_SIZE as f32;
 
             // optimizer
-            /// plain gradient descent
-            const LEARNING_RATE: f32 = 0.001;
-            self.q_net.subtract_gradients(LEARNING_RATE);
+            self.q_net.subtract_gradients();
 
             // return self.total_reward;
             return self.loss;
