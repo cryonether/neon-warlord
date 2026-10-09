@@ -14,8 +14,8 @@ const ACTIONS: usize = 1;
 const CART_MASS: f32 = 0.1;
 const POLE_MASS: f32 = 0.1;
 
-const CART_LEFT_X: f32 = -2.0;
-const CART_RIGHT_X: f32 = 2.0;
+const CART_LEFT_X: f32 = -4.0;
+const CART_RIGHT_X: f32 = 4.0;
 const POLE_LENGTH: f32 = 1.0;
 
 #[derive(Clone)]
@@ -219,7 +219,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPendulumOnCart {
         };
     }
 
-    fn get_reward(&self) -> f32 {
+    fn get_reward(&self) -> (f32, bool) {
         let cart_pos = self.state.cart_pos;
         let angular_velocity = self.state.angular_velocity;
 
@@ -228,10 +228,15 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPendulumOnCart {
         // sin(alpha) =  1 when pointing straight up.
         let upright_reward = (self.state.pol_sin_alpha + 1.0) / 2.0;
 
-        let cart_penalty = 0.001 * cart_pos * cart_pos;
-        let velocity_penalty = 0.0001 * angular_velocity * angular_velocity;
+        let cart_penalty = 1.0 * cart_pos * cart_pos;
+        let velocity_penalty = 0.01 * angular_velocity * angular_velocity;
 
-        upright_reward - cart_penalty - velocity_penalty
+        let reward = upright_reward - cart_penalty - velocity_penalty;
+        let done = cart_pos.abs() > 0.92;
+
+        let reward = f32::max(0.0, reward);
+
+        (reward, done)
     }
 
     fn reset(&mut self) {

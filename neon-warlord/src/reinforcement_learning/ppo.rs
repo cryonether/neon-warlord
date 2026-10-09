@@ -271,8 +271,8 @@ impl<
                 let _actor_dx = self.actor.backward(&loss_derivative);
             }
 
-            critic_loss = critic_loss_sum / n;
-            actor_loss = actor_loss_sum / n;
+            critic_loss = critic_loss_sum;
+            actor_loss = actor_loss_sum;
 
             self.critic.subtract_gradients();
             self.actor.subtract_gradients();

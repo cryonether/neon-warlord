@@ -214,13 +214,13 @@ impl<
 
         self.env.update(&action, dt);
         let new_state = self.env.get_state();
-        let reward = self.env.get_reward();
+        let (reward, done) = self.env.get_reward();
         self.reward_sum += reward;
         self.reward_sum_long += reward;
         self.reward_sum_super_long += reward;
 
         self.ppo
-            .save_reward(state, action, log_probability, reward, false);
+            .save_reward(state, action, log_probability, reward, done);
 
         for (i, val) in new_state.iter().enumerate() {
             self.graph_inputs.y_push_pop(i, *val);
@@ -235,6 +235,10 @@ impl<
         }
 
         self.graph_reward.y_push_pop(0, reward);
+
+        if done {
+            self.env.reset();
+        }
 
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop();
