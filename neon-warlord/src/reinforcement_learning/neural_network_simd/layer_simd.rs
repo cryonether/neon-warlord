@@ -3,9 +3,7 @@
 use std::{iter::zip, marker::PhantomData};
 
 use crate::reinforcement_learning::neural_network_simd::{
-    activation_function::ActivationFunction,
-    optimizer::adam::Adam,
-    simd_math::{simd_mat::SMat16, simd_vec::SVec16},
+    activation_function::ActivationFunction, optimizer::adam::Adam, simd_math::{simd_mat::{self, SMat16}, simd_vec::SVec16},
 };
 
 /// A simd layer
@@ -225,13 +223,14 @@ impl<
         let dl_db = &dz;
 
         // dL/dW = dz * x^T
-        let dl_dw = &dz * &self.x.clone().as_row_vec();
+        // let dl_dw = &dz * &self.x.clone().as_row_vec();
+        simd_mat::add_outer_product(&mut self.dl_dw, &dz, &self.x.clone().as_row_vec());    // using this combined function is slightly faster
 
         self.dx = dx.clone();
 
         // Update gradients
         self.dl_db += dl_db;
-        self.dl_dw += &dl_dw;
+        // self.dl_dw += &dl_dw;
 
         // self.assert_finite();
 
