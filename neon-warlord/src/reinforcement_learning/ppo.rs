@@ -113,7 +113,7 @@ where
                 clip: CLIP,
             })));
 
-            ppo_worker_thread.push(WorkerThread2::new(format!("PPO Worker {}", i)));
+            ppo_worker_thread.push(WorkerThread2::new(format!("Ppo Worker {}", i)));
         }        
 
         Self {
@@ -211,7 +211,8 @@ where
             let value = transition.value;
 
             // Terminal states have no bootstrap value.
-            let bootstrap_value = if transition.done { 0.0 } else { next_value };
+            // let bootstrap_value = if transition.done { 0.0 } else { next_value };
+            let bootstrap_value = if transition.done { value } else { next_value };
 
             let delta = reward + self.gamma * bootstrap_value - value;
 

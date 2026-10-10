@@ -7,7 +7,6 @@ use crate::{
         Vec3, gym::Gym, verlet_physics_drawer::VerletPhysicsDrawer,
         worker_thread_2::WorkerThread2Run,
     },
-    physics_simulation_v3_drawer::DrawerObjects,
     reinforcement_learning::{
         neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo,
     },
@@ -31,6 +30,8 @@ pub struct GymWorker<
     pub edges: Vec<forward_renderer::particle_shader_two_point::Instance>,
 
     pub nr_steps: usize,
+
+    pub reward: f32,
 
     ticks: usize,
 }
@@ -81,15 +82,29 @@ where
             edges,
             ticks: 0,
             nr_steps,
+            reward: 0.0,
         }
     }
+}
 
-    pub fn run(&mut self) {
+impl<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NEURONS: usize,
+    const LAYERS: usize,
+    const RESIDUAL: bool,
+    ENV: Gym<INPUTS, OUTPUTS>,
+> WorkerThread2Run for GymWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>
+where
+    ENV: std::clone::Clone,
+{
+    fn run(&mut self) {
         let dt = 1.0 / 60.0;
         let max_steps = 1000;
 
         self.nodes.clear();
         self.edges.clear();
+        self.reward = 0.0;
 
         for (env, drawer) in zip(&mut self.envs, &mut self.drawers) {
             for i in 0..self.nr_steps {
@@ -103,6 +118,7 @@ where
 
                 // reward
                 let (reward, done) = env.get_reward();
+                self.reward += reward;
 
                 // save reward
                 let done = done || i >= self.nr_steps - 1 || self.ticks + i >= max_steps;
@@ -121,21 +137,5 @@ where
             // draw
             drawer.update(env.get_verlet_physics(), &mut self.nodes, &mut self.edges);
         }
-    }
-}
-
-impl<
-    const INPUTS: usize,
-    const OUTPUTS: usize,
-    const NEURONS: usize,
-    const LAYERS: usize,
-    const RESIDUAL: bool,
-    ENV: Gym<INPUTS, OUTPUTS>,
-> WorkerThread2Run for GymWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>
-where
-    ENV: std::clone::Clone,
-{
-    fn run(&mut self) {
-        self.run();
     }
 }
