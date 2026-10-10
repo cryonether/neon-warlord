@@ -123,8 +123,14 @@ where
 
                 // save reward
                 let truncated = i >= self.nr_steps - 1 || self.ticks + i >= max_steps;
-                self.ppo
-                    .save_reward(state, action, log_probability, reward, terminated, truncated);
+                self.ppo.save_reward(
+                    state,
+                    action,
+                    log_probability,
+                    reward,
+                    terminated,
+                    truncated,
+                );
 
                 // count ticks and reset
                 if self.ticks + i >= max_steps {

@@ -1,13 +1,15 @@
 //! Worker thread for parallel learning
 
-use crate::{gym_simulation::worker_thread_2::WorkerThread2Run, reinforcement_learning::{
-    neural_network_simd::{
-        NeuralNetworkSimd,
-        activation_function::{ActivationFunction, activation_none::ActivationNone},
+use crate::{
+    gym_simulation::worker_thread_2::WorkerThread2Run,
+    reinforcement_learning::{
+        neural_network_simd::{
+            NeuralNetworkSimd,
+            activation_function::{ActivationFunction, activation_none::ActivationNone},
+        },
+        ppo::Transition,
     },
-    ppo::Transition,
-}};
-
+};
 
 /// Data to send from and to the thread
 #[derive(Clone)]
@@ -39,7 +41,8 @@ impl<
     const LAYERS: usize,
     const RESIDUAL: bool,
     OutputActivationActor: ActivationFunction<OUTPUTS>,
-> WorkerThread2Run for PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>
+> WorkerThread2Run
+    for PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>
 where
     OutputActivationActor: std::clone::Clone + Send + 'static,
 {

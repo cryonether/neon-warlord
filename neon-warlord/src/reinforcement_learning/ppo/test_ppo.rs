@@ -1264,7 +1264,14 @@ fn test_gae_arithmetic() {
 
         let (action, _mean, log_probability) = ppo.get_action(&observation);
 
-        ppo.save_reward(observation, action, log_probability, rewards[i], dones[i], false);
+        ppo.save_reward(
+            observation,
+            action,
+            log_probability,
+            rewards[i],
+            dones[i],
+            false,
+        );
     }
 
     //
@@ -1394,7 +1401,7 @@ fn test_gae_episode_boundary() {
         reward: 0.0,
         terminated: true,
         value: 0.0,
-        truncated: false
+        truncated: false,
     });
 
     ppo.transitions.push(Transition {
@@ -1404,7 +1411,7 @@ fn test_gae_episode_boundary() {
         reward: 10.0,
         terminated: true,
         value: 0.0,
-        truncated: false
+        truncated: false,
     });
 
     let (advantages, returns) = ppo.calculate_gae();
@@ -1436,7 +1443,7 @@ fn test_gae_propagation() {
         reward: 0.0,
         terminated: false,
         value: 0.0,
-        truncated: false
+        truncated: false,
     });
 
     ppo.transitions.push(Transition {
@@ -1446,7 +1453,7 @@ fn test_gae_propagation() {
         reward: 1.0,
         terminated: true,
         value: 0.0,
-        truncated: false
+        truncated: false,
     });
 
     let (advantages, returns) = ppo.calculate_gae();
@@ -1487,7 +1494,7 @@ fn test_gae_bootstrap_value() {
         reward: 0.0,
         terminated: false,
         value: 0.2,
-        truncated: false
+        truncated: false,
     });
 
     ppo.transitions.push(Transition {
@@ -1497,7 +1504,7 @@ fn test_gae_bootstrap_value() {
         reward: 1.0,
         terminated: true,
         value: 0.8,
-        truncated: false
+        truncated: false,
     });
 
     let (advantages, returns) = ppo.calculate_gae();

@@ -49,32 +49,34 @@ where
             let limit_ups = Arc::new(AtomicBool::new(true));
             let limit_ups_thread = limit_ups.clone();
             let builder = thread::Builder::new().name("Ups Thread".into());
-            let res = builder.spawn(move || {
-                let mut func_obj = func_obj;
+            let res = builder
+                .spawn(move || {
+                    let mut func_obj = func_obj;
 
-                let mut last_frame_time = Instant::now();
-                loop {
-                    // update
-                    func_obj.update_physics();
+                    let mut last_frame_time = Instant::now();
+                    loop {
+                        // update
+                        func_obj.update_physics();
 
-                    let target_frame_time = Duration::from_micros(16_667);
+                        let target_frame_time = Duration::from_micros(16_667);
 
-                    let elapsed_frame_time = last_frame_time.elapsed();
-                    if elapsed_frame_time >= target_frame_time {
-                        func_obj.update_drawer();
-                        last_frame_time = Instant::now();
-                    } else {
-                        if limit_ups_thread.load(Ordering::Relaxed) {
+                        let elapsed_frame_time = last_frame_time.elapsed();
+                        if elapsed_frame_time >= target_frame_time {
                             func_obj.update_drawer();
-
-                            // sleep until 16.6 ms have been reached
-                            thread::sleep(target_frame_time - elapsed_frame_time);
-
                             last_frame_time = Instant::now();
+                        } else {
+                            if limit_ups_thread.load(Ordering::Relaxed) {
+                                func_obj.update_drawer();
+
+                                // sleep until 16.6 ms have been reached
+                                thread::sleep(target_frame_time - elapsed_frame_time);
+
+                                last_frame_time = Instant::now();
+                            }
                         }
                     }
-                }
-            }).unwrap();
+                })
+                .unwrap();
             WorkerThread {
                 thread: Thread::MultiThread(res),
                 limit_ups,

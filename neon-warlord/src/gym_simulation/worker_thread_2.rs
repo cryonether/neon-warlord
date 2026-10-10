@@ -1,13 +1,14 @@
 //! Send data to a thread, run some function and receive data again
 
 use std::{
-    sync::mpsc::{Receiver, SyncSender, sync_channel}, thread::{self, JoinHandle},
+    sync::mpsc::{Receiver, SyncSender, sync_channel},
+    thread::{self, JoinHandle},
 };
 
 /// Send data to a thread, run some function and receive data again
-pub struct WorkerThread2<T> 
-where T:
-    WorkerThread2Run
+pub struct WorkerThread2<T>
+where
+    T: WorkerThread2Run,
 {
     request_tx: SyncSender<Box<T>>,
     result_rx: Receiver<Box<T>>,
@@ -15,19 +16,13 @@ where T:
     thread: Thread,
 }
 
-impl<T> WorkerThread2<T> 
-where T:
-    WorkerThread2Run + Send + 'static
+impl<T> WorkerThread2<T>
+where
+    T: WorkerThread2Run + Send + 'static,
 {
-    pub fn new(
-        name: String,
-    ) -> Self {
-        let (request_tx, request_rx) = sync_channel::<
-            Box<T>,
-        >(1);
-        let (result_tx, result_rx) = sync_channel::<
-            Box<T>,
-        >(1);
+    pub fn new(name: String) -> Self {
+        let (request_tx, request_rx) = sync_channel::<Box<T>>(1);
+        let (result_tx, result_rx) = sync_channel::<Box<T>>(1);
 
         #[allow(unused_mut)]
         #[allow(unused)]
@@ -40,28 +35,26 @@ where T:
         let thread = if single_threaded {
             // Single threaded
 
-            let lambda = move || 
-                {
-                    if let Ok(mut data) = request_rx.recv() {
-                        data.run();
-                        result_tx.send(data).unwrap();
-                    }
-                };
+            let lambda = move || {
+                if let Ok(mut data) = request_rx.recv() {
+                    data.run();
+                    result_tx.send(data).unwrap();
+                }
+            };
 
             Thread::SingleThread(Box::new(lambda))
-        }
-        else {
+        } else {
             // Multi threaded
 
             let builder = thread::Builder::new().name(name);
-            let thread = builder.spawn(move || 
-                {
+            let thread = builder
+                .spawn(move || {
                     while let Ok(mut data) = request_rx.recv() {
                         data.run();
                         result_tx.send(data).unwrap();
                     }
-                }
-            ).unwrap();
+                })
+                .unwrap();
 
             Thread::MultiThread(thread)
         };
@@ -74,28 +67,20 @@ where T:
     }
 
     pub fn send(&mut self, data: Box<T>) {
-
         self.request_tx.send(data).unwrap();
 
-        if let Thread::SingleThread(thread) = &self.thread 
-        {
+        if let Thread::SingleThread(thread) = &self.thread {
             thread();
         }
     }
 
     pub fn receive(&mut self) -> Box<T> {
-
-        
-
         self.result_rx.recv().unwrap()
     }
-
 }
 
-
 /// Helper to distinguish between single and multithreaded run
-enum Thread
-{
+enum Thread {
     SingleThread(Box<dyn Fn() + Send + 'static>),
     #[allow(unused)]
     MultiThread(JoinHandle<()>),

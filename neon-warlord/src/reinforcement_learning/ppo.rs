@@ -22,11 +22,10 @@ use crate::{
             loss_function::{
                 GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
             },
-            ppo_worker::{PpoWorkerData},
+            ppo_worker::PpoWorkerData,
         },
     },
 };
-
 
 /// Implements the Proximal Policy Optimization algorithm
 pub struct Ppo<
@@ -113,7 +112,7 @@ where
             })));
 
             ppo_worker_thread.push(WorkerThread2::new(format!("Ppo Worker {}", i)));
-        }        
+        }
 
         Self {
             actor,
@@ -191,12 +190,20 @@ where
         for transition in self.transitions.iter().rev() {
             let reward = transition.reward;
             let value = transition.value;
-            
+
             // Should actually be an estimate of the next state (but using the current value is close enough for small time steps I guess)
-            let bootstrap_value = if transition.truncated { value } else { next_value };
+            let bootstrap_value = if transition.truncated {
+                value
+            } else {
+                next_value
+            };
 
             // Terminal states have no bootstrap value.
-            let bootstrap_value = if transition.terminated { 0.0 } else { bootstrap_value };
+            let bootstrap_value = if transition.terminated {
+                0.0
+            } else {
+                bootstrap_value
+            };
 
             let delta = reward + self.gamma * bootstrap_value - value;
 
@@ -283,8 +290,7 @@ where
                 transitions.chunks(chunk_size),
                 advantages.chunks(chunk_size),
                 value_targets.chunks(chunk_size),
-            )
-            {
+            ) {
                 // get worker result
                 let data = worker.receive();
 

@@ -237,17 +237,20 @@ impl<const M: usize, const N: usize> Sub<&SMat16<M, N>> for &SMat16<M, N> {
     }
 }
 
-
 // Special functions
 
 // Outer Product a += b * c
 ///
 /// (M×1)(1×N) → M×N
 ///
-pub fn add_outer_product<const M: usize, const N: usize>(c: &mut SMat16<M, N>, a: &SVec16<M>, b: &SRowVec16<N>) {
+pub fn add_outer_product<const M: usize, const N: usize>(
+    c: &mut SMat16<M, N>,
+    a: &SVec16<M>,
+    b: &SRowVec16<N>,
+) {
     let res = c;
 
-    for (a, res_row) in std::iter::zip(a,  res) {
+    for (a, res_row) in std::iter::zip(a, res) {
         let a_ = f32x16::splat(*a);
 
         for (b, res) in std::iter::zip(b.simd_iter(), res_row.simd_iter_mut()) {
@@ -257,6 +260,5 @@ pub fn add_outer_product<const M: usize, const N: usize>(c: &mut SMat16<M, N>, a
         for (b, res) in std::iter::zip(b.remainder(), res_row.remainder_mut()) {
             *res += a * b;
         }
-    }   
+    }
 }
-
