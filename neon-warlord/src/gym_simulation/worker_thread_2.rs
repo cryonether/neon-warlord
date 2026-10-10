@@ -97,6 +97,7 @@ where T:
 enum Thread
 {
     SingleThread(Box<dyn Fn() + Send + 'static>),
+    #[allow(unused)]
     MultiThread(JoinHandle<()>),
 }
 

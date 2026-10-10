@@ -62,7 +62,6 @@ where
     _steps: u64,
     _episode: u64,
 
-    reward_sum: f32,
     reward_sum_long: f32,
     reward_sum_super_long: f32,
 
@@ -188,7 +187,6 @@ where
             ticks: 0,
             _steps: 0,
             _episode: 0,
-            reward_sum: 0.0,
             reward_sum_long: 0.0,
             reward_sum_super_long: 0.0,
             gym_worker,
@@ -269,7 +267,7 @@ where
         self.watch_ups.start_index(2, "Sim");
         let state = self.env.get_state();
 
-        let (action, mean_action, log_probability) = self.ppo.get_action(&state);
+        let (action, mean_action, _log_probability) = self.ppo.get_action(&state);
 
         self.env.update(&mean_action, dt);
         let new_state = self.env.get_state();
