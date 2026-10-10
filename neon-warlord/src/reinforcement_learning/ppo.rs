@@ -11,20 +11,23 @@ use std::{collections::VecDeque, iter::zip};
 
 use itertools::izip;
 
-use crate::reinforcement_learning::{
-    neural_network_simd::{
-        NeuralNetworkSimd,
-        activation_function::{ActivationFunction, activation_none::ActivationNone},
-    },
-    ppo::{
-        loss_function::{
-            GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
+use crate::{
+    gym_simulation::worker_thread_2::WorkerThread2,
+    reinforcement_learning::{
+        neural_network_simd::{
+            NeuralNetworkSimd,
+            activation_function::{ActivationFunction, activation_none::ActivationNone},
         },
-        ppo_worker::{PpoWorker, PpoWorkerData},
+        ppo::{
+            loss_function::{
+                GaussianLogProbability, MeanSquareError, PpoActorRatio, PpoSurrogateLossClipped,
+            },
+            ppo_worker::{PpoWorkerData},
+        },
     },
 };
 
-const NR_THREADS: usize = 8;
+// const NR_THREADS: usize = 8;
 
 /// Implements the Proximal Policy Optimization algorithm
 pub struct Ppo<
@@ -35,7 +38,7 @@ pub struct Ppo<
     const RESIDUAL: bool,
     OutputActivationActor: ActivationFunction<OUTPUTS>,
 > where
-    OutputActivationActor: std::clone::Clone + Send,
+    OutputActivationActor: std::clone::Clone + Send + 'static,
 {
     pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>,
     pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, RESIDUAL, ActivationNone>,
@@ -50,11 +53,16 @@ pub struct Ppo<
     nr_updates_per_iteration: usize,
 
     // parallel
-    ppo_worker:
-        [PpoWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>; NR_THREADS],
-    ppo_worker_data: [Option<
-        Box<PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>>,
-    >; NR_THREADS],
+    ppo_worker_data: Vec<
+        Option<
+            Box<PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>>,
+        >,
+    >,
+    ppo_worker_thread: Vec<
+        WorkerThread2<
+            PpoWorkerData<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>,
+        >,
+    >,
 }
 
 impl<
@@ -68,7 +76,9 @@ impl<
 where
     OutputActivationActor: std::clone::Clone + Send + 'static,
 {
-    pub fn new(seed: u64) -> Self {
+    pub fn new(seed: u64, nr_threads: usize) -> Self {
+        // let nr_threads = 8;
+
         // For choosing an action
         const VARIANCE: f32 = 0.5;
         const STD_DEV: f32 = 0.70710677; // sqrt(0.5)
@@ -88,9 +98,10 @@ where
 
         let transitions = Vec::new();
 
-        let ppo_worker = core::array::from_fn(|_| PpoWorker::new(STD_DEV, CLIP));
-        let ppo_worker_data = core::array::from_fn(|_| {
-            Some(Box::new(PpoWorkerData {
+        let mut ppo_worker_data = Vec::with_capacity(nr_threads);
+        let mut ppo_worker_thread = Vec::with_capacity(nr_threads);
+        for i in 0..nr_threads {
+            ppo_worker_data.push(Some(Box::new(PpoWorkerData {
                 actor: actor.clone(),
                 critic: critic.clone(),
                 transitions: Vec::new(),
@@ -98,8 +109,12 @@ where
                 value_targets: Vec::new(),
                 actor_loss_sum: 0.0,
                 critic_loss_sum: 0.0,
-            }))
-        });
+                std_dev: STD_DEV,
+                clip: CLIP,
+            })));
+
+            ppo_worker_thread.push(WorkerThread2::new(format!("PPO Worker {}", i)));
+        }        
 
         Self {
             actor,
@@ -111,7 +126,7 @@ where
             gae_lambda: GAE_LAMBDA,
             _clip: CLIP,
             nr_updates_per_iteration: NR_UPDATES_PER_ITERATION,
-            ppo_worker,
+            ppo_worker_thread,
             ppo_worker_data,
         }
     }
@@ -236,14 +251,16 @@ where
         assert_eq!(transitions.len(), advantages.len());
         assert_eq!(transitions.len(), value_targets.len());
 
-        assert!(transitions.len() >= NR_THREADS);
-        let chunk_size = transitions.len().div_ceil(NR_THREADS);
+        let nr_threads = self.ppo_worker_thread.len();
+        assert_eq!(self.ppo_worker_data.len(), nr_threads);
+        // assert!(transitions.len() >= nr_threads);
+        let chunk_size = transitions.len().div_ceil(nr_threads);
 
         let (mut actor_loss, mut critic_loss) = (0.0, 0.0);
         for _i in 0..self.nr_updates_per_iteration {
             // calculate gradients
             for (worker, worker_data, transitions, advantages, value_targets) in izip!(
-                &mut self.ppo_worker,
+                &mut self.ppo_worker_thread,
                 &mut self.ppo_worker_data,
                 transitions.chunks(chunk_size),
                 advantages.chunks(chunk_size),
@@ -270,14 +287,21 @@ where
                 worker_data.critic_loss_sum = 0.0;
 
                 // send worker request
-                worker.request_tx.send(worker_data).unwrap();
+                worker.send(worker_data);
             }
 
             let mut actor_loss_sum = 0.0;
             let mut critic_loss_sum = 0.0;
-            for (worker, worker_data) in zip(&mut self.ppo_worker, &mut self.ppo_worker_data) {
+            for (worker, worker_data, _transitions, _advantages, _value_targets) in izip!(
+                &mut self.ppo_worker_thread,
+                &mut self.ppo_worker_data,
+                transitions.chunks(chunk_size),
+                advantages.chunks(chunk_size),
+                value_targets.chunks(chunk_size),
+            )
+            {
                 // get worker result
-                let data = worker.result_rx.recv().unwrap();
+                let data = worker.receive();
 
                 // sum loss
                 actor_loss_sum += data.actor_loss_sum;
@@ -357,7 +381,7 @@ where
 
     pub fn learn(&mut self) -> (f32, f32) {
         #[allow(unused)]
-        let mut single_threaded = false;
+        let mut single_threaded = self.ppo_worker_thread.len() == 0;
         #[cfg(target_arch = "wasm32")]
         {
             single_threaded = true;

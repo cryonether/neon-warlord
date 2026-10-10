@@ -16,7 +16,7 @@ fn test_one_armed_bandit() {
     const EPISODES: usize = 2_000;
     const BATCH_SIZE: usize = 32;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     let observation = [1.0];
 
@@ -60,7 +60,7 @@ fn test_two_armed_bandit() {
     const BATCH_SIZE: usize = 32;
     const EVALUATION_SAMPLES: usize = 5_000;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     let observation = [1.0];
 
@@ -131,7 +131,7 @@ fn test_two_step_mdp() {
     const EPISODES: usize = 4_000;
     const BATCH_SIZE: usize = 32;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     // State 0: the agent must choose a positive action
     // to reach the rewarding state.
@@ -274,7 +274,7 @@ fn test_episode_boundaries() {
     const EPISODES: usize = 4_000;
     const BATCH_SIZE: usize = 32;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     let observation = [0.0];
 
@@ -321,7 +321,7 @@ fn test_multi_step_mdp() {
     const BATCH_SIZE: usize = 32;
     const EVALUATION_SAMPLES: usize = 5_000;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     // State 0: choosing positive leads toward the reward.
     let start_state = [0.0];
@@ -928,7 +928,7 @@ fn test_long_noisy_mdp() {
     const BATCH_SIZE: usize = 32;
     const EVALUATION_EPISODES: usize = 1_000;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     let start_state = [0.0];
     let state_1 = [1.0];
@@ -1221,7 +1221,7 @@ fn test_gae_arithmetic() {
     const LAMBDA: f32 = 0.90;
     const EPSILON: f32 = 1e-4;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     //
     // We want known critic values so that we can verify the
@@ -1373,7 +1373,7 @@ fn test_gae_arithmetic() {
 
 #[test]
 fn test_gae_episode_boundary() {
-    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42, 0);
 
     //
     // Manually construct:
@@ -1425,7 +1425,7 @@ fn test_gae_episode_boundary() {
 
 #[test]
 fn test_gae_propagation() {
-    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42, 0);
 
     ppo.transitions.push(Transition {
         observation: [0.0],
@@ -1474,7 +1474,7 @@ fn test_gae_propagation() {
 
 #[test]
 fn test_gae_bootstrap_value() {
-    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42, 0);
 
     ppo.transitions.push(Transition {
         observation: [0.0],
@@ -1545,7 +1545,7 @@ fn test_continuous_noisy_mdp() {
     const BATCH_SIZE: usize = 64;
     const HORIZON: usize = 8;
 
-    let mut ppo = Ppo::<1, 1, 64, 2, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 2, false, ActivationNone>::new(42, 0);
 
     for episode in 0..EPISODES {
         for step in 0..HORIZON {

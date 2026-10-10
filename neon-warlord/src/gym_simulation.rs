@@ -99,10 +99,11 @@ where
 
         let scale = 0.1;
 
-        let ppo = Ppo::new(0);
+        let nr_gym_ppo_threads = 8;
+        let ppo = Ppo::new(0, nr_gym_ppo_threads);
 
         let gym_worker = Some(Box::new(GymWorker::new(
-            Ppo::new(0), 
+            Ppo::new(0, 0), 
             env.clone(), 
             64, 
             64, 

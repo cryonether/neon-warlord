@@ -48,7 +48,8 @@ where
 
             let limit_ups = Arc::new(AtomicBool::new(true));
             let limit_ups_thread = limit_ups.clone();
-            let res = thread::spawn(move || {
+            let builder = thread::Builder::new().name("Ups Thread".into());
+            let res = builder.spawn(move || {
                 let mut func_obj = func_obj;
 
                 let mut last_frame_time = Instant::now();
@@ -73,7 +74,7 @@ where
                         }
                     }
                 }
-            });
+            }).unwrap();
             WorkerThread {
                 thread: Thread::MultiThread(res),
                 limit_ups,
