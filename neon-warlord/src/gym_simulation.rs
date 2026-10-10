@@ -236,7 +236,7 @@ where
             let mut gym_worker_ = gym_worker_thread.receive();
             
             // append transitions
-            self.ppo.transitions.extend(gym_worker_.ppo.transitions.drain(..));
+            self.ppo.transitions.append(&mut gym_worker_.ppo.transitions);
 
             // get reward
             reward += gym_worker_.reward;
@@ -375,14 +375,12 @@ where
         self.verlet_physics_drawer
             .update(self.env.get_verlet_physics(), nodes, edges);
 
-        for gym_worker in &self.gym_worker {
-            if let Some(gym_worker) = gym_worker {
-                for node in &gym_worker.nodes {
-                    nodes.push(node.clone());
-                }
-                for edge in &gym_worker.edges {
-                    edges.push(edge.clone());
-                }
+        for gym_worker in self.gym_worker.iter().flatten() {
+            for node in &gym_worker.nodes {
+                nodes.push(*node);
+            }
+            for edge in &gym_worker.edges {
+                edges.push(*edge);
             }
         }
 

@@ -85,9 +85,9 @@ where T:
 
     pub fn receive(&mut self) -> Box<T> {
 
-        let res = self.result_rx.recv().unwrap();
+        
 
-        res
+        self.result_rx.recv().unwrap()
     }
 
 }

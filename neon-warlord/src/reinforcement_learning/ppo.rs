@@ -366,7 +366,7 @@ where
 
     pub fn learn(&mut self) -> (f32, f32) {
         #[allow(unused)]
-        let mut single_threaded = self.ppo_worker_thread.len() == 0;
+        let mut single_threaded = self.ppo_worker_thread.is_empty();
         #[cfg(target_arch = "wasm32")]
         {
             single_threaded = true;
