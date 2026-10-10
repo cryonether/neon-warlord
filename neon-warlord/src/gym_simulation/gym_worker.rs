@@ -1,4 +1,4 @@
-//! Generates transitions
+//! Runs the simulation and generates transitions
 
 use std::iter::zip;
 
@@ -12,6 +12,7 @@ use crate::{
     },
 };
 
+/// Runs the simulation and generates transitions
 pub struct GymWorker<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -117,13 +118,13 @@ where
                 env.update_verlet_physics(dt);
 
                 // reward
-                let (reward, done) = env.get_reward();
+                let (reward, terminated) = env.get_reward();
                 self.reward += reward;
 
                 // save reward
-                let done = done || i >= self.nr_steps - 1 || self.ticks + i >= max_steps;
+                let truncated = i >= self.nr_steps - 1 || self.ticks + i >= max_steps;
                 self.ppo
-                    .save_reward(state, action, log_probability, reward, done);
+                    .save_reward(state, action, log_probability, reward, terminated, truncated);
 
                 // count ticks and reset
                 if self.ticks + i >= max_steps {

@@ -4,6 +4,7 @@ use std::{
     sync::mpsc::{Receiver, SyncSender, sync_channel}, thread::{self, JoinHandle},
 };
 
+/// Send data to a thread, run some function and receive data again
 pub struct WorkerThread2<T> 
 where T:
     WorkerThread2Run

@@ -27,7 +27,6 @@ use crate::{
     },
 };
 
-// const NR_THREADS: usize = 8;
 
 /// Implements the Proximal Policy Optimization algorithm
 pub struct Ppo<
@@ -163,7 +162,10 @@ where
         action: [f32; OUTPUTS],
         log_probability: f32,
         reward: f32,
-        done: bool,
+        // The episode reached a true terminal state, such as winning, losing, or reaching a goal.
+        terminated: bool,
+        //  The episode was cut short, for example by a time limit, without reaching a true terminal state.
+        truncated: bool,
     ) {
         let value = self.critic.forward(&observation);
         let value = value[0];
@@ -173,31 +175,11 @@ where
             action,
             log_probability,
             reward,
-            done,
             value,
+            terminated,
+            truncated,
         })
     }
-
-    // pub fn create_transition(
-    //     &mut self,
-    //     observation: [f32; INPUTS],
-    //     action: [f32; OUTPUTS],
-    //     log_probability: f32,
-    //     reward: f32,
-    //     done: bool,
-    // ) -> Transition<INPUTS, OUTPUTS> {
-    //     let value = self.critic.forward(&observation);
-    //     let value = value[0];
-
-    //     Transition {
-    //         observation,
-    //         action,
-    //         log_probability,
-    //         reward,
-    //         done,
-    //         value,
-    //     }
-    // }
 
     fn calculate_gae(&self) -> (VecDeque<f32>, VecDeque<f32>) {
         let mut advantages = VecDeque::new();
@@ -209,10 +191,12 @@ where
         for transition in self.transitions.iter().rev() {
             let reward = transition.reward;
             let value = transition.value;
+            
+            // Should actually be an estimate of the next state (but using the current value is close enough for small time steps I guess)
+            let bootstrap_value = if transition.truncated { value } else { next_value };
 
             // Terminal states have no bootstrap value.
-            // let bootstrap_value = if transition.done { 0.0 } else { next_value };
-            let bootstrap_value = if transition.done { value } else { next_value };
+            let bootstrap_value = if transition.terminated { 0.0 } else { bootstrap_value };
 
             let delta = reward + self.gamma * bootstrap_value - value;
 
@@ -221,7 +205,7 @@ where
             // A_t = δ_t + γ λ A_{t+1}
             //
             // Do not propagate GAE across an episode boundary.
-            last_gae = if transition.done {
+            last_gae = if transition.terminated || transition.truncated {
                 delta
             } else {
                 delta + self.gamma * self.gae_lambda * last_gae
@@ -492,8 +476,12 @@ pub struct Transition<const INPUTS: usize, const OUTPUTS: usize> {
     action: [f32; OUTPUTS],
     log_probability: f32,
     reward: f32,
-    done: bool,
     value: f32,
+
+    // The episode reached a true terminal state, such as winning, losing, or reaching a goal.
+    terminated: bool,
+    //  The episode was cut short, for example by a time limit, without reaching a true terminal state.
+    truncated: bool,
 }
 
 ///

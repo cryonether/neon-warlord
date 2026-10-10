@@ -260,7 +260,6 @@ where
     }
 
     pub fn update_physics(&mut self) {
-        // self.watch_ups.update();
 
        self.run_workers();
 
