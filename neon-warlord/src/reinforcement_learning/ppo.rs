@@ -40,7 +40,7 @@ pub struct Ppo<
     pub actor: NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, OutputActivationActor>,
     pub critic: NeuralNetworkSimd<INPUTS, 1, NEURONS, LAYERS, RESIDUAL, ActivationNone>,
 
-    transitions: Vec<Transition<INPUTS, OUTPUTS>>,
+    pub transitions: Vec<Transition<INPUTS, OUTPUTS>>,
 
     _variance: f32,
     std_dev: f32,
@@ -162,6 +162,27 @@ where
             value,
         })
     }
+
+    // pub fn create_transition(
+    //     &mut self,
+    //     observation: [f32; INPUTS],
+    //     action: [f32; OUTPUTS],
+    //     log_probability: f32,
+    //     reward: f32,
+    //     done: bool,
+    // ) -> Transition<INPUTS, OUTPUTS> {
+    //     let value = self.critic.forward(&observation);
+    //     let value = value[0];
+
+    //     Transition {
+    //         observation,
+    //         action,
+    //         log_probability,
+    //         reward,
+    //         done,
+    //         value,
+    //     }
+    // }
 
     fn calculate_gae(&self) -> (VecDeque<f32>, VecDeque<f32>) {
         let mut advantages = VecDeque::new();

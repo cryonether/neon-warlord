@@ -4,6 +4,8 @@ pub mod graph_lines;
 pub mod gym;
 pub mod neural_network_drawer;
 pub mod verlet_physics_drawer;
+mod gym_worker;
+pub mod worker_thread_2;
 
 use std::collections::VecDeque;
 
@@ -12,16 +14,10 @@ use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
 use crate::{
     gym_simulation::{
-        graph_lines::{GraphLines, GraphLinesDrawer},
-        gym::Gym,
-        verlet_physics_drawer::VerletPhysicsDrawer,
-    },
-    physics_simulation_v3_drawer::DrawerObjects,
-    print_color::{color::PrintColor, print_color},
-    reinforcement_learning::{
+        graph_lines::{GraphLines, GraphLinesDrawer}, gym::Gym, gym_worker::GymWorker, verlet_physics_drawer::VerletPhysicsDrawer, worker_thread_2::WorkerThread2,
+    }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::{
         neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo,
-    },
-    triple_buffer, worker_thread,
+    }, triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
@@ -35,11 +31,17 @@ pub struct GymSimulation<
     const LAYERS: usize,
     const RESIDUAL: bool,
     ENV: Gym<INPUTS, OUTPUTS>,
-> {
+> 
+where
+    ENV: std::clone::Clone,
+{
     // Physics
     ticks: u64,
 
     ppo: Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ActivationTanH>,
+
+    gym_worker: Option<Box<GymWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>>>,
+    gym_worker_thread: WorkerThread2<GymWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>>,
 
     graph_actor_loss: GraphLines<1>,
     graph_critic_loss: GraphLines<1>,
@@ -70,22 +72,6 @@ pub struct GymSimulation<
     watch_ups: Watch<WATCH_POINTS_SIZE>,
 }
 
-// unsafe impl<
-//     const INPUTS: usize,
-//     const OUTPUTS: usize,
-//     const NEURONS: usize,
-//     const LAYERS: usize,
-//     const RESIDUAL: bool,
-//     ENV: Gym<INPUTS, OUTPUTS>,
-// > Send for GymSimulation<
-//     INPUTS,
-//     OUTPUTS,
-//     NEURONS,
-//     LAYERS,
-//     RESIDUAL,
-//     ENV,
-// >{}
-
 impl<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -94,6 +80,8 @@ impl<
     const RESIDUAL: bool,
     ENV: Gym<INPUTS, OUTPUTS>,
 > GymSimulation<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>
+where
+    ENV: std::clone::Clone + Send  + 'static,
 {
     pub fn new(env: ENV) -> Self {
         // agent 0
@@ -112,6 +100,16 @@ impl<
         let scale = 0.1;
 
         let ppo = Ppo::new(0);
+
+        let gym_worker = Some(Box::new(GymWorker::new(
+            Ppo::new(0), 
+            env.clone(), 
+            64, 
+            64, 
+            pos + Vec3::new(11.0, -0.5, 1.0), 
+            1,
+        )));
+        let gym_worker_thread = WorkerThread2::new("Gym Worker".into());
 
         // Debug
         let ups = Fps::new();
@@ -185,6 +183,8 @@ impl<
             reward_sum: 0.0,
             reward_sum_long: 0.0,
             reward_sum_super_long: 0.0,
+            gym_worker,
+            gym_worker_thread,
 
             ups,
             last_render_time: instant::Instant::now(),
@@ -209,6 +209,14 @@ impl<
 
     pub fn update_physics(&mut self) {
         self.watch_ups.update();
+
+        // gym worker
+        let gym_worker = self.gym_worker.take().unwrap();
+        self.gym_worker_thread.send(gym_worker);
+        let mut gym_worker = self.gym_worker_thread.receive();
+        
+        gym_worker.ppo.transitions.clear();
+        self.gym_worker = Some(gym_worker);
 
         let dt = 1.0 / 60.0;
         self.ticks += 1;
@@ -327,6 +335,15 @@ impl<
         self.verlet_physics_drawer
             .update(self.env.get_verlet_physics(), nodes, edges);
 
+        if let Some(gym_worker) = &self.gym_worker {
+            for node in &gym_worker.nodes {
+                nodes.push(node.clone());
+            }
+            for edge in &gym_worker.edges {
+                edges.push(edge.clone());
+            }
+        }
+
         self.watch_ups.stop();
 
         objects.ups = self.ups.get();
@@ -348,13 +365,15 @@ impl<
     const RESIDUAL: bool,
     ENV: Gym<INPUTS, OUTPUTS>,
 > GymSimulationInterface for GymSimulation<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>
+where
+    ENV: std::clone::Clone + Send + 'static,
 {
     fn update_physics(&mut self) {
-        self.update_physics();
+        GymSimulation::update_physics(self);
     }
 
     fn update_drawer(&mut self, objects: &mut DrawerObjects) {
-        self.update_drawer(objects);
+        GymSimulation::update_drawer(self, objects);
     }
 }
 
