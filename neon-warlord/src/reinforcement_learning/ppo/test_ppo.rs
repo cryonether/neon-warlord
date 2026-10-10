@@ -16,7 +16,7 @@ fn test_one_armed_bandit() {
     const EPISODES: usize = 2_000;
     const BATCH_SIZE: usize = 32;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     let observation = [1.0];
 
@@ -27,7 +27,7 @@ fn test_one_armed_bandit() {
         // Maximum reward is therefore 0.0.
         let reward = -(action[0] - 2.0).powi(2);
 
-        ppo.save_reward(observation, action, log_probability, reward, true);
+        ppo.save_reward(observation, action, log_probability, reward, true, false);
 
         if (episode + 1) % BATCH_SIZE == 0 {
             ppo.learn();
@@ -60,7 +60,7 @@ fn test_two_armed_bandit() {
     const BATCH_SIZE: usize = 32;
     const EVALUATION_SAMPLES: usize = 5_000;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     let observation = [1.0];
 
@@ -75,7 +75,7 @@ fn test_two_armed_bandit() {
             1.0 - (x + 2.0).powi(2)
         };
 
-        ppo.save_reward(observation, action, log_probability, reward, true);
+        ppo.save_reward(observation, action, log_probability, reward, true, false);
 
         if (episode + 1) % BATCH_SIZE == 0 {
             ppo.learn();
@@ -131,7 +131,7 @@ fn test_two_step_mdp() {
     const EPISODES: usize = 4_000;
     const BATCH_SIZE: usize = 32;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     // State 0: the agent must choose a positive action
     // to reach the rewarding state.
@@ -161,7 +161,7 @@ fn test_two_step_mdp() {
             bad_state
         };
 
-        ppo.save_reward(start_state, action, log_probability, reward, false);
+        ppo.save_reward(start_state, action, log_probability, reward, false, false);
 
         //
         // STEP 2
@@ -174,7 +174,7 @@ fn test_two_step_mdp() {
             -1.0
         };
 
-        ppo.save_reward(next_state, action, log_probability, reward, true);
+        ppo.save_reward(next_state, action, log_probability, reward, true, false);
 
         //
         // Update PPO using the complete episode.
@@ -274,7 +274,7 @@ fn test_episode_boundaries() {
     const EPISODES: usize = 4_000;
     const BATCH_SIZE: usize = 32;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     let observation = [0.0];
 
@@ -293,7 +293,7 @@ fn test_episode_boundaries() {
         // Therefore the critic should learn V(s) ~= 0.
         let reward = if episode % 2 == 0 { 1.0 } else { -1.0 };
 
-        ppo.save_reward(observation, action, log_probability, reward, true);
+        ppo.save_reward(observation, action, log_probability, reward, true, false);
 
         if (episode + 1) % BATCH_SIZE == 0 {
             ppo.learn();
@@ -321,7 +321,7 @@ fn test_multi_step_mdp() {
     const BATCH_SIZE: usize = 32;
     const EVALUATION_SAMPLES: usize = 5_000;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     // State 0: choosing positive leads toward the reward.
     let start_state = [0.0];
@@ -347,7 +347,7 @@ fn test_multi_step_mdp() {
             bad_state
         };
 
-        ppo.save_reward(start_state, action, log_probability, 0.0, false);
+        ppo.save_reward(start_state, action, log_probability, 0.0, false, false);
 
         //
         // STEP 2
@@ -355,7 +355,7 @@ fn test_multi_step_mdp() {
         let (action, _mean, log_probability) = ppo.get_action(&next_state);
 
         if next_state == bad_state {
-            ppo.save_reward(next_state, action, log_probability, -1.0, true);
+            ppo.save_reward(next_state, action, log_probability, -1.0, true, false);
 
             if (episode + 1) % BATCH_SIZE == 0 {
                 ppo.learn();
@@ -370,7 +370,7 @@ fn test_multi_step_mdp() {
             bad_state
         };
 
-        ppo.save_reward(middle_state, action, log_probability, 0.0, false);
+        ppo.save_reward(middle_state, action, log_probability, 0.0, false, false);
 
         //
         // STEP 3
@@ -383,7 +383,7 @@ fn test_multi_step_mdp() {
             -1.0
         };
 
-        ppo.save_reward(next_state, action, log_probability, reward, true);
+        ppo.save_reward(next_state, action, log_probability, reward, true, false);
 
         //
         // Update PPO using the complete episode.
@@ -928,7 +928,7 @@ fn test_long_noisy_mdp() {
     const BATCH_SIZE: usize = 32;
     const EVALUATION_EPISODES: usize = 1_000;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     let start_state = [0.0];
     let state_1 = [1.0];
@@ -950,7 +950,7 @@ fn test_long_noisy_mdp() {
 
         let reward = rng.f32() * 0.2 - 0.1;
 
-        ppo.save_reward(start_state, action, log_probability, reward, false);
+        ppo.save_reward(start_state, action, log_probability, reward, false, false);
 
         //
         // If the agent chose the bad path, terminate.
@@ -960,7 +960,7 @@ fn test_long_noisy_mdp() {
 
             let reward = -2.0 + rng.f32() * 0.4 - 0.2;
 
-            ppo.save_reward(bad_state, action, log_probability, reward, true);
+            ppo.save_reward(bad_state, action, log_probability, reward, true, false);
         } else {
             //
             // STEP 2
@@ -971,14 +971,14 @@ fn test_long_noisy_mdp() {
 
             let reward = rng.f32() * 0.2 - 0.1;
 
-            ppo.save_reward(state_1, action, log_probability, reward, false);
+            ppo.save_reward(state_1, action, log_probability, reward, false, false);
 
             if next_state == bad_state {
                 let (action, _mean, log_probability) = ppo.get_action(&bad_state);
 
                 let reward = -2.0 + rng.f32() * 0.4 - 0.2;
 
-                ppo.save_reward(bad_state, action, log_probability, reward, true);
+                ppo.save_reward(bad_state, action, log_probability, reward, true, false);
             } else {
                 //
                 // STEP 3
@@ -989,14 +989,14 @@ fn test_long_noisy_mdp() {
 
                 let reward = rng.f32() * 0.2 - 0.1;
 
-                ppo.save_reward(state_2, action, log_probability, reward, false);
+                ppo.save_reward(state_2, action, log_probability, reward, false, false);
 
                 if next_state == bad_state {
                     let (action, _mean, log_probability) = ppo.get_action(&bad_state);
 
                     let reward = -2.0 + rng.f32() * 0.4 - 0.2;
 
-                    ppo.save_reward(bad_state, action, log_probability, reward, true);
+                    ppo.save_reward(bad_state, action, log_probability, reward, true, false);
                 } else {
                     //
                     // STEP 4
@@ -1011,7 +1011,7 @@ fn test_long_noisy_mdp() {
 
                     let reward = rng.f32() * 0.2 - 0.1;
 
-                    ppo.save_reward(state_3, action, log_probability, reward, false);
+                    ppo.save_reward(state_3, action, log_probability, reward, false, false);
 
                     //
                     // STEP 5
@@ -1025,7 +1025,7 @@ fn test_long_noisy_mdp() {
                         -2.0 + rng.f32() * 0.4 - 0.2
                     };
 
-                    ppo.save_reward(next_state, action, log_probability, reward, true);
+                    ppo.save_reward(next_state, action, log_probability, reward, true, false);
                 }
             }
         }
@@ -1221,7 +1221,7 @@ fn test_gae_arithmetic() {
     const LAMBDA: f32 = 0.90;
     const EPSILON: f32 = 1e-4;
 
-    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 1, false, ActivationNone>::new(42, 0);
 
     //
     // We want known critic values so that we can verify the
@@ -1264,7 +1264,14 @@ fn test_gae_arithmetic() {
 
         let (action, _mean, log_probability) = ppo.get_action(&observation);
 
-        ppo.save_reward(observation, action, log_probability, rewards[i], dones[i]);
+        ppo.save_reward(
+            observation,
+            action,
+            log_probability,
+            rewards[i],
+            dones[i],
+            false,
+        );
     }
 
     //
@@ -1373,7 +1380,7 @@ fn test_gae_arithmetic() {
 
 #[test]
 fn test_gae_episode_boundary() {
-    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42, 0);
 
     //
     // Manually construct:
@@ -1392,8 +1399,9 @@ fn test_gae_episode_boundary() {
         action: [0.0],
         log_probability: 0.0,
         reward: 0.0,
-        done: true,
+        terminated: true,
         value: 0.0,
+        truncated: false,
     });
 
     ppo.transitions.push(Transition {
@@ -1401,8 +1409,9 @@ fn test_gae_episode_boundary() {
         action: [0.0],
         log_probability: 0.0,
         reward: 10.0,
-        done: true,
+        terminated: true,
         value: 0.0,
+        truncated: false,
     });
 
     let (advantages, returns) = ppo.calculate_gae();
@@ -1425,15 +1434,16 @@ fn test_gae_episode_boundary() {
 
 #[test]
 fn test_gae_propagation() {
-    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42, 0);
 
     ppo.transitions.push(Transition {
         observation: [0.0],
         action: [0.0],
         log_probability: 0.0,
         reward: 0.0,
-        done: false,
+        terminated: false,
         value: 0.0,
+        truncated: false,
     });
 
     ppo.transitions.push(Transition {
@@ -1441,8 +1451,9 @@ fn test_gae_propagation() {
         action: [0.0],
         log_probability: 0.0,
         reward: 1.0,
-        done: true,
+        terminated: true,
         value: 0.0,
+        truncated: false,
     });
 
     let (advantages, returns) = ppo.calculate_gae();
@@ -1474,15 +1485,16 @@ fn test_gae_propagation() {
 
 #[test]
 fn test_gae_bootstrap_value() {
-    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 16, 1, false, ActivationNone>::new(42, 0);
 
     ppo.transitions.push(Transition {
         observation: [0.0],
         action: [0.0],
         log_probability: 0.0,
         reward: 0.0,
-        done: false,
+        terminated: false,
         value: 0.2,
+        truncated: false,
     });
 
     ppo.transitions.push(Transition {
@@ -1490,8 +1502,9 @@ fn test_gae_bootstrap_value() {
         action: [0.0],
         log_probability: 0.0,
         reward: 1.0,
-        done: true,
+        terminated: true,
         value: 0.8,
+        truncated: false,
     });
 
     let (advantages, returns) = ppo.calculate_gae();
@@ -1545,7 +1558,7 @@ fn test_continuous_noisy_mdp() {
     const BATCH_SIZE: usize = 64;
     const HORIZON: usize = 8;
 
-    let mut ppo = Ppo::<1, 1, 64, 2, false, ActivationNone>::new(42);
+    let mut ppo = Ppo::<1, 1, 64, 2, false, ActivationNone>::new(42, 0);
 
     for episode in 0..EPISODES {
         for step in 0..HORIZON {
@@ -1563,7 +1576,7 @@ fn test_continuous_noisy_mdp() {
 
             let done = step + 1 == HORIZON;
 
-            ppo.save_reward(state, action, log_probability, reward, done);
+            ppo.save_reward(state, action, log_probability, reward, done, false);
         }
 
         if (episode + 1) % BATCH_SIZE == 0 {

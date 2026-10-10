@@ -2,10 +2,12 @@
 
 pub mod graph_lines;
 pub mod gym;
+mod gym_worker;
 pub mod neural_network_drawer;
 pub mod verlet_physics_drawer;
+pub mod worker_thread_2;
 
-use std::collections::VecDeque;
+use std::{collections::VecDeque, iter::zip};
 
 use forward_renderer::to_rgb;
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
@@ -14,7 +16,9 @@ use crate::{
     gym_simulation::{
         graph_lines::{GraphLines, GraphLinesDrawer},
         gym::Gym,
+        gym_worker::GymWorker,
         verlet_physics_drawer::VerletPhysicsDrawer,
+        worker_thread_2::WorkerThread2,
     },
     physics_simulation_v3_drawer::DrawerObjects,
     print_color::{color::PrintColor, print_color},
@@ -35,11 +39,17 @@ pub struct GymSimulation<
     const LAYERS: usize,
     const RESIDUAL: bool,
     ENV: Gym<INPUTS, OUTPUTS>,
-> {
+> where
+    ENV: std::clone::Clone,
+{
     // Physics
     ticks: u64,
 
     ppo: Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ActivationTanH>,
+
+    gym_worker: Vec<Option<Box<GymWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>>>>,
+    gym_worker_thread:
+        Vec<WorkerThread2<GymWorker<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>>>,
 
     graph_actor_loss: GraphLines<1>,
     graph_critic_loss: GraphLines<1>,
@@ -60,7 +70,6 @@ pub struct GymSimulation<
     _steps: u64,
     _episode: u64,
 
-    reward_sum: f32,
     reward_sum_long: f32,
     reward_sum_super_long: f32,
 
@@ -70,22 +79,6 @@ pub struct GymSimulation<
     watch_ups: Watch<WATCH_POINTS_SIZE>,
 }
 
-// unsafe impl<
-//     const INPUTS: usize,
-//     const OUTPUTS: usize,
-//     const NEURONS: usize,
-//     const LAYERS: usize,
-//     const RESIDUAL: bool,
-//     ENV: Gym<INPUTS, OUTPUTS>,
-// > Send for GymSimulation<
-//     INPUTS,
-//     OUTPUTS,
-//     NEURONS,
-//     LAYERS,
-//     RESIDUAL,
-//     ENV,
-// >{}
-
 impl<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -94,10 +87,14 @@ impl<
     const RESIDUAL: bool,
     ENV: Gym<INPUTS, OUTPUTS>,
 > GymSimulation<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>
+where
+    ENV: std::clone::Clone + Send + 'static,
 {
     pub fn new(env: ENV) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
+        let nr_ppo_threads = 16;
+        let nr_gym_threads = 8;
 
         let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
@@ -111,7 +108,22 @@ impl<
 
         let scale = 0.1;
 
-        let ppo = Ppo::new(0);
+        let ppo = Ppo::new(0, nr_ppo_threads);
+
+        let mut gym_worker = Vec::new();
+        let mut gym_worker_thread = Vec::new();
+        for i in 0..nr_gym_threads {
+            gym_worker.push(Some(Box::new(GymWorker::new(
+                Ppo::new(0, 0),
+                env.clone(),
+                1,
+                4,
+                pos + Vec3::new(11.0 * (i + 1) as f32, -0.5, 1.0),
+                64,
+            ))));
+
+            gym_worker_thread.push(WorkerThread2::new(format!("Gym Worker {}", i)));
+        }
 
         // Debug
         let ups = Fps::new();
@@ -182,9 +194,10 @@ impl<
             ticks: 0,
             _steps: 0,
             _episode: 0,
-            reward_sum: 0.0,
             reward_sum_long: 0.0,
             reward_sum_super_long: 0.0,
+            gym_worker,
+            gym_worker_thread,
 
             ups,
             last_render_time: instant::Instant::now(),
@@ -207,26 +220,68 @@ impl<
         }
     }
 
+    fn run_workers(&mut self) {
+        let mut reward = 0.0;
+
+        self.watch_ups.start_index(0, "Gym");
+
+        // send to workers
+        for (gym_worker, gym_worker_thread) in
+            zip(&mut self.gym_worker, &mut self.gym_worker_thread)
+        {
+            let mut gym_worker_ = gym_worker.take().unwrap();
+
+            // copy policy
+            gym_worker_.ppo.actor.copy_weights(&self.ppo.actor);
+            gym_worker_.ppo.critic.copy_weights(&self.ppo.critic);
+
+            gym_worker_thread.send(gym_worker_);
+        }
+
+        // receive from worker
+        for (gym_worker, gym_worker_thread) in
+            zip(&mut self.gym_worker, &mut self.gym_worker_thread)
+        {
+            let mut gym_worker_ = gym_worker_thread.receive();
+
+            // append transitions
+            self.ppo
+                .transitions
+                .append(&mut gym_worker_.ppo.transitions);
+
+            // get reward
+            reward += gym_worker_.reward;
+
+            *gym_worker = Some(gym_worker_);
+        }
+        self.watch_ups.stop_index(0);
+
+        // learn
+        self.watch_ups.start_index(1, "Ppo");
+        let (actor_loss, critic_loss) = self.ppo.learn();
+        self.watch_ups.stop_index(1);
+
+        // print
+        self.reward_sum_long += reward;
+        self.reward_sum_super_long += reward;
+
+        self.print_reward(reward, actor_loss, critic_loss);
+    }
+
     pub fn update_physics(&mut self) {
-        self.watch_ups.update();
+        self.run_workers();
 
         let dt = 1.0 / 60.0;
         self.ticks += 1;
 
-        self.watch_ups.start("Solver");
+        self.watch_ups.start_index(2, "Sim");
         let state = self.env.get_state();
 
-        let (action, mean_action, log_probability) = self.ppo.get_action(&state);
+        let (action, mean_action, _log_probability) = self.ppo.get_action(&state);
 
-        self.env.update(&action, dt);
+        self.env.update(&mean_action, dt);
         let new_state = self.env.get_state();
         let (reward, done) = self.env.get_reward();
-        self.reward_sum += reward;
-        self.reward_sum_long += reward;
-        self.reward_sum_super_long += reward;
-
-        self.ppo
-            .save_reward(state, action, log_probability, reward, done);
 
         for (i, val) in new_state.iter().enumerate() {
             self.graph_inputs.y_push_pop(i, *val);
@@ -247,57 +302,9 @@ impl<
         }
 
         self.env.update_verlet_physics(dt);
-        self.watch_ups.stop();
-
-        if self.ticks.is_multiple_of(1_000_000) {
-            let reward = self.reward_sum_long / 1000.0;
-            self.graph_actor_loss.y_push_pop(0, reward / 1000.0);
-            self.reward_sum_long = 0.0;
-        }
-
-        if self.ticks.is_multiple_of(10_000_000) {
-            let reward = self.reward_sum_super_long / 10_000.0;
-            self.graph_critic_loss.y_push_pop(0, reward / 1000.0);
-            self.reward_sum_super_long = 0.0;
-        }
+        self.watch_ups.stop_index(2);
 
         if self.ticks.is_multiple_of(1000) {
-            let (actor_loss, critic_loss) = self.ppo.learn();
-
-            fn create_input<const INPUTS: usize>(i: usize, size: usize) -> [f32; INPUTS] {
-                let x = i as f32 / (size - 1) as f32 * 2.0 - 1.0;
-                let mut input: [f32; INPUTS] = [0.0; INPUTS];
-                input[0] = x;
-                input
-            }
-
-            print!("{}, ", self.ticks / 1000);
-
-            print!("reward: ");
-            print_color(self.reward_sum, 0.0, 1000.0, PrintColor::PurplePinkYellow);
-            print!(", ");
-            self.reward_sum = 0.0;
-
-            print!("actor: [ ");
-            let size = 10;
-            for i in 0..size {
-                let input = create_input(i, size);
-                let y_pred = self.ppo.actor.forward(&input);
-
-                print_color(y_pred[0], -1.0, 1.0, PrintColor::GreenCyanBlue);
-            }
-
-            print!("], critic: [ ");
-            let size = 10;
-            for i in 0..size {
-                let input = create_input(i, size);
-                let y_pred = self.ppo.critic.forward(&input);
-
-                print_color(y_pred[0], 0.0, 10.0, PrintColor::BluePurpleRed);
-            }
-            print!("], ");
-
-            println!("actor_loss: {}, critic_loss: {}", actor_loss, critic_loss);
             self.env.reset();
         }
 
@@ -306,13 +313,65 @@ impl<
         let dt = now - self.last_render_time;
         self.last_render_time = now;
         self.ups.update(dt);
+
+        self.watch_ups.update();
+    }
+
+    fn print_reward(&mut self, reward: f32, actor_loss: f32, critic_loss: f32) {
+        fn create_input<const INPUTS: usize>(i: usize, size: usize) -> [f32; INPUTS] {
+            let x = i as f32 / (size - 1) as f32 * 2.0 - 1.0;
+            let mut input: [f32; INPUTS] = [0.0; INPUTS];
+            input[0] = x;
+            input
+        }
+
+        print!("{}, ", self.ticks);
+
+        print!("reward: ");
+        print_color(reward, 0.0, 2000.0, PrintColor::PurplePinkYellow);
+        print!(", ");
+
+        print!("actor: [ ");
+        let size = 10;
+        for i in 0..size {
+            let input = create_input(i, size);
+            let y_pred = self.ppo.actor.forward(&input);
+
+            print_color(y_pred[0], -1.0, 1.0, PrintColor::GreenCyanBlue);
+        }
+
+        print!("], critic: [ ");
+        let size = 10;
+        for i in 0..size {
+            let input = create_input(i, size);
+            let y_pred = self.ppo.critic.forward(&input);
+
+            print_color(y_pred[0], 0.0, 10.0, PrintColor::BluePurpleRed);
+        }
+        print!("], ");
+        println!(
+            "actor_loss: {:+.6}, critic_loss: {:+.6}",
+            actor_loss, critic_loss
+        );
+
+        if self.ticks.is_multiple_of(100) {
+            let reward = self.reward_sum_long / 100.0;
+            self.graph_actor_loss.y_push_pop(0, reward / 2000.0);
+            self.reward_sum_long = 0.0;
+        }
+
+        if self.ticks.is_multiple_of(1_000) {
+            let reward = self.reward_sum_super_long / 1_000.0;
+            self.graph_critic_loss.y_push_pop(0, reward / 2000.0);
+            self.reward_sum_super_long = 0.0;
+        }
     }
 
     pub fn update_drawer(&mut self, objects: &mut DrawerObjects) {
         let nodes = &mut objects.genome_nodes;
         let edges = &mut objects.genome_edges;
 
-        self.watch_ups.start("Draw Model");
+        self.watch_ups.start_index(3, "Draw Model");
 
         self.drawer_graph_actor_loss
             .update(&self.graph_actor_loss, edges);
@@ -327,7 +386,16 @@ impl<
         self.verlet_physics_drawer
             .update(self.env.get_verlet_physics(), nodes, edges);
 
-        self.watch_ups.stop();
+        for gym_worker in self.gym_worker.iter().flatten() {
+            for node in &gym_worker.nodes {
+                nodes.push(*node);
+            }
+            for edge in &gym_worker.edges {
+                edges.push(*edge);
+            }
+        }
+
+        self.watch_ups.stop_index(3);
 
         objects.ups = self.ups.get();
         // self.watch_ups.update();
@@ -348,13 +416,15 @@ impl<
     const RESIDUAL: bool,
     ENV: Gym<INPUTS, OUTPUTS>,
 > GymSimulationInterface for GymSimulation<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ENV>
+where
+    ENV: std::clone::Clone + Send + 'static,
 {
     fn update_physics(&mut self) {
-        self.update_physics();
+        GymSimulation::update_physics(self);
     }
 
     fn update_drawer(&mut self, objects: &mut DrawerObjects) {
-        self.update_drawer(objects);
+        GymSimulation::update_drawer(self, objects);
     }
 }
 
