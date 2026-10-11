@@ -11,9 +11,9 @@ pub struct VerletParticles {
     pub y: Vec<f32>,
     pub z: Vec<f32>,
 
-    prev_x: Vec<f32>,
-    prev_y: Vec<f32>,
-    prev_z: Vec<f32>,
+    pub prev_x: Vec<f32>,
+    pub prev_y: Vec<f32>,
+    pub prev_z: Vec<f32>,
 
     pub acc_x: Vec<f32>,
     pub acc_y: Vec<f32>,

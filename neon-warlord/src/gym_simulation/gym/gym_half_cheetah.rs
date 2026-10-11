@@ -3,6 +3,7 @@
 use std::iter::zip;
 
 use cgmath::InnerSpace;
+use wgpu::rwh;
 
 use crate::{
     gym_simulation::{Vec3, gym::Gym},
@@ -33,10 +34,10 @@ impl GymHalfCheetah {
 
         // body
         let particles_body = [
-            verlet_physics.push_particle(Vec3::new(-1.0, 0.0, 2.0), radius, MASS),
-            verlet_physics.push_particle(Vec3::new(0.0, 0.0, 2.0), radius, MASS),
-            verlet_physics.push_particle(Vec3::new(1.0, 0.0, 2.0), radius, MASS),
-            verlet_physics.push_particle(Vec3::new(1.3, 0.0, 2.3), radius, MASS),
+            verlet_physics.push_particle(Vec3::new(-1.0, 0.0, 1.5), radius, MASS),
+            verlet_physics.push_particle(Vec3::new(0.0, 0.0, 1.5), radius, MASS),
+            verlet_physics.push_particle(Vec3::new(1.0, 0.0, 1.5), radius, MASS),
+            verlet_physics.push_particle(Vec3::new(1.3, 0.0, 1.8), radius, MASS),
         ];
 
         verlet_physics.push_constraint_distance_infer(particles_body[0], particles_body[1], 0.8);
@@ -48,22 +49,47 @@ impl GymHalfCheetah {
 
         // leg 0
         let particles_leg_0 = [
-            verlet_physics.push_particle(Vec3::new(-1.0, 0.0, 1.5), radius, MASS),
             verlet_physics.push_particle(Vec3::new(-1.0, 0.0, 1.0), radius, MASS),
+            verlet_physics.push_particle(Vec3::new(-1.0, 0.0, 0.5), radius, MASS),
         ];
 
         verlet_physics.push_constraint_distance_infer(particles_body[0], particles_leg_0[0], 0.8);
         verlet_physics.push_constraint_distance_infer(particles_leg_0[0], particles_leg_0[1], 0.8);
 
+        verlet_physics.push_constraint_angle_min_max(particles_body[1], particles_body[0], particles_leg_0[0], 
+        f32::cos(f32::to_radians(160.0)),
+        f32::cos(f32::to_radians(20.0)),
+        0.8
+        );
+        verlet_physics.push_constraint_angle_min_max(particles_body[0], particles_leg_0[0], particles_leg_0[1], 
+        f32::cos(f32::to_radians(180.0)),
+        f32::cos(f32::to_radians(40.0)),
+        0.8
+        );
+
 
         // leg 1
         let particles_leg_1 = [
-            verlet_physics.push_particle(Vec3::new(1.0, 0.0, 1.5), radius, MASS),
             verlet_physics.push_particle(Vec3::new(1.0, 0.0, 1.0), radius, MASS),
+            verlet_physics.push_particle(Vec3::new(1.0, 0.0, 0.5), radius, MASS),
         ];
         
         verlet_physics.push_constraint_distance_infer(particles_body[2], particles_leg_1[0], 0.8);
         verlet_physics.push_constraint_distance_infer(particles_leg_1[0], particles_leg_1[1], 0.8);
+
+
+        verlet_physics.push_constraint_angle_min_max(particles_body[1], particles_body[2], particles_leg_1[0], 
+        f32::cos(f32::to_radians(160.0)),
+        f32::cos(f32::to_radians(20.0)),
+        0.8
+        );
+        verlet_physics.push_constraint_angle_min_max(particles_body[2], particles_leg_1[0], particles_leg_1[1], 
+        f32::cos(f32::to_radians(180.0)),
+        f32::cos(f32::to_radians(40.0)),
+        0.8
+        );
+
+
 
 
         let state = State {
@@ -156,14 +182,24 @@ impl GymHalfCheetah {
     }
 
     fn apply_static_constraint(&mut self) {
+        let friction = 1.00; // 0.0 = no friction, 1.0 = full stop
+
         let particles = &mut self.verlet_physics.particles;
+        let len = particles.len();
 
+        for i in 0..len {
+            let radius = particles.radius[i];
 
-        for (pos_z, &radius) in zip(&mut particles.z, &particles.radius) {
-            if *pos_z < radius {
-                *pos_z = radius;
+            if particles.z[i] < radius {
+                // Resolve collision with the floor
+                particles.z[i] = radius;
+                particles.prev_z[i] = radius;
+
+                // Apply friction to horizontal velocity
+                let vx = particles.x[i] - particles.prev_x[i];
+                // particles.prev_x[i] = particles.x[i] - vx * (1.0 - friction);
+                particles.prev_x[i] = particles.x[i];
             }
-
         }
     }
 }
@@ -174,6 +210,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
     }
 
     fn update_verlet_physics(&mut self, dt: f32) {
+        // self.verlet_physics.update(dt * 0.4);
         self.verlet_physics.update(dt * 1.0);
     }
 
@@ -205,14 +242,25 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
     fn update(&mut self, actions: &[f32; ACTIONS], dt: f32) {
         self.apply_static_constraint();
 
+        let force = [
+            actions[0] * 4.0,
+            actions[1] * 4.0,
+            actions[2] * 4.0,
+            actions[3] * 4.0,
+        ];
+
         // let force = actions[0] * 0.7;
-        self.state = self.update(*actions, dt);
+        self.state = self.update(force, dt);
     }
 
     fn get_reward(&self) -> (f32, bool) {
         let vel_x = self.state.vel_x;
 
-        let reward = vel_x;
+        let reward = vel_x.clamp(0.0, 2.0);
+
+        // let reward = vel_x * (2.0 - vel_x);
+
+        // let reward = reward.max(0.0);
 
         (reward, false)
     }

@@ -13,7 +13,8 @@ pub struct AngleConstraints {
     pub c: Vec<u32>,
 
     /// Angle
-    cos_alpha: Vec<f32>,
+    cos_alpha_min: Vec<f32>,
+    cos_alpha_max: Vec<f32>,
 
     /// Constraint stiffness in [0, 1].
     stiffness: Vec<f32>,
@@ -24,14 +25,16 @@ impl AngleConstraints {
         let a = Vec::new();
         let b = Vec::new();
         let c = Vec::new();
-        let cos_alpha = Vec::new();
+        let cos_alpha_min = Vec::new();
+        let cos_alpha_max = Vec::new();
         let stiffness = Vec::new();
 
         Self {
             a,
             b,
             c,
-            cos_alpha,
+            cos_alpha_min,
+            cos_alpha_max,
             stiffness,
         }
     }
@@ -39,11 +42,12 @@ impl AngleConstraints {
     pub fn solve(&mut self, particles: &mut VerletParticles) {
         self.assert_bounds_invariants();
 
-        for (&a, &b, &c, cos_alpha, stiffness) in itertools::izip!(
+        for (&a, &b, &c, &cos_alpha_min, &cos_alpha_max, stiffness) in itertools::izip!(
             &self.a,
             &self.b,
             &self.c,
-            &self.cos_alpha,
+            &self.cos_alpha_min,
+            &self.cos_alpha_max,
             &self.stiffness,
         ) {
             let a = a as usize;
@@ -80,7 +84,17 @@ impl AngleConstraints {
 
             // Constraint: dot(u, v) == cos_alpha.
             let dot = u_x * v_x + u_y * v_y + u_z * v_z;
-            let error = dot - cos_alpha;
+            let target_cos = dot.clamp(cos_alpha_min, cos_alpha_max);
+            let error = dot - target_cos;
+
+            // let error = if dot < cos_alpha_min {
+            //     dot - cos_alpha_min
+            // } else if dot > cos_alpha_max {
+            //     dot - cos_alpha_max
+            // }
+            // else {
+            //     0.0
+            // };
 
             // Gradients with respect to A and C.
             let ga_x = (v_x - dot * u_x) * inv_len_ab;
@@ -128,18 +142,10 @@ impl AngleConstraints {
 
         assert!(self.a.len() == len);
         assert!(self.b.len() == len);
-
-        assert!(self.b.len() == len);
-        assert!(self.b.len() == len);
-        assert!(self.b.len() == len);
-
-        assert!(self.c.len() == len);
-        assert!(self.c.len() == len);
         assert!(self.c.len() == len);
 
-        assert!(self.cos_alpha.len() == len);
-        assert!(self.cos_alpha.len() == len);
-        assert!(self.cos_alpha.len() == len);
+        assert!(self.cos_alpha_min.len() == len);
+        assert!(self.cos_alpha_max.len() == len);
 
         assert!(self.stiffness.len() == len);
     }
@@ -156,14 +162,32 @@ impl AngleConstraints {
         cos_alpha: f32,
         stiffness: f32,
     ) -> usize {
+        self.push_min_max(a, b, c, cos_alpha, cos_alpha, stiffness)
+    }
+
+    pub fn push_min_max(
+        &mut self,
+        a: usize,
+        b: usize,
+        c: usize,
+        cos_alpha_min: f32,
+        cos_alpha_max: f32,
+        stiffness: f32,
+    ) -> usize {
         self.assert_bounds_invariants();
+
+        assert!((-1.0..=1.0).contains(&cos_alpha_min));
+        assert!((-1.0..=1.0).contains(&cos_alpha_max));
+        assert!(cos_alpha_min <= cos_alpha_max);
+
 
         let index = self.len();
 
         self.a.push(a as u32);
         self.b.push(b as u32);
         self.c.push(c as u32);
-        self.cos_alpha.push(cos_alpha);
+        self.cos_alpha_min.push(cos_alpha_min);
+        self.cos_alpha_max.push(cos_alpha_max);
         self.stiffness.push(stiffness);
 
         index

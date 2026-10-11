@@ -110,6 +110,19 @@ impl VerletPhysicsSimd {
             .push(a, b, c, cos_alpha, stiffness)
     }
 
+    pub fn push_constraint_angle_min_max(
+        &mut self,
+        a: usize,
+        b: usize,
+        c: usize,
+        cos_alpha_min: f32,
+        cos_alpha_max: f32,
+        stiffness: f32,
+    ) -> usize {
+        self.angle_constraints
+            .push_min_max(a, b, c, cos_alpha_min, cos_alpha_max, stiffness)
+    }
+
 
     pub fn push_constraint_angle_infer(
         &mut self,
