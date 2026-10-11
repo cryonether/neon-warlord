@@ -13,7 +13,7 @@ const ACTIONS: usize = 1;
 const MASS: f32 = 0.1;
 
 #[derive(Clone)]
-pub struct GymPendulum {
+pub struct GymTwoLeggedDog {
     pub verlet_physics: VerletPhysicsSimd,
 
     particles_static: usize,
@@ -23,7 +23,7 @@ pub struct GymPendulum {
     state: State,
 }
 
-impl GymPendulum {
+impl GymTwoLeggedDog {
     pub fn new() -> Self {
         let mut verlet_physics = VerletPhysicsSimd::new();
 
@@ -102,7 +102,7 @@ impl GymPendulum {
     }
 }
 
-impl Gym<OBSERVATIONS, ACTIONS> for GymPendulum {
+impl Gym<OBSERVATIONS, ACTIONS> for GymTwoLeggedDog {
     fn get_verlet_physics(&self) -> &VerletPhysicsSimd {
         &self.verlet_physics
     }

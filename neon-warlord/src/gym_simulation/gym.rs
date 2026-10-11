@@ -2,7 +2,8 @@
 
 pub mod gym_cart;
 pub mod gym_cart_pole;
-pub mod gym_pendulum;
+pub mod gym_pole;
+pub mod gym_two_legged_dog;
 
 use crate::verlet_physics_simd::VerletPhysicsSimd;
 

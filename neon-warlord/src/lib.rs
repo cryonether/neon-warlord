@@ -59,7 +59,7 @@ use crate::{
     debug_overlay::DebugOverlay,
     gym_simulation::{
         GymSimulation, GymSimulationThread,
-        gym::{gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_pendulum::GymPendulum},
+        gym::{gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_pole::GymPole},
     },
     physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
     simple_physics_simulation::SimplePhysicsSimulation,
@@ -330,8 +330,8 @@ impl NeonWarlord {
         let _gym_simulation_0: GymSimulation<2, 1, 16, 1, false, GymCart> =
             GymSimulation::new(GymCart::new());
 
-        let _gym_simulation_1: GymSimulation<3, 1, 16, 1, false, GymPendulum> =
-            GymSimulation::new(GymPendulum::new());
+        let _gym_simulation_1: GymSimulation<3, 1, 16, 1, false, GymPole> =
+            GymSimulation::new(GymPole::new());
 
         let _gym_simulation_2: GymSimulation<5, 1, 16, 1, false, GymCartPole> =
             GymSimulation::new(GymCartPole::new());
