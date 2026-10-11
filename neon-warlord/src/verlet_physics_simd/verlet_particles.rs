@@ -246,6 +246,13 @@ impl VerletParticles {
         Vec3::new(x, y, z)
     }
 
+    pub fn velocity(&self, index: usize) -> Vec3 {
+        let x = self.x[index] - self.prev_x[index];
+        let y = self.y[index] - self.prev_y[index];
+        let z = self.z[index] - self.prev_z[index];
+        Vec3::new(x, y, z)
+    }
+
     pub fn set_position(&mut self, index: usize, pos: Vec3) {
         self.x[index] = pos.x;
         self.y[index] = pos.y;

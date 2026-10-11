@@ -3,7 +3,7 @@
 pub mod gym_cart;
 pub mod gym_cart_pole;
 pub mod gym_pole;
-pub mod gym_two_legged_dog;
+pub mod gym_half_cheetah;
 
 use crate::verlet_physics_simd::VerletPhysicsSimd;
 

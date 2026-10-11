@@ -52,20 +52,9 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition,
-    ant_generator::AntGenerator,
-    ant_storage::AntStorage,
-    camera_controller::CameraController,
-    debug_overlay::DebugOverlay,
-    gym_simulation::{
-        GymSimulation, GymSimulationThread,
-        gym::{gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_pole::GymPole},
-    },
-    physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
-    simple_physics_simulation::SimplePhysicsSimulation,
-    sun_storage::SunStorage,
-    worker_instance::WorkerInstance,
-    worker_thread::WorkerThread,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, gym_simulation::{
+        GymSimulation, GymSimulationThread, gym::{gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_pole::GymPole, gym_half_cheetah::GymHalfCheetah},
+    }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -336,7 +325,10 @@ impl NeonWarlord {
         let _gym_simulation_2: GymSimulation<5, 1, 16, 1, false, GymCartPole> =
             GymSimulation::new(GymCartPole::new());
 
-        let gym_simulation = _gym_simulation_2;
+        let _gym_simulation_3: GymSimulation<15, 4, 32, 2, false, GymHalfCheetah> =
+            GymSimulation::new(GymHalfCheetah::new());
+
+        let gym_simulation = _gym_simulation_3;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
             sim: Box::new(gym_simulation),
             producer,
