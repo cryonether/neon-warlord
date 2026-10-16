@@ -43,7 +43,7 @@ impl VerletVelocity {
         // Update the position using the old velocity and acceleration
         self.integrate_position(DT);        
 
-        // Collision detection should be placed in here
+        self.solve_ground_collision();
 
         self.zero_acc();
 
@@ -71,7 +71,7 @@ impl VerletVelocity {
             pos += vel_half * dt;
 
             self.set_pos(i, pos);
-            self.set_vel_half(i, vel);
+            self.set_vel_half(i, vel_half);
         }
     }
 
@@ -153,7 +153,7 @@ impl VerletVelocity {
             let direction = delta / distance;
             let extension = distance - rest_length;
 
-            let relative_speed = (vel_b - vel_a).dot(direction);
+            let relative_speed = (vel_b - vel_a).dot(direction);    // half velocity is used as approximation for damping
 
             let force_magnitude = stiffness * extension + damping * relative_speed;
 
@@ -169,6 +169,46 @@ impl VerletVelocity {
             self.set_acc(index_b, acc_b);
         }
     }
+
+    /// Collision with the ground plane at z == 0.0
+    fn solve_ground_collision(&mut self) {
+        const GROUND_HEIGHT_Z: f32 = 0.0;
+        const RESTITUTION: f32 = 0.9;
+        const FRICTION: f32 = 0.1;
+
+        for i in 0..self.len() {
+            if self.inv_mass[i] == 0.0 {
+                // static particle
+                continue;
+            }
+
+            let mut pos = self.get_pos(i);
+            let mut vel = self.get_vel_half(i);
+
+            let min_z = GROUND_HEIGHT_Z + self.radius[i];
+
+            if pos.z >= min_z {
+                continue;
+            }
+
+            // Prevent penetration.
+            pos.z = min_z;
+
+            // Bounce only if moving into the ground.
+            if vel.z < 0.0 {
+                vel.z = -RESTITUTION * vel.z;
+
+                // Reduce tangential velocity due to friction.
+                vel.x *= 1.0 - FRICTION;
+                vel.y *= 1.0 - FRICTION;
+            }
+
+            self.set_pos(i, pos);
+            self.set_vel_half(i, vel);
+        }
+
+    }
+
 
     pub fn get_pos(&self, i: usize) -> Vec3 {
         Vec3::new(
