@@ -5,7 +5,7 @@ pub mod gym_cart_pole;
 pub mod gym_pole;
 pub mod gym_half_cheetah;
 
-use crate::verlet_physics_simd::VerletPhysicsSimd;
+use crate::physics::verlet_physics_simd::VerletPhysicsSimd;
 
 pub trait Gym<const OBSERVATIONS: usize, const ACTIONS: usize> {
     fn get_verlet_physics(&self) -> &VerletPhysicsSimd;

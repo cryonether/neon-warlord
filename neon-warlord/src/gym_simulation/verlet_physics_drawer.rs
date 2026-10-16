@@ -2,7 +2,7 @@
 
 use forward_renderer::{particle_shader, particle_shader_two_point, to_rgb};
 
-use crate::verlet_physics_simd::VerletPhysicsSimd;
+use crate::physics::verlet_physics_simd::VerletPhysicsSimd;
 
 type Vec3 = cgmath::Vector3<f32>;
 

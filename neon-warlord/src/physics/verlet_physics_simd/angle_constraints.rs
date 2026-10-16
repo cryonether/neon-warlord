@@ -1,6 +1,6 @@
 //! Fixes the angle between three particles
 
-use crate::verlet_physics_simd::{Vec3, verlet_particles::VerletParticles};
+use crate::physics::verlet_physics_simd::{Vec3, verlet_particles::VerletParticles};
 
 /// Fixes the angle between three particles
 #[derive(Clone)]

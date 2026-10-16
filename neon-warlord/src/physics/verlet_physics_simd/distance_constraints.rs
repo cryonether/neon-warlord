@@ -1,6 +1,6 @@
 //! Forces between two particles
 
-use crate::verlet_physics_simd::{Vec3, verlet_particles::VerletParticles};
+use crate::physics::verlet_physics_simd::{Vec3, verlet_particles::VerletParticles};
 
 /// Forces between two particles
 #[derive(Clone)]

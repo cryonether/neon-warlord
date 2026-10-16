@@ -2,7 +2,7 @@
 
 use cgmath::MetricSpace;
 
-use crate::verlet_physics::{
+use crate::physics::verlet_physics::{
     VerletObject, fixed::Fixed, fixed_link::FixedLink, link::Link, sticky_link::StickyLink,
 };
 type Vec3 = cgmath::Vector3<f32>;

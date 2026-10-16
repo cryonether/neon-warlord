@@ -11,7 +11,7 @@ use wgpu_renderer::{
 
 use crate::{
     procedural_tree::ProceduralTree,
-    verlet_physics::{self, VerletObject},
+    physics::verlet_physics::{self, VerletObject},
 };
 type Vec3 = cgmath::Vector3<f32>;
 

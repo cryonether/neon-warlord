@@ -2,7 +2,7 @@
 
 use cgmath::InnerSpace;
 
-use crate::verlet_physics::VerletObject;
+use crate::physics::verlet_physics::VerletObject;
 
 #[derive(Clone)]
 pub struct Link {

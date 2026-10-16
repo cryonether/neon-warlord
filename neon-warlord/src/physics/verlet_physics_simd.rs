@@ -7,7 +7,7 @@ pub mod angle_constraints;
 use cgmath::{InnerSpace, MetricSpace};
 use dfdx::tensor_ops::cos;
 
-use crate::verlet_physics_simd::{
+use crate::physics::verlet_physics_simd::{
     angle_constraints::AngleConstraints, distance_constraints::DistanceConstraints, verlet_particles::VerletParticles,
 };
 

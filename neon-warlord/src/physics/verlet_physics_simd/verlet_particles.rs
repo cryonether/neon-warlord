@@ -2,7 +2,7 @@
 
 use wide::f32x16;
 
-use crate::verlet_physics_simd::Vec3;
+use crate::physics::verlet_physics_simd::Vec3;
 
 /// Verlet physics particles
 #[derive(Clone)]

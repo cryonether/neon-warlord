@@ -2,7 +2,7 @@
 
 use cgmath::InnerSpace;
 
-use crate::verlet_physics::VerletObject;
+use crate::physics::verlet_physics::VerletObject;
 
 pub struct StickyLink {
     node_id_1: usize,

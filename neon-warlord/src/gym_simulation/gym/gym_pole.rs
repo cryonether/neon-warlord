@@ -4,7 +4,7 @@ use cgmath::InnerSpace;
 
 use crate::{
     gym_simulation::{Vec3, gym::Gym},
-    verlet_physics_simd::VerletPhysicsSimd,
+    physics::verlet_physics_simd::VerletPhysicsSimd,
 };
 
 const OBSERVATIONS: usize = 3;
