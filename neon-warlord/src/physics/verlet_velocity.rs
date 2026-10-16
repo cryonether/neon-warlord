@@ -32,6 +32,7 @@ pub struct VerletVelocity {
     // constraints
     distance_constraints: DistanceConstraints,
     angle_constraints: AngleConstraints,
+    angle_motor_constraints: AngleMotorConstraints,
 }
 
 impl VerletVelocity {
@@ -241,6 +242,102 @@ impl VerletVelocity {
         }
     }
 
+    /// Models an angle constraint between three particles
+    fn apply_angle_motor_constraints(&mut self) {
+        for i in 0..self.angle_motor_constraints.len() {
+            let index_a = self.angle_motor_constraints.a[i];
+            let index_b = self.angle_motor_constraints.b[i];
+            let index_c = self.angle_motor_constraints.c[i];
+
+            let min_angle = self.angle_motor_constraints.min_angle[i];
+            let max_angle = self.angle_motor_constraints.max_angle[i];
+            let max_torque = self.angle_motor_constraints.max_torque[i];
+            let stiffness = self.angle_motor_constraints.stiffness[i];
+            let damping = self.angle_motor_constraints.damping[i];
+            let external_torque = self.angle_motor_constraints.external_torque[i];
+
+            let pos_a = self.get_pos(index_a);
+            let pos_b = self.get_pos(index_b);
+            let pos_c = self.get_pos(index_c);
+
+            let vel_a = self.get_vel_half(index_a);
+            let vel_b = self.get_vel_half(index_b);
+            let vel_c = self.get_vel_half(index_c);
+
+            // Vectors pointing away from the central particle.
+            let u = pos_a - pos_b;
+            let v = pos_c - pos_b;
+
+            let len_u = u.magnitude();
+            let len_v = v.magnitude();
+
+            if len_u < 1e-6 || len_v < 1e-6 {
+                continue;
+            }
+
+            let u_hat = u / len_u;
+            let v_hat = v / len_v;
+
+            let cos_angle = u_hat.dot(v_hat).clamp(-1.0, 1.0);
+            let sin_angle = (1.0 - cos_angle * cos_angle).sqrt();
+
+            // The angle gradient is singular near 0 and PI.
+            if sin_angle < 1e-5 {
+                continue;
+            }
+
+            let angle = cos_angle.acos();
+
+            // Gradients of the angle with respect to the particle positions.
+            let grad_a =
+                -(v_hat - cos_angle * u_hat) / (len_u * sin_angle);
+
+            let grad_c =
+                -(u_hat - cos_angle * v_hat) / (len_v * sin_angle);
+
+            let grad_b = -(grad_a + grad_c);
+
+            // Angular velocity, computed without storing it.
+            let angular_velocity =
+                grad_a.dot(vel_a)
+                + grad_b.dot(vel_b)
+                + grad_c.dot(vel_c);
+
+            // Motor command, clamped to the permitted torque.
+            let motor_torque =
+                external_torque.clamp(-max_torque, max_torque);
+
+            // Soft mechanical stops.
+            let limit_torque = if angle < min_angle {
+                stiffness * (min_angle - angle)
+                    - damping * angular_velocity.min(0.0)
+            } else if angle > max_angle {
+                -stiffness * (angle - max_angle)
+                    - damping * angular_velocity.max(0.0)
+            } else {
+                0.0
+            };
+
+            let torque = motor_torque + limit_torque;
+
+            let force_a = torque * grad_a;
+            let force_b = torque * grad_b;
+            let force_c = torque * grad_c;
+
+            let mut acc_a = self.get_acc(index_a);
+            let mut acc_b = self.get_acc(index_b);
+            let mut acc_c = self.get_acc(index_c);
+
+            acc_a += force_a * self.inv_mass[index_a];
+            acc_b += force_b * self.inv_mass[index_b];
+            acc_c += force_c * self.inv_mass[index_c];
+
+            self.set_acc(index_a, acc_a);
+            self.set_acc(index_b, acc_b);
+            self.set_acc(index_c, acc_c);
+        }
+    }
+
     /// Collision with the ground plane at z == 0.0
     fn solve_ground_collision(&mut self) {
         const GROUND_HEIGHT_Z: f32 = 0.0;
@@ -422,5 +519,46 @@ impl AngleConstraints {
         assert!(self.angle.len() == len);
         assert!(self.stiffness.len() == len);
         assert!(self.damping.len() == len);
+    }
+}
+
+struct AngleMotorConstraints {
+    pub a: Vec<usize>,
+    pub b: Vec<usize>,
+    pub c: Vec<usize>,
+
+    pub min_angle: Vec<f32>,
+    pub max_angle: Vec<f32>,
+    pub max_torque: Vec<f32>,
+
+    pub stiffness: Vec<f32>,
+    pub damping: Vec<f32>,
+
+   // Externally commanded torque for each joint.
+    pub external_torque: Vec<f32>,
+}
+
+impl AngleMotorConstraints {
+    pub fn len(&self) -> usize {
+        self.assert_bounds_invariants();
+
+        self.a.len()
+    }
+
+    fn assert_bounds_invariants(&self) {
+        let len = self.a.len();
+
+        assert!(self.a.len() == len);
+        assert!(self.b.len() == len);
+        assert!(self.c.len() == len);
+
+        assert!(self.min_angle.len() == len);
+        assert!(self.max_angle.len() == len);
+        assert!(self.max_torque.len() == len);
+
+        assert!(self.stiffness.len() == len);
+        assert!(self.damping.len() == len);
+
+        assert!(self.external_torque.len() == len);
     }
 }
