@@ -26,6 +26,9 @@ pub struct VerletVelocityParticles {
     pub mass: Vec<f32>,
     pub inv_mass: Vec<f32>,
     pub radius: Vec<f32>,
+
+    // particle is integrated in rigid body integrator
+    pub is_rigid_body: Vec<bool>,
 }
 
 impl VerletVelocityParticles {
@@ -47,6 +50,7 @@ impl VerletVelocityParticles {
         let mass = Vec::new();
         let inv_mass = Vec::new();
         let radius = Vec::new();
+        let is_rigid_body = Vec::new();
 
         Self {
             pos_x,
@@ -64,12 +68,13 @@ impl VerletVelocityParticles {
             mass,
             inv_mass,
             radius,
+            is_rigid_body,
         }
     }
 
     pub fn integrate_position(&mut self, dt: f32) {
         for i in 0..self.len() {
-            if self.inv_mass[i] == 0.0 {
+            if self.inv_mass[i] == 0.0 || self.is_rigid_body[i] {
                 // static particle
                 continue;
             }
@@ -94,7 +99,7 @@ impl VerletVelocityParticles {
 
     pub fn integrate_velocity(&mut self, dt: f32) {
         for i in 0..self.len() {
-            if self.inv_mass[i] == 0.0 {
+            if self.inv_mass[i] == 0.0 || self.is_rigid_body[i]  {
                 // static particle
                 continue;
             }
@@ -137,6 +142,7 @@ impl VerletVelocityParticles {
         });
 
         self.radius.push(radius);
+        self.is_rigid_body.push(false);
 
         index
     }
@@ -202,6 +208,7 @@ impl VerletVelocityParticles {
 
         assert!(self.inv_mass.len() == len);
         assert!(self.radius.len() == len);
+        assert!(self.is_rigid_body.len() == len);
     }
 
     pub fn len(&self) -> usize {

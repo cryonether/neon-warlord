@@ -9,7 +9,7 @@ pub mod distance_constraints;
 pub mod angle_constraints;
 pub mod angle_motor_constraints;
 
-use cgmath::{InnerSpace, MetricSpace, Zero};
+use cgmath::{InnerSpace, Matrix3, MetricSpace, Zero};
 
 use crate::physics::{rigid_body::RigidBody, verlet_velocity::{angle_constraints::AngleConstraints, angle_motor_constraints::AngleMotorConstraints, distance_constraints::DistanceConstraints, verlet_velocity_particles::VerletVelocityParticles}};
 
@@ -46,102 +46,6 @@ impl VerletVelocityPhysics {
             angle_constraints,
             angle_motor_constraints,
         }
-    }
-
-    pub fn push_constraint_distance(
-        &mut self,
-        a: usize,
-        b: usize,
-        rest: f32,
-        stiffness: f32,
-        damping: f32,
-    ) -> usize {
-        self.distance_constraints.push(a,
-            b,
-            rest,
-            stiffness,
-            damping)
-    }
-
-    pub fn push_constraint_distance_infer(
-        &mut self,
-        a: usize,
-        b: usize,
-        stiffness: f32,
-        damping: f32,
-    ) -> usize {
-        let pos_a = self.particles.get_pos(a);
-        let pos_b = self.particles.get_pos(b);
-        let distance = pos_a.distance(pos_b);
-
-        self.push_constraint_distance(a, b, distance, stiffness, damping)
-    }
-
-    pub fn push_constraint_angle(
-        &mut self,
-        a: usize,
-        b: usize,
-        c: usize,
-        angle: f32,
-        stiffness: f32,
-        damping: f32,
-    ) -> usize {
-        self.angle_constraints.push(a, b, c, angle, stiffness, damping)
-    }
-
-    pub fn push_constraint_angle_infer(
-        &mut self,
-        a: usize,
-        b: usize,
-        c: usize,
-        stiffness: f32,
-        damping: f32,
-    ) -> usize {
-        let pos_a = self.particles.get_pos(a);
-        let pos_b = self.particles.get_pos(b);
-        let pos_c = self.particles.get_pos(c);
-
-        let ab = pos_a - pos_b;
-        let cb = pos_c - pos_b;
-
-        let len_ab = ab.magnitude();
-        let len_cb = cb.magnitude();
-
-        assert!(
-            len_ab > 1e-6 && len_cb > 1e-6,
-            "Cannot infer angle from coincident particles"
-        );
-
-        let cos_angle = (ab.dot(cb) / (len_ab * len_cb)).clamp(-1.0, 1.0);
-        let angle = cos_angle.acos();
-
-        self.push_constraint_angle(a, b, c, angle, stiffness, damping)
-    }
-
-    pub fn push_constraint_angle_motor(
-        &mut self,
-        a: usize,
-        b: usize,
-        c: usize,
-        min_angle: f32,
-        max_angle: f32,
-        max_torque: f32,
-        stiffness: f32,
-        damping: f32,
-    ) -> usize {
-        self.angle_motor_constraints.push(a, b, c, min_angle, max_angle, max_torque, stiffness, damping)
-    }
-
-    pub fn set_external_torque(&mut self, index: usize, value: f32) {
-        self.angle_motor_constraints.external_torque[index] = value;
-    }
-
-    pub fn get_motor_angle(&mut self, index: usize) -> f32 {
-        self.angle_motor_constraints.angle[index]
-    }
-
-    pub fn get_motor_angular_velocity(&mut self, index: usize) -> f32 {
-        self.angle_motor_constraints.angular_velocity[index]
     }
 
     /// Run a single step
@@ -242,6 +146,142 @@ impl VerletVelocityPhysics {
             self.particles.set_vel_half(i, vel);
         }
     }
+
+
+    pub fn push_rigid_body(
+        &mut self,
+        particle_indices: &[usize],
+        inertia_local: Matrix3<f32>,
+    ) -> usize {
+        assert!(!particle_indices.is_empty());
+
+        let mut center_of_mass = Vec3::new(0.0, 0.0, 0.0);
+        let mut total_mass = 0.0;
+
+        for &index in particle_indices {
+            let particle_mass = self.particles.mass[index];
+
+            assert!(particle_mass > 0.0);
+
+            center_of_mass += self.particles.get_pos(index) * particle_mass;
+            total_mass += particle_mass;
+        }
+
+        center_of_mass /= total_mass;
+
+        let mut body = RigidBody::new(
+            center_of_mass,
+            total_mass,
+            inertia_local,
+        );
+
+        for &index in particle_indices {
+            body.attach_particle(&mut self.particles, index);
+        }
+
+        let body_index = self.rigid_bodies.len();
+        self.rigid_bodies.push(body);
+
+        body_index
+    }
+
+    pub fn push_constraint_distance(
+        &mut self,
+        a: usize,
+        b: usize,
+        rest: f32,
+        stiffness: f32,
+        damping: f32,
+    ) -> usize {
+        self.distance_constraints.push(a,
+            b,
+            rest,
+            stiffness,
+            damping)
+    }
+
+    pub fn push_constraint_distance_infer(
+        &mut self,
+        a: usize,
+        b: usize,
+        stiffness: f32,
+        damping: f32,
+    ) -> usize {
+        let pos_a = self.particles.get_pos(a);
+        let pos_b = self.particles.get_pos(b);
+        let distance = pos_a.distance(pos_b);
+
+        self.push_constraint_distance(a, b, distance, stiffness, damping)
+    }
+
+    pub fn push_constraint_angle(
+        &mut self,
+        a: usize,
+        b: usize,
+        c: usize,
+        angle: f32,
+        stiffness: f32,
+        damping: f32,
+    ) -> usize {
+        self.angle_constraints.push(a, b, c, angle, stiffness, damping)
+    }
+
+    pub fn push_constraint_angle_infer(
+        &mut self,
+        a: usize,
+        b: usize,
+        c: usize,
+        stiffness: f32,
+        damping: f32,
+    ) -> usize {
+        let pos_a = self.particles.get_pos(a);
+        let pos_b = self.particles.get_pos(b);
+        let pos_c = self.particles.get_pos(c);
+
+        let ab = pos_a - pos_b;
+        let cb = pos_c - pos_b;
+
+        let len_ab = ab.magnitude();
+        let len_cb = cb.magnitude();
+
+        assert!(
+            len_ab > 1e-6 && len_cb > 1e-6,
+            "Cannot infer angle from coincident particles"
+        );
+
+        let cos_angle = (ab.dot(cb) / (len_ab * len_cb)).clamp(-1.0, 1.0);
+        let angle = cos_angle.acos();
+
+        self.push_constraint_angle(a, b, c, angle, stiffness, damping)
+    }
+
+    pub fn push_constraint_angle_motor(
+        &mut self,
+        a: usize,
+        b: usize,
+        c: usize,
+        min_angle: f32,
+        max_angle: f32,
+        max_torque: f32,
+        stiffness: f32,
+        damping: f32,
+    ) -> usize {
+        self.angle_motor_constraints.push(a, b, c, min_angle, max_angle, max_torque, stiffness, damping)
+    }
+
+    pub fn set_external_torque(&mut self, index: usize, value: f32) {
+        self.angle_motor_constraints.external_torque[index] = value;
+    }
+
+    pub fn get_motor_angle(&mut self, index: usize) -> f32 {
+        self.angle_motor_constraints.angle[index]
+    }
+
+    pub fn get_motor_angular_velocity(&mut self, index: usize) -> f32 {
+        self.angle_motor_constraints.angular_velocity[index]
+    }
+
+   
 }
 
 

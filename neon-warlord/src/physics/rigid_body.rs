@@ -200,7 +200,7 @@ impl RigidBody {
 
     pub fn attach_particle(
         &mut self,
-        particles: &VerletVelocityParticles,
+        particles: &mut VerletVelocityParticles,
         index: usize,
     ) {
         let world_pos = particles.get_pos(index);
@@ -209,6 +209,8 @@ impl RigidBody {
 
         self.particles.push(index);
         self.local_positions.push(local_pos);
+
+        particles.is_rigid_body[index] = true;
     }
 
     pub fn is_static(&self) -> bool {
