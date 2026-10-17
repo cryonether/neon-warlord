@@ -1,9 +1,9 @@
 //! Velocity Verlet integration physics
-//! 
+//!
 //! https://www.algorithm-archive.org/contents/verlet_integration/verlet_integration.html
-//! 
+//!
 
-use cgmath::{InnerSpace, Zero};
+use cgmath::{InnerSpace, MetricSpace, Zero};
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -36,6 +36,222 @@ pub struct VerletVelocity {
 }
 
 impl VerletVelocity {
+    pub fn new(
+
+    ) -> Self {
+        let pos_x = Vec::new();
+        let pos_y = Vec::new();
+        let pos_z = Vec::new();
+        let vel_half_x = Vec::new();
+        let vel_half_y = Vec::new();
+        let vel_half_z = Vec::new();
+        let vel_x = Vec::new();
+        let vel_y = Vec::new();
+        let vel_z = Vec::new();
+        let acc_x = Vec::new();
+        let acc_y = Vec::new();
+        let acc_z = Vec::new();
+        let mass = Vec::new();
+        let inv_mass = Vec::new();
+        let radius = Vec::new();
+        let distance_constraints = DistanceConstraints {
+            a:  Vec::new(),
+            b:  Vec::new(),
+            distance:  Vec::new(),
+            stiffness:  Vec::new(),
+            damping:  Vec::new(),
+        };
+        let angle_constraints = AngleConstraints {
+            a:  Vec::new(),
+            b:  Vec::new(),
+            c:  Vec::new(),
+            angle: Vec::new(),
+            stiffness: Vec::new(),
+            damping: Vec::new(),
+        };
+        let angle_motor_constraints = AngleMotorConstraints {
+            a:  Vec::new(),
+            b:  Vec::new(),
+            c:  Vec::new(),
+            min_angle:  Vec::new(),
+            max_angle:  Vec::new(),
+            max_torque:  Vec::new(),
+            stiffness:  Vec::new(),
+            damping:  Vec::new(),
+            external_torque:  Vec::new(),
+        };
+
+        Self {
+            pos_x,
+            pos_y,
+            pos_z,
+            vel_half_x,
+            vel_half_y,
+            vel_half_z,
+            vel_x,
+            vel_y,
+            vel_z,
+            acc_x,
+            acc_y,
+            acc_z,
+            mass,
+            inv_mass,
+            radius,
+            distance_constraints,
+            angle_constraints,
+            angle_motor_constraints,
+        }
+    }
+
+    pub fn push_particle(&mut self, pos: Vec3, radius: f32, mass: f32) -> usize
+    {
+        let index = self.len();
+
+        self.pos_x.push(pos.x);
+        self.pos_y.push(pos.y);
+        self.pos_z.push(pos.z);
+
+        self.vel_half_x.push(0.0);
+        self.vel_half_y.push(0.0);
+        self.vel_half_z.push(0.0);
+
+        self.vel_x.push(0.0);
+        self.vel_y.push(0.0);
+        self.vel_z.push(0.0);
+
+        self.acc_x.push(0.0);
+        self.acc_y.push(0.0);
+        self.acc_z.push(0.0);
+
+        self.mass.push(mass);
+        self.inv_mass.push(if mass > 0.0 {
+            1.0 / mass
+        } else {
+            // static particle
+            0.0
+        });
+
+        self.radius.push(radius);
+
+        index
+    }
+
+    pub fn push_constraint_distance(
+        &mut self,
+        a: usize,
+        b: usize,
+        rest: f32,
+        stiffness: f32,
+        damping: f32,
+    ) -> usize {
+        let index = self.distance_constraints.len();
+        
+        self.distance_constraints.a.push(a);
+        self.distance_constraints.b.push(b);
+        self.distance_constraints.distance.push(rest);
+        self.distance_constraints.stiffness.push(stiffness);
+        self.distance_constraints.damping.push(damping);
+
+        index
+    }
+
+    pub fn push_constraint_distance_infer(
+        &mut self,
+        a: usize,
+        b: usize,
+        stiffness: f32,
+        damping: f32,
+    ) -> usize {
+        let pos_a = self.get_pos(a);
+        let pos_b = self.get_pos(b);
+        let distance = pos_a.distance(pos_b);
+
+        self.push_constraint_distance(a, b, distance, stiffness, damping)
+    }
+
+    pub fn push_constraint_angle(
+        &mut self,
+        a: usize,
+        b: usize,
+        c: usize,
+        angle: f32,
+        stiffness: f32,
+        damping: f32,
+    ) -> usize {
+        let index = self.angle_constraints.len();
+
+        self.angle_constraints.a.push(a);
+        self.angle_constraints.b.push(b);
+        self.angle_constraints.c.push(c);
+
+        self.angle_constraints.angle.push(angle);
+        self.angle_constraints.stiffness.push(stiffness);
+        self.angle_constraints.damping.push(damping);
+
+        index
+    }
+
+    pub fn push_constraint_angle_infer(
+        &mut self,
+        a: usize,
+        b: usize,
+        c: usize,
+        stiffness: f32,
+        damping: f32,
+    ) -> usize {
+        let pos_a = self.get_pos(a);
+        let pos_b = self.get_pos(b);
+        let pos_c = self.get_pos(c);
+
+        let ab = pos_a - pos_b;
+        let cb = pos_c - pos_b;
+
+        let len_ab = ab.magnitude();
+        let len_cb = cb.magnitude();
+
+        assert!(
+            len_ab > 1e-6 && len_cb > 1e-6,
+            "Cannot infer angle from coincident particles"
+        );
+
+        let cos_angle = (ab.dot(cb) / (len_ab * len_cb)).clamp(-1.0, 1.0);
+        let angle = cos_angle.acos();
+
+        self.push_constraint_angle(a, b, c, angle, stiffness, damping)
+    }
+
+    pub fn push_constraint_angle_motor(
+        &mut self,
+        a: usize,
+        b: usize,
+        c: usize,
+        min_angle: f32,
+        max_angle: f32,
+        max_torque: f32,
+        stiffness: f32,
+        damping: f32,
+    ) -> usize {
+        let index = self.angle_motor_constraints.len();
+
+        self.angle_motor_constraints.a.push(a);
+        self.angle_motor_constraints.b.push(b);
+        self.angle_motor_constraints.c.push(c);
+
+        self.angle_motor_constraints.min_angle.push(min_angle);
+        self.angle_motor_constraints.max_angle.push(max_angle);
+        self.angle_motor_constraints.max_torque.push(max_torque);
+        self.angle_motor_constraints.stiffness.push(stiffness);
+        self.angle_motor_constraints.damping.push(damping);
+
+        self.angle_motor_constraints.external_torque.push(0.0);
+
+        index
+    }
+
+    pub fn set_external_torque(&mut self, index: usize, value: f32) {
+        self.angle_motor_constraints.external_torque[index] = value;
+    }
+
 
     /// Run a single step
     pub fn step(&mut self) {
@@ -43,7 +259,7 @@ impl VerletVelocity {
         const DT: f32 = 1.0 / 60.0;
 
         // Update the position using the old velocity and acceleration
-        self.integrate_position(DT);        
+        self.integrate_position(DT);
 
         self.solve_ground_collision();
 
@@ -53,7 +269,7 @@ impl VerletVelocity {
         self.apply_gravity();
         self.apply_distance_constraints();
         self.apply_angle_constraints();
-        
+
         // Update the position using the old velocity and acceleration
         self.integrate_velocity(DT);
     }
@@ -80,7 +296,7 @@ impl VerletVelocity {
 
     fn zero_acc(&mut self) {
         for i in 0..self.len() {
-            self.set_acc(i,  Vec3::zero());
+            self.set_acc(i, Vec3::zero());
         }
     }
 
@@ -104,7 +320,7 @@ impl VerletVelocity {
     /// Apply gravity
     fn apply_gravity(&mut self) {
         const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -10.0);
-    
+
         for i in 0..self.len() {
             let mut acc = self.get_acc(i);
             let inv_mass = self.inv_mass[i];
@@ -156,7 +372,7 @@ impl VerletVelocity {
             let direction = delta / distance;
             let extension = distance - rest_length;
 
-            let relative_speed = (vel_b - vel_a).dot(direction);    // half velocity is used as approximation for damping
+            let relative_speed = (vel_b - vel_a).dot(direction); // half velocity is used as approximation for damping
 
             let force_magnitude = stiffness * extension + damping * relative_speed;
 
@@ -191,7 +407,7 @@ impl VerletVelocity {
             let vel_a = self.get_vel_half(index_a);
             let vel_b = self.get_vel_half(index_b);
             let vel_c = self.get_vel_half(index_c);
-            
+
             let u = pos_a - pos_b;
             let v = pos_c - pos_b;
 
@@ -221,7 +437,7 @@ impl VerletVelocity {
             let grad_b = -(grad_a + grad_c);
 
             let angular_velocity = grad_a.dot(vel_a) + grad_b.dot(vel_b) + grad_c.dot(vel_c);
-            let torque = -stiffness * (angle - target_angle) -damping * angular_velocity;
+            let torque = -stiffness * (angle - target_angle) - damping * angular_velocity;
 
             let force_a = torque * grad_a;
             let force_b = torque * grad_b;
@@ -289,31 +505,23 @@ impl VerletVelocity {
             let angle = cos_angle.acos();
 
             // Gradients of the angle with respect to the particle positions.
-            let grad_a =
-                -(v_hat - cos_angle * u_hat) / (len_u * sin_angle);
+            let grad_a = -(v_hat - cos_angle * u_hat) / (len_u * sin_angle);
 
-            let grad_c =
-                -(u_hat - cos_angle * v_hat) / (len_v * sin_angle);
+            let grad_c = -(u_hat - cos_angle * v_hat) / (len_v * sin_angle);
 
             let grad_b = -(grad_a + grad_c);
 
             // Angular velocity, computed without storing it.
-            let angular_velocity =
-                grad_a.dot(vel_a)
-                + grad_b.dot(vel_b)
-                + grad_c.dot(vel_c);
+            let angular_velocity = grad_a.dot(vel_a) + grad_b.dot(vel_b) + grad_c.dot(vel_c);
 
             // Motor command, clamped to the permitted torque.
-            let motor_torque =
-                external_torque.clamp(-max_torque, max_torque);
+            let motor_torque = external_torque.clamp(-max_torque, max_torque);
 
             // Soft mechanical stops.
             let limit_torque = if angle < min_angle {
-                stiffness * (min_angle - angle)
-                    - damping * angular_velocity.min(0.0)
+                stiffness * (min_angle - angle) - damping * angular_velocity.min(0.0)
             } else if angle > max_angle {
-                -stiffness * (angle - max_angle)
-                    - damping * angular_velocity.max(0.0)
+                -stiffness * (angle - max_angle) - damping * angular_velocity.max(0.0)
             } else {
                 0.0
             };
@@ -376,37 +584,20 @@ impl VerletVelocity {
         }
     }
 
-
     pub fn get_pos(&self, i: usize) -> Vec3 {
-        Vec3::new(
-            self.pos_x[i], 
-            self.pos_y[i], 
-            self.pos_z[i]
-        )
+        Vec3::new(self.pos_x[i], self.pos_y[i], self.pos_z[i])
     }
 
     pub fn get_vel_half(&self, i: usize) -> Vec3 {
-        Vec3::new(
-            self.vel_half_x[i], 
-            self.vel_half_y[i], 
-            self.vel_half_z[i]
-        )
+        Vec3::new(self.vel_half_x[i], self.vel_half_y[i], self.vel_half_z[i])
     }
 
     pub fn get_vel(&self, i: usize) -> Vec3 {
-        Vec3::new(
-            self.vel_x[i], 
-            self.vel_y[i], 
-            self.vel_z[i]
-        )
+        Vec3::new(self.vel_x[i], self.vel_y[i], self.vel_z[i])
     }
 
     pub fn get_acc(&self, i: usize) -> Vec3 {
-        Vec3::new(
-            self.acc_x[i], 
-            self.acc_y[i], 
-            self.acc_z[i]
-        )
+        Vec3::new(self.acc_x[i], self.acc_y[i], self.acc_z[i])
     }
 
     pub fn set_pos(&mut self, i: usize, val: Vec3) {
@@ -461,9 +652,7 @@ impl VerletVelocity {
 
         self.pos_x.len()
     }
-
 }
-
 
 struct DistanceConstraints {
     pub a: Vec<usize>,
@@ -491,7 +680,6 @@ impl DistanceConstraints {
         assert!(self.damping.len() == len);
     }
 }
-
 
 struct AngleConstraints {
     pub a: Vec<usize>,
@@ -534,7 +722,7 @@ struct AngleMotorConstraints {
     pub stiffness: Vec<f32>,
     pub damping: Vec<f32>,
 
-   // Externally commanded torque for each joint.
+    // Externally commanded torque for each joint.
     pub external_torque: Vec<f32>,
 }
 
