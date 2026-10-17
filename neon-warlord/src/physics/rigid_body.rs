@@ -1,5 +1,7 @@
 //! Rigid body extension for verlet velocity integrator
 
+pub mod hing_joint;
+
 use std::iter::zip;
 
 use cgmath::{InnerSpace, Matrix, Matrix3, Quaternion, Rad, Rotation, Rotation3, SquareMatrix, Vector3, Zero};
@@ -215,5 +217,44 @@ impl RigidBody {
 
     pub fn is_static(&self) -> bool {
         self.inv_mass == 0.0
+    }
+
+    /// World-space inverse inertia tensor.
+    pub fn inv_inertia_world(&self) -> Mat3 {
+        if self.is_static() {
+            return Mat3::zero();
+        }
+
+        let rotation = Mat3::from(self.orientation);
+
+        rotation * self.inv_inertia_local * rotation.transpose()
+    }
+
+    /// Apply an impulse at a world-space point.
+    pub fn apply_impulse(
+        &mut self,
+        impulse: Vec3,
+        world_point: Vec3,
+    ) {
+        if self.is_static() {
+            return;
+        }
+
+        self.linear_velocity += impulse * self.inv_mass;
+
+        let lever_arm = world_point - self.position;
+
+        self.angular_velocity +=
+            self.inv_inertia_world() * lever_arm.cross(impulse);
+    }
+
+    /// Apply a pure angular impulse.
+    pub fn apply_angular_impulse(&mut self, impulse: Vec3) {
+        if self.is_static() {
+            return;
+        }
+
+        self.angular_velocity +=
+            self.inv_inertia_world() * impulse;
     }
 }

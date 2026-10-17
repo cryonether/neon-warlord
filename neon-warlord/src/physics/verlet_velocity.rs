@@ -52,7 +52,7 @@ impl VerletVelocityPhysics {
     pub fn step(&mut self) {
         // running at fixed step size
         const DT: f32 = 1.0 / 60.0;
-        const SUB_STEPS: usize = 4;
+        const SUB_STEPS: usize = 16;
 
         let sub_dt = DT / SUB_STEPS as f32;
 
