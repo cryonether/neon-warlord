@@ -12,7 +12,7 @@ type Vec3 = cgmath::Vector3<f32>;
 /// Velocity Verlet integration physics
 #[derive(Clone)]
 pub struct VerletVelocity {
-    pub pos_x: Vec<f32>,
+    pos_x: Vec<f32>,
     pos_y: Vec<f32>,
     pos_z: Vec<f32>,
 
@@ -20,7 +20,7 @@ pub struct VerletVelocity {
     vel_half_y: Vec<f32>,
     vel_half_z: Vec<f32>,
 
-    pub vel_x: Vec<f32>,
+    vel_x: Vec<f32>,
     vel_y: Vec<f32>,
     vel_z: Vec<f32>,
 

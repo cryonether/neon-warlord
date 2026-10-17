@@ -305,12 +305,12 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
 
     fn get_reward(&self) -> (f32, bool) {
 
-        let mut vel_x_sum = 0.0;
-        for elem in &self.verlet_physics.vel_x {
-            vel_x_sum += elem;
-        }
+        // let mut vel_x_sum = 0.0;
+        // for elem in &self.verlet_physics.vel_x {
+        //     vel_x_sum += elem;
+        // }
 
-        let vel_x_average = vel_x_sum / self.verlet_physics.vel_x.len() as f32;
+        // let vel_x_average = vel_x_sum / self.verlet_physics.vel_x.len() as f32;
 
 
 
@@ -319,15 +319,15 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
 
         // let pos_x = self.state.pos_x * 0.1;
 
-        // let reward = vel_x.clamp(0.0, 1.0);
+        let reward = vel_x.clamp(0.0, 1.0);
 
         // let reward = self.vel_x_average * 0.1;
 
         // let reward = vel_x * (2.0 - vel_x);
 
-        let reward = vel_x_average * 0.1;
+        // let reward = vel_x_average * 0.1;
 
-        let reward = reward.max(0.0);
+        // let reward = reward.max(0.0);
 
         (reward, false)
     }
