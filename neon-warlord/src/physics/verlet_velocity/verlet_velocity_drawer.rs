@@ -20,7 +20,7 @@ pub struct VerletVelocityDrawer {
 }
 
 impl VerletVelocityDrawer {
-    pub fn new(verlet_physics: &VerletVelocity, radius: f32, position: Vec3) -> Self {
+    pub fn new(verlet_physics: &VerletVelocityPhysics, radius: f32, position: Vec3) -> Self {
         let _nr_nodes = verlet_physics.particles.len();
         let _nr_edges = verlet_physics.distance_constraints.len();
 
@@ -41,7 +41,7 @@ impl VerletVelocityDrawer {
 
     pub fn update(
         &self,
-        verlet_physics: &VerletVelocity,
+        verlet_physics: &VerletVelocityPhysics,
         producer_nodes: &mut Vec<particle_shader::Instance>,
         producer_edges: &mut Vec<particle_shader_two_point::Instance>,
     ) {

@@ -6,7 +6,7 @@ use cgmath::{InnerSpace, Zero};
 use wgpu::rwh;
 
 use crate::{
-    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocity, verlet_velocity_drawer::VerletVelocityDrawer}},
+    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer}},
 };
 
 const OBSERVATIONS: usize = 11;
@@ -16,7 +16,7 @@ const MASS: f32 = 0.1;
 
 #[derive(Clone)]
 pub struct GymHalfCheetah {
-    pub verlet_physics: VerletVelocity,
+    pub verlet_physics: VerletVelocityPhysics,
     pub drawer: VerletVelocityDrawer,
 
     particles_body:  [usize; 4],
@@ -30,7 +30,7 @@ pub struct GymHalfCheetah {
 
 impl GymHalfCheetah {
     pub fn new() -> Self {
-        let mut verlet_physics = VerletVelocity::new();
+        let mut verlet_physics = VerletVelocityPhysics::new();
         let drawer = VerletVelocityDrawer::new(&verlet_physics, 0.1, Vec3::zero());
         
         let radius = 0.1;
@@ -48,10 +48,10 @@ impl GymHalfCheetah {
         
         // body
         let particles_body = [
-            verlet_physics.push_particle(Vec3::new(-1.0, 0.0, 1.5), radius, MASS * 4.0),
-            verlet_physics.push_particle(Vec3::new(0.0, 0.0, 1.5), radius, MASS * 4.0),
-            verlet_physics.push_particle(Vec3::new(1.0, 0.0, 1.5), radius, MASS * 4.0),
-            verlet_physics.push_particle(Vec3::new(1.3, 0.0, 1.8), radius, MASS * 4.0),
+            verlet_physics.particles.push(Vec3::new(-1.0, 0.0, 1.5), radius, MASS * 4.0),
+            verlet_physics.particles.push(Vec3::new(0.0, 0.0, 1.5), radius, MASS * 4.0),
+            verlet_physics.particles.push(Vec3::new(1.0, 0.0, 1.5), radius, MASS * 4.0),
+            verlet_physics.particles.push(Vec3::new(1.3, 0.0, 1.8), radius, MASS * 4.0),
         ];
 
         verlet_physics.push_constraint_distance_infer(particles_body[0], particles_body[1], stiffness_distance, damping_distance);
@@ -63,8 +63,8 @@ impl GymHalfCheetah {
 
         // leg 0
         let particles_leg_0 = [
-            verlet_physics.push_particle(Vec3::new(-1.0, 0.0, 1.0), radius, MASS),
-            verlet_physics.push_particle(Vec3::new(-1.0, 0.0, 0.5), radius, MASS),
+            verlet_physics.particles.push(Vec3::new(-1.0, 0.0, 1.0), radius, MASS),
+            verlet_physics.particles.push(Vec3::new(-1.0, 0.0, 0.5), radius, MASS),
         ];
 
         verlet_physics.push_constraint_distance_infer(particles_body[0], particles_leg_0[0], stiffness_distance, damping_distance);
@@ -88,8 +88,8 @@ impl GymHalfCheetah {
 
         // leg 1
         let particles_leg_1 = [
-            verlet_physics.push_particle(Vec3::new(1.0, 0.0, 1.0), radius, MASS),
-            verlet_physics.push_particle(Vec3::new(1.0, 0.0, 0.5), radius, MASS),
+            verlet_physics.particles.push(Vec3::new(1.0, 0.0, 1.0), radius, MASS),
+            verlet_physics.particles.push(Vec3::new(1.0, 0.0, 0.5), radius, MASS),
         ];
         
         verlet_physics.push_constraint_distance_infer(particles_body[2], particles_leg_1[0], stiffness_distance, damping_distance);
@@ -203,8 +203,8 @@ impl GymHalfCheetah {
         let angular_velocity_3 = self.verlet_physics.get_motor_angular_velocity(3);
 
         let front_tip = self.particles_body[3];
-        let pos = self.verlet_physics.get_pos(front_tip);
-        let vel = self.verlet_physics.get_vel(front_tip);
+        let pos = self.verlet_physics.particles.get_pos(front_tip);
+        let vel = self.verlet_physics.particles.get_vel(front_tip);
 
         State {
             pos_x: pos.x,
