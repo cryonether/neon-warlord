@@ -324,7 +324,7 @@ impl NeonWarlord {
         let _gym_simulation_2: GymSimulation<5, 1, 16, 1, false, GymCartPole> =
             GymSimulation::new(GymCartPole::new());
 
-        let _gym_simulation_3: GymSimulation<15, 4, 32, 2, false, GymHalfCheetah> =
+        let _gym_simulation_3: GymSimulation<11, 4, 64, 2, false, GymHalfCheetah> =
             GymSimulation::new(GymHalfCheetah::new());
 
         let gym_simulation = _gym_simulation_3;

@@ -1,10 +1,9 @@
 //! A pendulum, try to balance it
 
-use cgmath::InnerSpace;
+use cgmath::{InnerSpace, Zero};
 
 use crate::{
-    gym_simulation::{Vec3, gym::Gym},
-    physics::verlet_physics_simd::VerletPhysicsSimd,
+    gym_simulation::{Vec3, gym::Gym, verlet_physics_drawer::VerletPhysicsDrawer}, physics::verlet_physics_simd::VerletPhysicsSimd,
 };
 
 const OBSERVATIONS: usize = 3;
@@ -15,6 +14,7 @@ const MASS: f32 = 0.1;
 #[derive(Clone)]
 pub struct GymPole {
     pub verlet_physics: VerletPhysicsSimd,
+    pub drawer: VerletPhysicsDrawer,
 
     particles_static: usize,
     particles_static_pos: Vec3,
@@ -26,6 +26,7 @@ pub struct GymPole {
 impl GymPole {
     pub fn new() -> Self {
         let mut verlet_physics = VerletPhysicsSimd::new();
+        let drawer = VerletPhysicsDrawer::new(&verlet_physics, 0.1, Vec3::zero());
 
         let radius = 0.1;
 
@@ -44,6 +45,7 @@ impl GymPole {
 
         Self {
             verlet_physics,
+            drawer,
             particles_static,
             particles_static_pos,
             particle_pole,
@@ -103,9 +105,22 @@ impl GymPole {
 }
 
 impl Gym<OBSERVATIONS, ACTIONS> for GymPole {
-    fn get_verlet_physics(&self) -> &VerletPhysicsSimd {
-        &self.verlet_physics
+    fn set_drawer_position(&mut self, pos: &Vec3) {
+        self.drawer.position = *pos;
     }
+    
+    fn set_drawer_radius(&mut self, radius: f32) {
+        self.drawer.radius = radius;
+    }
+    
+    fn draw(
+        &self,
+        producer_nodes: &mut Vec<forward_renderer::particle_shader::Instance>,
+        producer_edges: &mut Vec<forward_renderer::particle_shader_two_point::Instance>,
+    ) {
+        self.drawer.update(&self.verlet_physics, producer_nodes, producer_edges);
+    }
+
 
     fn update_verlet_physics(&mut self, dt: f32) {
         self.verlet_physics.update(dt);
@@ -154,6 +169,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPole {
             angular_velocity: 0.0,
         }
     }
+    
+
 }
 
 #[derive(Clone)]

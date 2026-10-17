@@ -3,13 +3,16 @@
 //! https://www.algorithm-archive.org/contents/verlet_integration/verlet_integration.html
 //!
 
+pub mod verlet_velocity_drawer;
+
 use cgmath::{InnerSpace, MetricSpace, Zero};
 
 type Vec3 = cgmath::Vector3<f32>;
 
 /// Velocity Verlet integration physics
+#[derive(Clone)]
 pub struct VerletVelocity {
-    pos_x: Vec<f32>,
+    pub pos_x: Vec<f32>,
     pos_y: Vec<f32>,
     pos_z: Vec<f32>,
 
@@ -17,7 +20,7 @@ pub struct VerletVelocity {
     vel_half_y: Vec<f32>,
     vel_half_z: Vec<f32>,
 
-    vel_x: Vec<f32>,
+    pub vel_x: Vec<f32>,
     vel_y: Vec<f32>,
     vel_z: Vec<f32>,
 
@@ -79,6 +82,8 @@ impl VerletVelocity {
             stiffness:  Vec::new(),
             damping:  Vec::new(),
             external_torque:  Vec::new(),
+            angle: Vec::new(),
+            angular_velocity: Vec::new(),
         };
 
         Self {
@@ -244,6 +249,8 @@ impl VerletVelocity {
         self.angle_motor_constraints.damping.push(damping);
 
         self.angle_motor_constraints.external_torque.push(0.0);
+        self.angle_motor_constraints.angle.push(0.0);
+        self.angle_motor_constraints.angular_velocity.push(0.0);
 
         index
     }
@@ -252,26 +259,40 @@ impl VerletVelocity {
         self.angle_motor_constraints.external_torque[index] = value;
     }
 
+    pub fn get_motor_angle(&mut self, index: usize) -> f32 {
+        self.angle_motor_constraints.angle[index]
+    }
+
+    pub fn get_motor_angular_velocity(&mut self, index: usize) -> f32 {
+        self.angle_motor_constraints.angular_velocity[index]
+    }
 
     /// Run a single step
     pub fn step(&mut self) {
         // running at fixed step size
         const DT: f32 = 1.0 / 60.0;
+        const SUB_STEPS: usize = 8;
 
-        // Update the position using the old velocity and acceleration
-        self.integrate_position(DT);
+        let sub_dt = DT / SUB_STEPS as f32;
 
-        self.solve_ground_collision();
+        for i in 0..SUB_STEPS
+        {
+            // Update the position using the old velocity and acceleration
+            self.integrate_position(sub_dt);
 
-        self.zero_acc();
+            self.solve_ground_collision();
 
-        // Recalculate the acceleration at the new position
-        self.apply_gravity();
-        self.apply_distance_constraints();
-        self.apply_angle_constraints();
+            self.zero_acc();
 
-        // Update the position using the old velocity and acceleration
-        self.integrate_velocity(DT);
+            // Recalculate the acceleration at the new position
+            self.apply_gravity();
+            self.apply_distance_constraints();
+            self.apply_angle_constraints();
+            self.apply_angle_motor_constraints();
+
+            // Update the position using the old velocity and acceleration
+            self.integrate_velocity(sub_dt);
+        }
     }
 
     /// Velocity Verlet integration
@@ -543,6 +564,9 @@ impl VerletVelocity {
             self.set_acc(index_a, acc_a);
             self.set_acc(index_b, acc_b);
             self.set_acc(index_c, acc_c);
+
+            self.angle_motor_constraints.angle[i] = angle;
+            self.angle_motor_constraints.angular_velocity[i] = angular_velocity;
         }
     }
 
@@ -550,7 +574,7 @@ impl VerletVelocity {
     fn solve_ground_collision(&mut self) {
         const GROUND_HEIGHT_Z: f32 = 0.0;
         const RESTITUTION: f32 = 0.9;
-        const FRICTION: f32 = 0.1;
+        const FRICTION: f32 = 0.8;
 
         for i in 0..self.len() {
             if self.inv_mass[i] == 0.0 {
@@ -572,11 +596,15 @@ impl VerletVelocity {
 
             // Bounce only if moving into the ground.
             if vel.z < 0.0 {
-                vel.z = -RESTITUTION * vel.z;
+                vel.x = vel.x + -RESTITUTION * vel.x;
+                // vel.y = vel.x + -RESTITUTION * vel.x;
+                vel.z = vel.z + 0.2;
 
-                // Reduce tangential velocity due to friction.
-                vel.x *= 1.0 - FRICTION;
-                vel.y *= 1.0 - FRICTION;
+                // vel.z = -RESTITUTION * vel.z;
+
+                // // Reduce tangential velocity due to friction.
+                // vel.x *= 1.0 - FRICTION;
+                // vel.y *= 1.0 - FRICTION;
             }
 
             self.set_pos(i, pos);
@@ -654,6 +682,7 @@ impl VerletVelocity {
     }
 }
 
+#[derive(Clone)]
 struct DistanceConstraints {
     pub a: Vec<usize>,
     pub b: Vec<usize>,
@@ -681,6 +710,7 @@ impl DistanceConstraints {
     }
 }
 
+#[derive(Clone)]
 struct AngleConstraints {
     pub a: Vec<usize>,
     pub b: Vec<usize>,
@@ -710,6 +740,7 @@ impl AngleConstraints {
     }
 }
 
+#[derive(Clone)]
 struct AngleMotorConstraints {
     pub a: Vec<usize>,
     pub b: Vec<usize>,
@@ -724,6 +755,10 @@ struct AngleMotorConstraints {
 
     // Externally commanded torque for each joint.
     pub external_torque: Vec<f32>,
+
+    // status variables
+    pub angle: Vec<f32>,
+    pub angular_velocity: Vec<f32>,
 }
 
 impl AngleMotorConstraints {
@@ -748,5 +783,8 @@ impl AngleMotorConstraints {
         assert!(self.damping.len() == len);
 
         assert!(self.external_torque.len() == len);
+
+        assert!(self.angle.len() == len);
+        assert!(self.angular_velocity.len() == len);
     }
 }

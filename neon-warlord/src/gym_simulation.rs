@@ -66,7 +66,7 @@ pub struct GymSimulation<
     drawer_graph_inputs: GraphLinesDrawer<INPUTS>,
 
     env: ENV,
-    verlet_physics_drawer: VerletPhysicsDrawer,
+    // verlet_physics_drawer: VerletPhysicsDrawer,
     _steps: u64,
     _episode: u64,
 
@@ -90,7 +90,7 @@ impl<
 where
     ENV: std::clone::Clone + Send + 'static,
 {
-    pub fn new(env: ENV) -> Self {
+    pub fn new(mut env: ENV) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
         let nr_ppo_threads = 0;
@@ -117,9 +117,9 @@ where
                 Ppo::new(0, 0),
                 env.clone(),
                 1,
-                1,
+                16,
                 Vec3::new(0.0, 0.0, 0.0) + Vec3::new(11.0 * (i + 1) as f32, -0.5, 0.0),
-                1,
+                64,
             ))));
 
             gym_worker_thread.push(WorkerThread2::new(format!("Gym Worker {}", i)));
@@ -185,8 +185,11 @@ where
         let drawer_graph_inputs = GraphLinesDrawer::new(scale, pos_graph_inputs).colors(colors);
 
         // Pendulum
-        let verlet_physics_drawer =
-            VerletPhysicsDrawer::new(env.get_verlet_physics(), scale, pos_env);
+        env.set_drawer_position(&pos_env);
+        env.set_drawer_radius(scale);
+
+        // let verlet_physics_drawer =
+        //     VerletPhysicsDrawer::new(env.get_verlet_physics(), scale, pos_env);
 
         // Dqn
 
@@ -216,7 +219,7 @@ where
             drawer_graph_reward,
             drawer_graph_inputs,
             env,
-            verlet_physics_drawer,
+            // verlet_physics_drawer,
         }
     }
 
@@ -284,7 +287,7 @@ where
         let (reward, done) = self.env.get_reward();
 
         for (i, val) in new_state.iter().enumerate() {
-            self.graph_inputs.y_push_pop(i, *val);
+            self.graph_inputs.y_push_pop(i, *val * 0.01);
         }
 
         for (i, val) in action.iter().enumerate() {
@@ -383,8 +386,9 @@ where
         self.drawer_graph_reward.update(&self.graph_reward, edges);
         self.drawer_graph_inputs.update(&self.graph_inputs, edges);
 
-        self.verlet_physics_drawer
-            .update(self.env.get_verlet_physics(), nodes, edges);
+        self.env.draw(nodes, edges);
+        // self.verlet_physics_drawer
+        //     .update(self.env.get_verlet_physics(), nodes, edges);
 
         for gym_worker in self.gym_worker.iter().flatten() {
             for node in &gym_worker.nodes {
