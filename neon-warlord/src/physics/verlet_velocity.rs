@@ -4,33 +4,18 @@
 //!
 
 pub mod verlet_velocity_drawer;
+pub mod verlet_velocity_particles;
 
 use cgmath::{InnerSpace, MetricSpace, Zero};
+
+use crate::physics::verlet_velocity::verlet_velocity_particles::VerletVelocityParticles;
 
 type Vec3 = cgmath::Vector3<f32>;
 
 /// Velocity Verlet integration physics
 #[derive(Clone)]
 pub struct VerletVelocity {
-    pos_x: Vec<f32>,
-    pos_y: Vec<f32>,
-    pos_z: Vec<f32>,
-
-    vel_half_x: Vec<f32>,
-    vel_half_y: Vec<f32>,
-    vel_half_z: Vec<f32>,
-
-    vel_x: Vec<f32>,
-    vel_y: Vec<f32>,
-    vel_z: Vec<f32>,
-
-    acc_x: Vec<f32>,
-    acc_y: Vec<f32>,
-    acc_z: Vec<f32>,
-
-    mass: Vec<f32>,
-    inv_mass: Vec<f32>,
-    radius: Vec<f32>,
+    pub particles: VerletVelocityParticles,
 
     // constraints
     distance_constraints: DistanceConstraints,
@@ -42,21 +27,8 @@ impl VerletVelocity {
     pub fn new(
 
     ) -> Self {
-        let pos_x = Vec::new();
-        let pos_y = Vec::new();
-        let pos_z = Vec::new();
-        let vel_half_x = Vec::new();
-        let vel_half_y = Vec::new();
-        let vel_half_z = Vec::new();
-        let vel_x = Vec::new();
-        let vel_y = Vec::new();
-        let vel_z = Vec::new();
-        let acc_x = Vec::new();
-        let acc_y = Vec::new();
-        let acc_z = Vec::new();
-        let mass = Vec::new();
-        let inv_mass = Vec::new();
-        let radius = Vec::new();
+        let particles = VerletVelocityParticles::new();
+
         let distance_constraints = DistanceConstraints {
             a:  Vec::new(),
             b:  Vec::new(),
@@ -87,58 +59,11 @@ impl VerletVelocity {
         };
 
         Self {
-            pos_x,
-            pos_y,
-            pos_z,
-            vel_half_x,
-            vel_half_y,
-            vel_half_z,
-            vel_x,
-            vel_y,
-            vel_z,
-            acc_x,
-            acc_y,
-            acc_z,
-            mass,
-            inv_mass,
-            radius,
+            particles,
             distance_constraints,
             angle_constraints,
             angle_motor_constraints,
         }
-    }
-
-    pub fn push_particle(&mut self, pos: Vec3, radius: f32, mass: f32) -> usize
-    {
-        let index = self.len();
-
-        self.pos_x.push(pos.x);
-        self.pos_y.push(pos.y);
-        self.pos_z.push(pos.z);
-
-        self.vel_half_x.push(0.0);
-        self.vel_half_y.push(0.0);
-        self.vel_half_z.push(0.0);
-
-        self.vel_x.push(0.0);
-        self.vel_y.push(0.0);
-        self.vel_z.push(0.0);
-
-        self.acc_x.push(0.0);
-        self.acc_y.push(0.0);
-        self.acc_z.push(0.0);
-
-        self.mass.push(mass);
-        self.inv_mass.push(if mass > 0.0 {
-            1.0 / mass
-        } else {
-            // static particle
-            0.0
-        });
-
-        self.radius.push(radius);
-
-        index
     }
 
     pub fn push_constraint_distance(
@@ -167,8 +92,8 @@ impl VerletVelocity {
         stiffness: f32,
         damping: f32,
     ) -> usize {
-        let pos_a = self.get_pos(a);
-        let pos_b = self.get_pos(b);
+        let pos_a = self.particles.get_pos(a);
+        let pos_b = self.particles.get_pos(b);
         let distance = pos_a.distance(pos_b);
 
         self.push_constraint_distance(a, b, distance, stiffness, damping)
@@ -204,9 +129,9 @@ impl VerletVelocity {
         stiffness: f32,
         damping: f32,
     ) -> usize {
-        let pos_a = self.get_pos(a);
-        let pos_b = self.get_pos(b);
-        let pos_c = self.get_pos(c);
+        let pos_a = self.particles.get_pos(a);
+        let pos_b = self.particles.get_pos(b);
+        let pos_c = self.particles.get_pos(c);
 
         let ab = pos_a - pos_b;
         let cb = pos_c - pos_b;
@@ -278,11 +203,11 @@ impl VerletVelocity {
         for i in 0..SUB_STEPS
         {
             // Update the position using the old velocity and acceleration
-            self.integrate_position(sub_dt);
+            self.particles.integrate_position(sub_dt);
 
             self.solve_ground_collision();
 
-            self.zero_acc();
+            self.particles.zero_acc();
 
             // Recalculate the acceleration at the new position
             self.apply_gravity();
@@ -291,67 +216,25 @@ impl VerletVelocity {
             self.apply_angle_motor_constraints();
 
             // Update the position using the old velocity and acceleration
-            self.integrate_velocity(sub_dt);
+            self.particles.integrate_velocity(sub_dt);
         }
     }
 
-    /// Velocity Verlet integration
-    fn integrate_position(&mut self, dt: f32) {
-        for i in 0..self.len() {
-            if self.inv_mass[i] == 0.0 {
-                // static particle
-                continue;
-            }
-
-            let mut pos = self.get_pos(i);
-            let vel = self.get_vel(i);
-            let acc = self.get_acc(i);
-
-            let vel_half = vel + 0.5 * acc * dt;
-            pos += vel_half * dt;
-
-            self.set_pos(i, pos);
-            self.set_vel_half(i, vel_half);
-        }
-    }
-
-    fn zero_acc(&mut self) {
-        for i in 0..self.len() {
-            self.set_acc(i, Vec3::zero());
-        }
-    }
-
-    /// Velocity Verlet integration
-    fn integrate_velocity(&mut self, dt: f32) {
-        for i in 0..self.len() {
-            if self.inv_mass[i] == 0.0 {
-                // static particle
-                continue;
-            }
-
-            let vel_half = self.get_vel_half(i);
-            let acc = self.get_acc(i);
-
-            let vel = vel_half + 0.5 * acc * dt;
-
-            self.set_vel(i, vel);
-        }
-    }
 
     /// Apply gravity
     fn apply_gravity(&mut self) {
         const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -10.0);
 
-        for i in 0..self.len() {
-            let mut acc = self.get_acc(i);
-            let inv_mass = self.inv_mass[i];
+        for i in 0..self.particles.len() {
+            let mut acc = self.particles.get_acc(i);
+            let inv_mass = self.particles.inv_mass[i];
 
             // static particles have inv_mass == 0
             if inv_mass > 0.0 {
                 acc += GRAVITY;
             }
 
-            self.set_acc(i, acc);
+            self.particles.set_acc(i, acc);
         }
     }
 
@@ -364,8 +247,8 @@ impl VerletVelocity {
             let stiffness = self.distance_constraints.stiffness[i];
             let damping = self.distance_constraints.damping[i];
 
-            let inv_mass_a = self.inv_mass[index_a];
-            let inv_mass_b = self.inv_mass[index_b];
+            let inv_mass_a = self.particles.inv_mass[index_a];
+            let inv_mass_b = self.particles.inv_mass[index_b];
 
             // Both particles are static.
             if inv_mass_a == 0.0 && inv_mass_b == 0.0 {
@@ -373,14 +256,14 @@ impl VerletVelocity {
             }
 
             // Particle a
-            let pos_a = self.get_pos(index_a);
-            let vel_a = self.get_vel_half(index_a);
-            let mut acc_a = self.get_acc(index_a);
+            let pos_a = self.particles.get_pos(index_a);
+            let vel_a = self.particles.get_vel_half(index_a);
+            let mut acc_a = self.particles.get_acc(index_a);
 
             // Particle b
-            let pos_b = self.get_pos(index_b);
-            let vel_b = self.get_vel_half(index_b);
-            let mut acc_b = self.get_acc(index_b);
+            let pos_b = self.particles.get_pos(index_b);
+            let vel_b = self.particles.get_vel_half(index_b);
+            let mut acc_b = self.particles.get_acc(index_b);
 
             let delta = pos_b - pos_a;
             let distance = delta.magnitude();
@@ -405,8 +288,8 @@ impl VerletVelocity {
 
             acc_b -= force * inv_mass_b;
 
-            self.set_acc(index_a, acc_a);
-            self.set_acc(index_b, acc_b);
+            self.particles.set_acc(index_a, acc_a);
+            self.particles.set_acc(index_b, acc_b);
         }
     }
 
@@ -421,13 +304,13 @@ impl VerletVelocity {
             let stiffness = self.angle_constraints.stiffness[i];
             let damping = self.angle_constraints.damping[i];
 
-            let pos_a = self.get_pos(index_a);
-            let pos_b = self.get_pos(index_b);
-            let pos_c = self.get_pos(index_c);
+            let pos_a = self.particles.get_pos(index_a);
+            let pos_b = self.particles.get_pos(index_b);
+            let pos_c = self.particles.get_pos(index_c);
 
-            let vel_a = self.get_vel_half(index_a);
-            let vel_b = self.get_vel_half(index_b);
-            let vel_c = self.get_vel_half(index_c);
+            let vel_a = self.particles.get_vel_half(index_a);
+            let vel_b = self.particles.get_vel_half(index_b);
+            let vel_c = self.particles.get_vel_half(index_c);
 
             let u = pos_a - pos_b;
             let v = pos_c - pos_b;
@@ -464,18 +347,18 @@ impl VerletVelocity {
             let force_b = torque * grad_b;
             let force_c = torque * grad_c;
 
-            let mut acc_a = self.get_acc(index_a);
-            let mut acc_b = self.get_acc(index_b);
-            let mut acc_c = self.get_acc(index_c);
+            let mut acc_a = self.particles.get_acc(index_a);
+            let mut acc_b = self.particles.get_acc(index_b);
+            let mut acc_c = self.particles.get_acc(index_c);
 
             // Apply forces as accelerations using inverse masses.
-            acc_a += force_a * self.inv_mass[index_a];
-            acc_b += force_b * self.inv_mass[index_b];
-            acc_c += force_c * self.inv_mass[index_c];
+            acc_a += force_a * self.particles.inv_mass[index_a];
+            acc_b += force_b * self.particles.inv_mass[index_b];
+            acc_c += force_c * self.particles.inv_mass[index_c];
 
-            self.set_acc(index_a, acc_a);
-            self.set_acc(index_b, acc_b);
-            self.set_acc(index_c, acc_c);
+            self.particles.set_acc(index_a, acc_a);
+            self.particles.set_acc(index_b, acc_b);
+            self.particles.set_acc(index_c, acc_c);
         }
     }
 
@@ -493,13 +376,13 @@ impl VerletVelocity {
             let damping = self.angle_motor_constraints.damping[i];
             let external_torque = self.angle_motor_constraints.external_torque[i];
 
-            let pos_a = self.get_pos(index_a);
-            let pos_b = self.get_pos(index_b);
-            let pos_c = self.get_pos(index_c);
+            let pos_a = self.particles.get_pos(index_a);
+            let pos_b = self.particles.get_pos(index_b);
+            let pos_c = self.particles.get_pos(index_c);
 
-            let vel_a = self.get_vel_half(index_a);
-            let vel_b = self.get_vel_half(index_b);
-            let vel_c = self.get_vel_half(index_c);
+            let vel_a = self.particles.get_vel_half(index_a);
+            let vel_b = self.particles.get_vel_half(index_b);
+            let vel_c = self.particles.get_vel_half(index_c);
 
             // Vectors pointing away from the central particle.
             let u = pos_a - pos_b;
@@ -553,17 +436,17 @@ impl VerletVelocity {
             let force_b = torque * grad_b;
             let force_c = torque * grad_c;
 
-            let mut acc_a = self.get_acc(index_a);
-            let mut acc_b = self.get_acc(index_b);
-            let mut acc_c = self.get_acc(index_c);
+            let mut acc_a = self.particles.get_acc(index_a);
+            let mut acc_b = self.particles.get_acc(index_b);
+            let mut acc_c = self.particles.get_acc(index_c);
 
-            acc_a += force_a * self.inv_mass[index_a];
-            acc_b += force_b * self.inv_mass[index_b];
-            acc_c += force_c * self.inv_mass[index_c];
+            acc_a += force_a * self.particles.inv_mass[index_a];
+            acc_b += force_b * self.particles.inv_mass[index_b];
+            acc_c += force_c * self.particles.inv_mass[index_c];
 
-            self.set_acc(index_a, acc_a);
-            self.set_acc(index_b, acc_b);
-            self.set_acc(index_c, acc_c);
+            self.particles.set_acc(index_a, acc_a);
+            self.particles.set_acc(index_b, acc_b);
+            self.particles.set_acc(index_c, acc_c);
 
             self.angle_motor_constraints.angle[i] = angle;
             self.angle_motor_constraints.angular_velocity[i] = angular_velocity;
@@ -576,16 +459,16 @@ impl VerletVelocity {
         const RESTITUTION: f32 = 0.9;
         const FRICTION: f32 = 0.8;
 
-        for i in 0..self.len() {
-            if self.inv_mass[i] == 0.0 {
+        for i in 0..self.particles.len() {
+            if self.particles.inv_mass[i] == 0.0 {
                 // static particle
                 continue;
             }
 
-            let mut pos = self.get_pos(i);
-            let mut vel = self.get_vel_half(i);
+            let mut pos = self.particles.get_pos(i);
+            let mut vel = self.particles.get_vel_half(i);
 
-            let min_z = GROUND_HEIGHT_Z + self.radius[i];
+            let min_z = GROUND_HEIGHT_Z + self.particles.radius[i];
 
             if pos.z >= min_z {
                 continue;
@@ -607,78 +490,9 @@ impl VerletVelocity {
                 // vel.y *= 1.0 - FRICTION;
             }
 
-            self.set_pos(i, pos);
-            self.set_vel_half(i, vel);
+            self.particles.set_pos(i, pos);
+            self.particles.set_vel_half(i, vel);
         }
-    }
-
-    pub fn get_pos(&self, i: usize) -> Vec3 {
-        Vec3::new(self.pos_x[i], self.pos_y[i], self.pos_z[i])
-    }
-
-    pub fn get_vel_half(&self, i: usize) -> Vec3 {
-        Vec3::new(self.vel_half_x[i], self.vel_half_y[i], self.vel_half_z[i])
-    }
-
-    pub fn get_vel(&self, i: usize) -> Vec3 {
-        Vec3::new(self.vel_x[i], self.vel_y[i], self.vel_z[i])
-    }
-
-    pub fn get_acc(&self, i: usize) -> Vec3 {
-        Vec3::new(self.acc_x[i], self.acc_y[i], self.acc_z[i])
-    }
-
-    pub fn set_pos(&mut self, i: usize, val: Vec3) {
-        self.pos_x[i] = val.x;
-        self.pos_y[i] = val.y;
-        self.pos_z[i] = val.z;
-    }
-
-    pub fn set_vel_half(&mut self, i: usize, val: Vec3) {
-        self.vel_half_x[i] = val.x;
-        self.vel_half_y[i] = val.y;
-        self.vel_half_z[i] = val.z;
-    }
-
-    pub fn set_vel(&mut self, i: usize, val: Vec3) {
-        self.vel_x[i] = val.x;
-        self.vel_y[i] = val.y;
-        self.vel_z[i] = val.z;
-    }
-
-    pub fn set_acc(&mut self, i: usize, val: Vec3) {
-        self.acc_x[i] = val.x;
-        self.acc_y[i] = val.y;
-        self.acc_z[i] = val.z;
-    }
-
-    fn assert_bounds_invariants(&self) {
-        let len = self.pos_x.len();
-
-        assert!(self.pos_x.len() == len);
-        assert!(self.pos_y.len() == len);
-        assert!(self.pos_z.len() == len);
-
-        assert!(self.vel_half_x.len() == len);
-        assert!(self.vel_half_y.len() == len);
-        assert!(self.vel_half_z.len() == len);
-
-        assert!(self.vel_x.len() == len);
-        assert!(self.vel_y.len() == len);
-        assert!(self.vel_z.len() == len);
-
-        assert!(self.acc_x.len() == len);
-        assert!(self.acc_y.len() == len);
-        assert!(self.acc_z.len() == len);
-
-        assert!(self.inv_mass.len() == len);
-        assert!(self.radius.len() == len);
-    }
-
-    pub fn len(&self) -> usize {
-        self.assert_bounds_invariants();
-
-        self.pos_x.len()
     }
 }
 

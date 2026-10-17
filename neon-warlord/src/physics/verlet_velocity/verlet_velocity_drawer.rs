@@ -21,7 +21,7 @@ pub struct VerletVelocityDrawer {
 
 impl VerletVelocityDrawer {
     pub fn new(verlet_physics: &VerletVelocity, radius: f32, position: Vec3) -> Self {
-        let _nr_nodes = verlet_physics.len();
+        let _nr_nodes = verlet_physics.particles.len();
         let _nr_edges = verlet_physics.distance_constraints.len();
 
         let nodes_color_0: Vec3 = to_rgb("#ce51ff").into();
@@ -47,9 +47,9 @@ impl VerletVelocityDrawer {
     ) {
         let constrains = &verlet_physics.distance_constraints;
 
-        for i in 0..verlet_physics.len() {
-            let position = verlet_physics.get_pos(i) + self.position;
-            let radius = verlet_physics.radius[i];
+        for i in 0..verlet_physics.particles.len() {
+            let position = verlet_physics.particles.get_pos(i) + self.position;
+            let radius = verlet_physics.particles.radius[i];
 
             producer_nodes.push(particle_shader::Instance {
                 position: position.into(),
@@ -60,8 +60,8 @@ impl VerletVelocityDrawer {
         }
 
         for (&a, &b) in itertools::izip!(&constrains.a, &constrains.b,) {
-            let pos_0 = verlet_physics.get_pos(a) + self.position;
-            let pos_1 = verlet_physics.get_pos(b) + self.position;
+            let pos_0 = verlet_physics.particles.get_pos(a) + self.position;
+            let pos_1 = verlet_physics.particles.get_pos(b) + self.position;
 
             producer_edges.push(particle_shader_two_point::Instance {
                 position_0: pos_0.into(),
