@@ -179,3 +179,28 @@ pub struct RotationalQuantities {
     // Inverse inertia tensor
     pub inverse_inertia_tensor: Mat3
 }
+
+pub struct PositionalConstraint {
+
+    // Point 1 defined relative to the center of mass
+    r1: Vec3,
+
+    // Point 2 defined relative to the center of mass
+    r2: Vec3,
+}
+
+impl PositionalConstraint {
+    pub fn solve(&mut self, p: &PositionalQuantities, r: &RotationalQuantities){
+        
+        // To apply a positional correction Δx at positions r1 and r2, we first
+        // split it into its direction n and its magnitude 푐.
+        let dx = self.r2 - self.r1;
+        let c= dx.magnitude();
+        let n = dx / c;
+
+        // compute the two generalized inverse masses
+        let rn = self.r1.cross(n);
+        let w1 = p.inv_mass + rn.dot(r.inverse_inertia_tensor * rn);
+
+    }
+}
