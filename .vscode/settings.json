@@ -3,7 +3,8 @@
         "Deque",
         "recip",
         "Unclipped",
-        "verlet"
+        "verlet",
+        "Xpbd"
     ],
     "rust-analyzer.testExplorer": true,
     "explorer.sortOrder": "mixed",
