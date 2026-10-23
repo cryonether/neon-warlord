@@ -4,6 +4,7 @@ use cgmath::InnerSpace;
 
 use crate::physics::xpdb::{Quad, Vec3, XpbdRigidBody};
 
+#[derive(Clone)]
 pub struct XpbdPositionalConstraint {
 
     // Point 0 defined relative to the center of mass

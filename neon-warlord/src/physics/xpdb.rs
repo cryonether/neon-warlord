@@ -3,11 +3,12 @@
 //! 
 
 pub mod xpbd_positional_constraint;
+pub mod xpbd_drawer;
 
 #[cfg(test)]
 mod tests;
 
-use cgmath::{InnerSpace, Rotation, Zero};
+use cgmath::{InnerSpace, One, Rotation, SquareMatrix, Zero};
 
 use crate::physics::{rigid_body::RigidBody, xpdb::xpbd_positional_constraint::XpbdPositionalConstraint};
 
@@ -17,6 +18,7 @@ type Mat3 = cgmath::Matrix3<f32>;
 
 const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -10.0);
 
+#[derive(Clone)]
 pub struct Xpbd {
     particles: Vec<XpbdParticle>,
     rigid_bodies: Vec<XpbdRigidBody>,
@@ -84,20 +86,86 @@ impl Xpbd {
             //     // SolveVelocities(v_1, . . . v_n, w_1, . . . w_n)
             // }
         }
+    }
 
 
+    pub fn add_rigid_body(&mut self, pos: Vec3, mass: f32) -> usize {
+        assert!(
+            mass.is_finite() && mass >= 0.0,
+            "Mass must be finite and non-negative"
+        );
+        
+        let index = self.rigid_bodies.len();
+
+        let inv_mass = if mass > 0.0 {
+            1.0 / mass
+        } else {
+            0.0
+        };
+
+        let inertia_tensor = Mat3::identity();
+        let inverse_inertia_tensor = if mass > 0.0 {
+            Mat3::identity()
+        } else {
+            Mat3::zero()
+        };
+
+        let orientation= Quad::one();
+
+        let obj = XpbdRigidBody {
+            p: PositionalQuantities {
+                pos: pos,
+                pos_prev: pos,
+                vel: Vec3::zero(),
+                mass,
+                inv_mass,
+            },
+            r: RotationalQuantities {
+                orientation,
+                orientation_prev: orientation,
+                angular_velocity: Vec3::zero(),
+                inertia_tensor,
+                inverse_inertia_tensor,
+            },
+        };
+
+        self.rigid_bodies.push(obj);
+        
+        index
+    }
+
+    pub fn add_constraint_position(&mut self, index_a: usize, index_b: usize, compliance: f32) -> usize {
+        let index = self.position_constraints.len();
+        
+        let constraint = PositionalConstraint{
+            index_a,
+            index_b,
+            constraint: XpbdPositionalConstraint {
+                relative_position_0: Vec3::zero(),
+                relative_position_1: Vec3::zero(),
+                compliance,
+                lagrange_multiplier: 1.0,
+            },
+        };
+
+        self.position_constraints.push(constraint);
+
+        index
     }
 }
 
+#[derive(Clone)]
 pub struct XpbdParticle {
     p: PositionalQuantities,
 }
 
+#[derive(Clone)]
 pub struct XpbdRigidBody {
     p: PositionalQuantities,
     r: RotationalQuantities,
 }
 
+#[derive(Clone)]
 pub struct PositionalQuantities {
     // Position
     pos: Vec3,
@@ -113,9 +181,6 @@ pub struct PositionalQuantities {
 
     // Inverse mass
     inv_mass: f32,
-
-    // Inverse of stiffness
-    compliance: f32,
 }
 
 impl PositionalQuantities {
@@ -136,6 +201,7 @@ impl PositionalQuantities {
     }
 }
 
+#[derive(Clone)]
 pub struct RotationalQuantities {
     // Rotation
     pub orientation: Quad,
@@ -195,6 +261,7 @@ impl RotationalQuantities {
     }
 }
 
+#[derive(Clone)]
 pub struct PositionalConstraint {
     pub index_a: usize,
     pub index_b: usize,

@@ -12,7 +12,6 @@ fn test_integrate_position() {
         vel: Vec3::new(1.0, 0.0, 0.0),
         mass: 2.0,
         inv_mass: 0.5,
-        compliance: 0.0,
     };
 
     quantities.integrate_position(dt);
@@ -50,7 +49,6 @@ fn test_integrate_velocity() {
         vel: Vec3::new(0.0, 0.0, 0.0),
         mass: 1.0,
         inv_mass: 1.0,
-        compliance: 0.0,
     };
 
     quantities.integrate_velocity(dt);
@@ -77,7 +75,6 @@ fn test_steps() {
         vel: initial_vel,
         mass: 1.0,
         inv_mass: 1.0,
-        compliance: 0.0,
     };
 
     for _ in 0..steps {

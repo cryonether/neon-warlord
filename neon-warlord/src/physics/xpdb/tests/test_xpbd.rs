@@ -18,7 +18,6 @@ fn test_steps_one_rigid_body() {
             vel: Vec3::zero(),
             mass: 1.0,
             inv_mass: 1.0,
-            compliance: 0.0,
         },
         r: RotationalQuantities {
             orientation: Quad::new(1.0, 0.0, 0.0, 0.0),
