@@ -2,7 +2,11 @@
 //! https://matthias-research.github.io/pages/publications/PBDBodies.pdf
 //! 
 
+pub mod xpbd_positional_constraint;
+
 use cgmath::{InnerSpace, Rotation, Zero};
+
+use crate::physics::rigid_body::RigidBody;
 
 type Vec3 = cgmath::Vector3<f32>;
 type Quad = cgmath::Quaternion<f32>;
@@ -43,7 +47,7 @@ impl Xpbd {
 
             for rigid_body in &mut self.rigid_bodies {
                 {
-                    let p: &mut PositionalQuantities = &mut rigid_body.pos;
+                    let p: &mut PositionalQuantities = &mut rigid_body.p;
 
                     // Save previous position
                     p.pos_prev = p.pos;
@@ -56,7 +60,7 @@ impl Xpbd {
                     p.pos = p.pos + sub_dt * p.vel;
                 }
                 {
-                    let r: &mut RotationalQuantities = &mut rigid_body.rot;
+                    let r: &mut RotationalQuantities = &mut rigid_body.r;
 
                     // Save previous rotation
                     r.orientation_prev = r.orientation;
@@ -98,13 +102,13 @@ impl Xpbd {
 
             for rigid_body in &mut self.rigid_bodies {
                 {
-                    let p: &mut PositionalQuantities = &mut rigid_body.pos;
+                    let p: &mut PositionalQuantities = &mut rigid_body.p;
 
                     // Update velocity
                     p.vel = (p.pos - p.pos_prev) / sub_dt;
                 }
                 {
-                    let r: &mut RotationalQuantities = &mut rigid_body.rot;
+                    let r: &mut RotationalQuantities = &mut rigid_body.r;
 
                     // Calculate delta
                     let dq = r.orientation * r.orientation_prev.invert();
@@ -135,8 +139,8 @@ pub struct XpbdParticle {
 }
 
 pub struct XpbdRigidBody {
-    pos: PositionalQuantities,
-    rot: RotationalQuantities,
+    p: PositionalQuantities,
+    r: RotationalQuantities,
 }
 
 pub struct PositionalQuantities {
@@ -178,29 +182,4 @@ pub struct RotationalQuantities {
 
     // Inverse inertia tensor
     pub inverse_inertia_tensor: Mat3
-}
-
-pub struct PositionalConstraint {
-
-    // Point 1 defined relative to the center of mass
-    r1: Vec3,
-
-    // Point 2 defined relative to the center of mass
-    r2: Vec3,
-}
-
-impl PositionalConstraint {
-    pub fn solve(&mut self, p: &PositionalQuantities, r: &RotationalQuantities){
-        
-        // To apply a positional correction Δx at positions r1 and r2, we first
-        // split it into its direction n and its magnitude 푐.
-        let dx = self.r2 - self.r1;
-        let c= dx.magnitude();
-        let n = dx / c;
-
-        // compute the two generalized inverse masses
-        let rn = self.r1.cross(n);
-        let w1 = p.inv_mass + rn.dot(r.inverse_inertia_tensor * rn);
-
-    }
 }
