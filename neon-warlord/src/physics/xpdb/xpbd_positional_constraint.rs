@@ -4,7 +4,7 @@ use cgmath::InnerSpace;
 
 use crate::physics::xpdb::{Quad, Vec3, XpbdRigidBody};
 
-pub struct PositionalConstraint {
+pub struct XpbdPositionalConstraint {
 
     // Point 0 defined relative to the center of mass
     relative_position_0: Vec3,
@@ -20,7 +20,7 @@ pub struct PositionalConstraint {
     lagrange_multiplier: f32,
 }
 
-impl PositionalConstraint {
+impl XpbdPositionalConstraint {
     pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32){
         let p0 = &mut obj_0.p;
         let r0 = &mut obj_0.r;
