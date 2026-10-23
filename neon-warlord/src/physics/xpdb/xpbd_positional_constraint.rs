@@ -7,17 +7,17 @@ use crate::physics::xpdb::{Quad, Vec3, XpbdRigidBody};
 pub struct XpbdPositionalConstraint {
 
     // Point 0 defined relative to the center of mass
-    relative_position_0: Vec3,
+    pub relative_position_0: Vec3,
 
     // Point 1 defined relative to the center of mass
-    relative_position_1: Vec3,
+    pub relative_position_1: Vec3,
 
     // The compliance of the constraint
     // compliance = 0 simulates infinite stiffness
-    compliance: f32,
+    pub compliance: f32,
 
     // Lagrange multiplier in m/N
-    lagrange_multiplier: f32,
+    pub lagrange_multiplier: f32,
 }
 
 impl XpbdPositionalConstraint {
@@ -29,8 +29,13 @@ impl XpbdPositionalConstraint {
 
         // To apply a positional correction Δx at positions r1 and r2, we first
         // split it into its direction n and its magnitude n.
-        let dx = self.relative_position_1 - self.relative_position_0;
+        let dx = self.relative_position_0 - self.relative_position_1;
         let magnitude= dx.magnitude();
+        if magnitude < 1e-6 {
+            // Both objects occupies the same space
+            return;
+        }
+
         let direction = dx / magnitude;
 
         //
