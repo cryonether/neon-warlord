@@ -4,6 +4,7 @@
 //! 
 
 pub mod xpbd_positional_constraint;
+pub mod xpbd_angular_constraint;
 pub mod xpbd_drawer;
 pub mod xpbd_rigid_body;
 
@@ -280,6 +281,22 @@ impl RotationalQuantities {
         if dq.s < 0.0 { 
             self.omega = -self.omega
         }
+    }
+
+    fn apply_inverse_inertia_world(&self,
+        // rotation: &Quad,
+        // inverse_rotation: &Quad,
+        // inverse_inertia_local: &Mat3,
+        v_world: &Vec3,
+    ) -> Vec3 {
+        // Transform the vector into local space.
+        let v_local = self.inv_rot.rotate_vector(*v_world);
+
+        // Apply the full local-space inverse inertia tensor.
+        let result_local = self.inverse_inertia_tensor * v_local;
+
+        // Transform the result back into world space.
+        self.rot.rotate_vector(result_local)
     }
 }
 

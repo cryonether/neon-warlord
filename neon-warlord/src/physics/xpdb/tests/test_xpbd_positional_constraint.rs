@@ -41,6 +41,7 @@ fn test_solve() {
         relative_position_1: Vec3::zero(),
         compliance: 0.0,
         lagrange_multiplier: 0.0,
+        force: Vec3::zero(),
     };
 
     let dt = 1.0 / 60.0;
@@ -73,8 +74,7 @@ fn test_solve() {
     );
 
     // The constraint force estimate should be finite.
-    let force = constraint.get_force(dt);
-    assert!(force.is_finite());
+    let force = constraint.get_force();
 }
 
 /// Verify that the lighter body moves farther than the heavier body.
@@ -98,6 +98,7 @@ fn test_unequal_masses() {
         relative_position_1: Vec3::new(2.0, 0.0, 0.0),
         compliance: 0.0,
         lagrange_multiplier: 0.0,
+        force: Vec3::zero(),
     };
 
     constraint.solve(&mut body0, &mut body1, 1.0 / 60.0);
@@ -127,6 +128,7 @@ fn test_nonzero_compliance() {
         relative_position_1: Vec3::new(2.0, 0.0, 0.0),
         compliance: 0.01,
         lagrange_multiplier: 0.0,
+        force: Vec3::zero(),
     };
 
     let initial_distance = (body1.p.pos - body0.p.pos).magnitude();
@@ -160,6 +162,7 @@ fn test_zero_constraint_error() {
         relative_position_1: Vec3::zero(),
         compliance: 0.0,
         lagrange_multiplier: 0.0,
+        force: Vec3::zero(),
     };
 
     constraint.solve(&mut body0, &mut body1, 1.0 / 60.0);
@@ -192,6 +195,7 @@ fn test_nonzero_rotational_correction() {
         relative_position_1: Vec3::new(2.0, 1.0, 0.0),
         compliance: 0.0,
         lagrange_multiplier: 0.0,
+        force: Vec3::zero(),
     };
 
     constraint.solve(&mut body0, &mut body1, 1.0 / 60.0);

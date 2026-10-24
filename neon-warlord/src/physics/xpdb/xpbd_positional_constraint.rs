@@ -1,6 +1,6 @@
 //! A positional constraint of two rigid bodies
 
-use cgmath::{InnerSpace, Rotation};
+use cgmath::{InnerSpace, Rotation, Zero};
 
 use crate::physics::xpdb::{Mat3, Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
@@ -19,6 +19,9 @@ pub struct XpbdPositionalConstraint {
 
     // Lagrange multiplier in m/N
     pub lagrange_multiplier: f32,
+
+    // Applied force
+    pub force: Vec3,
 }
 
 impl XpbdPositionalConstraint {
@@ -29,11 +32,12 @@ impl XpbdPositionalConstraint {
             relative_position_1,
             compliance,
             lagrange_multiplier: 0.0,
+            force: Vec3::zero(),
         }
     }
 
 
-    pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32){
+    pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
         let p0 = &mut obj_0.p;
         let r0 = &mut obj_0.r;
         let p1 = &mut obj_1.p;
@@ -55,13 +59,13 @@ impl XpbdPositionalConstraint {
 
         // To apply a positional correction Δx at positions r1 and r2, we first
         // split it into its direction n and its magnitude n.
-        let magnitude= dx.magnitude();
-        if magnitude < 1e-6 {
+        let distance= dx.magnitude();
+        if distance < 1e-6 {
             // Both objects occupies the same space
             return;
         }
 
-        let direction = dx / magnitude;
+        let direction = dx / distance;
 
         //
         // Calculates the generalized inverse mass of a rigid body for a positional
@@ -88,16 +92,10 @@ impl XpbdPositionalConstraint {
         let rn0 = r0_world.cross(direction);
         let rn1 = r1_world.cross(direction);
 
-        let i_rn0 = apply_inverse_inertia_world(
-            &r0.rot, 
-            &r0.inv_rot, 
-            &r0.inverse_inertia_tensor, 
+        let i_rn0 = r0.apply_inverse_inertia_world(
             &rn0
         );
-        let i_rn1 = apply_inverse_inertia_world(
-            &r1.rot, 
-            &r1.inv_rot, 
-            &r1.inverse_inertia_tensor, 
+        let i_rn1 = r1.apply_inverse_inertia_world(
             &rn1
         );
         
@@ -115,7 +113,7 @@ impl XpbdPositionalConstraint {
         // Δλ = ─────────────────────────
         //          w₁ + w₂ + α̃
         //
-        //          α
+        //       α
         // α̃ = ───────
         //       h²
         // ```
@@ -135,7 +133,7 @@ impl XpbdPositionalConstraint {
         // For a rigid constraint, set α = 0.
         //
         let alpha_tilde = self.compliance / (dt * dt);
-        let delta_lagrange_multiplier = (-magnitude - alpha_tilde * self.lagrange_multiplier) / 
+        let delta_lagrange_multiplier = (-distance - alpha_tilde * self.lagrange_multiplier) / 
                                                         (w0 + w1 + alpha_tilde);
         self.lagrange_multiplier += delta_lagrange_multiplier;
 
@@ -199,21 +197,17 @@ impl XpbdPositionalConstraint {
         // Dynamics, Section 3.3.1, equation (8).
         // https://matthias-research.github.io/pages/publications/PBDBodies.pdf
         //
-        let dq0 = apply_inverse_inertia_world(
-            &r0.rot, 
-            &r0.inv_rot, 
-            &r0.inverse_inertia_tensor, 
+        let dq0 = r0.apply_inverse_inertia_world(
             &r0_world.cross(p)
         );
-        let dq1 = apply_inverse_inertia_world(
-            &r1.rot, 
-            &r1.inv_rot, 
-            &r1.inverse_inertia_tensor, 
+        let dq1 = r1.apply_inverse_inertia_world(
             &r1_world.cross(p)
         );
         
         r0.rot = r0.rot + 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r0.rot;
         r1.rot = r1.rot - 0.5 * Quad::new(0.0, dq1.x, dq1.y, dq1.z) * r1.rot;
+    
+        self.force = self.lagrange_multiplier * direction / (dt * dt)
     }
 
     ///
@@ -241,8 +235,8 @@ impl XpbdPositionalConstraint {
     /// - Use a consistent timestep convention when calculating the force.
     /// - The multiplier should be accumulated during constraint solving.
     ///
-    pub fn get_force(&self, dt:f32) -> f32 {
-        self.lagrange_multiplier / (dt * dt)
+    pub fn get_force(&self) -> cgmath::Vector3<f32> {
+        self.force
     }
 
     pub fn reset_lagrange_multiplier(&mut self) {
@@ -269,18 +263,18 @@ fn _apply_inverse_inertia_world(
     rotation.rotate_vector(result_local)
 }
 
-fn apply_inverse_inertia_world(
-    rotation: &Quad,
-    inverse_rotation: &Quad,
-    inverse_inertia_local: &Mat3,
-    v_world: &Vec3,
-) -> Vec3 {
-    // Transform the vector into local space.
-    let v_local = inverse_rotation.rotate_vector(*v_world);
+// fn apply_inverse_inertia_world(
+//     rotation: &Quad,
+//     inverse_rotation: &Quad,
+//     inverse_inertia_local: &Mat3,
+//     v_world: &Vec3,
+// ) -> Vec3 {
+//     // Transform the vector into local space.
+//     let v_local = inverse_rotation.rotate_vector(*v_world);
 
-    // Apply the full local-space inverse inertia tensor.
-    let result_local = inverse_inertia_local * v_local;
+//     // Apply the full local-space inverse inertia tensor.
+//     let result_local = inverse_inertia_local * v_local;
 
-    // Transform the result back into world space.
-    rotation.rotate_vector(result_local)
-}
+//     // Transform the result back into world space.
+//     rotation.rotate_vector(result_local)
+// }
