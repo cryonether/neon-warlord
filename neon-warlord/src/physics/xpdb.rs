@@ -7,13 +7,14 @@ pub mod xpbd_positional_constraint;
 pub mod xpbd_angular_constraint;
 pub mod xpbd_drawer;
 pub mod xpbd_rigid_body;
+pub mod xpbd_hinge_joint;
 
 #[cfg(test)]
 mod tests;
 
 use cgmath::{InnerSpace, One, Rad, Rotation, SquareMatrix, Zero};
 
-use crate::physics::{rigid_body::RigidBody, xpdb::{xpbd_angular_constraint::XpbdAngularConstraint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
+use crate::physics::{rigid_body::{RigidBody}, xpdb::{xpbd_angular_constraint::XpbdAngularConstraint, xpbd_hinge_joint::XpbdHingeJoint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
 
 type Vec3 = cgmath::Vector3<f32>;
 type Quad = cgmath::Quaternion<f32>;
@@ -28,6 +29,7 @@ pub struct Xpbd {
 
     position_constraints: Vec<PositionalConstraint>,
     angular_constraints: Vec<AngularConstraint>,
+    hinge_joints: Vec<HingeJoint>,
 }
 
 impl Xpbd {
@@ -36,25 +38,31 @@ impl Xpbd {
         let rigid_bodies = Vec::new();
         let position_constraints = Vec::new();
         let angular_constraints = Vec::new();
+        let hinge_joints = Vec::new();
 
         Self {
             particles,
             rigid_bodies,
             position_constraints,
             angular_constraints,
+            hinge_joints,
         }
     }
 
     pub fn step(&mut self, dt: f32) {
         // const DT: f32 = 1.0 / 60.0;
-        const SUB_STEPS: usize = 4;
+        const SUB_STEPS: usize = 1;
         let sub_dt = dt / SUB_STEPS as f32;
 
-        for constraint in &mut self.position_constraints {
-            constraint.constraint.reset_lagrange_multiplier();
-        }
+        // for constraint in &mut self.position_constraints {
+        //     constraint.constraint.reset_lagrange_multiplier();
+        // }
 
-        for constraint in &mut self.angular_constraints {
+        // for constraint in &mut self.angular_constraints {
+        //     constraint.constraint.reset_lagrange_multiplier();
+        // }
+
+        for constraint in &mut self.hinge_joints {
             constraint.constraint.reset_lagrange_multiplier();
         }
 
@@ -71,23 +79,38 @@ impl Xpbd {
 
             // SolvePositions(x_1, . . . x_n, q_1, . . . q_n);
 
-            // Positional Constraints
-            for constraint in &mut self.position_constraints {
-                let index_a = constraint.index_a;
-                let index_b = constraint.index_b;
-                let constraint = &mut constraint.constraint;
+            // // Positional Constraints
+            // for constraint in &mut self.position_constraints {
+            //     let index_a = constraint.index_a;
+            //     let index_b = constraint.index_b;
+            //     let constraint = &mut constraint.constraint;
 
-                assert_ne!(index_a, index_b, "Constraint indices must differ");
-                let (obj_a, obj_b) = {
-                    let (left, right) = self.rigid_bodies.split_at_mut(index_b);
-                    (&mut left[index_a], &mut right[0])
-                };
+            //     assert_ne!(index_a, index_b, "Constraint indices must differ");
+            //     let (obj_a, obj_b) = {
+            //         let (left, right) = self.rigid_bodies.split_at_mut(index_b);
+            //         (&mut left[index_a], &mut right[0])
+            //     };
 
-                constraint.solve(obj_a, obj_b, sub_dt);
-            }
+            //     constraint.solve(obj_a, obj_b, sub_dt);
+            // }
 
-            // Angular Constraints
-            for constraint in &mut self.angular_constraints {
+            // // Angular Constraints
+            // for constraint in &mut self.angular_constraints {
+            //     let index_a = constraint.index_a;
+            //     let index_b = constraint.index_b;
+            //     let constraint = &mut constraint.constraint;
+
+            //     assert_ne!(index_a, index_b, "Constraint indices must differ");
+            //     let (obj_a, obj_b) = {
+            //         let (left, right) = self.rigid_bodies.split_at_mut(index_b);
+            //         (&mut left[index_a], &mut right[0])
+            //     };
+
+            //     constraint.solve(obj_a, obj_b, sub_dt);
+            // }
+
+            // Hinge joint
+            for constraint in &mut self.hinge_joints {
                 let index_a = constraint.index_a;
                 let index_b = constraint.index_b;
                 let constraint = &mut constraint.constraint;
@@ -182,6 +205,21 @@ impl Xpbd {
 
         index
     }
+
+    pub fn add_hinge_joint(&mut self, index_a: usize, index_b: usize, constraint: XpbdHingeJoint) -> usize {
+        let index = self.position_constraints.len();
+        
+        let constraint = HingeJoint{
+            index_a,
+            index_b,
+            constraint,
+        };
+
+        self.hinge_joints.push(constraint);
+
+        index
+    }
+
 }
 
 #[derive(Clone)]
@@ -346,4 +384,11 @@ pub struct AngularConstraint {
     pub index_a: usize,
     pub index_b: usize,
     pub constraint: XpbdAngularConstraint,
+}
+
+#[derive(Clone)]
+pub struct HingeJoint {
+    pub index_a: usize,
+    pub index_b: usize,
+    pub constraint: XpbdHingeJoint,
 }

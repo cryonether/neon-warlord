@@ -7,11 +7,11 @@ use crate::physics::xpdb::{Mat3, Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 #[derive(Clone)]
 pub struct XpbdPositionalConstraint {
 
-    // Point 0 defined relative to the center of mass
-    pub relative_position_0: Vec3,
+    // // Point 0 defined relative to the center of mass
+    // pub relative_position_0: Vec3,
 
-    // Point 1 defined relative to the center of mass
-    pub relative_position_1: Vec3,
+    // // Point 1 defined relative to the center of mass
+    // pub relative_position_1: Vec3,
 
     // The compliance of the constraint
     // compliance = 0 simulates infinite stiffness
@@ -25,11 +25,11 @@ pub struct XpbdPositionalConstraint {
 }
 
 impl XpbdPositionalConstraint {
-    pub fn new(relative_position_0: Vec3, relative_position_1: Vec3, compliance: f32) -> Self {
+    pub fn new(compliance: f32) -> Self {
         
         Self {
-            relative_position_0,
-            relative_position_1,
+            // relative_position_0,
+            // relative_position_1,
             compliance,
             lagrange_multiplier: 0.0,
             force: Vec3::zero(),
@@ -37,18 +37,22 @@ impl XpbdPositionalConstraint {
     }
 
 
-    pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
+    pub fn solve(&mut self, 
+        obj_0: &mut XpbdRigidBody, 
+        obj_1: &mut XpbdRigidBody, 
+        attachment_point_0: &Vec3,
+        attachment_point_1: &Vec3,
+        dt: f32,
+    ) {
         let p0 = &mut obj_0.p;
         let r0 = &mut obj_0.r;
         let p1 = &mut obj_1.p;
         let r1 = &mut obj_1.r;
 
         // Calculate the world space anchor points
-        let anchor_0 = p0.pos
-            + r0.rot.rotate_vector(self.relative_position_0);
+        let anchor_0 = attachment_point_0;
 
-        let anchor_1 = p1.pos
-            + r1.rot.rotate_vector(self.relative_position_1);
+        let anchor_1 = attachment_point_1;
 
         let r0_world = anchor_0 - p0.pos;
         let r1_world = anchor_1 - p1.pos;

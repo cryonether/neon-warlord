@@ -1,12 +1,12 @@
 //! A pendulum, try to balance it
 
-use std::iter::zip;
+use std::{f32::consts::PI, iter::zip};
 
 use cgmath::{InnerSpace, Zero};
 use wgpu::rwh;
 
 use crate::{
-    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer}, xpdb::{Xpbd, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_drawer::XpbdDrawer, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}},
+    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer}, xpdb::{Xpbd, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_drawer::XpbdDrawer, xpbd_hinge_joint::{RotationAxis, XpbdHingeJoint}, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}},
 };
 
 const OBSERVATIONS: usize = 11;
@@ -40,24 +40,42 @@ impl GymHalfCheetah2 {
             MASS
         );
 
-       let index_rigid_body_0 = physics.add_rigid_body(&rigid_body_0);
-       let index_rigid_body_1 = physics.add_rigid_body(&rigid_body_1);
+        let index_rigid_body_0 = physics.add_rigid_body(&rigid_body_0);
+        let index_rigid_body_1 = physics.add_rigid_body(&rigid_body_1);
 
-       let constraint_0 = XpbdPositionalConstraint::new(
-        rigid_body_0.particles[0],
-        rigid_body_1.particles[0],
-        // 0.002,
-        0.0000,
-       );
+        let hinge_joint_0 = XpbdHingeJoint::new(
+            rigid_body_0.particles[0], 
+            rigid_body_1.particles[0], 
+            0.1 * PI, 
+             1.9 * PI, 
+            RotationAxis::Y,
+            RotationAxis::Y,
+            0.000, 
+            0.0000
+        );
 
-       physics.add_constraint_position(index_rigid_body_0, index_rigid_body_1, constraint_0);
+        physics.add_hinge_joint(
+            index_rigid_body_0, 
+            index_rigid_body_1, 
+            hinge_joint_0
+        );
 
-       let constraint_1 = XpbdAngularConstraint::new(
-        0.0002,
-        // 0.0000,
-       );
 
-       physics.add_constraint_angular(index_rigid_body_0, index_rigid_body_1, constraint_1);
+    //    let constraint_0 = XpbdPositionalConstraint::new(
+    //     rigid_body_0.particles[0],
+    //     rigid_body_1.particles[0],
+    //     // 0.002,
+    //     0.0000,
+    //    );
+
+    //    physics.add_constraint_position(index_rigid_body_0, index_rigid_body_1, constraint_0);
+
+    //    let constraint_1 = XpbdAngularConstraint::new(
+    //     // 0.0002,
+    //     0.0000,
+    //    );
+
+    //    physics.add_constraint_angular(index_rigid_body_0, index_rigid_body_1, constraint_1);
 
         Self {
             physics,

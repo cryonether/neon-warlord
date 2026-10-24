@@ -33,7 +33,13 @@ impl XpbdAngularConstraint {
         }
     }
 
-    pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
+    pub fn solve(&mut self, 
+        obj_0: &mut XpbdRigidBody, 
+        obj_1: &mut XpbdRigidBody, 
+        axis: &Vec3,
+        angle: f32,
+        dt: f32,
+    ) {
         // let p0 = &mut obj_0.p;
         let r0 = &mut obj_0.r;
         // let p1 = &mut obj_1.p;
@@ -42,7 +48,12 @@ impl XpbdAngularConstraint {
         // If the rotation axis is stored in body 0s local frame
         // let n = r0.rot.rotate_vector(self.rotation_axis).normalize();
 
-        let (n, theta) = Self::calculate_rotation_error_2(&r0.rot, &r1.rot);
+        // let (n, theta) = Self::calculate_rotation_error_2(&r0.rot, &r1.rot);
+
+        let n = *axis;
+        let theta = angle;
+        // let n = *angular_error / theta;
+
 
         //
         // Calculates the generalized inverse mass of a rigid body for an angular

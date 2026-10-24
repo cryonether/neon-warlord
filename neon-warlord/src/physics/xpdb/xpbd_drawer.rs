@@ -101,15 +101,15 @@ impl XpbdDrawer {
         }
 
         // Position constraints
-        for constraint in &physics.position_constraints {
+        for constraint in &physics.hinge_joints {
             let index_a = constraint.index_a;
             let index_b = constraint.index_b;
 
             let rigid_body_a = &physics.rigid_bodies[index_a];
             let rigid_body_b = &physics.rigid_bodies[index_b];
 
-            let pos_a = rigid_body_a.local_to_world(&constraint.constraint.relative_position_0) + self.position;
-            let pos_b = rigid_body_b.local_to_world(&constraint.constraint.relative_position_1) + self.position;
+            let pos_a = rigid_body_a.local_to_world(&constraint.constraint.attachment_point_0) + self.position;
+            let pos_b = rigid_body_b.local_to_world(&constraint.constraint.attachment_point_1) + self.position;
 
             producer_edges.push(particle_shader_two_point::Instance {
                 position_0: pos_a.into(),
