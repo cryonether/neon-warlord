@@ -6,20 +6,24 @@ use cgmath::{InnerSpace, SquareMatrix, Zero};
 const EPSILON: f32 = 1e-5;
 
 fn create_body(position: Vec3) -> XpbdRigidBody {
+    let rot = Quad::new(1.0, 0.0, 0.0, 0.0);
+
     XpbdRigidBody {
         p: PositionalQuantities {
             pos: position,
-            pos_prev: position,
+            prev_pos: position,
             vel: Vec3::zero(),
-            mass: 1.0,
+            // mass: 1.0,
             inv_mass: 1.0,
         },
         r: RotationalQuantities {
-            orientation: Quad::new(1.0, 0.0, 0.0, 0.0),
-            orientation_prev: Quad::new(1.0, 0.0, 0.0, 0.0),
-            angular_velocity: Vec3::zero(),
-            inertia_tensor: Mat3::from_diagonal(Vec3::new(1.0, 1.0, 1.0)),
+            rot,
+            prev_rot: Quad::new(1.0, 0.0, 0.0, 0.0),
+            omega: Vec3::zero(),
+            // inertia_tensor: Mat3::from_diagonal(Vec3::new(1.0, 1.0, 1.0)),
             inverse_inertia_tensor: Mat3::from_diagonal(Vec3::new(1.0, 1.0, 1.0)),
+            inv_rot: rot.invert(),
+            inv_inertia: Vec3::new(1.0, 1.0, 1.0),
         },
     }
 }
@@ -31,7 +35,7 @@ fn test_solve() {
 
     let mut constraint = XpbdPositionalConstraint {
         relative_position_0: Vec3::zero(),
-        relative_position_1: Vec3::new(2.0, 0.0, 0.0),
+        relative_position_1: Vec3::zero(),
         compliance: 0.0,
         lagrange_multiplier: 0.0,
     };
@@ -59,10 +63,10 @@ fn test_solve() {
     // No rotational correction should occur for lever arms parallel to
     // the correction direction.
     assert!(
-        (body0.r.orientation.magnitude() - 1.0).abs() < EPSILON
+        (body0.r.rot.magnitude() - 1.0).abs() < EPSILON
     );
     assert!(
-        (body1.r.orientation.magnitude() - 1.0).abs() < EPSILON
+        (body1.r.rot.magnitude() - 1.0).abs() < EPSILON
     );
 
     // The constraint force estimate should be finite.
@@ -77,10 +81,10 @@ fn test_unequal_masses() {
     let mut body1 = create_body(Vec3::new(2.0, 0.0, 0.0));
 
     // Body 0 is heavier than body 1.
-    body0.p.mass = 2.0;
+    // body0.p.mass = 2.0;
     body0.p.inv_mass = 0.5;
 
-    body1.p.mass = 1.0;
+    // body1.p.mass = 1.0;
     body1.p.inv_mass = 1.0;
 
     let initial_pos0 = body0.p.pos;
@@ -165,8 +169,8 @@ fn test_zero_constraint_error() {
     assert!(body1.p.pos.y.is_finite());
     assert!(body1.p.pos.z.is_finite());
 
-    assert!(body0.r.orientation.s.is_finite());
-    assert!(body1.r.orientation.s.is_finite());
+    assert!(body0.r.rot.s.is_finite());
+    assert!(body1.r.rot.s.is_finite());
 
     assert!(constraint.lagrange_multiplier.is_finite());
 }
@@ -177,8 +181,8 @@ fn test_nonzero_rotational_correction() {
     let mut body0 = create_body(Vec3::zero());
     let mut body1 = create_body(Vec3::new(2.0, 0.0, 0.0));
 
-    let initial_orientation0 = body0.r.orientation;
-    let initial_orientation1 = body1.r.orientation;
+    let initial_orientation0 = body0.r.rot;
+    let initial_orientation1 = body1.r.rot;
 
     let mut constraint = XpbdPositionalConstraint {
         relative_position_0: Vec3::new(0.0, 1.0, 0.0),
@@ -190,12 +194,12 @@ fn test_nonzero_rotational_correction() {
     constraint.solve(&mut body0, &mut body1, 1.0 / 60.0);
 
     assert!(
-        (body0.r.orientation - initial_orientation0).magnitude() > EPSILON,
+        (body0.r.rot - initial_orientation0).magnitude() > EPSILON,
         "Body 0 should rotate"
     );
 
     assert!(
-        (body1.r.orientation - initial_orientation1).magnitude() > EPSILON,
+        (body1.r.rot - initial_orientation1).magnitude() > EPSILON,
         "Body 1 should rotate"
     );
 }

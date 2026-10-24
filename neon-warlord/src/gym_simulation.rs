@@ -117,9 +117,9 @@ where
                 Ppo::new(0, 0),
                 env.clone(),
                 1,
-                16,
+                1,
                 Vec3::new(0.0, 0.0, 0.0) + Vec3::new(11.0 * (i + 1) as f32, -0.5, 0.0),
-                64,
+                1,
             ))));
 
             gym_worker_thread.push(WorkerThread2::new(format!("Gym Worker {}", i)));

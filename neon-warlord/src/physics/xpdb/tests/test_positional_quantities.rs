@@ -8,9 +8,9 @@ fn test_integrate_position() {
 
     let mut quantities = PositionalQuantities {
         pos: Vec3::new(0.0, 10.0, 0.0),
-        pos_prev: Vec3::new(0.0, 10.0, 0.0),
+        prev_pos: Vec3::new(0.0, 10.0, 0.0),
         vel: Vec3::new(1.0, 0.0, 0.0),
-        mass: 2.0,
+        // mass: 2.0,
         inv_mass: 0.5,
     };
 
@@ -18,7 +18,7 @@ fn test_integrate_position() {
 
     // Previous position should be saved.
     assert_eq!(
-        quantities.pos_prev,
+        quantities.prev_pos,
         Vec3::new(0.0, 10.0, 0.0)
     );
 
@@ -45,13 +45,13 @@ fn test_integrate_velocity() {
 
     let mut quantities = PositionalQuantities {
         pos: Vec3::new(3.0, 4.0, 5.0),
-        pos_prev: Vec3::new(1.0, 2.0, 3.0),
+        prev_pos: Vec3::new(1.0, 2.0, 3.0),
         vel: Vec3::new(0.0, 0.0, 0.0),
-        mass: 1.0,
+        // mass: 1.0,
         inv_mass: 1.0,
     };
 
-    quantities.integrate_velocity(dt);
+    quantities.update_velocity(dt);
 
     // Velocity = (current position - previous position) / dt.
     let expected_vel = Vec3::new(4.0, 4.0, 4.0);
@@ -71,15 +71,15 @@ fn test_steps() {
 
     let mut quantities = PositionalQuantities {
         pos: initial_pos,
-        pos_prev: initial_pos,
+        prev_pos: initial_pos,
         vel: initial_vel,
-        mass: 1.0,
+        // mass: 1.0,
         inv_mass: 1.0,
     };
 
     for _ in 0..steps {
         quantities.integrate_position(dt);
-        quantities.integrate_velocity(dt);
+        quantities.update_velocity(dt);
     }
 
     // Expected velocity after constant gravity acceleration.

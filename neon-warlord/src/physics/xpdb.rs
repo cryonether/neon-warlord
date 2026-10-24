@@ -1,5 +1,6 @@
 //! Extended Position Based Dynamics
 //! https://matthias-research.github.io/pages/publications/PBDBodies.pdf
+//! https://github.com/matthias-research/pages/blob/master/tenMinutePhysics/25-joints.html#L752
 //! 
 
 pub mod xpbd_positional_constraint;
@@ -8,7 +9,7 @@ pub mod xpbd_drawer;
 #[cfg(test)]
 mod tests;
 
-use cgmath::{InnerSpace, One, Rotation, SquareMatrix, Zero};
+use cgmath::{InnerSpace, One, Rad, Rotation, SquareMatrix, Zero};
 
 use crate::physics::{rigid_body::RigidBody, xpdb::xpbd_positional_constraint::XpbdPositionalConstraint};
 
@@ -42,10 +43,15 @@ impl Xpbd {
         }
     }
 
-    pub fn step(&mut self) {
-        const DT: f32 = 1.0 / 60.0;
+    pub fn step(&mut self, dt: f32) {
+        // const DT: f32 = 1.0 / 60.0;
         const SUB_STEPS: usize = 4;
-        let sub_dt = DT / SUB_STEPS as f32;
+        let sub_dt = dt / SUB_STEPS as f32;
+
+        for constraint in &mut self.position_constraints {
+            constraint.constraint.reset_lagrange_multiplier();
+        }
+
 
         for i in 0..SUB_STEPS {
             for particle in &mut self.particles {
@@ -74,12 +80,12 @@ impl Xpbd {
             }
 
             for particle in &mut self.particles {
-                particle.p.integrate_velocity(sub_dt);
+                particle.p.update_velocity(sub_dt);
             }
 
             for rigid_body in &mut self.rigid_bodies {
-                rigid_body.p.integrate_velocity(sub_dt);
-                rigid_body.r.integrate_angular_velocity(sub_dt);
+                rigid_body.p.update_velocity(sub_dt);
+                rigid_body.r.update_angular_velocity(sub_dt);
             }
 
             // for constraint in &self.velocity_constraints {
@@ -103,30 +109,17 @@ impl Xpbd {
             0.0
         };
 
-        let inertia_tensor = Mat3::identity();
-        let inverse_inertia_tensor = if mass > 0.0 {
-            Mat3::identity()
-        } else {
-            Mat3::zero()
-        };
-
         let orientation= Quad::one();
 
         let obj = XpbdRigidBody {
             p: PositionalQuantities {
                 pos: pos,
-                pos_prev: pos,
+                prev_pos: pos,
                 vel: Vec3::zero(),
-                mass,
+                // mass,
                 inv_mass,
             },
-            r: RotationalQuantities {
-                orientation,
-                orientation_prev: orientation,
-                angular_velocity: Vec3::zero(),
-                inertia_tensor,
-                inverse_inertia_tensor,
-            },
+            r: RotationalQuantities::new(Vec3::zero(), mass),
         };
 
         self.rigid_bodies.push(obj);
@@ -165,19 +158,87 @@ pub struct XpbdRigidBody {
     r: RotationalQuantities,
 }
 
+impl XpbdRigidBody {
+    pub fn get_velocity_at(&self, pos: &Vec3) -> Vec3 {
+        let p = &self.p;
+        let r = &self.r;
+        
+        if p.inv_mass <= 0.0 {
+            return Vec3::zero();
+        } 
+
+        p.vel - (pos - p.pos).cross(r.omega)
+    }
+
+    pub fn local_to_world(&self, local_pos: &Vec3) -> Vec3 {
+        let p = &self.p;
+        let r = &self.r;
+
+        r.rot * local_pos + p.pos
+    }
+
+    pub fn world_to_local(&self, world_pos: &Vec3) -> Vec3 {
+        let p = &self.p;
+        let r = &self.r;
+
+        r.inv_rot * (*world_pos - p.pos)
+    }
+
+
+    //
+    // Calculates the generalized inverse mass of a rigid body for a positional
+    // constraint, accounting for both translational and rotational motion.
+    //
+    // ### Mathematical Formula:
+    //
+    // ```text
+    // w₁ = 1/m₁ + (r₁ × n)ᵀ I₁⁻¹ (r₁ × n)
+    // ```
+    //
+    // Where:
+    // - w₁ = Generalized inverse mass of body 1
+    // - m₁ = Mass of body 1
+    // - r₁ = Lever arm from the center of mass to the constraint point
+    // - n = Normalized direction of the positional correction Δx
+    // - I₁⁻¹ = Inverse inertia tensor of body 1
+    // - × = Cross product
+    // - ᵀ = Transpose
+    //
+    // The first term accounts for translational motion, while the second
+    // accounts for rotational motion around the center of mass.
+    //    
+    // pub fn get_inverse_mass(&self, normal: &Vec3, pos: &Vec3) -> f32 {
+    //     let p = &self.p;
+    //     let r = &self.r;
+
+    //     if p.inv_mass <= 0.0 {
+    //         return 0.0;
+    //     }
+
+    //     let rn = r.inv_rot * (pos - p.pos).cross(*normal);
+
+    //     let w = p.inv_mass +
+    //         rn.x * rn.x * r.inv_inertia.x +
+    //         rn.y * rn.y * r.inv_inertia.y +
+    //         rn.z * rn.z * r.inv_inertia.z;
+            
+    //     w
+    // }
+}
+
 #[derive(Clone)]
 pub struct PositionalQuantities {
     // Position
     pos: Vec3,
 
     // Previous position
-    pos_prev: Vec3,
+    prev_pos: Vec3,
 
     // Velocity
     vel: Vec3,
 
     // mass
-    mass: f32,
+    // mass: f32,
 
     // Inverse mass
     inv_mass: f32,
@@ -186,78 +247,110 @@ pub struct PositionalQuantities {
 impl PositionalQuantities {
     fn integrate_position(&mut self, dt: f32) {
         // Save previous position
-        self.pos_prev = self.pos;
+        self.prev_pos = self.pos;
 
         // Apply external forces
-        let force_external = GRAVITY * self.mass;
-        self.vel = self.vel + dt * force_external * self.inv_mass;
+        self.vel = self.vel + dt * GRAVITY;
 
         // Update position
         self.pos = self.pos + dt * self.vel;
     }
 
-    fn integrate_velocity(&mut self, dt: f32) {
-        self.vel = (self.pos - self.pos_prev) / dt;
+    fn update_velocity(&mut self, dt: f32) {
+        self.vel = (self.pos - self.prev_pos) / dt;
     }
 }
 
 #[derive(Clone)]
 pub struct RotationalQuantities {
     // Rotation
-    pub orientation: Quad,
+    pub rot: Quad,
+    pub inv_rot: Quad,
 
     // Previous rotation
-    pub orientation_prev: Quad,
+    pub prev_rot: Quad,
 
     // Angular velocity
-    pub angular_velocity: Vec3,
+    pub omega: Vec3,
 
-    // Inertia tensor
-    pub inertia_tensor: Mat3,
+    // // Inertia tensor
+    // pub inertia_tensor: Mat3,
 
-    // Inverse inertia tensor
-    pub inverse_inertia_tensor: Mat3
+    // // Inverse inertia tensor
+    pub inverse_inertia_tensor: Mat3,
+
+
+    pub inv_inertia: Vec3,
 }
 
 impl RotationalQuantities {
-    fn integrate_orientation(&mut self, dt: f32) {
-        // Save previous rotation
-        self.orientation_prev = self.orientation;
 
-        // Apply external torques
-        let external_torque = Vec3::zero();
-        self.angular_velocity = self.angular_velocity + 
-            dt * self.inverse_inertia_tensor * 
-            (external_torque - self.angular_velocity.cross(
-                self.inertia_tensor * self.angular_velocity
-            )
-        );
+    pub fn new(angles: Vec3, mass: f32) -> Self {
+        let rot = Quad::from(cgmath::Euler{
+            x: Rad(angles.x),
+            y: Rad(angles.y),
+            z: Rad(angles.z),
+        });
+        let inv_rot = rot.invert();
+        let prev_rot = rot.clone();
+        let omega = Vec3::zero();
+        let inv_inertia = Vec3::new(1.0, 1.0, 1.0);
 
-        // Update orientation
-        self.orientation = self.orientation + dt * 0.5 * Quad::new(
-            0.0,
-            self.angular_velocity.x, 
-            self.angular_velocity.y, 
-            self.angular_velocity.z, 
-        ) * self.orientation;
+        let inverse_inertia_tensor = if mass > 0.0 {
+            Mat3::identity()
+        } else {
+            Mat3::zero()
+        };
 
-        // Normalize
-        self.orientation = self.orientation / self.orientation.magnitude();
+        Self {
+            rot,
+            inv_rot,
+            prev_rot,
+            omega,
+            inverse_inertia_tensor,
+            inv_inertia,
+        }
     }
 
-    fn integrate_angular_velocity(&mut self, dt: f32) {
+    fn integrate_orientation(&mut self, dt: f32) {
+        // Save previous rotation
+        self.prev_rot = self.rot;
+
+        // // Apply external torques
+        // let external_torque = Vec3::zero();
+        // self.omega = self.omega + 
+        //     dt * self.inverse_inertia_tensor * 
+        //     (external_torque - self.omega.cross(
+        //         self.inertia_tensor * self.omega
+        //     )
+        // );
+
+        // Update orientation
+        self.rot = self.rot + dt * 0.5 * Quad::new(
+            0.0,
+            self.omega.x, 
+            self.omega.y, 
+            self.omega.z, 
+        ) * self.rot;
+
+        // Normalize
+        self.rot = self.rot / self.rot.magnitude();
+
+        // Calculate inverse rotation
+        self.inv_rot = self.rot.invert();
+    }
+
+    fn update_angular_velocity(&mut self, dt: f32) {
         // Calculate delta
-        let dq = self.orientation * self.orientation_prev.invert();
+        let dq = self.rot * self.prev_rot.invert();
         
         // Update angular velocity
-        self.angular_velocity = 2.0 * Vec3::new(dq.v.x, dq.v.y, dq.v.z) / dt;
+        self.omega = 2.0 * Vec3::new(dq.v.x, dq.v.y, dq.v.z) / dt;
 
         // Check if > 0
-        self.angular_velocity = if Vec3::new(dq.v.x, dq.v.y, dq.v.z).dot(self.angular_velocity) > 0.0 { 
-            self.angular_velocity 
-        } else { 
-            -self.angular_velocity 
-        };
+        if dq.s < 0.0 { 
+            self.omega = -self.omega
+        }
     }
 }
 

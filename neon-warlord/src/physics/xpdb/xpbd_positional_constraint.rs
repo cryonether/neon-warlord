@@ -1,8 +1,8 @@
 //! A positional constraint of two rigid bodies
 
-use cgmath::InnerSpace;
+use cgmath::{InnerSpace, Rotation};
 
-use crate::physics::xpdb::{Quad, Vec3, XpbdRigidBody};
+use crate::physics::xpdb::{Mat3, Quad, Vec3, XpbdRigidBody};
 
 #[derive(Clone)]
 pub struct XpbdPositionalConstraint {
@@ -28,9 +28,22 @@ impl XpbdPositionalConstraint {
         let p1 = &mut obj_1.p;
         let r1 = &mut obj_1.r;
 
+        // Calculate the world space anchor points
+        let anchor_0 = p0.pos
+            + r0.rot.rotate_vector(self.relative_position_0);
+
+        let anchor_1 = p1.pos
+            + r1.rot.rotate_vector(self.relative_position_1);
+
+        let r0_world = anchor_0 - p0.pos;
+        let r1_world = anchor_1 - p1.pos;
+
+
+        let dx = anchor_0 - anchor_1;
+
+
         // To apply a positional correction Δx at positions r1 and r2, we first
         // split it into its direction n and its magnitude n.
-        let dx = self.relative_position_0 - self.relative_position_1;
         let magnitude= dx.magnitude();
         if magnitude < 1e-6 {
             // Both objects occupies the same space
@@ -61,11 +74,24 @@ impl XpbdPositionalConstraint {
         // The first term accounts for translational motion, while the second
         // accounts for rotational motion around the center of mass.
         //
-        let r0_n = self.relative_position_0.cross(direction);
-        let w0 = p0.inv_mass + r0_n.dot(r0.inverse_inertia_tensor * r0_n);
+        let rn0 = r0_world.cross(direction);
+        let rn1 = r1_world.cross(direction);
 
-        let r1_n = self.relative_position_1.cross(direction);
-        let w1 = p1.inv_mass + r1_n.dot(r1.inverse_inertia_tensor * r1_n);
+        let i_rn0 = apply_inverse_inertia_world(
+            &r0.rot, 
+            &r0.inv_rot, 
+            &r0.inverse_inertia_tensor, 
+            &rn0
+        );
+        let i_rn1 = apply_inverse_inertia_world(
+            &r1.rot, 
+            &r1.inv_rot, 
+            &r1.inverse_inertia_tensor, 
+            &rn1
+        );
+        
+        let w0 = p0.inv_mass + rn0.dot(i_rn0);
+        let w1 = p1.inv_mass + rn1.dot(i_rn1);
 
         //
         // Calculates the Lagrange multiplier correction for a compliant positional
@@ -162,11 +188,21 @@ impl XpbdPositionalConstraint {
         // Dynamics, Section 3.3.1, equation (8).
         // https://matthias-research.github.io/pages/publications/PBDBodies.pdf
         //
-        let dq0 = r0.inverse_inertia_tensor * self.relative_position_0.cross(p);
-        let dq1 = r1.inverse_inertia_tensor * self.relative_position_1.cross(p);
-
-        r0.orientation = r0.orientation + 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r0.orientation;
-        r1.orientation = r1.orientation - 0.5 * Quad::new(0.0, dq1.x, dq1.y, dq1.z) * r1.orientation;
+        let dq0 = apply_inverse_inertia_world(
+            &r0.rot, 
+            &r0.inv_rot, 
+            &r0.inverse_inertia_tensor, 
+            &r0_world.cross(p)
+        );
+        let dq1 = apply_inverse_inertia_world(
+            &r1.rot, 
+            &r1.inv_rot, 
+            &r1.inverse_inertia_tensor, 
+            &r1_world.cross(p)
+        );
+        
+        r0.rot = r0.rot + 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r0.rot;
+        r1.rot = r1.rot - 0.5 * Quad::new(0.0, dq1.x, dq1.y, dq1.z) * r1.rot;
     }
 
     ///
@@ -195,9 +231,45 @@ impl XpbdPositionalConstraint {
     /// - The multiplier should be accumulated during constraint solving.
     ///
     pub fn get_force(&self, dt:f32) -> f32 {
-        let dx = self.relative_position_1 - self.relative_position_0;
-        let magnitude= dx.magnitude();
-
-        self.lagrange_multiplier * magnitude / (dt * dt)
+        self.lagrange_multiplier / (dt * dt)
     }
+
+    pub fn reset_lagrange_multiplier(&mut self) {
+        self.lagrange_multiplier = 0.0;
+    }
+}
+
+/// Applies a local space inverse inertia tensor to a world space vector
+fn _apply_inverse_inertia_world(
+    rotation: Quad,
+    inverse_rotation: Quad,
+    inverse_inertia_local: Vec3,
+    v_world: Vec3,
+) -> Vec3 {
+    let v_local = inverse_rotation.rotate_vector(v_world);
+
+    // For a diagonal local-space inverse inertia tensor.
+    let result_local = Vec3::new(
+        inverse_inertia_local.x * v_local.x,
+        inverse_inertia_local.y * v_local.y,
+        inverse_inertia_local.z * v_local.z,
+    );
+
+    rotation.rotate_vector(result_local)
+}
+
+fn apply_inverse_inertia_world(
+    rotation: &Quad,
+    inverse_rotation: &Quad,
+    inverse_inertia_local: &Mat3,
+    v_world: &Vec3,
+) -> Vec3 {
+    // Transform the vector into local space.
+    let v_local = inverse_rotation.rotate_vector(*v_world);
+
+    // Apply the full local-space inverse inertia tensor.
+    let result_local = inverse_inertia_local * v_local;
+
+    // Transform the result back into world space.
+    rotation.rotate_vector(result_local)
 }

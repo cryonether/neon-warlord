@@ -10,28 +10,31 @@ const EPSILON: f32 = 1e-5;
 fn test_integrate_orientation() {
     let dt = 0.1;
     let angular_velocity = Vec3::new(0.0, 0.0, 1.0);
+    let rot = Quad::new(1.0, 0.0, 0.0, 0.0);
 
     let mut quantities = RotationalQuantities {
-        orientation: Quad::new(1.0, 0.0, 0.0, 0.0),
-        orientation_prev: Quad::new(1.0, 0.0, 0.0, 0.0),
-        angular_velocity,
-        inertia_tensor: Mat3::from_value(1.0),
+        rot,
+        prev_rot: Quad::new(1.0, 0.0, 0.0, 0.0),
+        omega: angular_velocity,
+        // inertia_tensor: Mat3::from_value(1.0),
         inverse_inertia_tensor: Mat3::from_value(1.0),
+        inv_rot: rot.invert(),
+        inv_inertia: Vec3::new(1.0, 1.0, 1.0),
     };
 
     quantities.integrate_orientation(dt);
 
     // Previous orientation should be saved.
     assert!(
-        (quantities.orientation_prev.v
+        (quantities.prev_rot.v
             - Vec3::zero()).magnitude() < EPSILON
     );
-    assert!((quantities.orientation_prev.s - 1.0).abs() < EPSILON);
+    assert!((quantities.prev_rot.s - 1.0).abs() < EPSILON);
 
     // With zero external torque and isotropic inertia,
     // angular velocity should remain constant.
     assert!(
-        (quantities.angular_velocity - angular_velocity).magnitude() < EPSILON
+        (quantities.omega - angular_velocity).magnitude() < EPSILON
     );
 
     // First-order quaternion integration:
@@ -45,14 +48,14 @@ fn test_integrate_orientation() {
     let expected = expected / expected.magnitude();
 
     assert!(
-        (quantities.orientation.s - expected.s).abs() < EPSILON
+        (quantities.rot.s - expected.s).abs() < EPSILON
     );
     assert!(
-        (quantities.orientation.v - expected.v).magnitude() < EPSILON
+        (quantities.rot.v - expected.v).magnitude() < EPSILON
     );
 
     // Orientation should remain normalized.
-    assert!((quantities.orientation.magnitude() - 1.0).abs() < EPSILON);
+    assert!((quantities.rot.magnitude() - 1.0).abs() < EPSILON);
 }
 
 #[test]
@@ -72,14 +75,16 @@ fn test_integrate_angular_velocity() {
     );
 
     let mut quantities = RotationalQuantities {
-        orientation,
-        orientation_prev,
-        angular_velocity: Vec3::zero(),
-        inertia_tensor: Mat3::from_value(1.0),
+        rot: orientation,
+        prev_rot: orientation_prev,
+        omega: Vec3::zero(),
+        // inertia_tensor: Mat3::from_value(1.0),
         inverse_inertia_tensor: Mat3::from_value(1.0),
+        inv_rot: orientation.invert(),
+        inv_inertia: Vec3::new(1.0, 1.0, 1.0),
     };
 
-    quantities.integrate_angular_velocity(dt);
+    quantities.update_angular_velocity(dt);
 
     // The implementation approximates angular velocity as
     // 2 * quaternion_vector / dt.
@@ -90,7 +95,7 @@ fn test_integrate_angular_velocity() {
     );
 
     assert!(
-        (quantities.angular_velocity - expected).magnitude() < EPSILON
+        (quantities.omega - expected).magnitude() < EPSILON
     );
 }
 
@@ -103,31 +108,33 @@ fn test_steps() {
     let initial_angular_velocity = Vec3::new(0.0, 0.0, 1.0);
 
     let mut quantities = RotationalQuantities {
-        orientation: initial_orientation,
-        orientation_prev: initial_orientation,
-        angular_velocity: initial_angular_velocity,
-        inertia_tensor: Mat3::from_value(1.0),
+        rot: initial_orientation,
+        prev_rot: initial_orientation,
+        omega: initial_angular_velocity,
+        // inertia_tensor: Mat3::from_value(1.0),
         inverse_inertia_tensor: Mat3::from_value(1.0),
+        inv_rot: initial_orientation.invert(),
+        inv_inertia: Vec3::new(1.0, 1.0, 1.0),
     };
 
     for _ in 0..steps {
         quantities.integrate_orientation(dt);
-        quantities.integrate_angular_velocity(dt);
+        quantities.update_angular_velocity(dt);
     }
 
     // Orientation should remain normalized after repeated steps.
     assert!(
-        (quantities.orientation.magnitude() - 1.0).abs() < EPSILON
+        (quantities.rot.magnitude() - 1.0).abs() < EPSILON
     );
 
     // For isotropic inertia and zero external torque, rotation
     // should remain around the Z axis.
-    assert!(quantities.orientation.v.x.abs() < EPSILON);
-    assert!(quantities.orientation.v.y.abs() < EPSILON);
+    assert!(quantities.rot.v.x.abs() < EPSILON);
+    assert!(quantities.rot.v.y.abs() < EPSILON);
 
     // Angular velocity should remain finite and point along Z.
-    assert!(quantities.angular_velocity.x.abs() < EPSILON);
-    assert!(quantities.angular_velocity.y.abs() < EPSILON);
-    assert!(quantities.angular_velocity.z.is_finite());
-    assert!(quantities.angular_velocity.z > 0.0);
+    assert!(quantities.omega.x.abs() < EPSILON);
+    assert!(quantities.omega.y.abs() < EPSILON);
+    assert!(quantities.omega.z.is_finite());
+    assert!(quantities.omega.z > 0.0);
 }

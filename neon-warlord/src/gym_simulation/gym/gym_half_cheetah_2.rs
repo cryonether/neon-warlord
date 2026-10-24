@@ -31,7 +31,7 @@ impl GymHalfCheetah2 {
        let particle_0 = physics.add_rigid_body(Vec3::new(-1.0, 0.0, 1.5), MASS);
        let particle_1 = physics.add_rigid_body(Vec3::new(1.0, 0.0, 1.5), MASS);
 
-       physics.add_constraint_position(particle_0, particle_1, 1.0);
+       physics.add_constraint_position(particle_0, particle_1, 0.0002);
 
         Self {
             physics,
@@ -61,7 +61,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
 
 
     fn update_verlet_physics(&mut self, dt: f32) {
-        self.physics.step();
+        self.physics.step(dt * 0.1);
         // self.verlet_physics.update(dt * 0.4);
         // self.verlet_physics.update(dt * 1.0);
     }
@@ -145,11 +145,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
         //     angular_velocity: 0.0,
         // }
 
-        // let drawer = self.drawer.clone();
-        
+        let drawer = self.drawer.clone();
         *self = Self::new();
-
-        // self.drawer = drawer;
+        self.drawer = drawer;
     }
     
 
