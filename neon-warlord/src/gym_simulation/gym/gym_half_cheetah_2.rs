@@ -6,7 +6,7 @@ use cgmath::{InnerSpace, Zero};
 use wgpu::rwh;
 
 use crate::{
-    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer}, xpdb::{Xpbd, xpbd_drawer::XpbdDrawer}},
+    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer}, xpdb::{Xpbd, xpbd_drawer::XpbdDrawer, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}},
 };
 
 const OBSERVATIONS: usize = 11;
@@ -28,10 +28,28 @@ impl GymHalfCheetah2 {
         let mut physics = Xpbd::new();
         let drawer = XpbdDrawer::new(&physics, 0.1, Vec3::zero());
         
-       let particle_0 = physics.add_rigid_body(Vec3::new(-1.0, 0.0, 1.5), MASS);
-       let particle_1 = physics.add_rigid_body(Vec3::new(1.0, 0.0, 1.5), MASS);
+        let rigid_body_0 = XpbdRigidBody::new(
+            Vec3::new(-1.0, 0.0, 1.5), 
+            &[Vec3::zero(), Vec3::new(0.0, 0.0, 1.0)],
+            MASS
+        );
 
-       physics.add_constraint_position(particle_0, particle_1, 0.0002);
+        let rigid_body_1 = XpbdRigidBody::new(
+            Vec3::new(1.0, 0.0, 1.5), 
+            &[Vec3::zero(), Vec3::new(0.0, 0.0, 1.0)],
+            MASS
+        );
+
+       let index_rigid_body_0 = physics.add_rigid_body(&rigid_body_0);
+       let index_rigid_body_1 = physics.add_rigid_body(&rigid_body_1);
+
+       let constraint_0 = XpbdPositionalConstraint::new(
+        rigid_body_0.particles[0],
+        rigid_body_1.particles[0],
+        0.0002,
+       );
+
+       physics.add_constraint_position(index_rigid_body_0, index_rigid_body_1, constraint_0);
 
         Self {
             physics,

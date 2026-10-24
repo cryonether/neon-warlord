@@ -95,8 +95,13 @@ impl Xpbd {
         }
     }
 
+    pub fn add_rigid_body(&mut self, rigid_body: &XpbdRigidBody) -> usize {
+        let index = self.rigid_bodies.len();
+        self.rigid_bodies.push(rigid_body.clone());
+        index
+    }
 
-    pub fn add_rigid_body(&mut self, pos: Vec3, mass: f32) -> usize {
+    pub fn add_rigid_body_2(&mut self, pos: Vec3, mass: f32) -> usize {
         assert!(
             mass.is_finite() && mass >= 0.0,
             "Mass must be finite and non-negative"
@@ -121,6 +126,7 @@ impl Xpbd {
                 inv_mass,
             },
             r: RotationalQuantities::new(Vec3::zero(), mass),
+            particles: [Vec3::zero()].to_vec()
         };
 
         self.rigid_bodies.push(obj);
@@ -128,18 +134,13 @@ impl Xpbd {
         index
     }
 
-    pub fn add_constraint_position(&mut self, index_a: usize, index_b: usize, compliance: f32) -> usize {
+    pub fn add_constraint_position(&mut self, index_a: usize, index_b: usize, constraint: XpbdPositionalConstraint) -> usize {
         let index = self.position_constraints.len();
         
         let constraint = PositionalConstraint{
             index_a,
             index_b,
-            constraint: XpbdPositionalConstraint {
-                relative_position_0: Vec3::zero(),
-                relative_position_1: Vec3::zero(),
-                compliance,
-                lagrange_multiplier: 1.0,
-            },
+            constraint,
         };
 
         self.position_constraints.push(constraint);

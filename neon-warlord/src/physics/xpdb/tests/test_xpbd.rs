@@ -31,6 +31,7 @@ fn test_steps_one_rigid_body() {
             inv_rot: rot.invert(),
             // inv_inertia: Vec3::new(1.0, 1.0, 1.0),
         },
+        particles: [Vec3::zero()].to_vec(),
     };
 
     let mut xpbd = Xpbd::new();

@@ -27,6 +27,7 @@ fn create_body(position: Vec3) -> XpbdRigidBody {
             inv_rot: rot.invert(),
             // inv_inertia: Vec3::new(1.0, 1.0, 1.0),
         },
+        particles: [Vec3::zero()].to_vec(),
     }
 }
 

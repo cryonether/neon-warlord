@@ -22,6 +22,17 @@ pub struct XpbdPositionalConstraint {
 }
 
 impl XpbdPositionalConstraint {
+    pub fn new(relative_position_0: Vec3, relative_position_1: Vec3, compliance: f32) -> Self {
+        
+        Self {
+            relative_position_0,
+            relative_position_1,
+            compliance,
+            lagrange_multiplier: 0.0,
+        }
+    }
+
+
     pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32){
         let p0 = &mut obj_0.p;
         let r0 = &mut obj_0.r;
