@@ -9,7 +9,8 @@ type Vec3 = cgmath::Vector3<f32>;
 /// Draws AdvancedCompositions
 #[derive(Clone)]
 pub struct XpbdDrawer {
-    nodes_color: Vec3,
+    nodes_color_0: Vec3,
+    nodes_color_1: Vec3,
     links_color: Vec3,
     pos_color: Vec3,
 
@@ -25,12 +26,14 @@ impl XpbdDrawer {
         let _nr_nodes = physics.rigid_bodies.len();
         let _nr_edges = physics.position_constraints.len();
 
-        let nodes_color: Vec3 = to_rgb("#ce51ff").into();
+        let nodes_color_0: Vec3 = to_rgb("#ce51ff").into();
+        let nodes_color_1: Vec3 = to_rgb("#371643").into();
         let links_color: Vec3 = to_rgb("#131922").into();
         let pos_color: Vec3 = to_rgb("#00814b").into();
 
         Self {
-            nodes_color,
+            nodes_color_0,
+            nodes_color_1,
             links_color,
             pos_color,
             _nr_nodes,
@@ -58,15 +61,42 @@ impl XpbdDrawer {
                 size: radius,
             });
 
-            for particle in &rigid_body.particles {
+            if rigid_body.particles.len() == 0 {
+                continue;
+            }
+
+            let particle_0 = rigid_body.particles[0];
+            let position_0 = rigid_body.local_to_world(&particle_0) + self.position;
+            producer_nodes.push(particle_shader::Instance { 
+                    position: position_0.into(),
+                    color: self.nodes_color_0.into(),
+                    time: 1.0,
+                    size: radius * 2.0,
+                });
+
+            let mut prev_position = position_0; 
+
+            for i in 1..rigid_body.particles.len() {
+                let particle = & rigid_body.particles[i];
+
                 let position = rigid_body.local_to_world(particle) + self.position;
 
                 producer_nodes.push(particle_shader::Instance {
                     position: position.into(),
-                    color: self.nodes_color.into(),
+                    color: self.nodes_color_0.into(),
                     time: 1.0,
                     size: radius * 2.0,
                 });
+
+                producer_edges.push(particle_shader_two_point::Instance {
+                    position_0: prev_position.into(),
+                    position_1: position.into(),
+                    color: self.nodes_color_1.into(),
+                    time: 1.0,
+                    size: self.radius * 0.1,
+                });
+
+                prev_position = position;
             }
         }
 

@@ -36,7 +36,7 @@ impl GymHalfCheetah2 {
 
         let rigid_body_1 = XpbdRigidBody::new(
             Vec3::new(1.0, 0.0, 1.5), 
-            &[Vec3::zero(), Vec3::new(0.0, 0.0, 1.0)],
+            &[Vec3::zero(), Vec3::new(0.0, 0.0, 2.0)],
             MASS
         );
 
@@ -47,6 +47,7 @@ impl GymHalfCheetah2 {
         rigid_body_0.particles[0],
         rigid_body_1.particles[0],
         0.0002,
+        // 0.0000,
        );
 
        physics.add_constraint_position(index_rigid_body_0, index_rigid_body_1, constraint_0);
