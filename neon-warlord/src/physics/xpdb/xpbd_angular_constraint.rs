@@ -1,16 +1,17 @@
 //! A angular constraint of two rigid bodies
 
-use cgmath::{InnerSpace, Rotation};
+use cgmath::{InnerSpace, Rotation, Zero};
 
 use crate::physics::xpdb::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
+#[derive(Clone)]
 pub struct XpbdAngularConstraint {
 
-    // Rotation axis defined in local space
-    pub rotation_axis: Vec3,
+    // // Rotation axis defined in local space
+    // pub rotation_axis: Vec3,
 
-    // magnitude, which is the rotation angle
-    pub rotation_angle: f32,
+    // // magnitude, which is the rotation angle
+    // pub rotation_angle: f32,
 
     // The compliance of the constraint
     // compliance = 0 simulates infinite stiffness
@@ -24,6 +25,14 @@ pub struct XpbdAngularConstraint {
 }
 
 impl XpbdAngularConstraint {
+    pub fn new(compliance: f32) -> Self {
+        Self {
+            compliance,
+            lagrange_multiplier: 0.0,
+            torque: Vec3::zero(),
+        }
+    }
+
     pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
         // let p0 = &mut obj_0.p;
         let r0 = &mut obj_0.r;
@@ -33,7 +42,7 @@ impl XpbdAngularConstraint {
         // If the rotation axis is stored in body 0s local frame
         // let n = r0.rot.rotate_vector(self.rotation_axis).normalize();
 
-        let (n, theta) = Self::calculate_rotation_error(&r0.rot, &r1.rot);
+        let (n, theta) = Self::calculate_rotation_error_2(&r0.rot, &r1.rot);
 
         //
         // Calculates the generalized inverse mass of a rigid body for an angular
@@ -165,14 +174,12 @@ impl XpbdAngularConstraint {
         }
 
         let axis = v / sin_half;
-        // let angle = 2.0 * sin_half.atan2(q_err.s);
-
-        // Suitable for small angle errors (paper's approximation)
-        let angle = 2.0 * sin_half;
+        let angle = 2.0 * sin_half.atan2(q_err.s);
                 
         (axis, angle)
     }
 
+    // Suitable for small angle errors (paper's approximation)
     pub fn calculate_rotation_error(
         rotation_0: &Quad,
         rotation_1: &Quad,

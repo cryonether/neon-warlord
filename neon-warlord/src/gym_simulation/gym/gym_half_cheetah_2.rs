@@ -6,7 +6,7 @@ use cgmath::{InnerSpace, Zero};
 use wgpu::rwh;
 
 use crate::{
-    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer}, xpdb::{Xpbd, xpbd_drawer::XpbdDrawer, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}},
+    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer}, xpdb::{Xpbd, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_drawer::XpbdDrawer, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}},
 };
 
 const OBSERVATIONS: usize = 11;
@@ -46,11 +46,18 @@ impl GymHalfCheetah2 {
        let constraint_0 = XpbdPositionalConstraint::new(
         rigid_body_0.particles[0],
         rigid_body_1.particles[0],
+        // 0.002,
+        0.0000,
+       );
+
+       physics.add_constraint_position(index_rigid_body_0, index_rigid_body_1, constraint_0);
+
+       let constraint_1 = XpbdAngularConstraint::new(
         0.0002,
         // 0.0000,
        );
 
-       physics.add_constraint_position(index_rigid_body_0, index_rigid_body_1, constraint_0);
+       physics.add_constraint_angular(index_rigid_body_0, index_rigid_body_1, constraint_1);
 
         Self {
             physics,

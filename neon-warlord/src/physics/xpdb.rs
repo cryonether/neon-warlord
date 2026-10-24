@@ -13,7 +13,7 @@ mod tests;
 
 use cgmath::{InnerSpace, One, Rad, Rotation, SquareMatrix, Zero};
 
-use crate::physics::{rigid_body::RigidBody, xpdb::{xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
+use crate::physics::{rigid_body::RigidBody, xpdb::{xpbd_angular_constraint::XpbdAngularConstraint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
 
 type Vec3 = cgmath::Vector3<f32>;
 type Quad = cgmath::Quaternion<f32>;
@@ -27,7 +27,7 @@ pub struct Xpbd {
     rigid_bodies: Vec<XpbdRigidBody>,
 
     position_constraints: Vec<PositionalConstraint>,
-    // velocity_constraints: Vec<f32>,
+    angular_constraints: Vec<AngularConstraint>,
 }
 
 impl Xpbd {
@@ -35,13 +35,13 @@ impl Xpbd {
         let particles = Vec::new();
         let rigid_bodies = Vec::new();
         let position_constraints = Vec::new();
-        // let velocity_constraints = Vec::new();
+        let angular_constraints = Vec::new();
 
         Self {
             particles,
             rigid_bodies,
             position_constraints,
-            // velocity_constraints,
+            angular_constraints,
         }
     }
 
@@ -51,6 +51,10 @@ impl Xpbd {
         let sub_dt = dt / SUB_STEPS as f32;
 
         for constraint in &mut self.position_constraints {
+            constraint.constraint.reset_lagrange_multiplier();
+        }
+
+        for constraint in &mut self.angular_constraints {
             constraint.constraint.reset_lagrange_multiplier();
         }
 
@@ -65,9 +69,25 @@ impl Xpbd {
                 rigid_body.r.integrate_orientation(sub_dt);
             }
 
-            for constraint in &mut self.position_constraints {
-                // SolvePositions(x_1, . . . x_n, q_1, . . . q_n);
+            // SolvePositions(x_1, . . . x_n, q_1, . . . q_n);
 
+            // Positional Constraints
+            for constraint in &mut self.position_constraints {
+                let index_a = constraint.index_a;
+                let index_b = constraint.index_b;
+                let constraint = &mut constraint.constraint;
+
+                assert_ne!(index_a, index_b, "Constraint indices must differ");
+                let (obj_a, obj_b) = {
+                    let (left, right) = self.rigid_bodies.split_at_mut(index_b);
+                    (&mut left[index_a], &mut right[0])
+                };
+
+                constraint.solve(obj_a, obj_b, sub_dt);
+            }
+
+            // Angular Constraints
+            for constraint in &mut self.angular_constraints {
                 let index_a = constraint.index_a;
                 let index_b = constraint.index_b;
                 let constraint = &mut constraint.constraint;
@@ -102,38 +122,38 @@ impl Xpbd {
         index
     }
 
-    pub fn add_rigid_body_2(&mut self, pos: Vec3, mass: f32) -> usize {
-        assert!(
-            mass.is_finite() && mass >= 0.0,
-            "Mass must be finite and non-negative"
-        );
+    // pub fn add_rigid_body_2(&mut self, pos: Vec3, mass: f32) -> usize {
+    //     assert!(
+    //         mass.is_finite() && mass >= 0.0,
+    //         "Mass must be finite and non-negative"
+    //     );
         
-        let index = self.rigid_bodies.len();
+    //     let index = self.rigid_bodies.len();
 
-        let inv_mass = if mass > 0.0 {
-            1.0 / mass
-        } else {
-            0.0
-        };
+    //     let inv_mass = if mass > 0.0 {
+    //         1.0 / mass
+    //     } else {
+    //         0.0
+    //     };
 
-        let orientation= Quad::one();
+    //     let orientation= Quad::one();
 
-        let obj = XpbdRigidBody {
-            p: PositionalQuantities {
-                pos: pos,
-                prev_pos: pos,
-                vel: Vec3::zero(),
-                // mass,
-                inv_mass,
-            },
-            r: RotationalQuantities::new(Vec3::zero(), mass),
-            particles: [Vec3::zero()].to_vec()
-        };
+    //     let obj = XpbdRigidBody {
+    //         p: PositionalQuantities {
+    //             pos: pos,
+    //             prev_pos: pos,
+    //             vel: Vec3::zero(),
+    //             // mass,
+    //             inv_mass,
+    //         },
+    //         r: RotationalQuantities::new(Vec3::zero(), mass),
+    //         particles: [Vec3::zero()].to_vec()
+    //     };
 
-        self.rigid_bodies.push(obj);
+    //     self.rigid_bodies.push(obj);
         
-        index
-    }
+    //     index
+    // }
 
     pub fn add_constraint_position(&mut self, index_a: usize, index_b: usize, constraint: XpbdPositionalConstraint) -> usize {
         let index = self.position_constraints.len();
@@ -145,6 +165,20 @@ impl Xpbd {
         };
 
         self.position_constraints.push(constraint);
+
+        index
+    }
+
+    pub fn add_constraint_angular(&mut self, index_a: usize, index_b: usize, constraint: XpbdAngularConstraint) -> usize {
+        let index = self.position_constraints.len();
+        
+        let constraint = AngularConstraint{
+            index_a,
+            index_b,
+            constraint,
+        };
+
+        self.angular_constraints.push(constraint);
 
         index
     }
@@ -305,4 +339,11 @@ pub struct PositionalConstraint {
     pub index_a: usize,
     pub index_b: usize,
     pub constraint: XpbdPositionalConstraint,
+}
+
+#[derive(Clone)]
+pub struct AngularConstraint {
+    pub index_a: usize,
+    pub index_b: usize,
+    pub constraint: XpbdAngularConstraint,
 }
