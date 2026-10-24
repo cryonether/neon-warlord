@@ -1,5 +1,7 @@
 //! Tests for XpbdPositionalConstraint
 
+use crate::physics::xpdb::xpbd_rigid_body::XpbdRigidBody;
+
 use super::super::*;
 use cgmath::{InnerSpace, SquareMatrix, Zero};
 
@@ -23,7 +25,7 @@ fn create_body(position: Vec3) -> XpbdRigidBody {
             // inertia_tensor: Mat3::from_diagonal(Vec3::new(1.0, 1.0, 1.0)),
             inverse_inertia_tensor: Mat3::from_diagonal(Vec3::new(1.0, 1.0, 1.0)),
             inv_rot: rot.invert(),
-            inv_inertia: Vec3::new(1.0, 1.0, 1.0),
+            // inv_inertia: Vec3::new(1.0, 1.0, 1.0),
         },
     }
 }

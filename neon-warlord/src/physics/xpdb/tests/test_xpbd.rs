@@ -1,5 +1,7 @@
 //! Test of xpbd physics
 
+use crate::physics::xpdb::xpbd_rigid_body::XpbdRigidBody;
+
 use super::super::*;
 use cgmath::{Quaternion, SquareMatrix, Vector3};
 
@@ -27,7 +29,7 @@ fn test_steps_one_rigid_body() {
             // inertia_tensor: Mat3::from_value(1.0),
             inverse_inertia_tensor: Mat3::from_value(1.0),
             inv_rot: rot.invert(),
-            inv_inertia: Vec3::new(1.0, 1.0, 1.0),
+            // inv_inertia: Vec3::new(1.0, 1.0, 1.0),
         },
     };
 

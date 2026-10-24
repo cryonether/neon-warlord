@@ -2,7 +2,7 @@
 
 use cgmath::{InnerSpace, Rotation};
 
-use crate::physics::xpdb::{Mat3, Quad, Vec3, XpbdRigidBody};
+use crate::physics::xpdb::{Mat3, Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
 #[derive(Clone)]
 pub struct XpbdPositionalConstraint {

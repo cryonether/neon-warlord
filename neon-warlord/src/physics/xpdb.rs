@@ -5,13 +5,14 @@
 
 pub mod xpbd_positional_constraint;
 pub mod xpbd_drawer;
+pub mod xpbd_rigid_body;
 
 #[cfg(test)]
 mod tests;
 
 use cgmath::{InnerSpace, One, Rad, Rotation, SquareMatrix, Zero};
 
-use crate::physics::{rigid_body::RigidBody, xpdb::xpbd_positional_constraint::XpbdPositionalConstraint};
+use crate::physics::{rigid_body::RigidBody, xpdb::{xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
 
 type Vec3 = cgmath::Vector3<f32>;
 type Quad = cgmath::Quaternion<f32>;
@@ -152,79 +153,6 @@ pub struct XpbdParticle {
     p: PositionalQuantities,
 }
 
-#[derive(Clone)]
-pub struct XpbdRigidBody {
-    p: PositionalQuantities,
-    r: RotationalQuantities,
-}
-
-impl XpbdRigidBody {
-    pub fn get_velocity_at(&self, pos: &Vec3) -> Vec3 {
-        let p = &self.p;
-        let r = &self.r;
-        
-        if p.inv_mass <= 0.0 {
-            return Vec3::zero();
-        } 
-
-        p.vel - (pos - p.pos).cross(r.omega)
-    }
-
-    pub fn local_to_world(&self, local_pos: &Vec3) -> Vec3 {
-        let p = &self.p;
-        let r = &self.r;
-
-        r.rot * local_pos + p.pos
-    }
-
-    pub fn world_to_local(&self, world_pos: &Vec3) -> Vec3 {
-        let p = &self.p;
-        let r = &self.r;
-
-        r.inv_rot * (*world_pos - p.pos)
-    }
-
-
-    //
-    // Calculates the generalized inverse mass of a rigid body for a positional
-    // constraint, accounting for both translational and rotational motion.
-    //
-    // ### Mathematical Formula:
-    //
-    // ```text
-    // w₁ = 1/m₁ + (r₁ × n)ᵀ I₁⁻¹ (r₁ × n)
-    // ```
-    //
-    // Where:
-    // - w₁ = Generalized inverse mass of body 1
-    // - m₁ = Mass of body 1
-    // - r₁ = Lever arm from the center of mass to the constraint point
-    // - n = Normalized direction of the positional correction Δx
-    // - I₁⁻¹ = Inverse inertia tensor of body 1
-    // - × = Cross product
-    // - ᵀ = Transpose
-    //
-    // The first term accounts for translational motion, while the second
-    // accounts for rotational motion around the center of mass.
-    //    
-    // pub fn get_inverse_mass(&self, normal: &Vec3, pos: &Vec3) -> f32 {
-    //     let p = &self.p;
-    //     let r = &self.r;
-
-    //     if p.inv_mass <= 0.0 {
-    //         return 0.0;
-    //     }
-
-    //     let rn = r.inv_rot * (pos - p.pos).cross(*normal);
-
-    //     let w = p.inv_mass +
-    //         rn.x * rn.x * r.inv_inertia.x +
-    //         rn.y * rn.y * r.inv_inertia.y +
-    //         rn.z * rn.z * r.inv_inertia.z;
-            
-    //     w
-    // }
-}
 
 #[derive(Clone)]
 pub struct PositionalQuantities {
@@ -280,7 +208,7 @@ pub struct RotationalQuantities {
     pub inverse_inertia_tensor: Mat3,
 
 
-    pub inv_inertia: Vec3,
+    // pub inv_inertia: Vec3,
 }
 
 impl RotationalQuantities {
@@ -308,7 +236,7 @@ impl RotationalQuantities {
             prev_rot,
             omega,
             inverse_inertia_tensor,
-            inv_inertia,
+            // inv_inertia,
         }
     }
 

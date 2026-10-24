@@ -19,7 +19,7 @@ fn test_integrate_orientation() {
         // inertia_tensor: Mat3::from_value(1.0),
         inverse_inertia_tensor: Mat3::from_value(1.0),
         inv_rot: rot.invert(),
-        inv_inertia: Vec3::new(1.0, 1.0, 1.0),
+        // inv_inertia: Vec3::new(1.0, 1.0, 1.0),
     };
 
     quantities.integrate_orientation(dt);
@@ -81,7 +81,7 @@ fn test_integrate_angular_velocity() {
         // inertia_tensor: Mat3::from_value(1.0),
         inverse_inertia_tensor: Mat3::from_value(1.0),
         inv_rot: orientation.invert(),
-        inv_inertia: Vec3::new(1.0, 1.0, 1.0),
+        // inv_inertia: Vec3::new(1.0, 1.0, 1.0),
     };
 
     quantities.update_angular_velocity(dt);
@@ -114,7 +114,7 @@ fn test_steps() {
         // inertia_tensor: Mat3::from_value(1.0),
         inverse_inertia_tensor: Mat3::from_value(1.0),
         inv_rot: initial_orientation.invert(),
-        inv_inertia: Vec3::new(1.0, 1.0, 1.0),
+        // inv_inertia: Vec3::new(1.0, 1.0, 1.0),
     };
 
     for _ in 0..steps {
