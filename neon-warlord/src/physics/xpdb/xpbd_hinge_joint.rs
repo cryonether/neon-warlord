@@ -4,7 +4,7 @@ use std::f32::consts::PI;
 
 use cgmath::{InnerSpace, Quaternion, Rad, Rotation, Rotation3, Zero};
 
-use crate::physics::xpdb::{Quad, Vec3, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody};
+use crate::physics::xpbd::{Quad, Vec3, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody};
 
 #[derive(Clone)]
 pub struct XpbdHingeJoint {

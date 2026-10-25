@@ -2,7 +2,7 @@
 
 use cgmath::InnerSpace;
 
-use crate::physics::xpdb::{Quad, Vec3, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody};
+use crate::physics::xpbd::{Quad, Vec3, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody};
 
 // Hight of the ground plane
 const GROUND_HIGHT_Z: f32 = 0.0;

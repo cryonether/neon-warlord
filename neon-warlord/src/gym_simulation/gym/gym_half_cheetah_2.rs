@@ -6,7 +6,7 @@ use cgmath::{InnerSpace, Zero};
 use wgpu::rwh;
 
 use crate::{
-    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer}, xpdb::{Xpbd, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_drawer::XpbdDrawer, xpbd_hinge_joint::{RotationAxis, XpbdHingeJoint}, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}},
+    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer}, xpbd::{Xpbd, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_drawer::XpbdDrawer, xpbd_hinge_joint::{RotationAxis, XpbdHingeJoint}, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}},
 };
 
 const OBSERVATIONS: usize = 11;

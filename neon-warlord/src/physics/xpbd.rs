@@ -15,7 +15,7 @@ mod tests;
 
 use cgmath::{InnerSpace, One, Rad, Rotation, SquareMatrix, Zero};
 
-use crate::physics::{rigid_body::{RigidBody}, xpdb::{xpbd_angular_constraint::XpbdAngularConstraint, xpbd_hinge_joint::XpbdHingeJoint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
+use crate::physics::{rigid_body::{RigidBody}, xpbd::{xpbd_angular_constraint::XpbdAngularConstraint, xpbd_hinge_joint::XpbdHingeJoint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
 
 type Vec3 = cgmath::Vector3<f32>;
 type Quad = cgmath::Quaternion<f32>;

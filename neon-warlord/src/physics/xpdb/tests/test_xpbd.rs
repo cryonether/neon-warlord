@@ -1,6 +1,6 @@
 //! Test of xpbd physics
 
-use crate::physics::xpdb::xpbd_rigid_body::XpbdRigidBody;
+use crate::physics::xpbd::xpbd_rigid_body::XpbdRigidBody;
 
 use super::super::*;
 use cgmath::{Quaternion, SquareMatrix, Vector3};
