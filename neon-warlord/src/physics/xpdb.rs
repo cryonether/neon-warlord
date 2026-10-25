@@ -66,9 +66,9 @@ impl Xpbd {
             constraint.constraint.reset_lagrange_multiplier();
         }
 
-        for rigid_body in &mut self.rigid_bodies {
-            rigid_body.r.external_torque = Vec3::zero();
-        }
+        // for rigid_body in &mut self.rigid_bodies {
+        //     rigid_body.r.external_torque = Vec3::zero();
+        // }
 
         for i in 0..SUB_STEPS {
             for particle in &mut self.particles {
@@ -270,22 +270,25 @@ impl PositionalQuantities {
 
 #[derive(Clone)]
 pub struct RotationalQuantities {
-    // Rotation
+    // Rotation (local space to world space)
     pub rot: Quad,
+
+    // Rotation (world space to local space)
     pub inv_rot: Quad,
 
     // Previous rotation
     pub prev_rot: Quad,
 
-    // Angular velocity
+    // Angular velocity (in world space)
     pub omega: Vec3,
 
     // Inertia tensor (in local space)
     pub inertia_tensor: Mat3,
 
-    // // Inverse inertia tensor (in local space)
+    // Inverse inertia tensor (in local space)
     pub inverse_inertia_tensor: Mat3,
 
+    // Angular velocity (in world space)
     pub external_torque: Vec3,
 }
 
@@ -326,12 +329,12 @@ impl RotationalQuantities {
         // Apply external torques
         let external_torque = self.external_torque;
         // let external_torque = Vec3::new(0.0, 1.0, 0.0);
-        self.omega = self.omega + 
-            dt * self.inverse_inertia_tensor * 
-            (external_torque - self.omega.cross(
-                self.inertia_tensor * self.omega
-            )
-        );
+
+        let inertia_omega = self.apply_inertia_world(&self.omega);
+        let angular_momentum_rate = external_torque - self.omega.cross(inertia_omega);
+        let angular_acceleration = self.apply_inverse_inertia_world(&angular_momentum_rate);
+        self.omega += dt * angular_acceleration;
+
         self.external_torque = Vec3::zero();
 
         // Update orientation
