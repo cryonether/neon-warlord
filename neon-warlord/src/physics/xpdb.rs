@@ -252,7 +252,9 @@ impl PositionalQuantities {
         self.prev_pos = self.pos;
 
         // Apply external forces
-        self.vel = self.vel + dt * GRAVITY;
+        if self.inv_mass > 0.0 {
+            self.vel = self.vel + dt * GRAVITY;
+        }
 
         // Update position
         self.pos = self.pos + dt * self.vel;

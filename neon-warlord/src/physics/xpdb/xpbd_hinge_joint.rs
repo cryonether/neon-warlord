@@ -187,6 +187,14 @@ impl XpbdHingeJoint {
         //     Vec3::unit_x()
         // };
 
+        // self.angular_constraint.solve(
+        //     obj_0, 
+        //     obj_1, 
+        //     &axis,
+        //     angle,
+        //     dt
+        // );
+
         // ##########################################################################
         // Test 3: Limit the target angle between alpha and beta
         
@@ -194,8 +202,8 @@ impl XpbdHingeJoint {
         let beta = self.angle_limit_1;
 
         let n = a0;
-        let mut n1 = b0;
-        let n2 = b1;
+        let n0 = b0;
+        let n1 = b1;
 
         // let sin_phi = n.dot(n1.cross(n2)).clamp(-1.0, 1.0);
         // let cos_phi = n1.dot(n2).clamp(-1.0, 1.0);
@@ -224,10 +232,10 @@ impl XpbdHingeJoint {
         //     (n, 0.0)
         // };
 
+        // ##############################################################################
 
-        let sin_phi = n.dot(b0.cross(b1)).clamp(-1.0, 1.0);
-        let cos_phi = b0.dot(b1).clamp(-1.0, 1.0);
-
+        let sin_phi = (n0.cross(n1)).dot(n);
+        let cos_phi = n0.dot(n1);
         let mut phi = sin_phi.atan2(cos_phi);
 
 
@@ -241,39 +249,35 @@ impl XpbdHingeJoint {
         // if phi < -PI {
         //     phi = phi + 2.0 * PI;
         // }
-        if phi < alpha || phi > beta {
-            phi = phi.clamp(alpha, beta);
-            let rotation = Quad::from_axis_angle(n, Rad(phi));
-            n1 = rotation.rotate_vector(n1);
-
-            // let angular_error = n1.cross(n2);
-
-            // let angle = angular_error.magnitude();
-            // let axis = if angle > 1e-6 {
-            //     angular_error / angle
-            // } else {
-            //     Vec3::unit_x()
-            // };
+        let phi_raw = phi;
+        // if phi < alpha || phi > beta {
+            
+        phi = phi.clamp(alpha, beta);
+        //     let rotation = Quad::from_axis_angle(n, Rad(-phi));
+        //     n1 = rotation.rotate_vector(n1);
 
 
-            // self.angular_constraint.solve(
-            //     obj_0, 
-            //     obj_1, 
-            //     &axis,
-            //     angle,
-            //     dt
-            // );
 
-        }
+        // }
 
-        let angular_error = n1.cross(n2);
+        let rotation = Quad::from_axis_angle(n.normalize(), Rad(phi));
+        let n_target = rotation.rotate_vector(n0);
+        let angular_error = n_target.cross(n1);
 
         let angle = angular_error.magnitude();
-        let axis = if angle > 1e-6 {
+        let axis = if angle == 1e-6 {
             angular_error / angle
         } else {
-            Vec3::unit_x()
+            Vec3::unit_y()
         };
+        
+
+        println!("alpha: {}, beta: {}, phi: {}, phi_raw: {}",
+            alpha,
+            beta,
+            phi,
+            phi_raw,
+        );
 
 
         self.angular_constraint.solve(
@@ -285,6 +289,7 @@ impl XpbdHingeJoint {
         );
 
 
+        // ################################################################################
 
         // let sin_phi = n.dot(b0.cross(b1)).clamp(-1.0, 1.0);
         // let cos_phi = b0.dot(b1).clamp(-1.0, 1.0);
@@ -319,6 +324,54 @@ impl XpbdHingeJoint {
         //     axis,
         //     angle,
         // );
+
+        // ##########################################################################
+
+        // let alpha = self.angle_limit_0;
+        // let beta = self.angle_limit_1;
+
+        // // Hinge axes in world space.
+        // let n = a0.normalize();
+
+        // // Reference vectors in world space.
+        // let mut u0 = b0 - n * n.dot(b0);
+        // let mut u1 = b1 - n * n.dot(b1);
+
+        // // Project onto the plane perpendicular to the hinge axis.
+        // if u0.magnitude2() < 1e-12 || u1.magnitude2() < 1e-12 {
+        //     return;
+        // }
+
+        // u0 = u0.normalize();
+        // u1 = u1.normalize();
+
+        // // Signed angle in [-PI, PI].
+        // let sin_phi = n.dot(u0.cross(u1));
+        // let cos_phi = u0.dot(u1);
+        // let phi = sin_phi.atan2(cos_phi);
+
+        // // Signed correction to the nearest limit.
+        // let error = if phi < alpha {
+        //     alpha - phi
+        // } else if phi > beta {
+        //     beta - phi
+        // } else {
+        //     0.0
+        // };
+
+        // if error.abs() > 1e-6 {
+        //     let axis = n * error.signum();
+        //     let angle = error.abs();
+
+        //     self.angular_constraint.solve(
+        //         obj_0,
+        //         obj_1,
+        //         &axis,
+        //         angle,
+        //         dt,
+        //     );
+        // }
+
 
 
 

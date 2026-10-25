@@ -328,34 +328,34 @@ where
             input
         }
 
-        print!("{}, ", self.ticks);
+        // print!("{}, ", self.ticks);
 
-        print!("reward: ");
-        print_color(reward, 0.0, 2000.0, PrintColor::PurplePinkYellow);
-        print!(", ");
+        // print!("reward: ");
+        // print_color(reward, 0.0, 2000.0, PrintColor::PurplePinkYellow);
+        // print!(", ");
 
-        print!("actor: [ ");
-        let size = 10;
-        for i in 0..size {
-            let input = create_input(i, size);
-            let y_pred = self.ppo.actor.forward(&input);
+        // print!("actor: [ ");
+        // let size = 10;
+        // for i in 0..size {
+        //     let input = create_input(i, size);
+        //     let y_pred = self.ppo.actor.forward(&input);
 
-            print_color(y_pred[0], -1.0, 1.0, PrintColor::GreenCyanBlue);
-        }
+        //     print_color(y_pred[0], -1.0, 1.0, PrintColor::GreenCyanBlue);
+        // }
 
-        print!("], critic: [ ");
-        let size = 10;
-        for i in 0..size {
-            let input = create_input(i, size);
-            let y_pred = self.ppo.critic.forward(&input);
+        // print!("], critic: [ ");
+        // let size = 10;
+        // for i in 0..size {
+        //     let input = create_input(i, size);
+        //     let y_pred = self.ppo.critic.forward(&input);
 
-            print_color(y_pred[0], 0.0, 10.0, PrintColor::BluePurpleRed);
-        }
-        print!("], ");
-        println!(
-            "actor_loss: {:+.6}, critic_loss: {:+.6}",
-            actor_loss, critic_loss
-        );
+        //     print_color(y_pred[0], 0.0, 10.0, PrintColor::BluePurpleRed);
+        // }
+        // print!("], ");
+        // println!(
+        //     "actor_loss: {:+.6}, critic_loss: {:+.6}",
+        //     actor_loss, critic_loss
+        // );
 
         if self.ticks.is_multiple_of(100) {
             let reward = self.reward_sum_long / 100.0;

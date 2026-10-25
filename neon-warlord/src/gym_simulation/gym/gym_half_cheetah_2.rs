@@ -19,8 +19,9 @@ pub struct GymHalfCheetah2 {
     pub physics: Xpbd,
     pub drawer: XpbdDrawer,
 
-    particle_0: usize,
-    particle_1: usize,
+    // particle_0: usize,
+    // particle_1: usize,
+    // particle_2: usize,
 }
 
 impl GymHalfCheetah2 {
@@ -40,24 +41,48 @@ impl GymHalfCheetah2 {
             MASS
         );
 
+        let rigid_body_2 = XpbdRigidBody::new(
+            Vec3::new(1.0, 0.0, 2.0), 
+            &[Vec3::zero(), Vec3::new(2.0, 0.0, 0.0)],
+            0.0
+        );
+
         let index_rigid_body_0 = physics.add_rigid_body(&rigid_body_0);
         let index_rigid_body_1 = physics.add_rigid_body(&rigid_body_1);
+        let index_rigid_body_2 = physics.add_rigid_body(&rigid_body_2);
 
         let hinge_joint_0 = XpbdHingeJoint::new(
             rigid_body_0.particles[0], 
             rigid_body_1.particles[0], 
-            0.1 * PI, 
-             1.9 * PI, 
+            0.4 * PI, 
+            1.6 * PI, 
             RotationAxis::Y,
             RotationAxis::Y,
             0.000, 
             0.0000
         );
 
+        // physics.add_hinge_joint(
+        //     index_rigid_body_0, 
+        //     index_rigid_body_1, 
+        //     hinge_joint_0
+        // );
+
+        let hinge_joint_1 = XpbdHingeJoint::new(
+            rigid_body_1.particles[1], 
+            rigid_body_2.particles[0], 
+            -0.5 * PI, 
+            -0.5 * PI, 
+            RotationAxis::Y,
+            RotationAxis::Y,
+            0.000, 
+            0.0002
+        );
+
         physics.add_hinge_joint(
-            index_rigid_body_0, 
             index_rigid_body_1, 
-            hinge_joint_0
+            index_rigid_body_2, 
+            hinge_joint_1
         );
 
 
@@ -80,8 +105,8 @@ impl GymHalfCheetah2 {
         Self {
             physics,
             drawer,
-            particle_0: 0,
-            particle_1: 0,
+            // particle_0: 0,
+            // particle_1: 0,
         }
     }
 }
@@ -105,7 +130,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
 
 
     fn update_verlet_physics(&mut self, dt: f32) {
-        self.physics.step(dt * 0.05);
+        self.physics.step(dt * 0.1);
         // self.verlet_physics.update(dt * 0.4);
         // self.verlet_physics.update(dt * 1.0);
     }
