@@ -77,7 +77,8 @@ impl ContactPoint {
         let p = &obj.p;
         let r = &obj.r;
 
-        let pos_world = obj.local_to_world(&self.particle_local);
+        let pos_world = r.rot * self.particle_local + p.pos;
+        let prev_pos_world = r.prev_rot * self.particle_local + p.prev_pos;
         let normal = Vec3::unit_z();
         let contact_point = pos_world - normal * self.particle_radius;
         let separation = contact_point.z - GROUND_HIGHT_Z;
@@ -86,40 +87,107 @@ impl ContactPoint {
         let p = &mut obj.p;
         let r = &mut obj.r;
 
-        // Parameters
-        let compliance = 0.00;
-        let r0_world = r_;
-        let distance = separation;
-        let direction = normal;
+        // #########################################################
+        // Solve Collision
+        {
+            // Parameters
+            let compliance = 0.00;
+            let r0_world = r_;
+            let distance = separation;
+            let direction = normal;
+
+            // Solve Collision
+
+            // Calculates the generalized inverse mas
+            let rn0 = r0_world.cross(direction);
+            let i_rn0 = r.apply_inverse_inertia_world(
+                &rn0
+            );
+            let w0 = p.inv_mass + rn0.dot(i_rn0);
+
+            // Calculates the Lagrange multiplier correction
+            let alpha_tilde = compliance / (dt * dt);
+            let delta_lagrange_multiplier = (-distance - alpha_tilde * self.lagrange_multiplier_n) / 
+                                                            (w0 + alpha_tilde);
+            self.lagrange_multiplier_n += delta_lagrange_multiplier;
+
+            // Compute the positional impulse
+            let p_ = delta_lagrange_multiplier * direction;
+
+            // println!("p: {:?}", p_);
+
+            // Calculates the positional correction
+            p.pos += p_ * p.inv_mass;
+
+            // Applies the rotational positional correction 
+            let dq0 = r.apply_inverse_inertia_world(
+                    &r0_world.cross(p_)
+                );
+
+            r.rot += 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r.rot;
+        }
 
         // #########################################################
-        // Solve
+        // Solve Friction
+        {   
+            // Parameters
+            let friction_coefficient = 1.0;
+            let compliance = 0.00;
 
-        // Calculates the generalized inverse mas
-        let rn0 = r0_world.cross(direction);
-        let i_rn0 = r.apply_inverse_inertia_world(
-            &rn0
-        );
-        let w0 = p.inv_mass + rn0.dot(i_rn0);
+            // Recompute contact position after normal correction.
+            let pos_world = r.rot * self.particle_local + p.pos;
+            let contact_point = pos_world - normal * self.particle_radius;
 
-        // Calculates the Lagrange multiplier correction
-        let alpha_tilde = compliance / (dt * dt);
-        let delta_lagrange_multiplier = (-distance - alpha_tilde * self.lagrange_multiplier_n) / 
-                                                        (w0 + alpha_tilde);
-        self.lagrange_multiplier_n += delta_lagrange_multiplier;
-        self.lagrange_multiplier_n = self.lagrange_multiplier_n.max(0.0);
 
-        // Compute the positional impulse
-        let p_ = delta_lagrange_multiplier * direction;
+            // Compute the relative motion of the contact points and its tangential component
+            let dp = contact_point - prev_pos_world;
+            let dp_t = dp - normal * dp.dot(normal);
 
-        // Calculates the positional correction
-        p.pos += p_ * p.inv_mass;
 
-        // Applies the rotational positional correction 
-        let dq0 = r.apply_inverse_inertia_world(
-                &r0_world.cross(p_)
+
+
+            // Solve Collision
+            let dx = dp_t;
+            let distance = dx.magnitude();
+            if distance < 1e-03 {
+                return;
+            }
+
+            let direction = dx / distance;
+            let r_contact = contact_point - p.pos;
+
+            // Calculates the generalized inverse mas
+            let rn0 = r_contact.cross(direction);
+            let i_rn0 = r.apply_inverse_inertia_world(
+                &rn0
             );
+            let w0 = p.inv_mass + rn0.dot(i_rn0);
 
-        r.rot += 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r.rot;
+            // Calculates the Lagrange multiplier correction
+            let alpha_tilde = compliance / (dt * dt);
+            let delta_lagrange_multiplier = (-distance - alpha_tilde * self.lagrange_multiplier_t) / 
+                                                            (w0 + alpha_tilde);
+            let new_lagrange_multiplier_t = self.lagrange_multiplier_t + delta_lagrange_multiplier;
+            
+            if new_lagrange_multiplier_t < friction_coefficient * self.lagrange_multiplier_n
+            {
+                self.lagrange_multiplier_t += delta_lagrange_multiplier;
+
+                // Compute the positional impulse
+                let p_ = delta_lagrange_multiplier * direction;
+                println!("p: {:?}", p_);
+
+                // Calculates the positional correction
+                p.pos += p_ * p.inv_mass;
+
+                // Applies the rotational positional correction 
+                let dq0 = r.apply_inverse_inertia_world(
+                        &r_contact.cross(p_)
+                    );
+
+                r.rot += 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r.rot;
+            }
+        }
+
     }
 }

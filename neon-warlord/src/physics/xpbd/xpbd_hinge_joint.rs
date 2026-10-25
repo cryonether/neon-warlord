@@ -71,7 +71,7 @@ impl XpbdHingeJoint {
             angle_limit_1,
             positional_constraint,
             angular_constraint,
-            external_torque: 2.0,
+            external_torque: 10.0,
         }
     }
 
