@@ -19,9 +19,16 @@ pub struct GymHalfCheetah2 {
     pub physics: Xpbd,
     pub drawer: XpbdDrawer,
 
-    // particle_0: usize,
-    // particle_1: usize,
-    // particle_2: usize,
+    index_body: usize,
+    index_log_0_0: usize,
+    index_log_1_0: usize,
+    index_log_0_1: usize,
+    index_log_1_1: usize,
+
+    index_hinge_joint_0_0: usize,
+    index_hinge_joint_1_0: usize,
+    index_hinge_joint_0_1: usize,
+    index_hinge_joint_1_1: usize,
 }
 
 impl GymHalfCheetah2 {
@@ -29,85 +36,128 @@ impl GymHalfCheetah2 {
         let mut physics = Xpbd::new();
         let drawer = XpbdDrawer::new(&physics, 0.1, Vec3::zero());
         
-        let rigid_body_0 = XpbdRigidBody::new(
-            Vec3::new(1.0, 0.0, 1.5), 
-            &[Vec3::zero(), Vec3::new(2.0, 0.0, 0.0)],
+        let body = XpbdRigidBody::new(
+            Vec3::new(-1.0, 0.0, 1.5), 
+            &[
+                Vec3::zero(), 
+                Vec3::new(1.0, 0.0, 0.0), 
+                Vec3::new(2.0, 0.0, 0.0),
+                Vec3::new(2.3, 0.0, 0.3)
+            ],
             MASS
             // 0.0
         );
 
-        let rigid_body_1 = XpbdRigidBody::new(
-            Vec3::new(3.0, 0.0, 1.5), 
-            &[Vec3::zero(), Vec3::new(2.0, 0.0, 0.0)],
+        let log_0_0 = XpbdRigidBody::new(
+            Vec3::new(-1.0, 0.0, 1.5), 
+            &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS
         );
 
-        let rigid_body_2 = XpbdRigidBody::new(
-            Vec3::new(5.0, 0.0, 1.5), 
-            &[Vec3::zero(), Vec3::new(1.0, 0.0, 0.0)],
+        let log_1_0 = XpbdRigidBody::new(
+            Vec3::new(1.0, 0.0, 1.5), 
+            &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS
         );
 
-        let index_rigid_body_0 = physics.add_rigid_body(&rigid_body_0);
-        let index_rigid_body_1 = physics.add_rigid_body(&rigid_body_1);
-        let index_rigid_body_2 = physics.add_rigid_body(&rigid_body_2);
-
-        let hinge_joint_0 = XpbdHingeJoint::new(
-            rigid_body_0.particles[1], 
-            rigid_body_1.particles[0], 
-            -0.9 * PI, 
-            0.9 * PI, 
-            RotationAxis::Y,
-            RotationAxis::Y,
-            0.000, 
-            0.000
+        let log_0_1 = XpbdRigidBody::new(
+            Vec3::new(-1.0, 0.0, 1.0), 
+            &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
+            MASS
         );
 
-        physics.add_hinge_joint(
-            index_rigid_body_0, 
-            index_rigid_body_1, 
-            hinge_joint_0
+        let log_1_1 = XpbdRigidBody::new(
+            Vec3::new(1.0, 0.0, 1.0), 
+            &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
+            MASS
         );
 
-        let hinge_joint_1 = XpbdHingeJoint::new(
-            rigid_body_1.particles[1], 
-            rigid_body_2.particles[0], 
+        let index_body = physics.add_rigid_body(&body);
+        let index_log_0_0 = physics.add_rigid_body(&log_0_0);
+        let index_log_1_0 = physics.add_rigid_body(&log_1_0);
+        let index_log_0_1 = physics.add_rigid_body(&log_0_1);
+        let index_log_1_1 = physics.add_rigid_body(&log_1_1);
+
+        let hinge_joint_0_0 = XpbdHingeJoint::new(
+            body.particles[0], 
+            log_0_0.particles[0], 
             -0.5 * PI, 
             0.5 * PI, 
             RotationAxis::Y,
             RotationAxis::Y,
-            0.000, 
-            0.000
+            0.0002, 
+            0.0002
+        );
+        let index_hinge_joint_0_0 = physics.add_hinge_joint(
+            index_body, 
+            index_log_0_0, 
+            hinge_joint_0_0
         );
 
-        physics.add_hinge_joint(
-            index_rigid_body_1, 
-            index_rigid_body_2, 
-            hinge_joint_1
+
+        let hinge_joint_1_0 = XpbdHingeJoint::new(
+            body.particles[2], 
+            log_1_0.particles[0], 
+            -0.5 * PI, 
+            0.5 * PI, 
+            RotationAxis::Y,
+            RotationAxis::Y,
+            0.0002, 
+            0.0002
+        );
+        let index_hinge_joint_1_0 = physics.add_hinge_joint(
+            index_body, 
+            index_log_1_0, 
+            hinge_joint_1_0
         );
 
 
-    //    let constraint_0 = XpbdPositionalConstraint::new(
-    //     rigid_body_0.particles[0],
-    //     rigid_body_1.particles[0],
-    //     // 0.002,
-    //     0.0000,
-    //    );
+        let hinge_joint_0_1 = XpbdHingeJoint::new(
+            log_0_0.particles[1], 
+            log_0_1.particles[0], 
+            -0.5 * PI, 
+            0.5 * PI, 
+            RotationAxis::Y,
+            RotationAxis::Y,
+            0.0002, 
+            0.0002
+        );
+         let index_hinge_joint_0_1 = physics.add_hinge_joint(
+            index_log_0_0, 
+            index_log_0_1, 
+            hinge_joint_0_1
+        );
 
-    //    physics.add_constraint_position(index_rigid_body_0, index_rigid_body_1, constraint_0);
 
-    //    let constraint_1 = XpbdAngularConstraint::new(
-    //     // 0.0002,
-    //     0.0000,
-    //    );
-
-    //    physics.add_constraint_angular(index_rigid_body_0, index_rigid_body_1, constraint_1);
+        let hinge_joint_1_1 = XpbdHingeJoint::new(
+            log_1_0.particles[1], 
+            log_1_1.particles[0], 
+            -0.5 * PI, 
+            0.5 * PI, 
+            RotationAxis::Y,
+            RotationAxis::Y,
+            0.0002, 
+            0.0002
+        );
+         let index_hinge_joint_1_1 = physics.add_hinge_joint(
+            index_log_1_0, 
+            index_log_1_1, 
+            hinge_joint_1_1
+        );
 
         Self {
             physics,
             drawer,
-            // particle_0: 0,
-            // particle_1: 0,
+            index_body,
+            index_log_0_0,
+            index_log_1_0,
+            index_log_0_1,
+            index_log_1_1,
+            index_hinge_joint_0_0,
+            index_hinge_joint_1_0,
+            index_hinge_joint_0_1,
+            index_hinge_joint_1_1,
+
         }
     }
 }
@@ -131,8 +181,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
 
 
     fn update_verlet_physics(&mut self, dt: f32) {
-        self.physics.step(dt * 0.4);
-        // self.physics.step(dt * 1.0);
+        // self.physics.step(dt * 0.04);
+        self.physics.step(dt * 1.0);
         // self.verlet_physics.update(dt * 0.4);
     }
 

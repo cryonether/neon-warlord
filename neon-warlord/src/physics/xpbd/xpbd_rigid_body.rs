@@ -89,6 +89,8 @@ impl XpbdRigidBody {
                 particles_centered.push(particle - center_of_mass);
         }
 
+        let pos = pos + center_of_mass;
+
         Self {
             p:PositionalQuantities{
                 pos,

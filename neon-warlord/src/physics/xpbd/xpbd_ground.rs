@@ -175,7 +175,7 @@ impl ContactPoint {
 
                 // Compute the positional impulse
                 let p_ = delta_lagrange_multiplier * direction;
-                println!("p: {:?}, db_t: {:?}", p_, dp_t);
+                // println!("p: {:?}, db_t: {:?}", p_, dp_t);
 
                 // Calculates the positional correction
                 p.pos += p_ * p.inv_mass;
