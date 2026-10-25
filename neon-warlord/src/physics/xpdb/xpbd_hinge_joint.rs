@@ -6,34 +6,6 @@ use cgmath::{InnerSpace, Quaternion, Rad, Rotation, Rotation3, Zero};
 
 use crate::physics::xpdb::{Quad, Vec3, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody};
 
-pub enum RotationAxis {
-    X,
-    Y, 
-    Z,
-}
-
-impl RotationAxis {
-    fn local_frame(self) -> (Vec3, Vec3, Vec3) {
-        match self {
-            RotationAxis::X => (
-                Vec3::unit_x(),
-                Vec3::unit_y(),
-                Vec3::unit_z(),
-            ),
-            RotationAxis::Y => (
-                Vec3::unit_y(),
-                Vec3::unit_z(),
-                Vec3::unit_x(),
-            ),
-            RotationAxis::Z => (
-                Vec3::unit_z(),
-                Vec3::unit_x(),
-                Vec3::unit_y(),
-            ),
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct XpbdHingeJoint {
     // Attachment point 0 defined relative to the center of mass of body 0
@@ -294,4 +266,33 @@ impl XpbdHingeJoint {
     //     cross * (theta / sin_theta)
     // }
 
+}
+
+
+pub enum RotationAxis {
+    X,
+    Y, 
+    Z,
+}
+
+impl RotationAxis {
+    fn local_frame(self) -> (Vec3, Vec3, Vec3) {
+        match self {
+            RotationAxis::X => (
+                Vec3::unit_x(),
+                Vec3::unit_y(),
+                Vec3::unit_z(),
+            ),
+            RotationAxis::Y => (
+                Vec3::unit_y(),
+                Vec3::unit_z(),
+                Vec3::unit_x(),
+            ),
+            RotationAxis::Z => (
+                Vec3::unit_z(),
+                Vec3::unit_x(),
+                Vec3::unit_y(),
+            ),
+        }
+    }
 }

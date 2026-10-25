@@ -8,6 +8,7 @@ pub mod xpbd_angular_constraint;
 pub mod xpbd_drawer;
 pub mod xpbd_rigid_body;
 pub mod xpbd_hinge_joint;
+pub mod xpbd_ground;
 
 #[cfg(test)]
 mod tests;
