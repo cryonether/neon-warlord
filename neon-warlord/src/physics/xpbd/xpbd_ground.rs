@@ -131,16 +131,16 @@ impl ContactPoint {
         // Solve Friction
         {   
             // Parameters
-            let friction_coefficient = 1.0;
-            let compliance = 0.00;
+            let friction_coefficient = 0.9;
+            let compliance = 0.0000;
 
             // Recompute contact position after normal correction.
             let pos_world = r.rot * self.particle_local + p.pos;
             let contact_point = pos_world - normal * self.particle_radius;
-
+            let prev_contact_point = prev_pos_world - normal * self.particle_radius;
 
             // Compute the relative motion of the contact points and its tangential component
-            let dp = contact_point - prev_pos_world;
+            let dp = contact_point - prev_contact_point;
             let dp_t = dp - normal * dp.dot(normal);
 
 
@@ -149,7 +149,7 @@ impl ContactPoint {
             // Solve Collision
             let dx = dp_t;
             let distance = dx.magnitude();
-            if distance < 1e-03 {
+            if distance < 1e-06 {
                 return;
             }
 
@@ -169,13 +169,13 @@ impl ContactPoint {
                                                             (w0 + alpha_tilde);
             let new_lagrange_multiplier_t = self.lagrange_multiplier_t + delta_lagrange_multiplier;
             
-            if new_lagrange_multiplier_t < friction_coefficient * self.lagrange_multiplier_n
+            self.lagrange_multiplier_t += delta_lagrange_multiplier;
+            if new_lagrange_multiplier_t.abs() <= friction_coefficient * self.lagrange_multiplier_n
             {
-                self.lagrange_multiplier_t += delta_lagrange_multiplier;
 
                 // Compute the positional impulse
                 let p_ = delta_lagrange_multiplier * direction;
-                println!("p: {:?}", p_);
+                println!("p: {:?}, db_t: {:?}", p_, dp_t);
 
                 // Calculates the positional correction
                 p.pos += p_ * p.inv_mass;
@@ -188,6 +188,7 @@ impl ContactPoint {
                 r.rot += 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r.rot;
             }
         }
+        
 
     }
 }

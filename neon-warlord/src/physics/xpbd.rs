@@ -248,7 +248,7 @@ impl PositionalQuantities {
 
     fn update_velocity(&mut self, dt: f32) {
         self.vel = (self.pos - self.prev_pos) / dt;
-        self.vel *= 0.999;
+        // self.vel *= 0.999;
     }
 }
 

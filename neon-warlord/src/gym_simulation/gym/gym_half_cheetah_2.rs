@@ -131,9 +131,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
 
 
     fn update_verlet_physics(&mut self, dt: f32) {
-        // self.physics.step(dt * 0.4);
+        self.physics.step(dt * 0.4);
+        // self.physics.step(dt * 1.0);
         // self.verlet_physics.update(dt * 0.4);
-        self.physics.step(dt * 1.0);
     }
 
     fn get_state(&self) -> [f32; OBSERVATIONS] {
