@@ -32,7 +32,8 @@ impl GymHalfCheetah2 {
         let rigid_body_0 = XpbdRigidBody::new(
             Vec3::new(1.0, 0.0, 1.5), 
             &[Vec3::zero(), Vec3::new(2.0, 0.0, 0.0)],
-            0.0
+            MASS
+            // 0.0
         );
 
         let rigid_body_1 = XpbdRigidBody::new(
@@ -130,9 +131,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
 
 
     fn update_verlet_physics(&mut self, dt: f32) {
-        self.physics.step(dt * 1.0);
+        // self.physics.step(dt * 0.4);
         // self.verlet_physics.update(dt * 0.4);
-        // self.verlet_physics.update(dt * 1.0);
+        self.physics.step(dt * 1.0);
     }
 
     fn get_state(&self) -> [f32; OBSERVATIONS] {

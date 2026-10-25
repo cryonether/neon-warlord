@@ -15,7 +15,7 @@ mod tests;
 
 use cgmath::{InnerSpace, One, Rad, Rotation, SquareMatrix, Zero};
 
-use crate::physics::{rigid_body::{RigidBody}, xpbd::{xpbd_angular_constraint::XpbdAngularConstraint, xpbd_hinge_joint::XpbdHingeJoint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
+use crate::physics::{rigid_body::RigidBody, xpbd::{xpbd_angular_constraint::XpbdAngularConstraint, xpbd_ground::XpbdGround, xpbd_hinge_joint::XpbdHingeJoint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
 
 type Vec3 = cgmath::Vector3<f32>;
 type Quad = cgmath::Quaternion<f32>;
@@ -31,6 +31,8 @@ pub struct Xpbd {
     position_constraints: Vec<PositionalConstraint>,
     angular_constraints: Vec<AngularConstraint>,
     hinge_joints: Vec<HingeJoint>,
+
+    ground_constraint: XpbdGround,
 }
 
 impl Xpbd {
@@ -40,6 +42,7 @@ impl Xpbd {
         let position_constraints = Vec::new();
         let angular_constraints = Vec::new();
         let hinge_joints = Vec::new();
+        let ground_constraint = XpbdGround::new(); 
 
         Self {
             particles,
@@ -47,6 +50,7 @@ impl Xpbd {
             position_constraints,
             angular_constraints,
             hinge_joints,
+            ground_constraint,
         }
     }
 
@@ -55,23 +59,21 @@ impl Xpbd {
         const SUB_STEPS: usize = 4;
         let sub_dt = dt / SUB_STEPS as f32;
 
-        // for constraint in &mut self.position_constraints {
-        //     constraint.constraint.reset_lagrange_multiplier();
-        // }
-
-        // for constraint in &mut self.angular_constraints {
-        //     constraint.constraint.reset_lagrange_multiplier();
-        // }
-
+        // ##########################################################
+        // Reset lagrange multipliers
         for constraint in &mut self.hinge_joints {
             constraint.constraint.reset_lagrange_multiplier();
         }
 
-        // for rigid_body in &mut self.rigid_bodies {
-        //     rigid_body.r.external_torque = Vec3::zero();
-        // }
+        // ##########################################################
+        // Find ground collisions
+        self.ground_constraint.find_contact_points(&self.rigid_bodies);
 
+        
         for i in 0..SUB_STEPS {
+            // ##########################################################
+            // Integrate positions and orientation
+
             for particle in &mut self.particles {
                 particle.p.integrate_position(sub_dt);
             }
@@ -81,37 +83,11 @@ impl Xpbd {
                 rigid_body.r.integrate_orientation(sub_dt);
             }
 
+            // ##########################################################
             // SolvePositions(x_1, . . . x_n, q_1, . . . q_n);
 
-            // // Positional Constraints
-            // for constraint in &mut self.position_constraints {
-            //     let index_a = constraint.index_a;
-            //     let index_b = constraint.index_b;
-            //     let constraint = &mut constraint.constraint;
-
-            //     assert_ne!(index_a, index_b, "Constraint indices must differ");
-            //     let (obj_a, obj_b) = {
-            //         let (left, right) = self.rigid_bodies.split_at_mut(index_b);
-            //         (&mut left[index_a], &mut right[0])
-            //     };
-
-            //     constraint.solve(obj_a, obj_b, sub_dt);
-            // }
-
-            // // Angular Constraints
-            // for constraint in &mut self.angular_constraints {
-            //     let index_a = constraint.index_a;
-            //     let index_b = constraint.index_b;
-            //     let constraint = &mut constraint.constraint;
-
-            //     assert_ne!(index_a, index_b, "Constraint indices must differ");
-            //     let (obj_a, obj_b) = {
-            //         let (left, right) = self.rigid_bodies.split_at_mut(index_b);
-            //         (&mut left[index_a], &mut right[0])
-            //     };
-
-            //     constraint.solve(obj_a, obj_b, sub_dt);
-            // }
+            // Ground 
+            self.ground_constraint.solve(&mut self.rigid_bodies, sub_dt);
 
             // Hinge joint
             for constraint in &mut self.hinge_joints {
@@ -128,6 +104,9 @@ impl Xpbd {
                 constraint.solve(obj_a, obj_b, sub_dt);
             }
 
+            // ##########################################################
+            // Integrate velocity and angular velocities
+
             for particle in &mut self.particles {
                 particle.p.update_velocity(sub_dt);
             }
@@ -137,8 +116,11 @@ impl Xpbd {
                 rigid_body.r.update_angular_velocity(sub_dt);
             }
 
+            // ##########################################################
+            // SolveVelocities(v_1, . . . v_n, w_1, . . . w_n);
+
             // for constraint in &self.velocity_constraints {
-            //     // SolveVelocities(v_1, . . . v_n, w_1, . . . w_n)
+            //     
             // }
         }
     }

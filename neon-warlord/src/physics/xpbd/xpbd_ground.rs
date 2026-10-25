@@ -7,11 +7,18 @@ use crate::physics::xpbd::{Quad, Vec3, xpbd_positional_constraint::XpbdPositiona
 // Hight of the ground plane
 const GROUND_HIGHT_Z: f32 = 0.0;
 
+#[derive(Clone)]
 pub struct XpbdGround {
     pub contact_points: Vec<(usize, ContactPoint)>
 }
 
 impl XpbdGround {
+    pub fn new() -> Self {
+        Self {
+            contact_points: Vec::new(),
+        }
+    }
+
 
     pub fn find_contact_points(&mut self, objs: &[XpbdRigidBody]) {
          self.contact_points.clear();
@@ -55,6 +62,7 @@ impl XpbdGround {
 
 
 
+#[derive(Clone)]
 pub struct ContactPoint {
     pub particle_local: Vec3,
     pub particle_radius: f32,
@@ -75,16 +83,11 @@ impl ContactPoint {
         let separation = contact_point.z - GROUND_HIGHT_Z;
         let r_ = contact_point - p.pos;
 
-        if separation >= 0.0 {
-            return;
-        }
-
-
         let p = &mut obj.p;
         let r = &mut obj.r;
 
         // Parameters
-        let compliance = 0.0;
+        let compliance = 0.00;
         let r0_world = r_;
         let distance = separation;
         let direction = normal;
@@ -104,7 +107,7 @@ impl ContactPoint {
         let delta_lagrange_multiplier = (-distance - alpha_tilde * self.lagrange_multiplier_n) / 
                                                         (w0 + alpha_tilde);
         self.lagrange_multiplier_n += delta_lagrange_multiplier;
-        // self.lagrange_multiplier_n = self.lagrange_multiplier_n.max(0.0);
+        self.lagrange_multiplier_n = self.lagrange_multiplier_n.max(0.0);
 
         // Compute the positional impulse
         let p_ = delta_lagrange_multiplier * direction;
