@@ -326,6 +326,7 @@ impl RotationalQuantities {
         // Save previous rotation
         self.prev_rot = self.rot;
 
+        // ########################################################################
         // Apply external torques
         let external_torque = self.external_torque;
         // let external_torque = Vec3::new(0.0, 1.0, 0.0);
@@ -337,6 +338,7 @@ impl RotationalQuantities {
 
         self.external_torque = Vec3::zero();
 
+        // ########################################################################
         // Update orientation
         self.rot = self.rot + dt * 0.5 * Quad::new(
             0.0,
