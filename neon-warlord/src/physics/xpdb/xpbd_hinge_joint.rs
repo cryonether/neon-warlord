@@ -63,6 +63,9 @@ pub struct XpbdHingeJoint {
 
     pub positional_constraint: XpbdPositionalConstraint,
     pub angular_constraint: XpbdAngularConstraint, 
+
+
+    pub external_torque: f32,
 }
 
 impl XpbdHingeJoint {
@@ -96,6 +99,7 @@ impl XpbdHingeJoint {
             angle_limit_1,
             positional_constraint,
             angular_constraint,
+            external_torque: 1.0,
         }
     }
 
@@ -128,6 +132,12 @@ impl XpbdHingeJoint {
         let c0 = r0.rot.rotate_vector(self.c0);
         let c1 = r1.rot.rotate_vector(self.c1);
         
+
+        // ##########################################################################
+        // Apply external torque
+        obj_0.r.external_torque += self.external_torque * a0;
+        obj_1.r.external_torque -= self.external_torque * a1;
+
 
 
         // ##########################################################################
@@ -254,6 +264,9 @@ impl XpbdHingeJoint {
             angle,
             dt
         );
+
+        
+
     }
 
     pub fn reset_lagrange_multiplier(&mut self) {

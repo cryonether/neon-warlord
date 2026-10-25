@@ -101,7 +101,9 @@ impl XpbdRigidBody {
                 inv_rot,
                 prev_rot,
                 omega,
+                inertia_tensor,
                 inverse_inertia_tensor,
+                external_torque: Vec3::zero(),
             },
             particles: particles_centered,
         }

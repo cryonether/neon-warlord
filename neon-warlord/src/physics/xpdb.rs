@@ -66,6 +66,9 @@ impl Xpbd {
             constraint.constraint.reset_lagrange_multiplier();
         }
 
+        for rigid_body in &mut self.rigid_bodies {
+            rigid_body.r.external_torque = Vec3::zero();
+        }
 
         for i in 0..SUB_STEPS {
             for particle in &mut self.particles {
@@ -277,14 +280,13 @@ pub struct RotationalQuantities {
     // Angular velocity
     pub omega: Vec3,
 
-    // // Inertia tensor
-    // pub inertia_tensor: Mat3,
+    // Inertia tensor (in local space)
+    pub inertia_tensor: Mat3,
 
-    // // Inverse inertia tensor
+    // // Inverse inertia tensor (in local space)
     pub inverse_inertia_tensor: Mat3,
 
-
-    // pub inv_inertia: Vec3,
+    pub external_torque: Vec3,
 }
 
 impl RotationalQuantities {
@@ -298,8 +300,8 @@ impl RotationalQuantities {
         let inv_rot = rot.invert();
         let prev_rot = rot.clone();
         let omega = Vec3::zero();
-        let inv_inertia = Vec3::new(1.0, 1.0, 1.0);
 
+        let inertia_tensor = Mat3::identity();
         let inverse_inertia_tensor = if mass > 0.0 {
             Mat3::identity()
         } else {
@@ -311,8 +313,9 @@ impl RotationalQuantities {
             inv_rot,
             prev_rot,
             omega,
+            inertia_tensor,
             inverse_inertia_tensor,
-            // inv_inertia,
+            external_torque: Vec3::zero(),
         }
     }
 
@@ -320,14 +323,16 @@ impl RotationalQuantities {
         // Save previous rotation
         self.prev_rot = self.rot;
 
-        // // Apply external torques
-        // let external_torque = Vec3::zero();
-        // self.omega = self.omega + 
-        //     dt * self.inverse_inertia_tensor * 
-        //     (external_torque - self.omega.cross(
-        //         self.inertia_tensor * self.omega
-        //     )
-        // );
+        // Apply external torques
+        let external_torque = self.external_torque;
+        // let external_torque = Vec3::new(0.0, 1.0, 0.0);
+        self.omega = self.omega + 
+            dt * self.inverse_inertia_tensor * 
+            (external_torque - self.omega.cross(
+                self.inertia_tensor * self.omega
+            )
+        );
+        self.external_torque = Vec3::zero();
 
         // Update orientation
         self.rot = self.rot + dt * 0.5 * Quad::new(
@@ -358,9 +363,6 @@ impl RotationalQuantities {
     }
 
     fn apply_inverse_inertia_world(&self,
-        // rotation: &Quad,
-        // inverse_rotation: &Quad,
-        // inverse_inertia_local: &Mat3,
         v_world: &Vec3,
     ) -> Vec3 {
         // Transform the vector into local space.
@@ -368,6 +370,19 @@ impl RotationalQuantities {
 
         // Apply the full local-space inverse inertia tensor.
         let result_local = self.inverse_inertia_tensor * v_local;
+
+        // Transform the result back into world space.
+        self.rot.rotate_vector(result_local)
+    }
+
+    fn apply_inertia_world(&self,
+        v_world: &Vec3,
+    ) -> Vec3 {
+        // Transform the vector into local space.
+        let v_local = self.inv_rot.rotate_vector(*v_world);
+
+        // Apply the full local-space inverse inertia tensor.
+        let result_local = self.inertia_tensor * v_local;
 
         // Transform the result back into world space.
         self.rot.rotate_vector(result_local)
