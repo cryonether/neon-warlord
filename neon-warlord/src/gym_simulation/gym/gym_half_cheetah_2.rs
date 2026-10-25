@@ -30,21 +30,21 @@ impl GymHalfCheetah2 {
         let drawer = XpbdDrawer::new(&physics, 0.1, Vec3::zero());
         
         let rigid_body_0 = XpbdRigidBody::new(
-            Vec3::new(-1.0, 0.0, 1.5), 
-            &[Vec3::zero(), Vec3::new(0.0, 0.0, 1.0)],
-            MASS
+            Vec3::new(1.0, 0.0, 1.5), 
+            &[Vec3::zero(), Vec3::new(2.0, 0.0, 0.0)],
+            0.0
         );
 
         let rigid_body_1 = XpbdRigidBody::new(
-            Vec3::new(1.0, 0.0, 1.5), 
-            &[Vec3::zero(), Vec3::new(0.0, 0.0, 2.0)],
+            Vec3::new(3.0, 0.0, 1.5), 
+            &[Vec3::zero(), Vec3::new(2.0, 0.0, 0.0)],
             MASS
         );
 
         let rigid_body_2 = XpbdRigidBody::new(
-            Vec3::new(1.0, 0.0, 2.0), 
-            &[Vec3::zero(), Vec3::new(2.0, 0.0, 0.0)],
-            0.0
+            Vec3::new(5.0, 0.0, 1.5), 
+            &[Vec3::zero(), Vec3::new(1.0, 0.0, 0.0)],
+            MASS
         );
 
         let index_rigid_body_0 = physics.add_rigid_body(&rigid_body_0);
@@ -52,31 +52,31 @@ impl GymHalfCheetah2 {
         let index_rigid_body_2 = physics.add_rigid_body(&rigid_body_2);
 
         let hinge_joint_0 = XpbdHingeJoint::new(
-            rigid_body_0.particles[0], 
+            rigid_body_0.particles[1], 
             rigid_body_1.particles[0], 
-            0.4 * PI, 
-            1.6 * PI, 
+            -0.9 * PI, 
+            0.9 * PI, 
             RotationAxis::Y,
             RotationAxis::Y,
             0.000, 
-            0.0000
+            0.000
         );
 
-        // physics.add_hinge_joint(
-        //     index_rigid_body_0, 
-        //     index_rigid_body_1, 
-        //     hinge_joint_0
-        // );
+        physics.add_hinge_joint(
+            index_rigid_body_0, 
+            index_rigid_body_1, 
+            hinge_joint_0
+        );
 
         let hinge_joint_1 = XpbdHingeJoint::new(
             rigid_body_1.particles[1], 
             rigid_body_2.particles[0], 
             -0.5 * PI, 
-            -0.5 * PI, 
+            0.5 * PI, 
             RotationAxis::Y,
             RotationAxis::Y,
             0.000, 
-            0.0002
+            0.000
         );
 
         physics.add_hinge_joint(
@@ -130,7 +130,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
 
 
     fn update_verlet_physics(&mut self, dt: f32) {
-        self.physics.step(dt * 0.1);
+        self.physics.step(dt * 1.0);
         // self.verlet_physics.update(dt * 0.4);
         // self.verlet_physics.update(dt * 1.0);
     }
