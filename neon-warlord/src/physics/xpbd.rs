@@ -13,7 +13,7 @@ pub mod xpbd_ground;
 #[cfg(test)]
 mod tests;
 
-use cgmath::{InnerSpace, One, Rad, Rotation, SquareMatrix, Zero};
+use cgmath::{Euler, InnerSpace, One, Rad, Rotation, SquareMatrix, Zero};
 
 use crate::physics::{rigid_body::RigidBody, xpbd::{xpbd_angular_constraint::XpbdAngularConstraint, xpbd_ground::XpbdGround, xpbd_hinge_joint::XpbdHingeJoint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
 
@@ -26,11 +26,11 @@ const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -10.0);
 #[derive(Clone)]
 pub struct Xpbd {
     particles: Vec<XpbdParticle>,
-    rigid_bodies: Vec<XpbdRigidBody>,
+    pub rigid_bodies: Vec<XpbdRigidBody>,
 
-    position_constraints: Vec<PositionalConstraint>,
-    angular_constraints: Vec<AngularConstraint>,
-    hinge_joints: Vec<HingeJoint>,
+    // position_constraints: Vec<PositionalConstraint>,
+    // angular_constraints: Vec<AngularConstraint>,
+    pub hinge_joints: Vec<HingeJoint>,
 
     ground_constraint: XpbdGround,
 }
@@ -39,16 +39,16 @@ impl Xpbd {
     pub fn new() -> Self {
         let particles = Vec::new();
         let rigid_bodies = Vec::new();
-        let position_constraints = Vec::new();
-        let angular_constraints = Vec::new();
+        // let position_constraints = Vec::new();
+        // let angular_constraints = Vec::new();
         let hinge_joints = Vec::new();
         let ground_constraint = XpbdGround::new(); 
 
         Self {
             particles,
             rigid_bodies,
-            position_constraints,
-            angular_constraints,
+            // position_constraints,
+            // angular_constraints,
             hinge_joints,
             ground_constraint,
         }
@@ -164,36 +164,36 @@ impl Xpbd {
     //     index
     // }
 
-    pub fn add_constraint_position(&mut self, index_a: usize, index_b: usize, constraint: XpbdPositionalConstraint) -> usize {
-        let index = self.position_constraints.len();
+    // pub fn add_constraint_position(&mut self, index_a: usize, index_b: usize, constraint: XpbdPositionalConstraint) -> usize {
+    //     let index = self.position_constraints.len();
         
-        let constraint = PositionalConstraint{
-            index_a,
-            index_b,
-            constraint,
-        };
+    //     let constraint = PositionalConstraint{
+    //         index_a,
+    //         index_b,
+    //         constraint,
+    //     };
 
-        self.position_constraints.push(constraint);
+    //     self.position_constraints.push(constraint);
 
-        index
-    }
+    //     index
+    // }
 
-    pub fn add_constraint_angular(&mut self, index_a: usize, index_b: usize, constraint: XpbdAngularConstraint) -> usize {
-        let index = self.position_constraints.len();
+    // pub fn add_constraint_angular(&mut self, index_a: usize, index_b: usize, constraint: XpbdAngularConstraint) -> usize {
+    //     let index = self.position_constraints.len();
         
-        let constraint = AngularConstraint{
-            index_a,
-            index_b,
-            constraint,
-        };
+    //     let constraint = AngularConstraint{
+    //         index_a,
+    //         index_b,
+    //         constraint,
+    //     };
 
-        self.angular_constraints.push(constraint);
+    //     self.angular_constraints.push(constraint);
 
-        index
-    }
+    //     index
+    // }
 
     pub fn add_hinge_joint(&mut self, index_a: usize, index_b: usize, constraint: XpbdHingeJoint) -> usize {
-        let index = self.position_constraints.len();
+        let index = self.hinge_joints.len();
         
         let constraint = HingeJoint{
             index_a,
@@ -217,13 +217,13 @@ pub struct XpbdParticle {
 #[derive(Clone)]
 pub struct PositionalQuantities {
     // Position
-    pos: Vec3,
+    pub pos: Vec3,
 
     // Previous position
     prev_pos: Vec3,
 
     // Velocity
-    vel: Vec3,
+    pub vel: Vec3,
 
     // mass
     // mass: f32,
@@ -278,33 +278,33 @@ pub struct RotationalQuantities {
 
 impl RotationalQuantities {
 
-    pub fn new(angles: Vec3, mass: f32) -> Self {
-        let rot = Quad::from(cgmath::Euler{
-            x: Rad(angles.x),
-            y: Rad(angles.y),
-            z: Rad(angles.z),
-        });
-        let inv_rot = rot.invert();
-        let prev_rot = rot.clone();
-        let omega = Vec3::zero();
+    // pub fn new(angles: Vec3, mass: f32) -> Self {
+    //     let rot = Quad::from(cgmath::Euler{
+    //         x: Rad(angles.x),
+    //         y: Rad(angles.y),
+    //         z: Rad(angles.z),
+    //     });
+    //     let inv_rot = rot.invert();
+    //     let prev_rot = rot.clone();
+    //     let omega = Vec3::zero();
 
-        let inertia_tensor = Mat3::identity();
-        let inverse_inertia_tensor = if mass > 0.0 {
-            Mat3::identity()
-        } else {
-            Mat3::zero()
-        };
+    //     let inertia_tensor = Mat3::identity();
+    //     let inverse_inertia_tensor = if mass > 0.0 {
+    //         Mat3::identity()
+    //     } else {
+    //         Mat3::zero()
+    //     };
 
-        Self {
-            rot,
-            inv_rot,
-            prev_rot,
-            omega,
-            inertia_tensor,
-            inverse_inertia_tensor,
-            external_torque: Vec3::zero(),
-        }
-    }
+    //     Self {
+    //         rot,
+    //         inv_rot,
+    //         prev_rot,
+    //         omega,
+    //         inertia_tensor,
+    //         inverse_inertia_tensor,
+    //         external_torque: Vec3::zero(),
+    //     }
+    // }
 
     fn integrate_orientation(&mut self, dt: f32) {
         // Save previous rotation
@@ -375,6 +375,12 @@ impl RotationalQuantities {
 
         // Transform the result back into world space.
         self.rot.rotate_vector(result_local)
+    }
+
+    pub fn get_rotation_as_euler(&self) -> Vec3 {
+        let euler: Euler<Rad<f32>> = self.rot.into();
+
+        Vec3::new(euler.x.0, euler.y.0, euler.z.0)
     }
 }
 

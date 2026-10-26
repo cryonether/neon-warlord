@@ -24,7 +24,7 @@ pub struct XpbdDrawer {
 impl XpbdDrawer {
     pub fn new(physics: &Xpbd, radius: f32, position: Vec3) -> Self {
         let _nr_nodes = physics.rigid_bodies.len();
-        let _nr_edges = physics.position_constraints.len();
+        let _nr_edges = physics.hinge_joints.len();
 
         let nodes_color_0: Vec3 = to_rgb("#ce51ff").into();
         let nodes_color_1: Vec3 = to_rgb("#371643").into();

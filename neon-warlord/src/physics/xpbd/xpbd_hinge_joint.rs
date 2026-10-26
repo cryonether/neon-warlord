@@ -24,20 +24,19 @@ pub struct XpbdHingeJoint {
     pub b1: Vec3,
     pub c1: Vec3,
 
-    // Target angle alpha
-    // pub target_angle: f32,
-
-
     // Limits the angle between the axes n1 and n2 of two bodies
     // to be in the interval [alpha, beta] using the common rotation axis n.
     pub angle_limit_0: f32,
     pub angle_limit_1: f32, 
 
+    // Constraints
     pub positional_constraint: XpbdPositionalConstraint,
     pub angular_constraint: XpbdAngularConstraint, 
 
-
-    pub external_torque: f32,
+    // Get and set
+    external_torque: f32,
+    phi: f32,
+    angular_velocity: f32,
 }
 
 impl XpbdHingeJoint {
@@ -73,6 +72,8 @@ impl XpbdHingeJoint {
             angular_constraint,
             // external_torque: -2.0,
             external_torque: 0.0,
+            phi: 0.0,
+            angular_velocity: 0.0,
         }
     }
 
@@ -238,8 +239,12 @@ impl XpbdHingeJoint {
             dt
         );
 
-        
+        // Save angle
+        self.phi = phi;
 
+        // Calculate angular velocity
+        let omega_rel = obj_1.r.omega - obj_0.r.omega;
+        self.angular_velocity = omega_rel.dot(n);        
     }
 
     pub fn reset_lagrange_multiplier(&mut self) {
@@ -247,26 +252,17 @@ impl XpbdHingeJoint {
         self.angular_constraint.reset_lagrange_multiplier();
     }
 
-    // /// Approximate angular error vector between two unit vectors.
-    // /// Returns a0 × a1.
-    // fn angular_error_approximate(a0: Vec3, a1: Vec3) -> Vec3 {
-    //     a0.cross(a1)
-    // }
+    pub fn get_angle(&self) -> f32 {
+        self.phi
+    }
 
-    // /// Computes the actual unsigned angle between two vectors in radians.
-    // fn angular_error(a0: Vec3, a1: Vec3) -> Vec3 {
-    //     let cross = a0.cross(a1);
-    //     let sin_theta = cross.magnitude();
-    //     let cos_theta = a0.dot(a1);
+    pub fn get_angular_velocity(&self) -> f32 {
+        self.angular_velocity
+    }
 
-    //     if sin_theta < 1e-6 {
-    //         return Vec3::new(0.0, 0.0, 0.0);
-    //     }
-
-    //     let theta = sin_theta.atan2(cos_theta);
-    //     cross * (theta / sin_theta)
-    // }
-
+    pub fn set_external_torque(&mut self, torque: f32) {
+        self.external_torque = torque;
+    }
 }
 
 

@@ -327,11 +327,11 @@ impl NeonWarlord {
         let _gym_simulation_3: GymSimulation<11, 4, 64, 2, false, GymHalfCheetah> =
             GymSimulation::new(GymHalfCheetah::new());
 
-        let _gym_simulation_4: GymSimulation<11, 4, 64, 2, false, GymHalfCheetah2> =
+        let _gym_simulation_4: GymSimulation<12, 4, 64, 2, false, GymHalfCheetah2> =
             GymSimulation::new(GymHalfCheetah2::new());
 
 
-        let gym_simulation = _gym_simulation_4;
+        let gym_simulation = _gym_simulation_2;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
             sim: Box::new(gym_simulation),
             producer,

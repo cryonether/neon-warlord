@@ -131,7 +131,7 @@ impl ContactPoint {
         // Solve Friction
         {   
             // Parameters
-            let friction_coefficient = 0.9;
+            let friction_coefficient = 10.0;
             let compliance = 0.0000;
 
             // Recompute contact position after normal correction.
@@ -172,7 +172,7 @@ impl ContactPoint {
             self.lagrange_multiplier_t += delta_lagrange_multiplier;
             if new_lagrange_multiplier_t.abs() <= friction_coefficient * self.lagrange_multiplier_n
             {
-
+                
                 // Compute the positional impulse
                 let p_ = delta_lagrange_multiplier * direction;
                 // println!("p: {:?}, db_t: {:?}", p_, dp_t);

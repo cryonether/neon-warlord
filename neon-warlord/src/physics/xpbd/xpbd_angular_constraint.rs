@@ -155,6 +155,7 @@ impl XpbdAngularConstraint {
         r0.rot = r0.rot + 0.5 * Quad::new(0.0, i_p0.x, i_p0.y, i_p0.z) * r0.rot;
         r1.rot = r1.rot - 0.5 * Quad::new(0.0, i_p1.x, i_p1.y, i_p1.z) * r1.rot;
 
+        // Calculate torque
         self.torque = self.lagrange_multiplier * n / (dt * dt);
     }
 
