@@ -4,8 +4,8 @@ use cgmath::InnerSpace;
 
 use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
-// Hight of the ground plane
-const GROUND_HIGHT_Z: f32 = 0.0;
+// Height of the ground plane
+const GROUND_HEIGHT_Z: f32 = 0.0;
 
 #[derive(Clone)]
 pub struct XpbdGround {
@@ -32,7 +32,7 @@ impl XpbdGround {
                 let particle_local = *particle;
                 let pos_world = obj.local_to_world(&particle_local);
 
-                if pos_world.z - particle_radius < GROUND_HIGHT_Z {
+                if pos_world.z - particle_radius < GROUND_HEIGHT_Z {
                     // Collision with the ground detected
 
                     let contact = ContactPoint {
@@ -75,7 +75,7 @@ impl ContactPoint {
         let prev_pos_world = r.prev_rot * self.particle_local + p.prev_pos;
         let normal = Vec3::unit_z();
         let contact_point = pos_world - normal * self.particle_radius;
-        let separation = contact_point.z - GROUND_HIGHT_Z;
+        let separation = contact_point.z - GROUND_HEIGHT_Z;
         let r_ = contact_point - p.pos;
 
         let p = &mut obj.p;
