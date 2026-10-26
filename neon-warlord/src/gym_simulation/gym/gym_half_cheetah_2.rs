@@ -1,6 +1,6 @@
 //! A pendulum, try to balance it
 
-use std::{f32::consts::PI, iter::zip, os::linux::raw::stat};
+use std::{f32::consts::PI, iter::zip};
 
 use cgmath::{InnerSpace, Zero};
 use wgpu::rwh;
