@@ -66,7 +66,6 @@ pub struct GymSimulation<
     drawer_graph_inputs: GraphLinesDrawer<INPUTS>,
 
     env: ENV,
-    // verlet_physics_drawer: VerletPhysicsDrawer,
     _steps: u64,
     _episode: u64,
 
@@ -188,9 +187,6 @@ where
         env.set_drawer_position(&pos_env);
         env.set_drawer_radius(scale);
 
-        // let verlet_physics_drawer =
-        //     VerletPhysicsDrawer::new(env.get_verlet_physics(), scale, pos_env);
-
         // Dqn
 
         Self {
@@ -219,7 +215,6 @@ where
             drawer_graph_reward,
             drawer_graph_inputs,
             env,
-            // verlet_physics_drawer,
         }
     }
 
@@ -287,8 +282,7 @@ where
         let (reward, done) = self.env.get_reward();
 
         for (i, val) in new_state.iter().enumerate() {
-            // self.graph_inputs.y_push_pop(i, *val * 1.00);
-            self.graph_inputs.y_push_pop(i, *val * 0.01);
+            self.graph_inputs.y_push_pop(i, *val * 0.01);   // input graph
         }
 
         for (i, val) in action.iter().enumerate() {
@@ -388,8 +382,6 @@ where
         self.drawer_graph_inputs.update(&self.graph_inputs, edges);
 
         self.env.draw(nodes, edges);
-        // self.verlet_physics_drawer
-        //     .update(self.env.get_verlet_physics(), nodes, edges);
 
         for gym_worker in self.gym_worker.iter().flatten() {
             for node in &gym_worker.nodes {

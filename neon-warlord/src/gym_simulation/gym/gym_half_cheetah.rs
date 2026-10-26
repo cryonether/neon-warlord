@@ -137,51 +137,6 @@ impl GymHalfCheetah {
         }
     }
 
-    // fn apply_angle_force(&mut self, index_base: usize, index_pole: usize, force: f32, state_leg: StateLeg, dt: f32) -> StateLeg {
-    //     let index_pole: usize = index_pole;
-    //     let index_base: usize = index_base;
-    //     let pos_pole: cgmath::Vector3<f32> = self.verlet_physics.particles.position(index_pole);
-    //     let pos_base: cgmath::Vector3<f32> = self.verlet_physics.particles.position(index_base);
-
-    //     // move to the center
-    //     let pos_pole = pos_pole - pos_base;
-    //     // let _pos_static = pos_static - pos_static;
-
-    //     // normalize
-    //     let pos_pole = pos_pole.normalize();
-
-    //     // tangent
-    //     let tangent = cgmath::Vector3::new(-pos_pole.z, 0.0, pos_pole.x);
-
-    //     // apply force
-    //     let acc = tangent * force / MASS;
-    //     self.verlet_physics.particles.accelerate(index_pole, acc);
-
-    //     // get sin and cos
-    //     let pol_sin_alpha = pos_pole.z;
-    //     let pol_cos_alpha = pos_pole.x;
-
-    //     // get velocities
-    //     let pol_sin_alpha_v = (pol_sin_alpha - state_leg.sin_alpha) / dt;
-    //     let pol_cos_alpha_v = (pol_cos_alpha - state_leg.cos_alpha) / dt;
-
-    //     //
-    //     // d sin(α)/dt = cos(α) α'
-    //     // d cos(α)/dt = -sin(α) α'
-    //     //
-    //     // cos(α) · (cos(α) α') - sin(α) · (-sin(α) α') = α'
-    //     //
-    //     let angular_velocity = pol_cos_alpha * pol_sin_alpha_v - pol_sin_alpha * pol_cos_alpha_v;
-
-
-    //     StateLeg {
-    //         sin_alpha: pol_sin_alpha,
-    //         cos_alpha: pol_cos_alpha,
-    //         angular_velocity,
-    //     }
-
-    // }
-
     // Calculates the sin_x and cos_x of the pole and the velocities
     fn update(&mut self, force: [f32; 4], dt: f32) -> State {
 
@@ -225,25 +180,7 @@ impl GymHalfCheetah {
     }
 
     fn apply_static_constraint(&mut self) {
-        // let friction = 1.00; // 0.0 = no friction, 1.0 = full stop
 
-        // let particles = &mut self.verlet_physics.particles;
-        // let len = particles.len();
-
-        // for i in 0..len {
-        //     let radius = particles.radius[i];
-
-        //     if particles.z[i] < radius {
-        //         // Resolve collision with the floor
-        //         particles.z[i] = radius;
-        //         particles.prev_z[i] = radius;
-
-        //         // Apply friction to horizontal velocity
-        //         let vx = particles.x[i] - particles.prev_x[i];
-        //         // particles.prev_x[i] = particles.x[i] - vx * (1.0 - friction);
-        //         particles.prev_x[i] = particles.x[i];
-        //     }
-        // }
     }
 }
 
@@ -266,8 +203,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
 
 
     fn update_verlet_physics(&mut self, dt: f32) {
-        // self.verlet_physics.update(dt * 0.4);
-        // self.verlet_physics.update(dt * 1.0);
+
     }
 
     fn get_state(&self) -> [f32; OBSERVATIONS] {
@@ -305,30 +241,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
 
     fn get_reward(&self) -> (f32, bool) {
 
-        // let mut vel_x_sum = 0.0;
-        // for elem in &self.verlet_physics.vel_x {
-        //     vel_x_sum += elem;
-        // }
-
-        // let vel_x_average = vel_x_sum / self.verlet_physics.vel_x.len() as f32;
-
-
-
         let vel_x = self.state.vel_x * 0.1;
-
-
-        // let pos_x = self.state.pos_x * 0.1;
-
         let reward = vel_x.clamp(0.0, 1.0);
-
-        // let reward = self.vel_x_average * 0.1;
-
-        // let reward = vel_x * (2.0 - vel_x);
-
-        // let reward = vel_x_average * 0.1;
-
-        // let reward = reward.max(0.0);
-
         (reward, false)
     }
 
@@ -338,17 +252,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
 
         let pol_sin_alpha = alpha.sin();
         let pol_cos_alpha = alpha.cos();
-
-        // self.verlet_physics.particles.reset_position(
-        //     self.particle_pole[0],
-        //     Vec3::new(pol_cos_alpha, 0.0, pol_sin_alpha),
-        // );
-
-        // self.state = State {
-        //     pol_sin_alpha,
-        //     pol_cos_alpha,
-        //     angular_velocity: 0.0,
-        // }
 
         let drawer = self.drawer.clone();
         
@@ -360,19 +263,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
 
     
 
-}
-
-
-#[derive(Clone)]
-pub struct StateLeg {
-    sin_alpha: f32,
-    cos_alpha: f32,
-    angular_velocity: f32,
-
-//     leg_0_sin_alpha, leg_0_cos_alpha, log_0_angular_velocity
-// leg_1_sin_alpha, leg_1_cos_alpha, log_1_angular_velocity
-// leg_2_sin_alpha, leg_2_cos_alpha, log_2_angular_velocity
-// leg_3_sin_alpha, leg_3_cos_alpha, log_3_angular_velocity
 }
 
 

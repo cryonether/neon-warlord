@@ -11,7 +11,7 @@ pub mod angle_motor_constraints;
 
 use cgmath::{InnerSpace, Matrix3, MetricSpace, Zero};
 
-use crate::physics::{rigid_body::RigidBody, verlet_velocity::{angle_constraints::AngleConstraints, angle_motor_constraints::AngleMotorConstraints, distance_constraints::DistanceConstraints, verlet_velocity_particles::VerletVelocityParticles}};
+use crate::physics::{verlet_velocity::{angle_constraints::AngleConstraints, angle_motor_constraints::AngleMotorConstraints, distance_constraints::DistanceConstraints, verlet_velocity_particles::VerletVelocityParticles}};
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -19,7 +19,6 @@ type Vec3 = cgmath::Vector3<f32>;
 #[derive(Clone)]
 pub struct VerletVelocityPhysics {
     pub particles: VerletVelocityParticles,
-    pub rigid_bodies: Vec<RigidBody>,
 
     // constraints
     distance_constraints: DistanceConstraints,
@@ -41,7 +40,6 @@ impl VerletVelocityPhysics {
 
         Self {
             particles,
-            rigid_bodies: Vec::new(),
             distance_constraints,
             angle_constraints,
             angle_motor_constraints,
@@ -70,17 +68,6 @@ impl VerletVelocityPhysics {
             self.distance_constraints.apply_distance_constraints(&mut self.particles);
             self.angle_constraints.apply_angle_constraints(&mut self.particles);
             self.angle_motor_constraints.apply_angle_motor_constraints(&mut self.particles);
-
-            // Accumulate forces on each rigid body.
-            for body in &mut self.rigid_bodies {
-                body.apply_forces(&self.particles);
-            }
-
-            // Advance the rigid bodies.
-            for body in &mut self.rigid_bodies {
-                body.integrate(sub_dt);
-                body.update_particles(&mut self.particles);
-            }
 
             // Update the position using the old velocity and acceleration
             self.particles.integrate_velocity(sub_dt);
@@ -145,44 +132,6 @@ impl VerletVelocityPhysics {
             self.particles.set_pos(i, pos);
             self.particles.set_vel_half(i, vel);
         }
-    }
-
-
-    pub fn push_rigid_body(
-        &mut self,
-        particle_indices: &[usize],
-        inertia_local: Matrix3<f32>,
-    ) -> usize {
-        assert!(!particle_indices.is_empty());
-
-        let mut center_of_mass = Vec3::new(0.0, 0.0, 0.0);
-        let mut total_mass = 0.0;
-
-        for &index in particle_indices {
-            let particle_mass = self.particles.mass[index];
-
-            assert!(particle_mass > 0.0);
-
-            center_of_mass += self.particles.get_pos(index) * particle_mass;
-            total_mass += particle_mass;
-        }
-
-        center_of_mass /= total_mass;
-
-        let mut body = RigidBody::new(
-            center_of_mass,
-            total_mass,
-            inertia_local,
-        );
-
-        for &index in particle_indices {
-            body.attach_particle(&mut self.particles, index);
-        }
-
-        let body_index = self.rigid_bodies.len();
-        self.rigid_bodies.push(body);
-
-        body_index
     }
 
     pub fn push_constraint_distance(

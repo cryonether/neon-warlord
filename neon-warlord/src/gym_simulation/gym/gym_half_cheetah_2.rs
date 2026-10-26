@@ -271,12 +271,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
         
         let hinge_1_1 = &mut self.physics.hinge_joints[self.index_hinge_joint_1_1].constraint;
         hinge_1_1.set_external_torque(torque[3]);
-
-
-        // // let force = actions[0] * 0.7;
-        // self.state = self.update(force, dt);
-
-        // self.vel_x_average = (self.vel_x_average + self.state.vel_x) * 0.92; 
     }
 
     fn get_reward(&self) -> (f32, bool) {
@@ -293,21 +287,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
 
     fn reset(&mut self) {
         let alpha = (fastrand::f32() * 2.0 - 1.0) * std::f32::consts::PI;
-        // let alpha = -std::f32::consts::PI * 0.5  + (fastrand::f32() * 2.0 - 1.0) * 0.3;
 
         let pol_sin_alpha = alpha.sin();
         let pol_cos_alpha = alpha.cos();
-
-        // self.verlet_physics.particles.reset_position(
-        //     self.particle_pole[0],
-        //     Vec3::new(pol_cos_alpha, 0.0, pol_sin_alpha),
-        // );
-
-        // self.state = State {
-        //     pol_sin_alpha,
-        //     pol_cos_alpha,
-        //     angular_velocity: 0.0,
-        // }
 
         let drawer = self.drawer.clone();
         *self = Self::new();
@@ -318,20 +300,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
     
 
 }
-
-
-#[derive(Clone)]
-pub struct StateLeg {
-    sin_alpha: f32,
-    cos_alpha: f32,
-    angular_velocity: f32,
-
-//     leg_0_sin_alpha, leg_0_cos_alpha, log_0_angular_velocity
-// leg_1_sin_alpha, leg_1_cos_alpha, log_1_angular_velocity
-// leg_2_sin_alpha, leg_2_cos_alpha, log_2_angular_velocity
-// leg_3_sin_alpha, leg_3_cos_alpha, log_3_angular_velocity
-}
-
 
 #[derive(Clone)]
 pub struct State {

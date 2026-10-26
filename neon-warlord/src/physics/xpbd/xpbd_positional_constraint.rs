@@ -7,12 +7,6 @@ use crate::physics::xpbd::{Mat3, Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 #[derive(Clone)]
 pub struct XpbdPositionalConstraint {
 
-    // // Point 0 defined relative to the center of mass
-    // pub relative_position_0: Vec3,
-
-    // // Point 1 defined relative to the center of mass
-    // pub relative_position_1: Vec3,
-
     // The compliance of the constraint
     // compliance = 0 simulates infinite stiffness
     pub compliance: f32,
@@ -28,8 +22,6 @@ impl XpbdPositionalConstraint {
     pub fn new(compliance: f32) -> Self {
         
         Self {
-            // relative_position_0,
-            // relative_position_1,
             compliance,
             lagrange_multiplier: 0.0,
             force: Vec3::zero(),

@@ -7,12 +7,6 @@ use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 #[derive(Clone)]
 pub struct XpbdAngularConstraint {
 
-    // // Rotation axis defined in local space
-    // pub rotation_axis: Vec3,
-
-    // // magnitude, which is the rotation angle
-    // pub rotation_angle: f32,
-
     // The compliance of the constraint
     // compliance = 0 simulates infinite stiffness
     pub compliance: f32,
@@ -167,7 +161,7 @@ impl XpbdAngularConstraint {
         self.lagrange_multiplier = 0.0;
     }
 
-    pub fn calculate_rotation_error_2(
+    pub fn _calculate_rotation_error_2(
         rotation_0: &Quad,
         rotation_1: &Quad,
     ) -> (Vec3, f32) {
@@ -192,7 +186,7 @@ impl XpbdAngularConstraint {
     }
 
     // Suitable for small angle errors (paper's approximation)
-    pub fn calculate_rotation_error(
+    pub fn _calculate_rotation_error(
         rotation_0: &Quad,
         rotation_1: &Quad,
     ) -> (Vec3, f32) {

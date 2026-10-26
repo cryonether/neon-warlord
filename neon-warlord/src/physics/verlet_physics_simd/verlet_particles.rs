@@ -11,9 +11,9 @@ pub struct VerletParticles {
     pub y: Vec<f32>,
     pub z: Vec<f32>,
 
-    pub prev_x: Vec<f32>,
-    pub prev_y: Vec<f32>,
-    pub prev_z: Vec<f32>,
+    prev_x: Vec<f32>,
+    prev_y: Vec<f32>,
+    prev_z: Vec<f32>,
 
     pub acc_x: Vec<f32>,
     pub acc_y: Vec<f32>,
@@ -243,13 +243,6 @@ impl VerletParticles {
         let x = self.x[index];
         let y = self.y[index];
         let z = self.z[index];
-        Vec3::new(x, y, z)
-    }
-
-    pub fn velocity(&self, index: usize) -> Vec3 {
-        let x = self.x[index] - self.prev_x[index];
-        let y = self.y[index] - self.prev_y[index];
-        let z = self.z[index] - self.prev_z[index];
         Vec3::new(x, y, z)
     }
 

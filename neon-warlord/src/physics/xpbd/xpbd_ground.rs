@@ -172,7 +172,7 @@ impl ContactPoint {
             self.lagrange_multiplier_t += delta_lagrange_multiplier;
             if new_lagrange_multiplier_t.abs() <= friction_coefficient * self.lagrange_multiplier_n
             {
-                
+
                 // Compute the positional impulse
                 let p_ = delta_lagrange_multiplier * direction;
                 // println!("p: {:?}, db_t: {:?}", p_, dp_t);

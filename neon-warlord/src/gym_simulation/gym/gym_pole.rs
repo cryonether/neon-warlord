@@ -169,8 +169,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPole {
             angular_velocity: 0.0,
         }
     }
-    
-
 }
 
 #[derive(Clone)]
