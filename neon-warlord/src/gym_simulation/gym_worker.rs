@@ -1,11 +1,7 @@
 //! Runs the simulation and generates transitions
 
-
 use crate::{
-    gym_simulation::{
-        Vec3, gym::Gym,
-        worker_thread_2::WorkerThread2Run,
-    },
+    gym_simulation::{Vec3, gym::Gym, worker_thread_2::WorkerThread2Run},
     reinforcement_learning::{
         neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo,
     },
@@ -138,7 +134,7 @@ where
             }
 
             // draw
-            env.draw( &mut self.nodes, &mut self.edges);
+            env.draw(&mut self.nodes, &mut self.edges);
         }
     }
 }

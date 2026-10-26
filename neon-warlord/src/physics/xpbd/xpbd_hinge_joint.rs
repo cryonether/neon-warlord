@@ -1,9 +1,11 @@
 //! Implementation of a hinge joint with xpbd physics
 
-
 use cgmath::{InnerSpace, Rad, Rotation, Rotation3};
 
-use crate::physics::xpbd::{Quad, Vec3, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody};
+use crate::physics::xpbd::{
+    Quad, Vec3, xpbd_angular_constraint::XpbdAngularConstraint,
+    xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody,
+};
 
 #[derive(Clone)]
 pub struct XpbdHingeJoint {
@@ -26,11 +28,11 @@ pub struct XpbdHingeJoint {
     // Limits the angle between the axes n1 and n2 of two bodies
     // to be in the interval [alpha, beta] using the common rotation axis n.
     pub angle_limit_0: f32,
-    pub angle_limit_1: f32, 
+    pub angle_limit_1: f32,
 
     // Constraints
     pub positional_constraint: XpbdPositionalConstraint,
-    pub angular_constraint: XpbdAngularConstraint, 
+    pub angular_constraint: XpbdAngularConstraint,
 
     // Get and set
     external_torque: f32,
@@ -50,7 +52,6 @@ impl XpbdHingeJoint {
         positional_compliance: f32,
         angular_compliance: f32,
     ) -> Self {
-
         let (a0, b0, c0) = rotation_axis_0.local_frame();
         let (a1, b1, c1) = rotation_axis_1.local_frame();
 
@@ -78,24 +79,21 @@ impl XpbdHingeJoint {
     }
 
     pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
-
-
         let attachment_point_0 = obj_0.local_to_world(&self.attachment_point_0);
         let attachment_point_1 = obj_1.local_to_world(&self.attachment_point_1);
-    
+
         self.positional_constraint.solve(
-            obj_0, 
+            obj_0,
             obj_1,
             &attachment_point_0,
             &attachment_point_1,
-            dt, 
+            dt,
         );
 
         let _p0 = &obj_0.p;
         let r0 = &obj_0.r;
         let _p1 = &obj_1.p;
         let r1 = &obj_1.r;
-
 
         let a0 = r0.rot.rotate_vector(self.a0);
         let a1 = r1.rot.rotate_vector(self.a1);
@@ -105,14 +103,11 @@ impl XpbdHingeJoint {
 
         let _c0 = r0.rot.rotate_vector(self.c0);
         let _c1 = r1.rot.rotate_vector(self.c1);
-        
 
         // ##########################################################################
         // Apply external torque
         obj_0.r.external_torque += self.external_torque * a0;
         obj_1.r.external_torque -= self.external_torque * a1;
-
-
 
         // ##########################################################################
         // Test 0: Align both angles
@@ -136,8 +131,8 @@ impl XpbdHingeJoint {
         // };
 
         // self.angular_constraint.solve(
-        //     obj_0, 
-        //     obj_1, 
+        //     obj_0,
+        //     obj_1,
         //     &axis,
         //     angle,
         //     dt
@@ -160,8 +155,8 @@ impl XpbdHingeJoint {
         // };
 
         // self.angular_constraint.solve(
-        //     obj_0, 
-        //     obj_1, 
+        //     obj_0,
+        //     obj_1,
         //     &axis,
         //     angle,
         //     dt
@@ -187,8 +182,8 @@ impl XpbdHingeJoint {
         // };
 
         // self.angular_constraint.solve(
-        //     obj_0, 
-        //     obj_1, 
+        //     obj_0,
+        //     obj_1,
         //     &axis,
         //     angle,
         //     dt
@@ -196,7 +191,7 @@ impl XpbdHingeJoint {
 
         // ##########################################################################
         // Test 3: Limit the target angle between alpha and beta
-        
+
         let alpha = self.angle_limit_0;
         let beta = self.angle_limit_1;
 
@@ -223,7 +218,7 @@ impl XpbdHingeJoint {
             // Vec3::unit_y()
             n
         };
-        
+
         // println!("alpha: {}, beta: {}, phi_target: {}, phi: {}",
         //     alpha,
         //     beta,
@@ -231,20 +226,15 @@ impl XpbdHingeJoint {
         //     phi,
         // );
 
-        self.angular_constraint.solve(
-            obj_0, 
-            obj_1, 
-            &axis,
-            angle,
-            dt
-        );
+        self.angular_constraint
+            .solve(obj_0, obj_1, &axis, angle, dt);
 
         // Save angle
         self.phi = phi;
 
         // Calculate angular velocity
         let omega_rel = obj_1.r.omega - obj_0.r.omega;
-        self.angular_velocity = omega_rel.dot(n);        
+        self.angular_velocity = omega_rel.dot(n);
     }
 
     pub fn reset_lagrange_multiplier(&mut self) {
@@ -265,15 +255,15 @@ impl XpbdHingeJoint {
     }
 }
 
-
 #[allow(unused)]
 pub enum RotationAxis {
     X,
-    Y, 
+    Y,
     Z,
 }
 
 impl RotationAxis {
+    #[rustfmt::skip]
     fn local_frame(self) -> (Vec3, Vec3, Vec3) {
         match self {
             RotationAxis::X => (

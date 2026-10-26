@@ -9,7 +9,7 @@ const GROUND_HIGHT_Z: f32 = 0.0;
 
 #[derive(Clone)]
 pub struct XpbdGround {
-    pub contact_points: Vec<(usize, ContactPoint)>
+    pub contact_points: Vec<(usize, ContactPoint)>,
 }
 
 impl XpbdGround {
@@ -19,10 +19,8 @@ impl XpbdGround {
         }
     }
 
-
     pub fn find_contact_points(&mut self, objs: &[XpbdRigidBody]) {
-         self.contact_points.clear();
-
+        self.contact_points.clear();
 
         // The rigid bodies consist of multiple spherical particles with a defined radius
         let particle_radius = 0.1;
@@ -48,9 +46,7 @@ impl XpbdGround {
                 }
             }
         }
-
     }
-
 
     pub fn solve(&mut self, bodies: &mut [XpbdRigidBody], dt: f32) {
         for (index, contact_point) in &mut self.contact_points {
@@ -59,8 +55,6 @@ impl XpbdGround {
         }
     }
 }
-
-
 
 #[derive(Clone)]
 pub struct ContactPoint {
@@ -73,7 +67,7 @@ pub struct ContactPoint {
 }
 
 impl ContactPoint {
-    pub fn solve(&mut self, obj: &mut XpbdRigidBody, dt: f32){
+    pub fn solve(&mut self, obj: &mut XpbdRigidBody, dt: f32) {
         let p = &obj.p;
         let r = &obj.r;
 
@@ -100,15 +94,13 @@ impl ContactPoint {
 
             // Calculates the generalized inverse mas
             let rn0 = r0_world.cross(direction);
-            let i_rn0 = r.apply_inverse_inertia_world(
-                &rn0
-            );
+            let i_rn0 = r.apply_inverse_inertia_world(&rn0);
             let w0 = p.inv_mass + rn0.dot(i_rn0);
 
             // Calculates the Lagrange multiplier correction
             let alpha_tilde = compliance / (dt * dt);
-            let delta_lagrange_multiplier = (-distance - alpha_tilde * self.lagrange_multiplier_n) / 
-                                                            (w0 + alpha_tilde);
+            let delta_lagrange_multiplier =
+                (-distance - alpha_tilde * self.lagrange_multiplier_n) / (w0 + alpha_tilde);
             self.lagrange_multiplier_n += delta_lagrange_multiplier;
 
             // Compute the positional impulse
@@ -119,17 +111,15 @@ impl ContactPoint {
             // Calculates the positional correction
             p.pos += p_ * p.inv_mass;
 
-            // Applies the rotational positional correction 
-            let dq0 = r.apply_inverse_inertia_world(
-                    &r0_world.cross(p_)
-                );
+            // Applies the rotational positional correction
+            let dq0 = r.apply_inverse_inertia_world(&r0_world.cross(p_));
 
             r.rot += 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r.rot;
         }
 
         // #########################################################
         // Solve Friction
-        {   
+        {
             // Parameters
             let friction_coefficient = 10.0;
             let compliance = 0.0000;
@@ -143,9 +133,6 @@ impl ContactPoint {
             let dp = contact_point - prev_contact_point;
             let dp_t = dp - normal * dp.dot(normal);
 
-
-
-
             // Solve Collision
             let dx = dp_t;
             let distance = dx.magnitude();
@@ -158,21 +145,18 @@ impl ContactPoint {
 
             // Calculates the generalized inverse mas
             let rn0 = r_contact.cross(direction);
-            let i_rn0 = r.apply_inverse_inertia_world(
-                &rn0
-            );
+            let i_rn0 = r.apply_inverse_inertia_world(&rn0);
             let w0 = p.inv_mass + rn0.dot(i_rn0);
 
             // Calculates the Lagrange multiplier correction
             let alpha_tilde = compliance / (dt * dt);
-            let delta_lagrange_multiplier = (-distance - alpha_tilde * self.lagrange_multiplier_t) / 
-                                                            (w0 + alpha_tilde);
+            let delta_lagrange_multiplier =
+                (-distance - alpha_tilde * self.lagrange_multiplier_t) / (w0 + alpha_tilde);
             let new_lagrange_multiplier_t = self.lagrange_multiplier_t + delta_lagrange_multiplier;
-            
+
             self.lagrange_multiplier_t += delta_lagrange_multiplier;
             if new_lagrange_multiplier_t.abs() <= friction_coefficient * self.lagrange_multiplier_n
             {
-
                 // Compute the positional impulse
                 let p_ = delta_lagrange_multiplier * direction;
                 // println!("p: {:?}, db_t: {:?}", p_, dp_t);
@@ -180,15 +164,11 @@ impl ContactPoint {
                 // Calculates the positional correction
                 p.pos += p_ * p.inv_mass;
 
-                // Applies the rotational positional correction 
-                let dq0 = r.apply_inverse_inertia_world(
-                        &r_contact.cross(p_)
-                    );
+                // Applies the rotational positional correction
+                let dq0 = r.apply_inverse_inertia_world(&r_contact.cross(p_));
 
                 r.rot += 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r.rot;
             }
         }
-        
-
     }
 }

@@ -1,10 +1,12 @@
 //! A pendulum, try to balance it
 
-
 use cgmath::Zero;
 
 use crate::{
-    gym_simulation::{Vec3, gym::Gym}, physics::verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer},
+    gym_simulation::{Vec3, gym::Gym},
+    physics::verlet_velocity::{
+        VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer,
+    },
 };
 
 const OBSERVATIONS: usize = 11;
@@ -17,7 +19,7 @@ pub struct GymHalfCheetah {
     pub verlet_physics: VerletVelocityPhysics,
     pub drawer: VerletVelocityDrawer,
 
-    particles_body:  [usize; 4],
+    particles_body: [usize; 4],
     _particles_leg_0: [usize; 2],
     _particles_leg_1: [usize; 2],
 
@@ -30,7 +32,7 @@ impl GymHalfCheetah {
     pub fn new() -> Self {
         let mut verlet_physics = VerletVelocityPhysics::new();
         let drawer = VerletVelocityDrawer::new(&verlet_physics, 0.1, Vec3::zero());
-        
+
         let radius = 0.1;
 
         let stiffness_distance = 800.0;
@@ -39,74 +41,146 @@ impl GymHalfCheetah {
         let stiffness_angle = 800.0;
         let damping_angle = 0.999;
 
-
         let stiffness_motor = 800.0;
         let damping_motor = 0.999;
         let max_torque = 100.0;
-        
+
         // body
         let particles_body = [
-            verlet_physics.particles.push(Vec3::new(-1.0, 0.0, 1.5), radius, MASS * 4.0),
-            verlet_physics.particles.push(Vec3::new(0.0, 0.0, 1.5), radius, MASS * 4.0),
-            verlet_physics.particles.push(Vec3::new(1.0, 0.0, 1.5), radius, MASS * 4.0),
-            verlet_physics.particles.push(Vec3::new(1.3, 0.0, 1.8), radius, MASS * 4.0),
+            verlet_physics
+                .particles
+                .push(Vec3::new(-1.0, 0.0, 1.5), radius, MASS * 4.0),
+            verlet_physics
+                .particles
+                .push(Vec3::new(0.0, 0.0, 1.5), radius, MASS * 4.0),
+            verlet_physics
+                .particles
+                .push(Vec3::new(1.0, 0.0, 1.5), radius, MASS * 4.0),
+            verlet_physics
+                .particles
+                .push(Vec3::new(1.3, 0.0, 1.8), radius, MASS * 4.0),
         ];
 
-        verlet_physics.push_constraint_distance_infer(particles_body[0], particles_body[1], stiffness_distance, damping_distance);
-        verlet_physics.push_constraint_distance_infer(particles_body[1], particles_body[2], stiffness_distance, damping_distance);
-        verlet_physics.push_constraint_distance_infer(particles_body[2], particles_body[3], stiffness_distance, damping_distance);
+        verlet_physics.push_constraint_distance_infer(
+            particles_body[0],
+            particles_body[1],
+            stiffness_distance,
+            damping_distance,
+        );
+        verlet_physics.push_constraint_distance_infer(
+            particles_body[1],
+            particles_body[2],
+            stiffness_distance,
+            damping_distance,
+        );
+        verlet_physics.push_constraint_distance_infer(
+            particles_body[2],
+            particles_body[3],
+            stiffness_distance,
+            damping_distance,
+        );
 
-        verlet_physics.push_constraint_angle_infer(particles_body[0], particles_body[1], particles_body[2], stiffness_angle, damping_angle);
-        verlet_physics.push_constraint_angle_infer(particles_body[1], particles_body[2], particles_body[3], stiffness_angle, damping_angle);
+        verlet_physics.push_constraint_angle_infer(
+            particles_body[0],
+            particles_body[1],
+            particles_body[2],
+            stiffness_angle,
+            damping_angle,
+        );
+        verlet_physics.push_constraint_angle_infer(
+            particles_body[1],
+            particles_body[2],
+            particles_body[3],
+            stiffness_angle,
+            damping_angle,
+        );
 
         // leg 0
         let _particles_leg_0 = [
-            verlet_physics.particles.push(Vec3::new(-1.0, 0.0, 1.0), radius, MASS),
-            verlet_physics.particles.push(Vec3::new(-1.0, 0.0, 0.5), radius, MASS),
+            verlet_physics
+                .particles
+                .push(Vec3::new(-1.0, 0.0, 1.0), radius, MASS),
+            verlet_physics
+                .particles
+                .push(Vec3::new(-1.0, 0.0, 0.5), radius, MASS),
         ];
 
-        verlet_physics.push_constraint_distance_infer(particles_body[0], _particles_leg_0[0], stiffness_distance, damping_distance);
-        verlet_physics.push_constraint_distance_infer(_particles_leg_0[0], _particles_leg_0[1], stiffness_distance, damping_distance);
-
-        verlet_physics.push_constraint_angle_motor(particles_body[1], particles_body[0], _particles_leg_0[0], 
-        f32::to_radians(20.0),
-        f32::to_radians(160.0),
-        max_torque,
-        stiffness_motor,
-        damping_motor, 
+        verlet_physics.push_constraint_distance_infer(
+            particles_body[0],
+            _particles_leg_0[0],
+            stiffness_distance,
+            damping_distance,
         );
-        verlet_physics.push_constraint_angle_motor(particles_body[0], _particles_leg_0[0], _particles_leg_0[1], 
-        f32::to_radians(90.0),
-        f32::to_radians(270.0),
-        max_torque,
-        stiffness_motor,
-        damping_motor, 
+        verlet_physics.push_constraint_distance_infer(
+            _particles_leg_0[0],
+            _particles_leg_0[1],
+            stiffness_distance,
+            damping_distance,
         );
 
+        verlet_physics.push_constraint_angle_motor(
+            particles_body[1],
+            particles_body[0],
+            _particles_leg_0[0],
+            f32::to_radians(20.0),
+            f32::to_radians(160.0),
+            max_torque,
+            stiffness_motor,
+            damping_motor,
+        );
+        verlet_physics.push_constraint_angle_motor(
+            particles_body[0],
+            _particles_leg_0[0],
+            _particles_leg_0[1],
+            f32::to_radians(90.0),
+            f32::to_radians(270.0),
+            max_torque,
+            stiffness_motor,
+            damping_motor,
+        );
 
         // leg 1
         let _particles_leg_1 = [
-            verlet_physics.particles.push(Vec3::new(1.0, 0.0, 1.0), radius, MASS),
-            verlet_physics.particles.push(Vec3::new(1.0, 0.0, 0.5), radius, MASS),
+            verlet_physics
+                .particles
+                .push(Vec3::new(1.0, 0.0, 1.0), radius, MASS),
+            verlet_physics
+                .particles
+                .push(Vec3::new(1.0, 0.0, 0.5), radius, MASS),
         ];
-        
-        verlet_physics.push_constraint_distance_infer(particles_body[2], _particles_leg_1[0], stiffness_distance, damping_distance);
-        verlet_physics.push_constraint_distance_infer(_particles_leg_1[0], _particles_leg_1[1], stiffness_distance, damping_distance);
 
-
-        verlet_physics.push_constraint_angle_motor(particles_body[1], particles_body[2], _particles_leg_1[0], 
-        f32::to_radians(20.0),
-        f32::to_radians(160.0),
-        max_torque,
-        stiffness_motor,
-        damping_motor, 
+        verlet_physics.push_constraint_distance_infer(
+            particles_body[2],
+            _particles_leg_1[0],
+            stiffness_distance,
+            damping_distance,
         );
-        verlet_physics.push_constraint_angle_motor(particles_body[2], _particles_leg_1[0], _particles_leg_1[1], 
-        f32::to_radians(90.0),
-        f32::to_radians(270.0),
-        max_torque,
-        stiffness_motor,
-        damping_motor, 
+        verlet_physics.push_constraint_distance_infer(
+            _particles_leg_1[0],
+            _particles_leg_1[1],
+            stiffness_distance,
+            damping_distance,
+        );
+
+        verlet_physics.push_constraint_angle_motor(
+            particles_body[1],
+            particles_body[2],
+            _particles_leg_1[0],
+            f32::to_radians(20.0),
+            f32::to_radians(160.0),
+            max_torque,
+            stiffness_motor,
+            damping_motor,
+        );
+        verlet_physics.push_constraint_angle_motor(
+            particles_body[2],
+            _particles_leg_1[0],
+            _particles_leg_1[1],
+            f32::to_radians(90.0),
+            f32::to_radians(270.0),
+            max_torque,
+            stiffness_motor,
+            damping_motor,
         );
 
         let state = State {
@@ -137,7 +211,6 @@ impl GymHalfCheetah {
 
     // Calculates the sin_x and cos_x of the pole and the velocities
     fn update(&mut self, force: [f32; 4], _dt: f32) -> State {
-
         self.verlet_physics.set_external_torque(0, force[0]);
         self.verlet_physics.set_external_torque(1, force[1]);
         self.verlet_physics.set_external_torque(2, force[2]);
@@ -177,9 +250,7 @@ impl GymHalfCheetah {
         }
     }
 
-    fn apply_static_constraint(&mut self) {
-
-    }
+    fn apply_static_constraint(&mut self) {}
 }
 
 impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
@@ -196,13 +267,11 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
         producer_nodes: &mut Vec<forward_renderer::particle_shader::Instance>,
         producer_edges: &mut Vec<forward_renderer::particle_shader_two_point::Instance>,
     ) {
-        self.drawer.update(&self.verlet_physics, producer_nodes, producer_edges);
+        self.drawer
+            .update(&self.verlet_physics, producer_nodes, producer_edges);
     }
 
-
-    fn update_verlet_physics(&mut self, _dt: f32) {
-
-    }
+    fn update_verlet_physics(&mut self, _dt: f32) {}
 
     fn get_state(&self) -> [f32; OBSERVATIONS] {
         let state = &self.state;
@@ -234,11 +303,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
         // let force = actions[0] * 0.7;
         self.state = self.update(force, dt);
 
-        self.vel_x_average = (self.vel_x_average + self.state.vel_x) * 0.92; 
+        self.vel_x_average = (self.vel_x_average + self.state.vel_x) * 0.92;
     }
 
     fn get_reward(&self) -> (f32, bool) {
-
         let vel_x = self.state.vel_x * 0.1;
         let reward = vel_x.clamp(0.0, 1.0);
         (reward, false)
@@ -252,17 +320,12 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
         let _pol_cos_alpha = alpha.cos();
 
         let drawer = self.drawer.clone();
-        
+
         *self = Self::new();
 
         self.drawer = drawer;
     }
-    
-
-    
-
 }
-
 
 #[derive(Clone)]
 pub struct State {

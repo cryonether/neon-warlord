@@ -281,7 +281,7 @@ where
         let (reward, done) = self.env.get_reward();
 
         for (i, val) in new_state.iter().enumerate() {
-            self.graph_inputs.y_push_pop(i, *val * 0.01);   // input graph
+            self.graph_inputs.y_push_pop(i, *val * 0.01); // input graph
         }
 
         for (i, val) in action.iter().enumerate() {

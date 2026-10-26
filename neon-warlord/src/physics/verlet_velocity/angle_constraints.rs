@@ -18,16 +18,16 @@ pub struct AngleConstraints {
 impl AngleConstraints {
     pub fn new() -> Self {
         Self {
-            a:  Vec::new(),
-            b:  Vec::new(),
-            c:  Vec::new(),
+            a: Vec::new(),
+            b: Vec::new(),
+            c: Vec::new(),
             angle: Vec::new(),
             stiffness: Vec::new(),
             damping: Vec::new(),
         }
     }
 
-/// Models an angle constraint between three particles
+    /// Models an angle constraint between three particles
     pub fn apply_angle_constraints(&mut self, particles: &mut VerletVelocityParticles) {
         for i in 0..self.len() {
             let index_a = self.a[i];
@@ -95,7 +95,6 @@ impl AngleConstraints {
             particles.set_acc(index_c, acc_c);
         }
     }
-
 
     pub fn push(
         &mut self,

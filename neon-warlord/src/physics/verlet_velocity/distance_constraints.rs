@@ -17,11 +17,11 @@ pub struct DistanceConstraints {
 impl DistanceConstraints {
     pub fn new() -> Self {
         Self {
-            a:  Vec::new(),
-            b:  Vec::new(),
-            distance:  Vec::new(),
-            stiffness:  Vec::new(),
-            damping:  Vec::new(),
+            a: Vec::new(),
+            b: Vec::new(),
+            distance: Vec::new(),
+            stiffness: Vec::new(),
+            damping: Vec::new(),
         }
     }
 
@@ -80,17 +80,9 @@ impl DistanceConstraints {
         }
     }
 
-
-    pub fn push(
-        &mut self,
-        a: usize,
-        b: usize,
-        rest: f32,
-        stiffness: f32,
-        damping: f32,
-    ) -> usize {
+    pub fn push(&mut self, a: usize, b: usize, rest: f32, stiffness: f32, damping: f32) -> usize {
         let index = self.len();
-        
+
         self.a.push(a);
         self.b.push(b);
         self.distance.push(rest);

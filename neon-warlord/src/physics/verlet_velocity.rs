@@ -3,15 +3,18 @@
 //! https://www.algorithm-archive.org/contents/verlet_integration/verlet_integration.html
 //!
 
-pub mod verlet_velocity_drawer;
-pub mod verlet_velocity_particles;
-pub mod distance_constraints;
 pub mod angle_constraints;
 pub mod angle_motor_constraints;
+pub mod distance_constraints;
+pub mod verlet_velocity_drawer;
+pub mod verlet_velocity_particles;
 
 use cgmath::{InnerSpace, MetricSpace};
 
-use crate::physics::{verlet_velocity::{angle_constraints::AngleConstraints, angle_motor_constraints::AngleMotorConstraints, distance_constraints::DistanceConstraints, verlet_velocity_particles::VerletVelocityParticles}};
+use crate::physics::verlet_velocity::{
+    angle_constraints::AngleConstraints, angle_motor_constraints::AngleMotorConstraints,
+    distance_constraints::DistanceConstraints, verlet_velocity_particles::VerletVelocityParticles,
+};
 
 type Vec3 = cgmath::Vector3<f32>;
 
@@ -27,9 +30,7 @@ pub struct VerletVelocityPhysics {
 }
 
 impl VerletVelocityPhysics {
-    pub fn new(
-
-    ) -> Self {
+    pub fn new() -> Self {
         let particles = VerletVelocityParticles::new();
 
         let distance_constraints = DistanceConstraints::new();
@@ -54,8 +55,7 @@ impl VerletVelocityPhysics {
 
         let sub_dt = DT / SUB_STEPS as f32;
 
-        for _i in 0..SUB_STEPS
-        {
+        for _i in 0..SUB_STEPS {
             // Update the position using the old velocity and acceleration
             self.particles.integrate_position(sub_dt);
 
@@ -65,15 +65,17 @@ impl VerletVelocityPhysics {
 
             // apply_external_accelerations(&mut particles);
             self.apply_gravity();
-            self.distance_constraints.apply_distance_constraints(&mut self.particles);
-            self.angle_constraints.apply_angle_constraints(&mut self.particles);
-            self.angle_motor_constraints.apply_angle_motor_constraints(&mut self.particles);
+            self.distance_constraints
+                .apply_distance_constraints(&mut self.particles);
+            self.angle_constraints
+                .apply_angle_constraints(&mut self.particles);
+            self.angle_motor_constraints
+                .apply_angle_motor_constraints(&mut self.particles);
 
             // Update the position using the old velocity and acceleration
             self.particles.integrate_velocity(sub_dt);
         }
     }
-
 
     /// Apply gravity
     fn apply_gravity(&mut self) {
@@ -90,7 +92,7 @@ impl VerletVelocityPhysics {
 
             self.particles.set_acc(i, acc);
         }
-    }   
+    }
 
     /// Collision with the ground plane at z == 0.0
     fn solve_ground_collision(&mut self) {
@@ -142,11 +144,8 @@ impl VerletVelocityPhysics {
         stiffness: f32,
         damping: f32,
     ) -> usize {
-        self.distance_constraints.push(a,
-            b,
-            rest,
-            stiffness,
-            damping)
+        self.distance_constraints
+            .push(a, b, rest, stiffness, damping)
     }
 
     pub fn push_constraint_distance_infer(
@@ -172,7 +171,8 @@ impl VerletVelocityPhysics {
         stiffness: f32,
         damping: f32,
     ) -> usize {
-        self.angle_constraints.push(a, b, c, angle, stiffness, damping)
+        self.angle_constraints
+            .push(a, b, c, angle, stiffness, damping)
     }
 
     pub fn push_constraint_angle_infer(
@@ -216,7 +216,9 @@ impl VerletVelocityPhysics {
         stiffness: f32,
         damping: f32,
     ) -> usize {
-        self.angle_motor_constraints.push(a, b, c, min_angle, max_angle, max_torque, stiffness, damping)
+        self.angle_motor_constraints.push(
+            a, b, c, min_angle, max_angle, max_torque, stiffness, damping,
+        )
     }
 
     pub fn set_external_torque(&mut self, index: usize, value: f32) {
@@ -230,8 +232,4 @@ impl VerletVelocityPhysics {
     pub fn get_motor_angular_velocity(&mut self, index: usize) -> f32 {
         self.angle_motor_constraints.angular_velocity[index]
     }
-
-   
 }
-
-

@@ -1,13 +1,14 @@
 //! Verlet physics with SIMD optimizations
 
+pub mod angle_constraints;
 pub mod distance_constraints;
 pub mod verlet_particles;
-pub mod angle_constraints;
 
 use cgmath::MetricSpace;
 
 use crate::physics::verlet_physics_simd::{
-    angle_constraints::AngleConstraints, distance_constraints::DistanceConstraints, verlet_particles::VerletParticles,
+    angle_constraints::AngleConstraints, distance_constraints::DistanceConstraints,
+    verlet_particles::VerletParticles,
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -61,12 +62,7 @@ impl VerletPhysicsSimd {
             .push_constraint_distance(a, b, rest, stiffness)
     }
 
-    pub fn _push_constraint_distance_infer(
-        &mut self,
-        a: usize,
-        b: usize,
-        stiffness: f32,
-    ) -> usize {
+    pub fn _push_constraint_distance_infer(&mut self, a: usize, b: usize, stiffness: f32) -> usize {
         let a_x = self.particles.x[a];
         let a_y = self.particles.y[a];
         let a_z = self.particles.z[a];
@@ -80,7 +76,6 @@ impl VerletPhysicsSimd {
         self.distance_constraints
             .push_constraint_distance(a, b, len, stiffness)
     }
-
 
     pub fn push_constraint_position(
         &mut self,
@@ -105,8 +100,7 @@ impl VerletPhysicsSimd {
         cos_alpha: f32,
         stiffness: f32,
     ) -> usize {
-        self.angle_constraints
-            ._push(a, b, c, cos_alpha, stiffness)
+        self.angle_constraints._push(a, b, c, cos_alpha, stiffness)
     }
 
     pub fn _push_constraint_angle_min_max(
@@ -121,7 +115,6 @@ impl VerletPhysicsSimd {
         self.angle_constraints
             ._push_min_max(a, b, c, cos_alpha_min, cos_alpha_max, stiffness)
     }
-
 
     pub fn _push_constraint_angle_infer(
         &mut self,
@@ -152,7 +145,6 @@ impl VerletPhysicsSimd {
         self.angle_constraints
             ._push(a, b, c, cos_alpha.clamp(-1.0, 1.0), stiffness)
     }
-
 
     pub fn get_particle_position(&self, index: usize) -> Vec3 {
         let pos_x = self.particles.x[index];

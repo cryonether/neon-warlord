@@ -110,6 +110,7 @@ impl AngleConstraints {
             let gb_y = -ga_y - gc_y;
             let gb_z = -ga_z - gc_z;
 
+            #[rustfmt::skip]
             let denom =
                 ga_x * ga_x + ga_y * ga_y + ga_z * ga_z
                 + gb_x * gb_x + gb_y * gb_y + gb_z * gb_z
@@ -154,14 +155,7 @@ impl AngleConstraints {
         self.a.len()
     }
 
-    pub fn _push(
-        &mut self,
-        a: usize,
-        b: usize,
-        c: usize,
-        cos_alpha: f32,
-        stiffness: f32,
-    ) -> usize {
+    pub fn _push(&mut self, a: usize, b: usize, c: usize, cos_alpha: f32, stiffness: f32) -> usize {
         self._push_min_max(a, b, c, cos_alpha, cos_alpha, stiffness)
     }
 
@@ -179,7 +173,6 @@ impl AngleConstraints {
         assert!((-1.0..=1.0).contains(&cos_alpha_min));
         assert!((-1.0..=1.0).contains(&cos_alpha_max));
         assert!(cos_alpha_min <= cos_alpha_max);
-
 
         let index = self.len();
 

@@ -5,7 +5,13 @@ use std::f32::consts::PI;
 use cgmath::Zero;
 
 use crate::{
-    gym_simulation::{Vec3, gym::Gym}, physics::xpbd::{Xpbd, xpbd_drawer::XpbdDrawer, xpbd_hinge_joint::{RotationAxis, XpbdHingeJoint}, xpbd_rigid_body::XpbdRigidBody},
+    gym_simulation::{Vec3, gym::Gym},
+    physics::xpbd::{
+        Xpbd,
+        xpbd_drawer::XpbdDrawer,
+        xpbd_hinge_joint::{RotationAxis, XpbdHingeJoint},
+        xpbd_rigid_body::XpbdRigidBody,
+    },
 };
 
 const OBSERVATIONS: usize = 12;
@@ -36,41 +42,40 @@ impl GymHalfCheetah2 {
     pub fn new() -> Self {
         let mut physics = Xpbd::new();
         let drawer = XpbdDrawer::new(&physics, 0.1, Vec3::zero());
-        
+
         let body = XpbdRigidBody::new(
-            Vec3::new(-1.0, 0.0, 1.5), 
+            Vec3::new(-1.0, 0.0, 1.5),
             &[
-                Vec3::zero(), 
-                Vec3::new(1.0, 0.0, 0.0), 
+                Vec3::zero(),
+                Vec3::new(1.0, 0.0, 0.0),
                 Vec3::new(2.0, 0.0, 0.0),
-                Vec3::new(2.3, 0.0, 0.3)
+                Vec3::new(2.3, 0.0, 0.3),
             ],
-            MASS
-            // 0.0
+            MASS, // 0.0
         );
 
         let log_0_0 = XpbdRigidBody::new(
-            Vec3::new(-1.0, 0.0, 1.5), 
+            Vec3::new(-1.0, 0.0, 1.5),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
-            MASS
+            MASS,
         );
 
         let log_1_0 = XpbdRigidBody::new(
-            Vec3::new(1.0, 0.0, 1.5), 
+            Vec3::new(1.0, 0.0, 1.5),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
-            MASS
+            MASS,
         );
 
         let log_0_1 = XpbdRigidBody::new(
-            Vec3::new(-1.0, 0.0, 1.0), 
+            Vec3::new(-1.0, 0.0, 1.0),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
-            MASS
+            MASS,
         );
 
         let log_1_1 = XpbdRigidBody::new(
-            Vec3::new(1.0, 0.0, 1.0), 
+            Vec3::new(1.0, 0.0, 1.0),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
-            MASS
+            MASS,
         );
 
         let index_body = physics.add_rigid_body(&body);
@@ -83,71 +88,56 @@ impl GymHalfCheetah2 {
         let angular_compliance = 0.0002;
 
         let hinge_joint_0_0 = XpbdHingeJoint::new(
-            body.particles[0], 
-            log_0_0.particles[0], 
-            -0.5 * PI, 
-            0.5 * PI, 
+            body.particles[0],
+            log_0_0.particles[0],
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
-            positional_compliance, 
-            angular_compliance
+            positional_compliance,
+            angular_compliance,
         );
-        let index_hinge_joint_0_0 = physics.add_hinge_joint(
-            index_body, 
-            _index_log_0_0, 
-            hinge_joint_0_0
-        );
-
+        let index_hinge_joint_0_0 =
+            physics.add_hinge_joint(index_body, _index_log_0_0, hinge_joint_0_0);
 
         let hinge_joint_1_0 = XpbdHingeJoint::new(
-            body.particles[2], 
-            log_1_0.particles[0], 
-            -0.5 * PI, 
-            0.5 * PI, 
+            body.particles[2],
+            log_1_0.particles[0],
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
-            positional_compliance, 
-            angular_compliance
+            positional_compliance,
+            angular_compliance,
         );
-        let index_hinge_joint_1_0 = physics.add_hinge_joint(
-            index_body, 
-            _index_log_1_0, 
-            hinge_joint_1_0
-        );
-
+        let index_hinge_joint_1_0 =
+            physics.add_hinge_joint(index_body, _index_log_1_0, hinge_joint_1_0);
 
         let hinge_joint_0_1 = XpbdHingeJoint::new(
-            log_0_0.particles[1], 
-            log_0_1.particles[0], 
-            -0.5 * PI, 
-            0.5 * PI, 
+            log_0_0.particles[1],
+            log_0_1.particles[0],
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
-            positional_compliance, 
-            angular_compliance
+            positional_compliance,
+            angular_compliance,
         );
-         let index_hinge_joint_0_1 = physics.add_hinge_joint(
-            _index_log_0_0, 
-            _index_log_0_1, 
-            hinge_joint_0_1
-        );
-
+        let index_hinge_joint_0_1 =
+            physics.add_hinge_joint(_index_log_0_0, _index_log_0_1, hinge_joint_0_1);
 
         let hinge_joint_1_1 = XpbdHingeJoint::new(
-            log_1_0.particles[1], 
-            log_1_1.particles[0], 
-            -0.5 * PI, 
-            0.5 * PI, 
+            log_1_0.particles[1],
+            log_1_1.particles[0],
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
-            positional_compliance, 
-            angular_compliance
+            positional_compliance,
+            angular_compliance,
         );
-         let index_hinge_joint_1_1 = physics.add_hinge_joint(
-            _index_log_1_0, 
-            _index_log_1_1, 
-            hinge_joint_1_1
-        );
+        let index_hinge_joint_1_1 =
+            physics.add_hinge_joint(_index_log_1_0, _index_log_1_1, hinge_joint_1_1);
 
         let state = State {
             _pos_x: 0.0,
@@ -196,9 +186,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
         producer_nodes: &mut Vec<forward_renderer::particle_shader::Instance>,
         producer_edges: &mut Vec<forward_renderer::particle_shader_two_point::Instance>,
     ) {
-        self.drawer.update(&self.physics, producer_nodes, producer_edges);
+        self.drawer
+            .update(&self.physics, producer_nodes, producer_edges);
     }
-
 
     fn update_verlet_physics(&mut self, dt: f32) {
         // self.physics.step(dt * 0.04);
@@ -264,16 +254,15 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
 
         let hinge_1_0 = &mut self.physics.hinge_joints[self.index_hinge_joint_1_0].constraint;
         hinge_1_0.set_external_torque(torque[1]);
-        
+
         let hinge_0_1 = &mut self.physics.hinge_joints[self.index_hinge_joint_0_1].constraint;
         hinge_0_1.set_external_torque(torque[2]);
-        
+
         let hinge_1_1 = &mut self.physics.hinge_joints[self.index_hinge_joint_1_1].constraint;
         hinge_1_1.set_external_torque(torque[3]);
     }
 
     fn get_reward(&self) -> (f32, bool) {
-
         // let reward = self.state.vel_x + self.state.pos_z;
         let reward = self.state.vel_x;
         // let reward = self.state.rot_y;
@@ -294,10 +283,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
         *self = Self::new();
         self.drawer = drawer;
     }
-    
-
-    
-
 }
 
 #[derive(Clone)]

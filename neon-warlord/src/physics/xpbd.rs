@@ -1,21 +1,23 @@
 //! Extended Position Based Dynamics
 //! https://matthias-research.github.io/pages/publications/PBDBodies.pdf
 //! https://github.com/matthias-research/pages/blob/master/tenMinutePhysics/25-joints.html#L752
-//! 
+//!
 
-pub mod xpbd_positional_constraint;
 pub mod xpbd_angular_constraint;
 pub mod xpbd_drawer;
-pub mod xpbd_rigid_body;
-pub mod xpbd_hinge_joint;
 pub mod xpbd_ground;
+pub mod xpbd_hinge_joint;
+pub mod xpbd_positional_constraint;
+pub mod xpbd_rigid_body;
 
 #[cfg(test)]
 mod tests;
 
 use cgmath::{Euler, InnerSpace, Rad, Rotation, Zero};
 
-use crate::physics::xpbd::{xpbd_ground::XpbdGround, xpbd_hinge_joint::XpbdHingeJoint, xpbd_rigid_body::XpbdRigidBody};
+use crate::physics::xpbd::{
+    xpbd_ground::XpbdGround, xpbd_hinge_joint::XpbdHingeJoint, xpbd_rigid_body::XpbdRigidBody,
+};
 
 type Vec3 = cgmath::Vector3<f32>;
 type Quad = cgmath::Quaternion<f32>;
@@ -40,7 +42,7 @@ impl Xpbd {
         let rigid_bodies = Vec::new();
         // let position_constraints = Vec::new();
         let hinge_joints = Vec::new();
-        let ground_constraint = XpbdGround::new(); 
+        let ground_constraint = XpbdGround::new();
 
         Self {
             particles,
@@ -64,9 +66,9 @@ impl Xpbd {
 
         // ##########################################################
         // Find ground collisions
-        self.ground_constraint.find_contact_points(&self.rigid_bodies);
+        self.ground_constraint
+            .find_contact_points(&self.rigid_bodies);
 
-        
         for _i in 0..SUB_STEPS {
             // ##########################################################
             // Integrate positions and orientation
@@ -83,7 +85,7 @@ impl Xpbd {
             // ##########################################################
             // SolvePositions(x_1, . . . x_n, q_1, . . . q_n);
 
-            // Ground 
+            // Ground
             self.ground_constraint.solve(&mut self.rigid_bodies, sub_dt);
 
             // Hinge joint
@@ -117,7 +119,7 @@ impl Xpbd {
             // SolveVelocities(v_1, . . . v_n, w_1, . . . w_n);
 
             // for constraint in &self.velocity_constraints {
-            //     
+            //
             // }
         }
     }
@@ -128,10 +130,15 @@ impl Xpbd {
         index
     }
 
-    pub fn add_hinge_joint(&mut self, index_a: usize, index_b: usize, constraint: XpbdHingeJoint) -> usize {
+    pub fn add_hinge_joint(
+        &mut self,
+        index_a: usize,
+        index_b: usize,
+        constraint: XpbdHingeJoint,
+    ) -> usize {
         let index = self.hinge_joints.len();
-        
-        let constraint = HingeJoint{
+
+        let constraint = HingeJoint {
             index_a,
             index_b,
             constraint,
@@ -141,14 +148,12 @@ impl Xpbd {
 
         index
     }
-
 }
 
 #[derive(Clone)]
 pub struct XpbdParticle {
     p: PositionalQuantities,
 }
-
 
 #[derive(Clone)]
 pub struct PositionalQuantities {
@@ -213,7 +218,6 @@ pub struct RotationalQuantities {
 }
 
 impl RotationalQuantities {
-
     fn integrate_orientation(&mut self, dt: f32) {
         // Save previous rotation
         self.prev_rot = self.rot;
@@ -232,12 +236,8 @@ impl RotationalQuantities {
 
         // ########################################################################
         // Update orientation
-        self.rot = self.rot + dt * 0.5 * Quad::new(
-            0.0,
-            self.omega.x, 
-            self.omega.y, 
-            self.omega.z, 
-        ) * self.rot;
+        self.rot = self.rot
+            + dt * 0.5 * Quad::new(0.0, self.omega.x, self.omega.y, self.omega.z) * self.rot;
 
         // Normalize
         self.rot = self.rot / self.rot.magnitude();
@@ -249,19 +249,17 @@ impl RotationalQuantities {
     fn update_angular_velocity(&mut self, dt: f32) {
         // Calculate delta
         let dq = self.rot * self.prev_rot.invert();
-        
+
         // Update angular velocity
         self.omega = 2.0 * Vec3::new(dq.v.x, dq.v.y, dq.v.z) / dt;
 
         // Check if > 0
-        if dq.s < 0.0 { 
+        if dq.s < 0.0 {
             self.omega = -self.omega
         }
     }
 
-    fn apply_inverse_inertia_world(&self,
-        v_world: &Vec3,
-    ) -> Vec3 {
+    fn apply_inverse_inertia_world(&self, v_world: &Vec3) -> Vec3 {
         // Transform the vector into local space.
         let v_local = self.inv_rot.rotate_vector(*v_world);
 
@@ -272,9 +270,7 @@ impl RotationalQuantities {
         self.rot.rotate_vector(result_local)
     }
 
-    fn apply_inertia_world(&self,
-        v_world: &Vec3,
-    ) -> Vec3 {
+    fn apply_inertia_world(&self, v_world: &Vec3) -> Vec3 {
         // Transform the vector into local space.
         let v_local = self.inv_rot.rotate_vector(*v_world);
 

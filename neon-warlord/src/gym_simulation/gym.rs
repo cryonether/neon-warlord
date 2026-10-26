@@ -2,9 +2,9 @@
 
 pub mod gym_cart;
 pub mod gym_cart_pole;
-pub mod gym_pole;
 pub mod gym_half_cheetah;
 pub mod gym_half_cheetah_2;
+pub mod gym_pole;
 
 use forward_renderer::{particle_shader, particle_shader_two_point};
 

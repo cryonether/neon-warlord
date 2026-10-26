@@ -50,7 +50,7 @@ impl XpbdDrawer {
         producer_edges: &mut Vec<particle_shader_two_point::Instance>,
     ) {
         // Particles
-        for rigid_body  in &physics.rigid_bodies {
+        for rigid_body in &physics.rigid_bodies {
             let position = rigid_body.p.pos + self.position;
             let radius = self.radius;
 
@@ -67,17 +67,17 @@ impl XpbdDrawer {
 
             let particle_0 = rigid_body.particles[0];
             let position_0 = rigid_body.local_to_world(&particle_0) + self.position;
-            producer_nodes.push(particle_shader::Instance { 
-                    position: position_0.into(),
-                    color: self.nodes_color_0.into(),
-                    time: 1.0,
-                    size: radius * 2.0,
-                });
+            producer_nodes.push(particle_shader::Instance {
+                position: position_0.into(),
+                color: self.nodes_color_0.into(),
+                time: 1.0,
+                size: radius * 2.0,
+            });
 
-            let mut prev_position = position_0; 
+            let mut prev_position = position_0;
 
             for i in 1..rigid_body.particles.len() {
-                let particle = & rigid_body.particles[i];
+                let particle = &rigid_body.particles[i];
 
                 let position = rigid_body.local_to_world(particle) + self.position;
 
@@ -108,8 +108,10 @@ impl XpbdDrawer {
             let rigid_body_a = &physics.rigid_bodies[index_a];
             let rigid_body_b = &physics.rigid_bodies[index_b];
 
-            let pos_a = rigid_body_a.local_to_world(&constraint.constraint.attachment_point_0) + self.position;
-            let pos_b = rigid_body_b.local_to_world(&constraint.constraint.attachment_point_1) + self.position;
+            let pos_a = rigid_body_a.local_to_world(&constraint.constraint.attachment_point_0)
+                + self.position;
+            let pos_b = rigid_body_b.local_to_world(&constraint.constraint.attachment_point_1)
+                + self.position;
 
             producer_edges.push(particle_shader_two_point::Instance {
                 position_0: pos_a.into(),

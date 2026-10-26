@@ -4,7 +4,7 @@ use super::super::*;
 
 #[test]
 fn test_integrate_position() {
-   let dt = 0.1;
+    let dt = 0.1;
 
     let mut quantities = PositionalQuantities {
         pos: Vec3::new(0.0, 10.0, 0.0),
@@ -17,26 +17,17 @@ fn test_integrate_position() {
     quantities.integrate_position(dt);
 
     // Previous position should be saved.
-    assert_eq!(
-        quantities.prev_pos,
-        Vec3::new(0.0, 10.0, 0.0)
-    );
+    assert_eq!(quantities.prev_pos, Vec3::new(0.0, 10.0, 0.0));
 
     // Gravity should affect velocity.
-    let expected_vel = Vec3::new(1.0, 0.0, 0.0)
-        + dt * GRAVITY;
+    let expected_vel = Vec3::new(1.0, 0.0, 0.0) + dt * GRAVITY;
 
-    assert!(
-        (quantities.vel - expected_vel).magnitude() < 1e-5
-    );
+    assert!((quantities.vel - expected_vel).magnitude() < 1e-5);
 
     // Position should be updated using the new velocity.
-    let expected_pos = Vec3::new(0.0, 10.0, 0.0)
-        + dt * expected_vel;
+    let expected_pos = Vec3::new(0.0, 10.0, 0.0) + dt * expected_vel;
 
-    assert!(
-        (quantities.pos - expected_pos).magnitude() < 1e-5
-    );
+    assert!((quantities.pos - expected_pos).magnitude() < 1e-5);
 }
 
 #[test]
@@ -56,9 +47,7 @@ fn test_integrate_velocity() {
     // Velocity = (current position - previous position) / dt.
     let expected_vel = Vec3::new(4.0, 4.0, 4.0);
 
-    assert!(
-        (quantities.vel - expected_vel).magnitude() < 1e-5
-    );
+    assert!((quantities.vel - expected_vel).magnitude() < 1e-5);
 }
 
 #[test]
@@ -95,9 +84,8 @@ fn test_steps() {
     // Semi-implicit Euler integration:
     // p(n) = p(0) + n*dt*v(0) + dt²*a*n*(n+1)/2
     let n = steps as f32;
-    let expected_pos = initial_pos
-        + initial_vel * (n * dt)
-        + GRAVITY * (dt * dt * n * (n + 1.0) / 2.0);
+    let expected_pos =
+        initial_pos + initial_vel * (n * dt) + GRAVITY * (dt * dt * n * (n + 1.0) / 2.0);
 
     assert!(
         (quantities.pos - expected_pos).magnitude() < 1e-4,

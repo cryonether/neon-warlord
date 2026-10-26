@@ -6,7 +6,6 @@ use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
 #[derive(Clone)]
 pub struct XpbdAngularConstraint {
-
     // The compliance of the constraint
     // compliance = 0 simulates infinite stiffness
     pub compliance: f32,
@@ -27,9 +26,10 @@ impl XpbdAngularConstraint {
         }
     }
 
-    pub fn solve(&mut self, 
-        obj_0: &mut XpbdRigidBody, 
-        obj_1: &mut XpbdRigidBody, 
+    pub fn solve(
+        &mut self,
+        obj_0: &mut XpbdRigidBody,
+        obj_1: &mut XpbdRigidBody,
         axis: &Vec3,
         angle: f32,
         dt: f32,
@@ -47,7 +47,6 @@ impl XpbdAngularConstraint {
         let n = *axis;
         let theta = angle;
         // let n = *angular_error / theta;
-
 
         //
         // Calculates the generalized inverse mass of a rigid body for an angular
@@ -76,10 +75,9 @@ impl XpbdAngularConstraint {
         //
         let i_n0 = r0.apply_inverse_inertia_world(&n);
         let i_n1 = r1.apply_inverse_inertia_world(&n);
-        
+
         let w0 = n.dot(i_n0);
         let w1 = n.dot(i_n1);
-
 
         //
         // Calculates the Lagrange multiplier correction for a compliant angular
@@ -112,8 +110,8 @@ impl XpbdAngularConstraint {
         // For a rigid angular constraint, set α = 0.
         //
         let alpha_tilde = self.compliance / (dt * dt);
-        let delta_lagrange_multiplier = (-theta - alpha_tilde * self.lagrange_multiplier) / 
-                                                        (w0 + w1 + alpha_tilde);
+        let delta_lagrange_multiplier =
+            (-theta - alpha_tilde * self.lagrange_multiplier) / (w0 + w1 + alpha_tilde);
         self.lagrange_multiplier += delta_lagrange_multiplier;
 
         // Compute the angular impulse
@@ -139,12 +137,8 @@ impl XpbdAngularConstraint {
         // - I₀⁻¹ = Inverse inertia tensor of body 0
         // - [I₀⁻¹ p, 0] = Quaternion with I₀⁻¹ p as its vector part
         //   and zero as its scalar part
-        let i_p0 = r0.apply_inverse_inertia_world(
-            &p
-        );
-        let i_p1 = r1.apply_inverse_inertia_world(
-            &p
-        );
+        let i_p0 = r0.apply_inverse_inertia_world(&p);
+        let i_p1 = r1.apply_inverse_inertia_world(&p);
 
         r0.rot = r0.rot + 0.5 * Quad::new(0.0, i_p0.x, i_p0.y, i_p0.z) * r0.rot;
         r1.rot = r1.rot - 0.5 * Quad::new(0.0, i_p1.x, i_p1.y, i_p1.z) * r1.rot;
@@ -161,10 +155,7 @@ impl XpbdAngularConstraint {
         self.lagrange_multiplier = 0.0;
     }
 
-    pub fn _calculate_rotation_error_2(
-        rotation_0: &Quad,
-        rotation_1: &Quad,
-    ) -> (Vec3, f32) {
+    pub fn _calculate_rotation_error_2(rotation_0: &Quad, rotation_1: &Quad) -> (Vec3, f32) {
         let mut q_err = (rotation_0 * rotation_1.conjugate()).normalize();
 
         // Choose the shortest rotation.
@@ -181,15 +172,12 @@ impl XpbdAngularConstraint {
 
         let axis = v / sin_half;
         let angle = 2.0 * sin_half.atan2(q_err.s);
-                
+
         (axis, angle)
     }
 
     // Suitable for small angle errors (paper's approximation)
-    pub fn _calculate_rotation_error(
-        rotation_0: &Quad,
-        rotation_1: &Quad,
-    ) -> (Vec3, f32) {
+    pub fn _calculate_rotation_error(rotation_0: &Quad, rotation_1: &Quad) -> (Vec3, f32) {
         let dq = (*rotation_0 * rotation_1.conjugate()).normalize();
 
         let sign = if dq.s > 0.0 { -1.0 } else { 1.0 };

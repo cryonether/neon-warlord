@@ -4,8 +4,8 @@ pub mod node;
 pub mod tree;
 
 use crate::{
-    procedural_tree::tree::{Tree, TreeInterface},
     physics::verlet_physics::{self, VerletObject, fixed_link::FixedLink},
+    procedural_tree::tree::{Tree, TreeInterface},
 };
 use cgmath::{Rotation3, Zero};
 use forward_renderer::{geometry, to_rgb};

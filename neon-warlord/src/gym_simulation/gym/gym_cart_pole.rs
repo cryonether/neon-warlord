@@ -3,7 +3,9 @@
 use cgmath::{InnerSpace, Zero};
 
 use crate::{
-    advanced_composition::motor_linear::MotorLinear, gym_simulation::{Vec3, gym::Gym, verlet_physics_drawer::VerletPhysicsDrawer}, physics::verlet_physics_simd::VerletPhysicsSimd,
+    advanced_composition::motor_linear::MotorLinear,
+    gym_simulation::{Vec3, gym::Gym, verlet_physics_drawer::VerletPhysicsDrawer},
+    physics::verlet_physics_simd::VerletPhysicsSimd,
 };
 
 const OBSERVATIONS: usize = 5;
@@ -181,17 +183,18 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymCartPole {
     fn set_drawer_position(&mut self, pos: &Vec3) {
         self.drawer.position = *pos;
     }
-    
+
     fn set_drawer_radius(&mut self, radius: f32) {
         self.drawer.radius = radius;
     }
-    
+
     fn draw(
         &self,
         producer_nodes: &mut Vec<forward_renderer::particle_shader::Instance>,
         producer_edges: &mut Vec<forward_renderer::particle_shader_two_point::Instance>,
     ) {
-        self.drawer.update(&self.verlet_physics, producer_nodes, producer_edges);
+        self.drawer
+            .update(&self.verlet_physics, producer_nodes, producer_edges);
     }
 
     fn update_verlet_physics(&mut self, dt: f32) {

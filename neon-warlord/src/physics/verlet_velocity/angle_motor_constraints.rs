@@ -4,7 +4,6 @@ use cgmath::InnerSpace;
 
 use crate::physics::verlet_velocity::verlet_velocity_particles::VerletVelocityParticles;
 
-
 #[derive(Clone)]
 pub struct AngleMotorConstraints {
     pub a: Vec<usize>,
@@ -29,23 +28,22 @@ pub struct AngleMotorConstraints {
 impl AngleMotorConstraints {
     pub fn new() -> Self {
         Self {
-            a:  Vec::new(),
-            b:  Vec::new(),
-            c:  Vec::new(),
-            min_angle:  Vec::new(),
-            max_angle:  Vec::new(),
-            max_torque:  Vec::new(),
-            stiffness:  Vec::new(),
-            damping:  Vec::new(),
-            external_torque:  Vec::new(),
+            a: Vec::new(),
+            b: Vec::new(),
+            c: Vec::new(),
+            min_angle: Vec::new(),
+            max_angle: Vec::new(),
+            max_torque: Vec::new(),
+            stiffness: Vec::new(),
+            damping: Vec::new(),
+            external_torque: Vec::new(),
             angle: Vec::new(),
             angular_velocity: Vec::new(),
         }
     }
 
-
     /// Models an angle constraint between three particles
-    pub fn apply_angle_motor_constraints(&mut self,  particles: &mut VerletVelocityParticles) {
+    pub fn apply_angle_motor_constraints(&mut self, particles: &mut VerletVelocityParticles) {
         for i in 0..self.len() {
             let index_a = self.a[i];
             let index_b = self.b[i];

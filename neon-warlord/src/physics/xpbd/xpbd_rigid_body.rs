@@ -1,6 +1,5 @@
 //! RigidBody implementation using XPBD
 
-
 use cgmath::One;
 
 use super::*;
@@ -48,7 +47,7 @@ impl XpbdRigidBody {
         // I⁻¹ = pseudo-inverse(I)
         //
         let particle_mass = mass;
-        
+
         // Calculate center of mass
         let mut center_of_mass = Vec3::zero();
         for particle in particles {
@@ -87,19 +86,19 @@ impl XpbdRigidBody {
         // Move all particles by the center of mass
         let mut particles_centered = Vec::with_capacity(particles.len());
         for particle in particles {
-                particles_centered.push(particle - center_of_mass);
+            particles_centered.push(particle - center_of_mass);
         }
 
         let pos = pos + center_of_mass;
 
         Self {
-            p:PositionalQuantities{
+            p: PositionalQuantities {
                 pos,
                 prev_pos: pos,
                 vel: Vec3::zero(),
                 inv_mass,
             },
-            r: RotationalQuantities{
+            r: RotationalQuantities {
                 rot,
                 inv_rot,
                 prev_rot,
@@ -112,14 +111,13 @@ impl XpbdRigidBody {
         }
     }
 
-
     pub fn _get_velocity_at(&self, pos: &Vec3) -> Vec3 {
         let p = &self.p;
         let r = &self.r;
-        
+
         if p.inv_mass <= 0.0 {
             return Vec3::zero();
-        } 
+        }
 
         p.vel - (pos - p.pos).cross(r.omega)
     }
@@ -139,7 +137,6 @@ impl XpbdRigidBody {
     }
 }
 
-
 /// Computes the Moore-Penrose pseudoinverse of a symmetric 3x3 matrix
 /// using Jacobi eigenvalue decomposition.
 fn symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
@@ -152,6 +149,7 @@ fn symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
         [matrix.x.z, matrix.y.z, matrix.z.z],
     ];
 
+    #[rustfmt::skip]
     let mut q = [
         [1.0_f32, 0.0, 0.0],
         [0.0, 1.0, 0.0],
@@ -173,6 +171,7 @@ fn symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
             }
         }
 
+        #[rustfmt::skip]
         let scale = a[0][0].abs()
             .max(a[1][1].abs())
             .max(a[2][2].abs());
@@ -229,6 +228,7 @@ fn symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
     }
 
     // Invert only eigenvalues that are sufficiently far from zero.
+    #[rustfmt::skip]
     let max_eigenvalue = a[0][0]
         .abs()
         .max(a[1][1].abs())

@@ -6,7 +6,6 @@ use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
 #[derive(Clone)]
 pub struct XpbdPositionalConstraint {
-
     // The compliance of the constraint
     // compliance = 0 simulates infinite stiffness
     pub compliance: f32,
@@ -20,7 +19,6 @@ pub struct XpbdPositionalConstraint {
 
 impl XpbdPositionalConstraint {
     pub fn new(compliance: f32) -> Self {
-        
         Self {
             compliance,
             lagrange_multiplier: 0.0,
@@ -28,10 +26,10 @@ impl XpbdPositionalConstraint {
         }
     }
 
-
-    pub fn solve(&mut self, 
-        obj_0: &mut XpbdRigidBody, 
-        obj_1: &mut XpbdRigidBody, 
+    pub fn solve(
+        &mut self,
+        obj_0: &mut XpbdRigidBody,
+        obj_1: &mut XpbdRigidBody,
         attachment_point_0: &Vec3,
         attachment_point_1: &Vec3,
         dt: f32,
@@ -49,13 +47,11 @@ impl XpbdPositionalConstraint {
         let r0_world = anchor_0 - p0.pos;
         let r1_world = anchor_1 - p1.pos;
 
-
         let dx = anchor_0 - anchor_1;
-
 
         // To apply a positional correction Δx at positions r1 and r2, we first
         // split it into its direction n and its magnitude n.
-        let distance= dx.magnitude();
+        let distance = dx.magnitude();
         if distance < 1e-6 {
             // Both objects occupies the same space
             return;
@@ -88,13 +84,9 @@ impl XpbdPositionalConstraint {
         let rn0 = r0_world.cross(direction);
         let rn1 = r1_world.cross(direction);
 
-        let i_rn0 = r0.apply_inverse_inertia_world(
-            &rn0
-        );
-        let i_rn1 = r1.apply_inverse_inertia_world(
-            &rn1
-        );
-        
+        let i_rn0 = r0.apply_inverse_inertia_world(&rn0);
+        let i_rn1 = r1.apply_inverse_inertia_world(&rn1);
+
         let w0 = p0.inv_mass + rn0.dot(i_rn0);
         let w1 = p1.inv_mass + rn1.dot(i_rn1);
 
@@ -129,8 +121,8 @@ impl XpbdPositionalConstraint {
         // For a rigid constraint, set α = 0.
         //
         let alpha_tilde = self.compliance / (dt * dt);
-        let delta_lagrange_multiplier = (-distance - alpha_tilde * self.lagrange_multiplier) / 
-                                                        (w0 + w1 + alpha_tilde);
+        let delta_lagrange_multiplier =
+            (-distance - alpha_tilde * self.lagrange_multiplier) / (w0 + w1 + alpha_tilde);
         self.lagrange_multiplier += delta_lagrange_multiplier;
 
         // Compute the positional impulse
@@ -193,16 +185,12 @@ impl XpbdPositionalConstraint {
         // Dynamics, Section 3.3.1, equation (8).
         // https://matthias-research.github.io/pages/publications/PBDBodies.pdf
         //
-        let dq0 = r0.apply_inverse_inertia_world(
-            &r0_world.cross(p)
-        );
-        let dq1 = r1.apply_inverse_inertia_world(
-            &r1_world.cross(p)
-        );
-        
+        let dq0 = r0.apply_inverse_inertia_world(&r0_world.cross(p));
+        let dq1 = r1.apply_inverse_inertia_world(&r1_world.cross(p));
+
         r0.rot = r0.rot + 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r0.rot;
         r1.rot = r1.rot - 0.5 * Quad::new(0.0, dq1.x, dq1.y, dq1.z) * r1.rot;
-    
+
         self.force = self.lagrange_multiplier * direction / (dt * dt)
     }
 

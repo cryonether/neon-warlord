@@ -4,7 +4,6 @@ use cgmath::Zero;
 
 use super::Vec3;
 
-
 #[derive(Clone)]
 pub struct VerletVelocityParticles {
     pos_x: Vec<f32>,
@@ -32,9 +31,7 @@ pub struct VerletVelocityParticles {
 }
 
 impl VerletVelocityParticles {
-    pub fn new(
-
-    ) -> Self {
+    pub fn new() -> Self {
         let pos_x = Vec::new();
         let pos_y = Vec::new();
         let pos_z = Vec::new();
@@ -99,7 +96,7 @@ impl VerletVelocityParticles {
 
     pub fn integrate_velocity(&mut self, dt: f32) {
         for i in 0..self.len() {
-            if self.inv_mass[i] == 0.0 || self.is_rigid_body[i]  {
+            if self.inv_mass[i] == 0.0 || self.is_rigid_body[i] {
                 // static particle
                 continue;
             }
@@ -113,8 +110,7 @@ impl VerletVelocityParticles {
         }
     }
 
-    pub fn push(&mut self, pos: Vec3, radius: f32, mass: f32) -> usize
-    {
+    pub fn push(&mut self, pos: Vec3, radius: f32, mass: f32) -> usize {
         let index = self.len();
 
         self.pos_x.push(pos.x);
