@@ -203,6 +203,7 @@ fn symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
         a[r][p] = 0.0;
 
         // Update the remaining symmetric entries.
+        #[allow(clippy::needless_range_loop)]
         for k in 0..3 {
             if k != p && k != r {
                 let akp = a[k][p];
@@ -217,6 +218,7 @@ fn symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
         }
 
         // Accumulate eigenvectors: Q = Q * rotation.
+        #[allow(clippy::needless_range_loop)]
         for k in 0..3 {
             let qkp = q[k][p];
             let qkr = q[k][r];

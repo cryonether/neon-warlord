@@ -61,7 +61,7 @@ impl XpbdDrawer {
                 size: radius,
             });
 
-            if rigid_body.particles.len() == 0 {
+            if rigid_body.particles.is_empty() {
                 continue;
             }
 

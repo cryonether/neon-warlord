@@ -175,11 +175,11 @@ impl PositionalQuantities {
 
         // Apply external forces
         if self.inv_mass > 0.0 {
-            self.vel = self.vel + dt * GRAVITY;
+            self.vel += dt * GRAVITY;
         }
 
         // Update position
-        self.pos = self.pos + dt * self.vel;
+        self.pos += dt * self.vel;
     }
 
     fn update_velocity(&mut self, dt: f32) {

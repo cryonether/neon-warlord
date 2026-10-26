@@ -135,6 +135,7 @@ impl AngleMotorConstraints {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn push(
         &mut self,
         a: usize,

@@ -39,6 +39,7 @@ pub struct XpbdHingeJoint {
 }
 
 impl XpbdHingeJoint {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         attachment_point_0: Vec3,
         attachment_point_1: Vec3,

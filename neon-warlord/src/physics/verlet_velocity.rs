@@ -120,7 +120,7 @@ impl VerletVelocityPhysics {
             if vel.z < 0.0 {
                 vel.x = vel.x + -RESTITUTION * vel.x;
                 // vel.y = vel.x + -RESTITUTION * vel.x;
-                vel.z = vel.z + 0.2;
+                vel.z += 0.2;
 
                 // vel.z = -RESTITUTION * vel.z;
 
@@ -204,6 +204,7 @@ impl VerletVelocityPhysics {
         self.push_constraint_angle(a, b, c, angle, stiffness, damping)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn push_constraint_angle_motor(
         &mut self,
         a: usize,
