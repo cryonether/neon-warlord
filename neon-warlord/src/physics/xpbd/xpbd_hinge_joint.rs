@@ -1,8 +1,7 @@
 //! Implementation of a hinge joint with xpbd physics
 
-use std::f32::consts::PI;
 
-use cgmath::{InnerSpace, Quaternion, Rad, Rotation, Rotation3, Zero};
+use cgmath::{InnerSpace, Rad, Rotation, Rotation3};
 
 use crate::physics::xpbd::{Quad, Vec3, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody};
 
@@ -91,9 +90,9 @@ impl XpbdHingeJoint {
             dt, 
         );
 
-        let p0 = &obj_0.p;
+        let _p0 = &obj_0.p;
         let r0 = &obj_0.r;
-        let p1 = &obj_1.p;
+        let _p1 = &obj_1.p;
         let r1 = &obj_1.r;
 
 
@@ -103,8 +102,8 @@ impl XpbdHingeJoint {
         let b0 = r0.rot.rotate_vector(self.b0);
         let b1 = r1.rot.rotate_vector(self.b1);
 
-        let c0 = r0.rot.rotate_vector(self.c0);
-        let c1 = r1.rot.rotate_vector(self.c1);
+        let _c0 = r0.rot.rotate_vector(self.c0);
+        let _c1 = r1.rot.rotate_vector(self.c1);
         
 
         // ##########################################################################
@@ -266,6 +265,7 @@ impl XpbdHingeJoint {
 }
 
 
+#[allow(unused)]
 pub enum RotationAxis {
     X,
     Y, 

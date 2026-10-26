@@ -2,7 +2,7 @@
 
 use cgmath::{InnerSpace, Rotation, Zero};
 
-use crate::physics::xpbd::{Mat3, Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
+use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
 #[derive(Clone)]
 pub struct XpbdPositionalConstraint {
@@ -231,7 +231,7 @@ impl XpbdPositionalConstraint {
     /// - Use a consistent timestep convention when calculating the force.
     /// - The multiplier should be accumulated during constraint solving.
     ///
-    pub fn get_force(&self) -> cgmath::Vector3<f32> {
+    pub fn _get_force(&self) -> cgmath::Vector3<f32> {
         self.force
     }
 

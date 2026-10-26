@@ -1,6 +1,6 @@
 //! A angular constraint of two rigid bodies
 
-use cgmath::{InnerSpace, Rotation, Zero};
+use cgmath::{InnerSpace, Zero};
 
 use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
@@ -153,7 +153,7 @@ impl XpbdAngularConstraint {
         self.torque = self.lagrange_multiplier * n / (dt * dt);
     }
 
-    pub fn get_torque(&self) -> cgmath::Vector3<f32> {
+    pub fn _get_torque(&self) -> cgmath::Vector3<f32> {
         self.torque
     }
 

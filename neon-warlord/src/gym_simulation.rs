@@ -17,7 +17,6 @@ use crate::{
         graph_lines::{GraphLines, GraphLinesDrawer},
         gym::Gym,
         gym_worker::GymWorker,
-        verlet_physics_drawer::VerletPhysicsDrawer,
         worker_thread_2::WorkerThread2,
     },
     physics_simulation_v3_drawer::DrawerObjects,

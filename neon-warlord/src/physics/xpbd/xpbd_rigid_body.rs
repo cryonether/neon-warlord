@@ -1,6 +1,7 @@
 //! RigidBody implementation using XPBD
 
-use std::iter::zip;
+
+use cgmath::One;
 
 use super::*;
 
@@ -15,7 +16,7 @@ pub struct XpbdRigidBody {
 
 impl XpbdRigidBody {
     pub fn new(pos: Vec3, particles: &[Vec3], mass: f32) -> Self {
-        let prev_pos = pos;
+        let _prev_pos = pos;
         let overall_mass = particles.len() as f32 * mass;
         let inv_mass = if overall_mass > 0.0 {
             1.0 / overall_mass
@@ -112,7 +113,7 @@ impl XpbdRigidBody {
     }
 
 
-    pub fn get_velocity_at(&self, pos: &Vec3) -> Vec3 {
+    pub fn _get_velocity_at(&self, pos: &Vec3) -> Vec3 {
         let p = &self.p;
         let r = &self.r;
         
@@ -130,7 +131,7 @@ impl XpbdRigidBody {
         r.rot * local_pos + p.pos
     }
 
-    pub fn world_to_local(&self, world_pos: &Vec3) -> Vec3 {
+    pub fn _world_to_local(&self, world_pos: &Vec3) -> Vec3 {
         let p = &self.p;
         let r = &self.r;
 

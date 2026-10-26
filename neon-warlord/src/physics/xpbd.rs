@@ -13,9 +13,9 @@ pub mod xpbd_ground;
 #[cfg(test)]
 mod tests;
 
-use cgmath::{Euler, InnerSpace, One, Rad, Rotation, SquareMatrix, Zero};
+use cgmath::{Euler, InnerSpace, Rad, Rotation, Zero};
 
-use crate::physics::{xpbd::{xpbd_angular_constraint::XpbdAngularConstraint, xpbd_ground::XpbdGround, xpbd_hinge_joint::XpbdHingeJoint, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}};
+use crate::physics::xpbd::{xpbd_ground::XpbdGround, xpbd_hinge_joint::XpbdHingeJoint, xpbd_rigid_body::XpbdRigidBody};
 
 type Vec3 = cgmath::Vector3<f32>;
 type Quad = cgmath::Quaternion<f32>;
@@ -67,7 +67,7 @@ impl Xpbd {
         self.ground_constraint.find_contact_points(&self.rigid_bodies);
 
         
-        for i in 0..SUB_STEPS {
+        for _i in 0..SUB_STEPS {
             // ##########################################################
             // Integrate positions and orientation
 

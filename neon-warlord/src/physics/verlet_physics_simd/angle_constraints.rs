@@ -1,6 +1,6 @@
 //! Fixes the angle between three particles
 
-use crate::physics::verlet_physics_simd::{Vec3, verlet_particles::VerletParticles};
+use crate::physics::verlet_physics_simd::verlet_particles::VerletParticles;
 
 /// Fixes the angle between three particles
 #[derive(Clone)]
@@ -154,7 +154,7 @@ impl AngleConstraints {
         self.a.len()
     }
 
-    pub fn push(
+    pub fn _push(
         &mut self,
         a: usize,
         b: usize,
@@ -162,10 +162,10 @@ impl AngleConstraints {
         cos_alpha: f32,
         stiffness: f32,
     ) -> usize {
-        self.push_min_max(a, b, c, cos_alpha, cos_alpha, stiffness)
+        self._push_min_max(a, b, c, cos_alpha, cos_alpha, stiffness)
     }
 
-    pub fn push_min_max(
+    pub fn _push_min_max(
         &mut self,
         a: usize,
         b: usize,

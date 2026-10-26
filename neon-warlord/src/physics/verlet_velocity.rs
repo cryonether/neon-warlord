@@ -9,7 +9,7 @@ pub mod distance_constraints;
 pub mod angle_constraints;
 pub mod angle_motor_constraints;
 
-use cgmath::{InnerSpace, Matrix3, MetricSpace, Zero};
+use cgmath::{InnerSpace, MetricSpace};
 
 use crate::physics::{verlet_velocity::{angle_constraints::AngleConstraints, angle_motor_constraints::AngleMotorConstraints, distance_constraints::DistanceConstraints, verlet_velocity_particles::VerletVelocityParticles}};
 
@@ -54,7 +54,7 @@ impl VerletVelocityPhysics {
 
         let sub_dt = DT / SUB_STEPS as f32;
 
-        for i in 0..SUB_STEPS
+        for _i in 0..SUB_STEPS
         {
             // Update the position using the old velocity and acceleration
             self.particles.integrate_position(sub_dt);
@@ -96,7 +96,7 @@ impl VerletVelocityPhysics {
     fn solve_ground_collision(&mut self) {
         const GROUND_HEIGHT_Z: f32 = 0.0;
         const RESTITUTION: f32 = 0.9;
-        const FRICTION: f32 = 0.8;
+        // const FRICTION: f32 = 0.8;
 
         for i in 0..self.particles.len() {
             if self.particles.inv_mass[i] == 0.0 {

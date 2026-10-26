@@ -1,12 +1,11 @@
 //! A pendulum, try to balance it
 
-use std::{f32::consts::PI, iter::zip};
+use std::f32::consts::PI;
 
-use cgmath::{InnerSpace, Zero};
-use wgpu::rwh;
+use cgmath::Zero;
 
 use crate::{
-    gym_simulation::{Vec3, gym::Gym}, physics::{verlet_physics_simd::VerletPhysicsSimd, verlet_velocity::{VerletVelocityPhysics, verlet_velocity_drawer::VerletVelocityDrawer}, xpbd::{Xpbd, xpbd_angular_constraint::XpbdAngularConstraint, xpbd_drawer::XpbdDrawer, xpbd_hinge_joint::{RotationAxis, XpbdHingeJoint}, xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody}},
+    gym_simulation::{Vec3, gym::Gym}, physics::xpbd::{Xpbd, xpbd_drawer::XpbdDrawer, xpbd_hinge_joint::{RotationAxis, XpbdHingeJoint}, xpbd_rigid_body::XpbdRigidBody},
 };
 
 const OBSERVATIONS: usize = 12;
@@ -20,10 +19,10 @@ pub struct GymHalfCheetah2 {
     pub drawer: XpbdDrawer,
 
     index_body: usize,
-    index_log_0_0: usize,
-    index_log_1_0: usize,
-    index_log_0_1: usize,
-    index_log_1_1: usize,
+    _index_log_0_0: usize,
+    _index_log_1_0: usize,
+    _index_log_0_1: usize,
+    _index_log_1_1: usize,
 
     index_hinge_joint_0_0: usize,
     index_hinge_joint_1_0: usize,
@@ -75,10 +74,10 @@ impl GymHalfCheetah2 {
         );
 
         let index_body = physics.add_rigid_body(&body);
-        let index_log_0_0 = physics.add_rigid_body(&log_0_0);
-        let index_log_1_0 = physics.add_rigid_body(&log_1_0);
-        let index_log_0_1 = physics.add_rigid_body(&log_0_1);
-        let index_log_1_1 = physics.add_rigid_body(&log_1_1);
+        let _index_log_0_0 = physics.add_rigid_body(&log_0_0);
+        let _index_log_1_0 = physics.add_rigid_body(&log_1_0);
+        let _index_log_0_1 = physics.add_rigid_body(&log_0_1);
+        let _index_log_1_1 = physics.add_rigid_body(&log_1_1);
 
         let positional_compliance = 0.000;
         let angular_compliance = 0.0002;
@@ -95,7 +94,7 @@ impl GymHalfCheetah2 {
         );
         let index_hinge_joint_0_0 = physics.add_hinge_joint(
             index_body, 
-            index_log_0_0, 
+            _index_log_0_0, 
             hinge_joint_0_0
         );
 
@@ -112,7 +111,7 @@ impl GymHalfCheetah2 {
         );
         let index_hinge_joint_1_0 = physics.add_hinge_joint(
             index_body, 
-            index_log_1_0, 
+            _index_log_1_0, 
             hinge_joint_1_0
         );
 
@@ -128,8 +127,8 @@ impl GymHalfCheetah2 {
             angular_compliance
         );
          let index_hinge_joint_0_1 = physics.add_hinge_joint(
-            index_log_0_0, 
-            index_log_0_1, 
+            _index_log_0_0, 
+            _index_log_0_1, 
             hinge_joint_0_1
         );
 
@@ -145,13 +144,13 @@ impl GymHalfCheetah2 {
             angular_compliance
         );
          let index_hinge_joint_1_1 = physics.add_hinge_joint(
-            index_log_1_0, 
-            index_log_1_1, 
+            _index_log_1_0, 
+            _index_log_1_1, 
             hinge_joint_1_1
         );
 
         let state = State {
-            pos_x: 0.0,
+            _pos_x: 0.0,
             pos_z: 0.0,
             vel_x: 0.0,
             vel_z: 0.0,
@@ -170,10 +169,10 @@ impl GymHalfCheetah2 {
             physics,
             drawer,
             index_body,
-            index_log_0_0,
-            index_log_1_0,
-            index_log_0_1,
-            index_log_1_1,
+            _index_log_0_0,
+            _index_log_1_0,
+            _index_log_0_1,
+            _index_log_1_1,
             index_hinge_joint_0_0,
             index_hinge_joint_1_0,
             index_hinge_joint_0_1,
@@ -214,7 +213,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
         let hinge_1_1 = &self.physics.hinge_joints[self.index_hinge_joint_1_1].constraint;
 
         let state = State {
-            pos_x: body.p.pos.x,
+            _pos_x: body.p.pos.x,
             pos_z: body.p.pos.z,
             vel_x: body.p.vel.x,
             vel_z: body.p.vel.z,
@@ -250,7 +249,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
         ]
     }
 
-    fn update(&mut self, actions: &[f32; ACTIONS], dt: f32) {
+    fn update(&mut self, actions: &[f32; ACTIONS], _dt: f32) {
         // self.apply_static_constraint();
 
         let torque = [
@@ -288,8 +287,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
     fn reset(&mut self) {
         let alpha = (fastrand::f32() * 2.0 - 1.0) * std::f32::consts::PI;
 
-        let pol_sin_alpha = alpha.sin();
-        let pol_cos_alpha = alpha.cos();
+        let _pol_sin_alpha = alpha.sin();
+        let _pol_cos_alpha = alpha.cos();
 
         let drawer = self.drawer.clone();
         *self = Self::new();
@@ -303,7 +302,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
 
 #[derive(Clone)]
 pub struct State {
-    pos_x: f32,
+    _pos_x: f32,
     pos_z: f32,
     vel_x: f32,
     vel_z: f32,

@@ -1,10 +1,9 @@
 //! Runs the simulation and generates transitions
 
-use std::iter::zip;
 
 use crate::{
     gym_simulation::{
-        Vec3, gym::Gym, verlet_physics_drawer::VerletPhysicsDrawer,
+        Vec3, gym::Gym,
         worker_thread_2::WorkerThread2Run,
     },
     reinforcement_learning::{
