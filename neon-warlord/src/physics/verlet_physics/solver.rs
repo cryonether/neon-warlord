@@ -4,7 +4,9 @@ use cgmath::InnerSpace;
 use forward_renderer::height_map::HeightMapInterface;
 use noise::NoiseFn;
 
-use crate::verlet_physics::{self, Vec3, VerletObject, verlet_composition::VerletComposition};
+use crate::physics::verlet_physics::{
+    self, Vec3, VerletObject, verlet_composition::VerletComposition,
+};
 
 pub struct Solver {
     perlin: noise::Perlin,

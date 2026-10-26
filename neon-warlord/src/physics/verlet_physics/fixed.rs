@@ -1,6 +1,6 @@
 //! A link between two objects
 
-use crate::verlet_physics::{Vec3, VerletObject};
+use crate::physics::verlet_physics::{Vec3, VerletObject};
 
 pub struct Fixed {
     node_id_1: usize,

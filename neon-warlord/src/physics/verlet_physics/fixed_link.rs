@@ -1,6 +1,6 @@
 //! A link between two objects with fixed angle
 
-use crate::verlet_physics::{Vec3, VerletObject};
+use crate::physics::verlet_physics::{Vec3, VerletObject};
 
 #[derive(Clone)]
 pub struct FixedLink {

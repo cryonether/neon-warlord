@@ -1,12 +1,7 @@
 //! Runs the simulation and generates transitions
 
-use std::iter::zip;
-
 use crate::{
-    gym_simulation::{
-        Vec3, gym::Gym, verlet_physics_drawer::VerletPhysicsDrawer,
-        worker_thread_2::WorkerThread2Run,
-    },
+    gym_simulation::{Vec3, gym::Gym, worker_thread_2::WorkerThread2Run},
     reinforcement_learning::{
         neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo,
     },
@@ -25,7 +20,6 @@ pub struct GymWorker<
 {
     pub ppo: Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ActivationTanH>,
     pub envs: Vec<ENV>,
-    pub drawers: Vec<VerletPhysicsDrawer>,
 
     pub nodes: Vec<forward_renderer::particle_shader::Instance>,
     pub edges: Vec<forward_renderer::particle_shader_two_point::Instance>,
@@ -59,16 +53,15 @@ where
         let radius = 0.1;
 
         let mut envs: Vec<ENV> = Vec::with_capacity(n * m);
-        let mut drawers = Vec::with_capacity(n * m);
         for j in 0..m {
             for i in 0..n {
                 let pos = pos + Vec3::new(i as f32 * 10.0, j as f32 * 4.0, 0.0);
 
-                let env = env.clone();
-                let drawer = VerletPhysicsDrawer::new(env.get_verlet_physics(), radius, pos);
+                let mut env = env.clone();
+                env.set_drawer_position(&pos);
+                env.set_drawer_radius(radius);
 
                 envs.push(env);
-                drawers.push(drawer);
             }
         }
 
@@ -78,7 +71,6 @@ where
         Self {
             ppo,
             envs,
-            drawers,
             nodes,
             edges,
             ticks: 0,
@@ -107,7 +99,7 @@ where
         self.edges.clear();
         self.reward = 0.0;
 
-        for (env, drawer) in zip(&mut self.envs, &mut self.drawers) {
+        for env in &mut self.envs {
             for i in 0..self.nr_steps {
                 // current state and action
                 let state = env.get_state();
@@ -142,7 +134,7 @@ where
             }
 
             // draw
-            drawer.update(env.get_verlet_physics(), &mut self.nodes, &mut self.edges);
+            env.draw(&mut self.nodes, &mut self.edges);
         }
     }
 }

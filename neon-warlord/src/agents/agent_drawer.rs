@@ -1,6 +1,6 @@
 //! Draws an object in 3D
 
-use crate::verlet_physics::verlet_composition::VerletComposition;
+use crate::physics::verlet_physics::verlet_composition::VerletComposition;
 use cgmath::Rotation3;
 use forward_renderer::{geometry, to_rgb};
 use wgpu_renderer::{

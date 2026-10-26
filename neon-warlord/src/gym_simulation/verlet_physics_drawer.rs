@@ -2,11 +2,12 @@
 
 use forward_renderer::{particle_shader, particle_shader_two_point, to_rgb};
 
-use crate::verlet_physics_simd::VerletPhysicsSimd;
+use crate::physics::verlet_physics_simd::VerletPhysicsSimd;
 
 type Vec3 = cgmath::Vector3<f32>;
 
 /// Draws AdvancedCompositions
+#[derive(Clone)]
 pub struct VerletPhysicsDrawer {
     nodes_color_0: Vec3,
     links_color_0: Vec3,
@@ -14,8 +15,8 @@ pub struct VerletPhysicsDrawer {
     _nr_nodes: usize,
     _nr_edges: usize,
 
-    radius: f32,
-    position: Vec3,
+    pub radius: f32,
+    pub position: Vec3,
 }
 
 impl VerletPhysicsDrawer {
@@ -39,7 +40,7 @@ impl VerletPhysicsDrawer {
     }
 
     pub fn update(
-        &mut self,
+        &self,
         verlet_physics: &VerletPhysicsSimd,
         producer_nodes: &mut Vec<particle_shader::Instance>,
         producer_edges: &mut Vec<particle_shader_two_point::Instance>,

@@ -1,6 +1,6 @@
 //! Instantiates agents
 
-use crate::verlet_physics::verlet_composition::{LinkKind, Node};
+use crate::physics::verlet_physics::verlet_composition::{LinkKind, Node};
 use regex::Regex;
 type Vec3 = cgmath::Vector3<f32>;
 

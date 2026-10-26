@@ -15,6 +15,7 @@ mod gym_simulation;
 mod heightmap_generator;
 mod orb_controller;
 mod orb_storage;
+mod physics;
 #[allow(dead_code)]
 mod physics_simulation_v3;
 mod physics_simulation_v3_drawer;
@@ -25,8 +26,6 @@ mod settings;
 mod simple_physics_simulation;
 mod sun_storage;
 mod triple_buffer;
-mod verlet_physics;
-mod verlet_physics_simd;
 mod worker;
 mod worker_instance;
 mod worker_thread;
@@ -59,7 +58,10 @@ use crate::{
     debug_overlay::DebugOverlay,
     gym_simulation::{
         GymSimulation, GymSimulationThread,
-        gym::{gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_pendulum::GymPendulum},
+        gym::{
+            gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_half_cheetah::GymHalfCheetah,
+            gym_half_cheetah_2::GymHalfCheetah2, gym_pole::GymPole,
+        },
     },
     physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
     simple_physics_simulation::SimplePhysicsSimulation,
@@ -330,13 +332,19 @@ impl NeonWarlord {
         let _gym_simulation_0: GymSimulation<2, 1, 16, 1, false, GymCart> =
             GymSimulation::new(GymCart::new());
 
-        let _gym_simulation_1: GymSimulation<3, 1, 16, 1, false, GymPendulum> =
-            GymSimulation::new(GymPendulum::new());
+        let _gym_simulation_1: GymSimulation<3, 1, 16, 1, false, GymPole> =
+            GymSimulation::new(GymPole::new());
 
         let _gym_simulation_2: GymSimulation<5, 1, 16, 1, false, GymCartPole> =
             GymSimulation::new(GymCartPole::new());
 
-        let gym_simulation = _gym_simulation_2;
+        let _gym_simulation_3: GymSimulation<11, 4, 64, 2, false, GymHalfCheetah> =
+            GymSimulation::new(GymHalfCheetah::new());
+
+        let _gym_simulation_4: GymSimulation<12, 4, 64, 2, false, GymHalfCheetah2> =
+            GymSimulation::new(GymHalfCheetah2::new());
+
+        let gym_simulation = _gym_simulation_4;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
             sim: Box::new(gym_simulation),
             producer,

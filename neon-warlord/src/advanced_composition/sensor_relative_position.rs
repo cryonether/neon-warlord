@@ -2,7 +2,7 @@
 
 use cgmath::Zero;
 
-use crate::verlet_physics_simd::verlet_particles::VerletParticles;
+use crate::physics::verlet_physics_simd::verlet_particles::VerletParticles;
 
 type Vec3 = cgmath::Vector3<f32>;
 

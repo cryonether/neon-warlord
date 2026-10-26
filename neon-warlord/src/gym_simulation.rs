@@ -17,7 +17,6 @@ use crate::{
         graph_lines::{GraphLines, GraphLinesDrawer},
         gym::Gym,
         gym_worker::GymWorker,
-        verlet_physics_drawer::VerletPhysicsDrawer,
         worker_thread_2::WorkerThread2,
     },
     physics_simulation_v3_drawer::DrawerObjects,
@@ -66,7 +65,6 @@ pub struct GymSimulation<
     drawer_graph_inputs: GraphLinesDrawer<INPUTS>,
 
     env: ENV,
-    verlet_physics_drawer: VerletPhysicsDrawer,
     _steps: u64,
     _episode: u64,
 
@@ -90,11 +88,11 @@ impl<
 where
     ENV: std::clone::Clone + Send + 'static,
 {
-    pub fn new(env: ENV) -> Self {
+    pub fn new(mut env: ENV) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
-        let nr_ppo_threads = 16;
-        let nr_gym_threads = 8;
+        let nr_ppo_threads = 4;
+        let nr_gym_threads = 4;
 
         let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
@@ -118,8 +116,8 @@ where
                 env.clone(),
                 1,
                 4,
-                pos + Vec3::new(11.0 * (i + 1) as f32, -0.5, 1.0),
-                64,
+                Vec3::new(0.0, 0.0, 0.0) + Vec3::new(11.0 * (i + 1) as f32, -0.5, 0.0),
+                128,
             ))));
 
             gym_worker_thread.push(WorkerThread2::new(format!("Gym Worker {}", i)));
@@ -185,8 +183,8 @@ where
         let drawer_graph_inputs = GraphLinesDrawer::new(scale, pos_graph_inputs).colors(colors);
 
         // Pendulum
-        let verlet_physics_drawer =
-            VerletPhysicsDrawer::new(env.get_verlet_physics(), scale, pos_env);
+        env.set_drawer_position(&pos_env);
+        env.set_drawer_radius(scale);
 
         // Dqn
 
@@ -216,7 +214,6 @@ where
             drawer_graph_reward,
             drawer_graph_inputs,
             env,
-            verlet_physics_drawer,
         }
     }
 
@@ -284,7 +281,7 @@ where
         let (reward, done) = self.env.get_reward();
 
         for (i, val) in new_state.iter().enumerate() {
-            self.graph_inputs.y_push_pop(i, *val);
+            self.graph_inputs.y_push_pop(i, *val * 0.01); // input graph
         }
 
         for (i, val) in action.iter().enumerate() {
@@ -383,8 +380,7 @@ where
         self.drawer_graph_reward.update(&self.graph_reward, edges);
         self.drawer_graph_inputs.update(&self.graph_inputs, edges);
 
-        self.verlet_physics_drawer
-            .update(self.env.get_verlet_physics(), nodes, edges);
+        self.env.draw(nodes, edges);
 
         for gym_worker in self.gym_worker.iter().flatten() {
             for node in &gym_worker.nodes {

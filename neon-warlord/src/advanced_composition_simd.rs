@@ -10,7 +10,7 @@ use crate::{
         sensor_linear::SensorLinear,
         sensor_relative_position::SensorRelativePosition,
     },
-    verlet_physics_simd::VerletPhysicsSimd,
+    physics::verlet_physics_simd::VerletPhysicsSimd,
 };
 
 type Vec3 = cgmath::Vector3<f32>;

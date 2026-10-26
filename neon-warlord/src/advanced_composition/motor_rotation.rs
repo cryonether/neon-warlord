@@ -1,6 +1,6 @@
 use cgmath::{InnerSpace, Vector3};
 
-use crate::verlet_physics_simd::verlet_particles::VerletParticles;
+use crate::physics::verlet_physics_simd::verlet_particles::VerletParticles;
 
 /// An actor free to rotate along the axis described by two nodes.
 #[derive(Clone)]

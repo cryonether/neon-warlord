@@ -2,7 +2,7 @@
 
 use cgmath::InnerSpace;
 
-use crate::verlet_physics_simd::verlet_particles::VerletParticles;
+use crate::physics::verlet_physics_simd::verlet_particles::VerletParticles;
 
 /// An actor free to move between two nodes
 #[derive(Clone)]
