@@ -144,9 +144,6 @@ where
         } else {
             self.ticks += 1;
         }
-        
-
-        thread::sleep(Duration::from_millis(16));
 
     }
     

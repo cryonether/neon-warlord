@@ -1,9 +1,10 @@
 //! Send data to a thread, run some function and receive data again
 
 use std::{
-    sync::mpsc::{Receiver, SyncSender, sync_channel},
-    thread::{self, JoinHandle},
+    sync::{Arc, atomic::{AtomicBool, Ordering}, mpsc::{Receiver, SyncSender, sync_channel}}, thread::{self, JoinHandle}, time::Duration,
 };
+
+use instant::Instant;
 
 use crate::triple_buffer::{self};
 
@@ -17,6 +18,8 @@ where
     pub drawer_consumer: triple_buffer::Consumer<Drawer>,
 
     thread: Thread,
+
+    limit_ups: Arc<AtomicBool>,
 }
 
 impl<T> WorkerThread2<T>
@@ -31,6 +34,10 @@ where
 
         // Triple buffer for drawing
         let (mut drawer_producer, drawer_consumer) = triple_buffer::create(Drawer::new());
+
+        // limit ups 
+        let limit_ups = Arc::new(AtomicBool::new(false));
+        let limit_ups_thread = limit_ups.clone();
 
         #[allow(unused_mut)]
         #[allow(unused)]
@@ -70,7 +77,16 @@ where
                     while let Ok(mut data) = request_rx.recv() {
                     data.init();
                     while !data.done() {
+                        let target_frame_time = Duration::from_micros(16_667);
+                        let mut last_frame_time = Instant::now();
                         data.run();
+                        let elapsed_frame_time = last_frame_time.elapsed();
+
+                        // limit ups
+                        if limit_ups_thread.load(Ordering::Relaxed) {
+                            thread::sleep(target_frame_time - elapsed_frame_time);
+                        }
+
 
                         // draw
                         if drawer_producer.is_consumed() {
@@ -93,6 +109,7 @@ where
             result_rx,
             drawer_consumer,
             thread,
+            limit_ups,
         }
     }
 
@@ -110,6 +127,16 @@ where
 
     pub fn try_receive(&mut self) -> Option<Box<T>> {
         self.result_rx.try_recv().ok()
+    }
+
+
+    pub fn _limit_ups(&mut self, val: bool) {
+        self.limit_ups.store(val, Ordering::Relaxed);
+    }
+
+    pub fn limit_ups_toggle(&mut self) {
+        let val = self.limit_ups.load(Ordering::Relaxed);
+        self.limit_ups.store(!val, Ordering::Relaxed);
     }
 
 }
