@@ -269,25 +269,25 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
     }
 
     fn get_reward(&self) -> (f32, bool) {
-        // let reward = self.state.vel_x + self.state.pos_z;
 
+        // Reward target velocity
         let target_velocity = 6.0;
-
         let mut reward = 1.0 - ((self.state.vel_x - target_velocity)/target_velocity).powi(2);
-        // let reward = self.state.rot_y;
-        // let reward = self.state.pos_z;
-        
+
+        // Penalize rotation
+        let rot_cost = self.state.rot_y.powi(2);
+        reward -= rot_cost * 0.1;
+        // println!("self.state.rot_y: {}", self.state.rot_y);
+
+        // Penalize huge actions
         let mut action_cost = 0.0;
         for action in self.state.actions {
             action_cost += action.powi(2);
         }
         reward -= action_cost * 0.1;
         
-        
+        // No negative rewards
         let reward = reward.max(0.0);
-        // let reward = vel_x;
-
-
 
         (reward, false)
     }
