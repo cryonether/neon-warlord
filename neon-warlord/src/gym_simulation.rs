@@ -87,7 +87,7 @@ where
     pub fn new(mut env: ENV) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
-        let nr_ppo_threads = 8;
+        let nr_ppo_threads = 4;
         let nr_gym_threads = 4;
 
         let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
@@ -107,7 +107,7 @@ where
         let mut gym_worker = Vec::new();
         let mut gym_worker_thread = Vec::new();
         
-        let n = 4;
+        let n = 1;
         let m = 4;
         for i in 0..nr_gym_threads {
 
