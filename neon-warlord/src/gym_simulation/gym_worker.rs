@@ -26,7 +26,6 @@ pub struct GymWorker<
     // pub edges: Vec<forward_renderer::particle_shader_two_point::Instance>,
 
     pub nr_steps: usize,
-    pub current_steps: usize,
 
     pub reward: f32,
     pub done: bool,
@@ -78,7 +77,6 @@ where
             // edges,
             ticks: 0,
             nr_steps,
-            current_steps: 0,
             reward: 0.0,
             done: false,
         }
@@ -98,58 +96,58 @@ where
 {
     fn run(&mut self) {
         let dt = 1.0 / 60.0;
-        let max_steps = 1000;
+        let max_steps = 4000;
 
         // self.nodes.clear();
         // self.edges.clear();
         self.reward = 0.0;
 
-        let i = self.current_steps;
-        {
 
-            for env in &mut self.envs {
-                {
-                    // current state and action
-                    let state = env.get_state();
-                    let (action, _mean_action, log_probability) = self.ppo.get_action(&state);
 
-                    // update
-                    env.update(&action, dt);
-                    env.update_verlet_physics(dt);
+        for env in &mut self.envs {
+            {
+                // current state and action
+                let state = env.get_state();
+                let (action, _mean_action, log_probability) = self.ppo.get_action(&state);
 
-                    // reward
-                    let (reward, terminated) = env.get_reward();
-                    self.reward += reward;
+                // update
+                env.update(&action, dt);
+                env.update_verlet_physics(dt);
 
-                    // save reward
-                    let truncated = i >= self.nr_steps - 1 || self.ticks + i >= max_steps;
-                    self.ppo.save_reward(
-                        state,
-                        action,
-                        log_probability,
-                        reward,
-                        terminated,
-                        truncated,
-                    );
+                // reward
+                let (reward, terminated) = env.get_reward();
+                self.reward += reward;
 
-                    // count ticks and reset
-                    if self.ticks + i >= max_steps {
-                        self.ticks = 0;
-                        env.reset();
-                    } else {
-                        self.ticks += 1;
-                    }
-                }
+                // save reward
+                let truncated = self.ticks.is_multiple_of(self.nr_steps) || self.ticks >= max_steps;
+                self.ppo.save_reward(
+                    state,
+                    action,
+                    log_probability,
+                    reward,
+                    terminated,
+                    truncated,
+                );
             }
         }
 
-        thread::sleep(Duration::from_millis(16));
-
-
-        self.current_steps += 1;
-        if self.current_steps >= self.nr_steps {
+        if self.ticks.is_multiple_of(self.nr_steps) {
             self.done = true;
         }
+
+
+        if self.ticks >= max_steps {
+            self.ticks = 0;
+            for env in &mut self.envs {
+                env.reset();
+            }
+        } else {
+            self.ticks += 1;
+        }
+        
+
+        thread::sleep(Duration::from_millis(16));
+
     }
     
     fn draw(&self, 
@@ -171,6 +169,5 @@ where
     fn init(&mut self) {
         self.done = false;
         self.reward = 0.0;
-        self.current_steps = 0;
     }
 }
