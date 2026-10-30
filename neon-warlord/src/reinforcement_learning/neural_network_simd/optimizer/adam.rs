@@ -31,6 +31,9 @@ pub struct Adam<const INPUTS: usize, const OUTPUTS: usize> {
     /// Prevents division by zero
     epsilon: f32,
 
+    /// Weight decay coefficient
+    weight_decay: f32,
+
     /// First moment vector
     m_w: SMat16<OUTPUTS, INPUTS>,
     m_b: SVec16<OUTPUTS>,
@@ -48,7 +51,9 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
         let alpha = 0.001;
         let beta_1 = 0.9;
         let beta_2 = 0.999;
-        let epsilon = 1e-8;
+        let epsilon = 1e-6;
+        // let weight_decay = 0.0;
+        let weight_decay = 1e-4;
 
         let m_w = SMat16::zero();
         let m_b = SVec16::zero();
@@ -63,6 +68,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
             beta_1,
             beta_2,
             epsilon,
+            weight_decay,
             m_w,
             m_b,
             v_w,
@@ -84,6 +90,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
         epsilon: f32,
         beta_1_pow_t: f32,
         beta_2_pow_t: f32,
+         weight_decay: f32,
     ) {
         let one_ = f32x16::splat(1.0);
         let alpha_ = f32x16::splat(alpha);
@@ -92,6 +99,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
         let epsilon_ = f32x16::splat(epsilon);
         let beta_1_pow_t_ = f32x16::splat(beta_1_pow_t);
         let beta_2_pow_t_ = f32x16::splat(beta_2_pow_t);
+        let weight_decay_ = f32x16::splat(weight_decay);
 
         let one = 1.0;
 
@@ -114,7 +122,10 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
             let v_ = *v / (one_ - beta_2_pow_t_);
 
             // θt ← θt−1 − α ·̂ mt/(√̂ vt + epsilon) (Update parameters)
-            *theta_ -= alpha_ * m_ / (v_.sqrt() + epsilon_);
+            *theta_ -= alpha_ * (
+                m_ / (v_.sqrt() + epsilon_)
+                + weight_decay_ * *theta_
+            );
         }
 
         for (theta, d_theta, m, v) in izip!(
@@ -136,7 +147,10 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
             let v_ = *v / (one - beta_2_pow_t);
 
             // θt ← θt−1 − α ·̂ mt/(√̂ vt + epsilon) (Update parameters)
-            *theta -= alpha * m_ / (v_.sqrt() + epsilon);
+            *theta -= alpha * (
+                m_ / (v_.sqrt() + epsilon)
+                + weight_decay * *theta
+            );
         }
     }
 
@@ -159,6 +173,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
                 self.epsilon,
                 self.beta_1_pow_t,
                 self.beta_2_pow_t,
+                self.weight_decay,
             );
         }
 
@@ -173,6 +188,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
             self.epsilon,
             self.beta_1_pow_t,
             self.beta_2_pow_t,
+            0.0,
         );
 
         self.beta_1_pow_t *= self.beta_1;

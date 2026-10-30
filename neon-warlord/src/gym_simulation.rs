@@ -18,13 +18,9 @@ use crate::{
         gym::Gym,
         gym_worker::GymWorker,
         worker_thread_2::WorkerThread2,
-    },
-    physics_simulation_v3_drawer::DrawerObjects,
-    print_color::{color::PrintColor, print_color},
-    reinforcement_learning::{
-        neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo,
-    },
-    triple_buffer, worker_thread,
+    }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::{
+        neural_network_simd::activation_function::{activation_none::ActivationNone, activation_tan_h::ActivationTanH}, ppo::Ppo,
+    }, triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
