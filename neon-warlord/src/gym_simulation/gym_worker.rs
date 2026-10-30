@@ -1,5 +1,7 @@
 //! Runs the simulation and generates transitions
 
+use std::{thread, time::Duration};
+
 use crate::{
     gym_simulation::{Vec3, gym::Gym, worker_thread_2::WorkerThread2Run}, reinforcement_learning::{
         neural_network_simd::activation_function::{activation_none::ActivationNone, activation_tan_h::ActivationTanH}, ppo::Ppo,
@@ -20,12 +22,14 @@ pub struct GymWorker<
     pub ppo: Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ActivationTanH>,
     pub envs: Vec<ENV>,
 
-    pub nodes: Vec<forward_renderer::particle_shader::Instance>,
-    pub edges: Vec<forward_renderer::particle_shader_two_point::Instance>,
+    // pub nodes: Vec<forward_renderer::particle_shader::Instance>,
+    // pub edges: Vec<forward_renderer::particle_shader_two_point::Instance>,
 
     pub nr_steps: usize,
+    pub current_steps: usize,
 
     pub reward: f32,
+    pub done: bool,
 
     ticks: usize,
 }
@@ -64,17 +68,19 @@ where
             }
         }
 
-        let nodes: Vec<forward_renderer::particle_shader::Instance> = Vec::new();
-        let edges: Vec<forward_renderer::particle_shader_two_point::Instance> = Vec::new();
+        // let nodes: Vec<forward_renderer::particle_shader::Instance> = Vec::new();
+        // let edges: Vec<forward_renderer::particle_shader_two_point::Instance> = Vec::new();
 
         Self {
             ppo,
             envs,
-            nodes,
-            edges,
+            // nodes,
+            // edges,
             ticks: 0,
             nr_steps,
+            current_steps: 0,
             reward: 0.0,
+            done: false,
         }
     }
 }
@@ -94,46 +100,77 @@ where
         let dt = 1.0 / 60.0;
         let max_steps = 1000;
 
-        self.nodes.clear();
-        self.edges.clear();
+        // self.nodes.clear();
+        // self.edges.clear();
         self.reward = 0.0;
 
-        for env in &mut self.envs {
-            for i in 0..self.nr_steps {
-                // current state and action
-                let state = env.get_state();
-                let (action, _mean_action, log_probability) = self.ppo.get_action(&state);
+        let i = self.current_steps;
+        {
 
-                // update
-                env.update(&action, dt);
-                env.update_verlet_physics(dt);
+            for env in &mut self.envs {
+                {
+                    // current state and action
+                    let state = env.get_state();
+                    let (action, _mean_action, log_probability) = self.ppo.get_action(&state);
 
-                // reward
-                let (reward, terminated) = env.get_reward();
-                self.reward += reward;
+                    // update
+                    env.update(&action, dt);
+                    env.update_verlet_physics(dt);
 
-                // save reward
-                let truncated = i >= self.nr_steps - 1 || self.ticks + i >= max_steps;
-                self.ppo.save_reward(
-                    state,
-                    action,
-                    log_probability,
-                    reward,
-                    terminated,
-                    truncated,
-                );
+                    // reward
+                    let (reward, terminated) = env.get_reward();
+                    self.reward += reward;
 
-                // count ticks and reset
-                if self.ticks + i >= max_steps {
-                    self.ticks = 0;
-                    env.reset();
-                } else {
-                    self.ticks += 1;
+                    // save reward
+                    let truncated = i >= self.nr_steps - 1 || self.ticks + i >= max_steps;
+                    self.ppo.save_reward(
+                        state,
+                        action,
+                        log_probability,
+                        reward,
+                        terminated,
+                        truncated,
+                    );
+
+                    // count ticks and reset
+                    if self.ticks + i >= max_steps {
+                        self.ticks = 0;
+                        env.reset();
+                    } else {
+                        self.ticks += 1;
+                    }
                 }
             }
-
-            // draw
-            env.draw(&mut self.nodes, &mut self.edges);
         }
+
+        thread::sleep(Duration::from_millis(16));
+
+
+        self.current_steps += 1;
+        if self.current_steps >= self.nr_steps {
+            self.done = true;
+        }
+    }
+    
+    fn draw(&self, 
+        nodes: &mut Vec<forward_renderer::particle_shader::Instance>,
+        edges: &mut Vec<forward_renderer::particle_shader_two_point::Instance>,
+    ) {
+        nodes.clear();
+        edges.clear();
+
+        for env in &self.envs {
+            env.draw(nodes, edges);
+        }
+    }
+    
+    fn done(&self) -> bool {
+        self.done
+    }
+    
+    fn init(&mut self) {
+        self.done = false;
+        self.reward = 0.0;
+        self.current_steps = 0;
     }
 }

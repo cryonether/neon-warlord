@@ -32,6 +32,7 @@ pub struct PpoWorkerData<
     pub critic_loss_sum: f32,
     pub std_dev: f32,
     pub clip: f32,
+    pub done: bool,
 }
 
 impl<
@@ -58,5 +59,22 @@ where
             self.std_dev,
             self.clip,
         );
+
+        self.done = true;
+    }
+    
+    fn draw(&self, 
+        nodes: &mut Vec<forward_renderer::particle_shader::Instance>,
+        edges: &mut Vec<forward_renderer::particle_shader_two_point::Instance>,
+    ) {
+        // Nothing to draw
+    }
+    
+    fn done(&self) -> bool {
+        self.done
+    }
+    
+    fn init(&mut self) {
+        self.done = false;
     }
 }

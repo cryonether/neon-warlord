@@ -32,6 +32,7 @@ unsafe impl<T: Send> Sync for TripleBuffer<T> {}
 pub struct Producer<T> {
     inner: Arc<TripleBuffer<T>>,
     back: usize,
+    last_back: usize,
 }
 
 /// Gets data from the Triple Buffer
@@ -61,9 +62,16 @@ impl<T> Producer<T> {
         //
         // At the same time, take whatever was in the middle
         // as our new back buffer.
+        self.last_back = self.back;
         self.back = self.inner.middle.swap(self.back, Ordering::AcqRel);
 
         self.inner.count.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn is_consumed(&self) -> bool {
+        let middle: usize = self.inner.middle.load(Ordering::Relaxed);
+
+        self.last_back != middle
     }
 }
 
@@ -108,6 +116,7 @@ where
     let producer = Producer {
         inner: inner.clone(),
         back: 0,
+        last_back: 0,
     };
 
     let consumer = Consumer {

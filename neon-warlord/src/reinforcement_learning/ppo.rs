@@ -109,6 +109,7 @@ where
                 critic_loss_sum: 0.0,
                 std_dev: STD_DEV,
                 clip: CLIP,
+                done: false,
             })));
 
             ppo_worker_thread.push(WorkerThread2::new(format!("Ppo Worker {}", i)));

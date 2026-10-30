@@ -62,7 +62,7 @@ pub struct GymSimulation<
 
     env: ENV,
     _steps: u64,
-    _episode: u64,
+    episode: u64,
 
     reward_sum_long: f32,
     reward_sum_super_long: f32,
@@ -87,8 +87,8 @@ where
     pub fn new(mut env: ENV) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
-        let nr_ppo_threads = 4;
-        let nr_gym_threads = 4;
+        let nr_ppo_threads = 16;
+        let nr_gym_threads = 1;
 
         let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
@@ -110,10 +110,10 @@ where
             gym_worker.push(Some(Box::new(GymWorker::new(
                 Ppo::new(0, 0),
                 env.clone(),
-                1,
-                4,
+                16,
+                16,
                 Vec3::new(0.0, 0.0, 0.0) + Vec3::new(11.0 * (i + 1) as f32, -0.5, 0.0),
-                128,
+                32,
             ))));
 
             gym_worker_thread.push(WorkerThread2::new(format!("Gym Worker {}", i)));
@@ -187,7 +187,7 @@ where
         Self {
             ticks: 0,
             _steps: 0,
-            _episode: 0,
+            episode: 0,
             reward_sum_long: 0.0,
             reward_sum_super_long: 0.0,
             gym_worker,
@@ -216,40 +216,64 @@ where
     fn run_workers(&mut self) {
         let mut reward = 0.0;
 
-        self.watch_ups.start_index(0, "Gym");
+        // self.watch_ups.start_index(0, "Gym");
 
-        // send to workers
-        for (gym_worker, gym_worker_thread) in
-            zip(&mut self.gym_worker, &mut self.gym_worker_thread)
-        {
-            let mut gym_worker_ = gym_worker.take().unwrap();
-
-            // copy policy
-            gym_worker_.ppo.actor.copy_weights(&self.ppo.actor);
-            gym_worker_.ppo.critic.copy_weights(&self.ppo.critic);
-
-            gym_worker_thread.send(gym_worker_);
+        let mut is_ready = true;
+        for gym_worker in &self.gym_worker {
+            is_ready = is_ready && gym_worker.is_some();
         }
 
-        // receive from worker
-        for (gym_worker, gym_worker_thread) in
+        if is_ready {
+            // ################################################################
+            // send to workers
+            for (gym_worker, gym_worker_thread) in
+                zip(&mut self.gym_worker, &mut self.gym_worker_thread)
+            {
+                let mut gym_worker_ = gym_worker.take().unwrap();
+
+                // copy policy
+                gym_worker_.ppo.actor.copy_weights(&self.ppo.actor);
+                gym_worker_.ppo.critic.copy_weights(&self.ppo.critic);
+
+                gym_worker_thread.send(gym_worker_);
+            }
+            return;
+        }
+
+        // ################################################################
+        // Wait for all threads to finish
+         for (gym_worker, gym_worker_thread) in
             zip(&mut self.gym_worker, &mut self.gym_worker_thread)
         {
-            let mut gym_worker_ = gym_worker_thread.receive();
-
-            // append transitions
-            self.ppo
-                .transitions
-                .append(&mut gym_worker_.ppo.transitions);
-
-            // get reward
-            reward += gym_worker_.reward;
-
-            *gym_worker = Some(gym_worker_);
+            if gym_worker.is_none() {
+                *gym_worker = gym_worker_thread.try_receive();
+                if gym_worker.is_none() {
+                    // Thread is not yet ready
+                    return;
+                }
+            }
         }
-        self.watch_ups.stop_index(0);
+
+        // ################################################################
+        // PPO
+
+        // append transitions
+        for gym_worker in &mut self.gym_worker
+        {
+            if let Some(gym_worker) = gym_worker {
+                // append transitions
+                self.ppo
+                    .transitions
+                    .append(&mut gym_worker.ppo.transitions);
+
+                // get reward
+                reward += gym_worker.reward;
+            }
+        }
+        // self.watch_ups.stop_index(0);
 
         // learn
+        self.episode += 1;
         self.watch_ups.start_index(1, "Ppo");
         let (actor_loss, critic_loss) = self.ppo.learn();
         self.watch_ups.stop_index(1);
@@ -318,7 +342,7 @@ where
             input
         }
 
-        print!("{}, ", self.ticks);
+        print!("{}, ", self.episode);
 
         print!("reward: ");
         print_color(reward, 0.0, 2000.0, PrintColor::PurplePinkYellow);
@@ -378,11 +402,13 @@ where
 
         self.env.draw(nodes, edges);
 
-        for gym_worker in self.gym_worker.iter().flatten() {
-            for node in &gym_worker.nodes {
+        for gym_worker_thread in &mut self.gym_worker_thread {
+            gym_worker_thread.drawer_consumer.acquire_latest();
+            let buffer = gym_worker_thread.drawer_consumer.buffer();
+            for node in &buffer.nodes {
                 nodes.push(*node);
             }
-            for edge in &gym_worker.edges {
+            for edge in &buffer.edges {
                 edges.push(*edge);
             }
         }

@@ -83,13 +83,13 @@ struct CameraSettings {
     sensitivity_scroll: f32,
 }
 
-const HEIGHT_MAP_INNER_WIDTH: usize = 32;
-const HEIGHT_MAP_INNER_HEIGHT: usize = 32;
+const HEIGHT_MAP_INNER_WIDTH: usize = 64;
+const HEIGHT_MAP_INNER_HEIGHT: usize = 64;
 
 const HEIGHT_MAP_TILE_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH + 2;
 const HEIGHT_MAP_TILE_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT + 2;
 
-const HEIGHT_MAP_NR_TILES_X: usize = 4;
+const HEIGHT_MAP_NR_TILES_X: usize = 6;
 const HEIGHT_MAP_NR_TILES_Y: usize = 4;
 
 const HEIGHT_MAP_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH * HEIGHT_MAP_NR_TILES_X;
@@ -276,10 +276,10 @@ impl NeonWarlord {
         // height_map.set_tile(0, 2, &data);
         // height_map.set_tile(2, 0, &data);
 
-        _height_map.set_tile(0, 3, &data);
+        // _height_map.set_tile(0, 3, &data);
         _height_map.set_tile(0, 0, &data);
 
-        _height_map.set_tile(3, 3, &data);
+        // _height_map.set_tile(3, 3, &data);
         _height_map.set_tile(3, 0, &data);
 
         let height_map_inner_width = HEIGHT_MAP_INNER_WIDTH;
