@@ -39,9 +39,9 @@ pub struct NeuralNetworkSimd<
     const RESIDUAL: bool,
     OutputActivation: ActivationFunction<OUTPUTS>,
 > {
-    pub input: LayerSimd<INPUTS, NEURONS, RESIDUAL, ActivationLeakyReLu>,
-    pub layers: [LayerSimd<NEURONS, NEURONS, RESIDUAL, ActivationLeakyReLu>; NR_LAYERS],
-    pub output: LayerSimd<NEURONS, OUTPUTS, RESIDUAL, OutputActivation>,
+    pub input: Box<LayerSimd<INPUTS, NEURONS, RESIDUAL, ActivationLeakyReLu>>,
+    pub layers: [Box<LayerSimd<NEURONS, NEURONS, RESIDUAL, ActivationLeakyReLu>>; NR_LAYERS],
+    pub output: Box<LayerSimd<NEURONS, OUTPUTS, RESIDUAL, OutputActivation>>,
 }
 
 impl<
@@ -54,9 +54,9 @@ impl<
 > NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL, OutputActivation>
 {
     pub fn new() -> Self {
-        let input = LayerSimd::new();
-        let layers = std::array::from_fn(|_| LayerSimd::new());
-        let output = LayerSimd::new();
+        let input = Box::new(LayerSimd::new());
+        let layers = std::array::from_fn(|_| Box::new(LayerSimd::new()));
+        let output = Box::new(LayerSimd::new());
 
         Self {
             input,
@@ -71,9 +71,9 @@ impl<
         }
         let mut rng = fastrand::Rng::with_seed(seed);
 
-        let input = LayerSimd::new_rand(&mut rng);
-        let layers = std::array::from_fn(|_| LayerSimd::new_rand(&mut rng));
-        let output = LayerSimd::new_rand(&mut rng);
+        let input = Box::new(LayerSimd::new_rand(&mut rng));
+        let layers = std::array::from_fn(|_| Box::new(LayerSimd::new_rand(&mut rng)));
+        let output = Box::new(LayerSimd::new_rand(&mut rng));
 
         Self {
             input,
@@ -83,9 +83,9 @@ impl<
     }
 
     pub fn new_zero_one() -> Self {
-        let input = LayerSimd::new_zero_one();
-        let layers = std::array::from_fn(|_| LayerSimd::new_zero_one());
-        let output = LayerSimd::new_zero_one();
+        let input = Box::new(LayerSimd::new_zero_one());
+        let layers = std::array::from_fn(|_| Box::new(LayerSimd::new_zero_one()));
+        let output = Box::new(LayerSimd::new_zero_one());
 
         Self {
             input,

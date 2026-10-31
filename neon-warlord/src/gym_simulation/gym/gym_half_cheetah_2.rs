@@ -85,7 +85,7 @@ impl GymHalfCheetah2 {
         let _index_log_1_1 = physics.add_rigid_body(&log_1_1);
 
         let positional_compliance = 0.000;
-        let angular_compliance = 0.0002;
+        let angular_compliance = 0.000;
 
         let hinge_joint_0_0 = XpbdHingeJoint::new(
             body.particles[0],
@@ -116,8 +116,8 @@ impl GymHalfCheetah2 {
         let hinge_joint_0_1 = XpbdHingeJoint::new(
             log_0_0.particles[1],
             log_0_1.particles[0],
-            -0.5 * PI,
-            0.5 * PI,
+            -0.8 * PI,
+            0.0 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -129,8 +129,8 @@ impl GymHalfCheetah2 {
         let hinge_joint_1_1 = XpbdHingeJoint::new(
             log_1_0.particles[1],
             log_1_1.particles[0],
-            -0.5 * PI,
-            0.5 * PI,
+            -0.8 * PI,
+            0.0 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -153,6 +153,7 @@ impl GymHalfCheetah2 {
             leg_angular_velocity_1: 0.0,
             leg_angular_velocity_2: 0.0,
             leg_angular_velocity_3: 0.0,
+            actions: [0.0; 4],
         };
 
         Self {
@@ -216,6 +217,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
             leg_angular_velocity_1: hinge_1_0.get_angular_velocity(),
             leg_angular_velocity_2: hinge_0_1.get_angular_velocity(),
             leg_angular_velocity_3: hinge_1_1.get_angular_velocity(),
+            actions: self.state.actions,
         };
 
         self.state = state;
@@ -243,10 +245,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
         // self.apply_static_constraint();
 
         let torque = [
-            actions[0].clamp(-1.0, 1.0) * 10.0,
-            actions[1].clamp(-1.0, 1.0) * 10.0,
-            actions[2].clamp(-1.0, 1.0) * 10.0,
-            actions[3].clamp(-1.0, 1.0) * 10.0,
+            actions[0] * 10.0,
+            actions[1] * 10.0,
+            actions[2] * 10.0,
+            actions[3] * 10.0,
         ];
 
         let hinge_0_0 = &mut self.physics.hinge_joints[self.index_hinge_joint_0_0].constraint;
@@ -260,15 +262,33 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
 
         let hinge_1_1 = &mut self.physics.hinge_joints[self.index_hinge_joint_1_1].constraint;
         hinge_1_1.set_external_torque(torque[3]);
+
+        self.state.actions = *actions;
     }
 
     fn get_reward(&self) -> (f32, bool) {
-        // let reward = self.state.vel_x + self.state.pos_z;
-        let reward = self.state.vel_x;
-        // let reward = self.state.rot_y;
-        // let reward = self.state.pos_z;
-        let reward = reward.max(0.0) * 0.1;
-        // let reward = vel_x;
+        // Reward target velocity
+        let target_velocity = 6.0;
+        let mut reward = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
+
+        // Penalize rotation
+        let rot_cost = self.state.rot_y.powi(2);
+        reward -= rot_cost * 0.1;
+        // println!("self.state.rot_y: {}", self.state.rot_y);
+
+        // Penalize vel z
+        // let vel_z_cost = self.state.vel_z.powi(2);
+        // reward -= vel_z_cost * 0.1;
+
+        // Penalize huge actions
+        let mut action_cost = 0.0;
+        for action in self.state.actions {
+            action_cost += action.powi(2);
+        }
+        reward -= action_cost * 0.1;
+
+        // No negative rewards
+        let reward = reward.max(0.0);
 
         (reward, false)
     }
@@ -300,4 +320,6 @@ pub struct State {
     leg_angular_velocity_1: f32,
     leg_angular_velocity_2: f32,
     leg_angular_velocity_3: f32,
+
+    actions: [f32; 4],
 }

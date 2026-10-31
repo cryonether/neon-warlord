@@ -91,8 +91,8 @@ where
     pub fn new(mut env: ENV) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
-        let nr_ppo_threads = 4;
-        let nr_gym_threads = 4;
+        let nr_ppo_threads = 16;
+        let nr_gym_threads = 16;
 
         let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
@@ -110,13 +110,19 @@ where
 
         let mut gym_worker = Vec::new();
         let mut gym_worker_thread = Vec::new();
+
+        let n = 1;
+        let m = 1;
         for i in 0..nr_gym_threads {
+            let x = 12.0;
+            let y = m as f32 * 5.0;
+
             gym_worker.push(Some(Box::new(GymWorker::new(
                 Ppo::new(0, 0),
                 env.clone(),
-                1,
-                4,
-                Vec3::new(0.0, 0.0, 0.0) + Vec3::new(11.0 * (i + 1) as f32, -0.5, 0.0),
+                n,
+                m,
+                Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 - 0.5, 0.0),
                 128,
             ))));
 

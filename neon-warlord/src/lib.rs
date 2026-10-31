@@ -83,8 +83,8 @@ struct CameraSettings {
     sensitivity_scroll: f32,
 }
 
-const HEIGHT_MAP_INNER_WIDTH: usize = 32;
-const HEIGHT_MAP_INNER_HEIGHT: usize = 32;
+const HEIGHT_MAP_INNER_WIDTH: usize = 64;
+const HEIGHT_MAP_INNER_HEIGHT: usize = 64;
 
 const HEIGHT_MAP_TILE_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH + 2;
 const HEIGHT_MAP_TILE_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT + 2;
@@ -279,7 +279,7 @@ impl NeonWarlord {
         _height_map.set_tile(0, 3, &data);
         _height_map.set_tile(0, 0, &data);
 
-        _height_map.set_tile(3, 3, &data);
+        // _height_map.set_tile(3, 3, &data);
         _height_map.set_tile(3, 0, &data);
 
         let height_map_inner_width = HEIGHT_MAP_INNER_WIDTH;
@@ -338,7 +338,7 @@ impl NeonWarlord {
         let _gym_simulation_2: GymSimulation<5, 1, 16, 1, false, GymCartPole> =
             GymSimulation::new(GymCartPole::new());
 
-        let _gym_simulation_3: GymSimulation<11, 4, 64, 2, false, GymHalfCheetah> =
+        let _gym_simulation_3: GymSimulation<11, 4, 16, 1, false, GymHalfCheetah> =
             GymSimulation::new(GymHalfCheetah::new());
 
         let _gym_simulation_4: GymSimulation<12, 4, 64, 2, false, GymHalfCheetah2> =
