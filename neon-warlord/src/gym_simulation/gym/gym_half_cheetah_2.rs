@@ -279,6 +279,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
         reward -= rot_cost * 0.1;
         // println!("self.state.rot_y: {}", self.state.rot_y);
 
+        // Penalize vel z
+        // let vel_z_cost = self.state.vel_z.powi(2);
+        // reward -= vel_z_cost * 0.1;
+
         // Penalize huge actions
         let mut action_cost = 0.0;
         for action in self.state.actions {

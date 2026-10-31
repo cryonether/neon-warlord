@@ -51,23 +51,13 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition,
-    ant_generator::AntGenerator,
-    ant_storage::AntStorage,
-    camera_controller::CameraController,
-    debug_overlay::DebugOverlay,
-    gym_simulation::{
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, gym_simulation::{
         GymSimulation, GymSimulationThread,
         gym::{
             gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_half_cheetah::GymHalfCheetah,
             gym_half_cheetah_2::GymHalfCheetah2, gym_pole::GymPole,
         },
-    },
-    physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
-    simple_physics_simulation::SimplePhysicsSimulation,
-    sun_storage::SunStorage,
-    worker_instance::WorkerInstance,
-    worker_thread::WorkerThread,
+    }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, reinforcement_learning::{neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo}, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -83,8 +73,8 @@ struct CameraSettings {
     sensitivity_scroll: f32,
 }
 
-const HEIGHT_MAP_INNER_WIDTH: usize = 32;
-const HEIGHT_MAP_INNER_HEIGHT: usize = 32;
+const HEIGHT_MAP_INNER_WIDTH: usize = 64;
+const HEIGHT_MAP_INNER_HEIGHT: usize = 64;
 
 const HEIGHT_MAP_TILE_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH + 2;
 const HEIGHT_MAP_TILE_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT + 2;
@@ -279,7 +269,7 @@ impl NeonWarlord {
         _height_map.set_tile(0, 3, &data);
         _height_map.set_tile(0, 0, &data);
 
-        _height_map.set_tile(3, 3, &data);
+        // _height_map.set_tile(3, 3, &data);
         _height_map.set_tile(3, 0, &data);
 
         let height_map_inner_width = HEIGHT_MAP_INNER_WIDTH;

@@ -1,5 +1,7 @@
 //! Runs the simulation and generates transitions
 
+use std::iter::zip;
+
 use crate::{
     gym_simulation::{Vec3, gym::Gym, worker_thread_2::WorkerThread2Run}, reinforcement_learning::{
         neural_network_simd::activation_function::{activation_none::ActivationNone, activation_tan_h::ActivationTanH}, ppo::Ppo,
@@ -19,7 +21,7 @@ pub struct GymWorker<
 {
     pub ppo: Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ActivationTanH>,
     pub envs: Vec<ENV>,
-
+    
     pub nodes: Vec<forward_renderer::particle_shader::Instance>,
     pub edges: Vec<forward_renderer::particle_shader_two_point::Instance>,
 
@@ -27,7 +29,7 @@ pub struct GymWorker<
 
     pub reward: f32,
 
-    ticks: usize,
+    ticks: Vec<usize>,
 }
 
 impl<
@@ -66,13 +68,14 @@ where
 
         let nodes: Vec<forward_renderer::particle_shader::Instance> = Vec::new();
         let edges: Vec<forward_renderer::particle_shader_two_point::Instance> = Vec::new();
+        let ticks = vec![0; envs.len()];
 
         Self {
             ppo,
             envs,
             nodes,
             edges,
-            ticks: 0,
+            ticks,
             nr_steps,
             reward: 0.0,
         }
@@ -98,8 +101,8 @@ where
         self.edges.clear();
         self.reward = 0.0;
 
-        for env in &mut self.envs {
-            for i in 0..self.nr_steps {
+        for (env, ticks) in zip(&mut self.envs, &mut self.ticks) {
+        for i in 0..self.nr_steps {
                 // current state and action
                 let state = env.get_state();
                 let (action, _mean_action, log_probability) = self.ppo.get_action(&state);
@@ -113,7 +116,7 @@ where
                 self.reward += reward;
 
                 // save reward
-                let truncated = i >= self.nr_steps - 1 || self.ticks + i >= max_steps;
+                let truncated = i >= self.nr_steps - 1;
                 self.ppo.save_reward(
                     state,
                     action,
@@ -123,16 +126,17 @@ where
                     truncated,
                 );
 
-                // count ticks and reset
-                if self.ticks + i >= max_steps {
-                    self.ticks = 0;
+                if *ticks >= max_steps &&  i >= self.nr_steps - 1 {
                     env.reset();
+                    *ticks = 0;
                 } else {
-                    self.ticks += 1;
+                    *ticks += 1;
                 }
             }
-
-            // draw
+        }
+        
+        // draw
+        for env in &mut self.envs {
             env.draw(&mut self.nodes, &mut self.edges);
         }
     }

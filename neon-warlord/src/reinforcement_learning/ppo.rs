@@ -89,7 +89,7 @@ where
         const CLIP: f32 = 0.2;
 
         // Number of times to update the network from the same batch of data
-        const NR_UPDATES_PER_ITERATION: usize = 5;
+        const NR_UPDATES_PER_ITERATION: usize = 1;
 
         let actor = NeuralNetworkSimd::new_rand(seed);
         let critic = NeuralNetworkSimd::new_rand(seed);

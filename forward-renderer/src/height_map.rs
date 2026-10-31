@@ -34,7 +34,7 @@ impl<const WIDTH: usize, const HEIGHT: usize, const TILE_WIDTH: usize, const TIL
     const TILE_COUNT: usize = Self::TILES_X * Self::TILES_Y;
 
     const OFFSET_X: usize = Self::TILES_X / 2;
-    const OFFSET_Y: usize = Self::TILES_X / 2;
+    const OFFSET_Y: usize = Self::TILES_Y / 2;
 
     pub fn new() -> Self {
         let mut data = Vec::with_capacity(Self::TILE_COUNT);
