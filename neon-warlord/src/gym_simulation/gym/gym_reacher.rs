@@ -94,14 +94,14 @@ impl GymReacher {
         let _index_second_arm = physics.add_rigid_body(&second_arm);
         let _index_fingertip = physics.add_rigid_body(&fingertip);
 
-        let positional_compliance = 0.02;
-        let angular_compliance = 0.02;
+        let positional_compliance = 0.00;
+        let angular_compliance = 0.00;
 
         let hinge_rotor = XpbdHingeJoint::new(
             stator.particles[1],
             rotor.particles[0],
-            0.0 * PI,
-            0.4 * PI,
+            -1.0 * PI,
+            1.1 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,

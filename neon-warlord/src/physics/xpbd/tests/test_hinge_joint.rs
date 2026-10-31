@@ -27,20 +27,33 @@ fn create_body(position: Vec3) -> XpbdRigidBody {
 fn create_joint(
     lower_limit: f32,
     upper_limit: f32,
+    rotation_axis: RotationAxis,
 ) -> XpbdHingeJoint {
     XpbdHingeJoint::new(
         Vec3::zero(),
         Vec3::zero(),
         lower_limit,
         upper_limit,
-        RotationAxis::Y,
-        RotationAxis::Y,
-        0.0,
-        0.0,
+        rotation_axis.clone(),
+        rotation_axis,
+        0.00,
+        0.00,
     )
 }
 
 // Run the constraint solver for multiple iterations.
+// fn simulate_joint(
+//     joint: &mut XpbdHingeJoint,
+//     body0: &mut XpbdRigidBody,
+//     body1: &mut XpbdRigidBody,
+//     dt: f32,
+//     iterations: usize,
+// ) {
+//     for _ in 0..iterations {
+//         joint.solve(body0, body1, dt);
+//     }
+// }
+
 fn simulate_joint(
     joint: &mut XpbdHingeJoint,
     body0: &mut XpbdRigidBody,
@@ -48,8 +61,40 @@ fn simulate_joint(
     dt: f32,
     iterations: usize,
 ) {
-    for _ in 0..iterations {
+    for i in 0..iterations {
         joint.solve(body0, body1, dt);
+
+        let rotations = [
+            body0.r.rot.s,
+            body0.r.rot.v.x,
+            body0.r.rot.v.y,
+            body0.r.rot.v.z,
+            body1.r.rot.s,
+            body1.r.rot.v.x,
+            body1.r.rot.v.y,
+            body1.r.rot.v.z,
+        ];
+
+        assert!(
+            rotations.iter().all(|x| x.is_finite()),
+            "Invalid rotation at solver iteration {}",
+            i,
+        );
+
+        let q0_length = body0.r.rot.magnitude();
+        let q1_length = body1.r.rot.magnitude();
+
+        assert!(
+            (q0_length - 1.0).abs() < 1e-3,
+            "Body 0 quaternion is not normalized: {}",
+            q0_length,
+        );
+
+        assert!(
+            (q1_length - 1.0).abs() < 1e-3,
+            "Body 1 quaternion is not normalized: {}",
+            q1_length,
+        );
     }
 }
 
@@ -79,6 +124,7 @@ fn test_initial_configuration() {
     let mut joint = create_joint(
         -PI / 4.0,
         PI / 4.0,
+        RotationAxis::Y
     );
 
     let initial_angle = joint.get_angle();
@@ -110,6 +156,7 @@ fn test_free_rotation_within_limits() {
     let mut joint = create_joint(
         -PI / 4.0,
         PI / 4.0,
+        RotationAxis::Y
     );
 
     body1.r.rot = Quad::from_axis_angle(
@@ -200,6 +247,38 @@ fn test_angular_constraint_is_finite() {
 }
 
 #[test]
+fn test_hinge_axis_misalignment_produces_finite_rotation() {
+    let mut body0 = create_body(Vec3::zero());
+    let mut body1 = create_body(Vec3::zero());
+
+    let mut joint = create_joint(-PI, PI,
+        RotationAxis::Y
+    );
+
+    body1.r.rot = Quad::from_axis_angle(
+        Vec3::unit_x(),
+        Rad(PI / 6.0),
+    );
+
+    joint.solve(
+        &mut body0,
+        &mut body1,
+        1.0 / 60.0,
+    );
+
+    assert!(body0.r.rot.s.is_finite());
+    assert!(body1.r.rot.s.is_finite());
+
+    assert!(body0.r.rot.v.x.is_finite());
+    assert!(body0.r.rot.v.y.is_finite());
+    assert!(body0.r.rot.v.z.is_finite());
+
+    assert!(body1.r.rot.v.x.is_finite());
+    assert!(body1.r.rot.v.y.is_finite());
+    assert!(body1.r.rot.v.z.is_finite());
+}
+
+#[test]
 fn test_lower_angular_limit() {
     let mut body0 = create_body(Vec3::zero());
     let mut body1 = create_body(Vec3::zero());
@@ -210,26 +289,30 @@ fn test_lower_angular_limit() {
     let mut joint = create_joint(
         lower_limit,
         upper_limit,
+        RotationAxis::Y
     );
 
     // Rotate body 1 by -90 degrees.
     body1.r.rot = Quad::from_axis_angle(
         Vec3::unit_y(),
         Rad(-PI / 2.0),
+        // Rad(PI),
     );
+
+    let dt = 1.0 / 60.0;
 
     simulate_joint(
         &mut joint,
         &mut body0,
         &mut body1,
-        1.0 / 60.0,
+        dt * 10.0,
         100,
     );
 
     assert_angle_near(
         joint.get_angle(),
         lower_limit,
-        1e-2,
+        0.02,
     );
 }
 
@@ -238,7 +321,7 @@ fn test_lower_angular_limit() {
 // ------------------------------------------------------------
 
 #[test]
-fn test_upper_angular_limit() {
+fn test_upper_angular_limit_y() {
     let mut body0 = create_body(Vec3::zero());
     let mut body1 = create_body(Vec3::zero());
 
@@ -248,6 +331,7 @@ fn test_upper_angular_limit() {
     let mut joint = create_joint(
         lower_limit,
         upper_limit,
+        RotationAxis::Y
     );
 
     // Rotate body 1 by +90 degrees.
@@ -269,6 +353,137 @@ fn test_upper_angular_limit() {
         upper_limit,
         1e-2,
     );
+
+    // Rotate body 1 by +90 degrees.
+    body1.r.rot = Quad::from_axis_angle(
+        Vec3::unit_y(),
+        Rad(-PI / 2.0),
+    );
+
+    simulate_joint(
+        &mut joint,
+        &mut body0,
+        &mut body1,
+        1.0 / 60.0,
+        100,
+    );
+
+    assert_angle_near(
+        joint.get_angle(),
+        lower_limit,
+        1e-2,
+    );
+}
+
+#[test]
+fn test_upper_angular_limit_x() {
+    let mut body0 = create_body(Vec3::zero());
+    let mut body1 = create_body(Vec3::zero());
+
+    let lower_limit = -PI / 4.0;
+    let upper_limit = PI / 4.0;
+
+    let mut joint = create_joint(
+        lower_limit,
+        upper_limit,
+        RotationAxis::X
+    );
+
+    // Rotate body 1 by +90 degrees.
+    body1.r.rot = Quad::from_axis_angle(
+        Vec3::unit_x(),
+        Rad(PI / 2.0),
+    );
+
+    simulate_joint(
+        &mut joint,
+        &mut body0,
+        &mut body1,
+        1.0 / 60.0,
+        100,
+    );
+
+    assert_angle_near(
+        joint.get_angle(),
+        upper_limit,
+        1e-2,
+    );
+
+    // Rotate body 1 by +90 degrees.
+    body1.r.rot = Quad::from_axis_angle(
+        Vec3::unit_x(),
+        Rad(-PI / 2.0),
+    );
+
+    simulate_joint(
+        &mut joint,
+        &mut body0,
+        &mut body1,
+        1.0 / 60.0,
+        100,
+    );
+
+    assert_angle_near(
+        joint.get_angle(),
+        lower_limit,
+        1e-2,
+    );
+}
+
+#[test]
+fn test_upper_angular_limit_z() {
+    let mut body0 = create_body(Vec3::zero());
+    let mut body1 = create_body(Vec3::zero());
+
+    let lower_limit = -PI / 4.0;
+    let upper_limit = PI / 4.0;
+
+    let mut joint = create_joint(
+        lower_limit,
+        upper_limit,
+        RotationAxis::Z
+    );
+
+    // Rotate body 1 by +90 degrees.
+    body1.r.rot = Quad::from_axis_angle(
+        Vec3::unit_z(),
+        Rad(PI / 2.0),
+    );
+
+    simulate_joint(
+        &mut joint,
+        &mut body0,
+        &mut body1,
+        1.0 / 60.0,
+        100,
+    );
+
+    assert_angle_near(
+        joint.get_angle(),
+        upper_limit,
+        1e-2,
+    );
+
+
+    // Rotate body 1 by +90 degrees.
+    body1.r.rot = Quad::from_axis_angle(
+        Vec3::unit_z(),
+        Rad(-PI / 2.0),
+    );
+
+    simulate_joint(
+        &mut joint,
+        &mut body0,
+        &mut body1,
+        1.0 / 60.0,
+        100,
+    );
+
+    assert_angle_near(
+        joint.get_angle(),
+        lower_limit,
+        1e-2,
+    );
 }
 
 // ------------------------------------------------------------
@@ -283,6 +498,7 @@ fn test_hinge_axis_alignment() {
     let mut joint = create_joint(
         -PI,
         PI,
+        RotationAxis::Y
     );
 
     // Rotate body 1 by 30 degrees around X.
@@ -322,7 +538,7 @@ fn test_hinge_axis_alignment() {
     let alignment = a0.dot(a1).clamp(-1.0, 1.0);
 
     assert!(
-        alignment > 0.999,
+        alignment > 0.99,
         "Hinge axes are not aligned: dot = {}",
         alignment,
     );

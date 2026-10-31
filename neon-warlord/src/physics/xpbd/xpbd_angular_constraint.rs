@@ -1,6 +1,6 @@
 //! A angular constraint of two rigid bodies
 
-use cgmath::{InnerSpace, Zero};
+use cgmath::{InnerSpace, Rad, Rotation3, Zero};
 
 use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
@@ -143,6 +143,12 @@ impl XpbdAngularConstraint {
         r0.rot = r0.rot + 0.5 * Quad::new(0.0, i_p0.x, i_p0.y, i_p0.z) * r0.rot;
         r1.rot = r1.rot - 0.5 * Quad::new(0.0, i_p1.x, i_p1.y, i_p1.z) * r1.rot;
 
+        r0.rot = r0.rot.normalize();
+        r1.rot = r1.rot.normalize();
+
+        // apply_angular_correction(&mut r0.rot, 0.5 * i_p0 );
+        // apply_angular_correction(&mut r1.rot, -0.5 * i_p1 );
+
         // Calculate torque
         self.torque = self.lagrange_multiplier * n / (dt * dt);
     }
@@ -191,4 +197,20 @@ impl XpbdAngularConstraint {
 
         (corr / angle, angle)
     }
+}
+
+
+fn apply_angular_correction(rot: &mut Quad, delta: Vec3) {
+    let angle = delta.magnitude();
+
+    if angle < 1e-8 {
+        return;
+    }
+
+    let dq = Quad::from_axis_angle(
+        delta / angle,
+        Rad(angle),
+    );
+
+    *rot = (dq * *rot).normalize();
 }

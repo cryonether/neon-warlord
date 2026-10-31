@@ -205,8 +205,10 @@ impl XpbdHingeJoint {
 
         let phi_target = phi.clamp(alpha, beta);
 
+        // println!("phi: {}, phi_target: {}", phi, phi_target);
+
         let rotation = Quad::from_axis_angle(n, Rad(phi_target));
-        let n_target = rotation.rotate_vector(n0);
+        let n_target = rotation.rotate_vector(-n0);
 
         // Angular correction from the paper, Equation (21).
         let angular_error = n_target.cross(n1);
@@ -257,6 +259,7 @@ impl XpbdHingeJoint {
 }
 
 #[allow(unused)]
+#[derive(Clone)]
 pub enum RotationAxis {
     X,
     Y,
