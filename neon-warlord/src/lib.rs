@@ -51,23 +51,11 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition,
-    ant_generator::AntGenerator,
-    ant_storage::AntStorage,
-    camera_controller::CameraController,
-    debug_overlay::DebugOverlay,
-    gym_simulation::{
-        GymSimulation, GymSimulationThread,
-        gym::{
-            gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_half_cheetah::GymHalfCheetah,
-            gym_half_cheetah_2::GymHalfCheetah2, gym_pole::GymPole,
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, gym_simulation::{
+        GymSimulation, GymSimulationThread, gym::{
+            gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_half_cheetah::GymHalfCheetah, gym_half_cheetah_2::GymHalfCheetah2, gym_pole::GymPole, gym_reacher::GymReacher,
         },
-    },
-    physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
-    simple_physics_simulation::SimplePhysicsSimulation,
-    sun_storage::SunStorage,
-    worker_instance::WorkerInstance,
-    worker_thread::WorkerThread,
+    }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -329,22 +317,31 @@ impl NeonWarlord {
         //         sim: PhysicsSimulationV3::new(producer),
         //     });
 
+        // Cart
         let _gym_simulation_0: GymSimulation<2, 1, 16, 1, false, GymCart> =
             GymSimulation::new(GymCart::new());
 
+        // Pole
         let _gym_simulation_1: GymSimulation<3, 1, 16, 1, false, GymPole> =
             GymSimulation::new(GymPole::new());
 
+        // CartPole
         let _gym_simulation_2: GymSimulation<5, 1, 16, 1, false, GymCartPole> =
             GymSimulation::new(GymCartPole::new());
 
+        // HalfCheetah
         let _gym_simulation_3: GymSimulation<11, 4, 16, 1, false, GymHalfCheetah> =
             GymSimulation::new(GymHalfCheetah::new());
 
+        // HalfCheetah2
         let _gym_simulation_4: GymSimulation<12, 4, 64, 2, false, GymHalfCheetah2> =
             GymSimulation::new(GymHalfCheetah2::new());
 
-        let gym_simulation = _gym_simulation_4;
+        // Reacher
+        let _gym_simulation_5: GymSimulation<12, 4, 16, 2, false, GymReacher> =
+            GymSimulation::new(GymReacher::new());
+
+        let gym_simulation = _gym_simulation_5;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
             sim: Box::new(gym_simulation),
             producer,
