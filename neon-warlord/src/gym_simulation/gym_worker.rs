@@ -4,7 +4,7 @@ use std::iter::zip;
 
 use crate::{
     gym_simulation::{Vec3, gym::Gym, worker_thread_2::WorkerThread2Run}, reinforcement_learning::{
-        neural_network_simd::activation_function::{activation_none::ActivationNone, activation_tan_h::ActivationTanH}, ppo::Ppo,
+        neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo,
     },
 };
 

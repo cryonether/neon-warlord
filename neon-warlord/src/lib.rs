@@ -57,7 +57,7 @@ use crate::{
             gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_half_cheetah::GymHalfCheetah,
             gym_half_cheetah_2::GymHalfCheetah2, gym_pole::GymPole,
         },
-    }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, reinforcement_learning::{neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo}, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
+    }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
