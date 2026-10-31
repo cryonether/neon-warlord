@@ -153,7 +153,7 @@ impl GymHalfCheetah2 {
             leg_angular_velocity_1: 0.0,
             leg_angular_velocity_2: 0.0,
             leg_angular_velocity_3: 0.0,
-            actions: [0.0; 4]
+            actions: [0.0; 4],
         };
 
         Self {
@@ -217,7 +217,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
             leg_angular_velocity_1: hinge_1_0.get_angular_velocity(),
             leg_angular_velocity_2: hinge_0_1.get_angular_velocity(),
             leg_angular_velocity_3: hinge_1_1.get_angular_velocity(),
-            actions: self.state.actions
+            actions: self.state.actions,
         };
 
         self.state = state;
@@ -251,8 +251,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
             actions[3] * 10.0,
         ];
 
-        
-
         let hinge_0_0 = &mut self.physics.hinge_joints[self.index_hinge_joint_0_0].constraint;
         hinge_0_0.set_external_torque(torque[0]);
 
@@ -269,10 +267,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
     }
 
     fn get_reward(&self) -> (f32, bool) {
-
         // Reward target velocity
         let target_velocity = 6.0;
-        let mut reward = 1.0 - ((self.state.vel_x - target_velocity)/target_velocity).powi(2);
+        let mut reward = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
 
         // Penalize rotation
         let rot_cost = self.state.rot_y.powi(2);
@@ -289,7 +286,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
             action_cost += action.powi(2);
         }
         reward -= action_cost * 0.1;
-        
+
         // No negative rewards
         let reward = reward.max(0.0);
 

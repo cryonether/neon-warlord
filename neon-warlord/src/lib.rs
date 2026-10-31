@@ -51,13 +51,23 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, gym_simulation::{
+    ant_controller::AntPosition,
+    ant_generator::AntGenerator,
+    ant_storage::AntStorage,
+    camera_controller::CameraController,
+    debug_overlay::DebugOverlay,
+    gym_simulation::{
         GymSimulation, GymSimulationThread,
         gym::{
             gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_half_cheetah::GymHalfCheetah,
             gym_half_cheetah_2::GymHalfCheetah2, gym_pole::GymPole,
         },
-    }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
+    },
+    physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
+    simple_physics_simulation::SimplePhysicsSimulation,
+    sun_storage::SunStorage,
+    worker_instance::WorkerInstance,
+    worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;

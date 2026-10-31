@@ -3,7 +3,8 @@
 use std::iter::zip;
 
 use crate::{
-    gym_simulation::{Vec3, gym::Gym, worker_thread_2::WorkerThread2Run}, reinforcement_learning::{
+    gym_simulation::{Vec3, gym::Gym, worker_thread_2::WorkerThread2Run},
+    reinforcement_learning::{
         neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo,
     },
 };
@@ -21,7 +22,7 @@ pub struct GymWorker<
 {
     pub ppo: Ppo<INPUTS, OUTPUTS, NEURONS, LAYERS, RESIDUAL, ActivationTanH>,
     pub envs: Vec<ENV>,
-    
+
     pub nodes: Vec<forward_renderer::particle_shader::Instance>,
     pub edges: Vec<forward_renderer::particle_shader_two_point::Instance>,
 
@@ -102,7 +103,7 @@ where
         self.reward = 0.0;
 
         for (env, ticks) in zip(&mut self.envs, &mut self.ticks) {
-        for i in 0..self.nr_steps {
+            for i in 0..self.nr_steps {
                 // current state and action
                 let state = env.get_state();
                 let (action, _mean_action, log_probability) = self.ppo.get_action(&state);
@@ -126,7 +127,7 @@ where
                     truncated,
                 );
 
-                if *ticks >= max_steps &&  i >= self.nr_steps - 1 {
+                if *ticks >= max_steps && i >= self.nr_steps - 1 {
                     env.reset();
                     *ticks = 0;
                 } else {
@@ -134,7 +135,7 @@ where
                 }
             }
         }
-        
+
         // draw
         for env in &mut self.envs {
             env.draw(&mut self.nodes, &mut self.edges);

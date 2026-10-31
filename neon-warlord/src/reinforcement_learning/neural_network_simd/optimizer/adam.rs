@@ -90,7 +90,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
         epsilon: f32,
         beta_1_pow_t: f32,
         beta_2_pow_t: f32,
-         weight_decay: f32,
+        weight_decay: f32,
     ) {
         let one_ = f32x16::splat(1.0);
         let alpha_ = f32x16::splat(alpha);
@@ -122,10 +122,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
             let v_ = *v / (one_ - beta_2_pow_t_);
 
             // θt ← θt−1 − α ·̂ mt/(√̂ vt + epsilon) (Update parameters)
-            *theta_ -= alpha_ * (
-                m_ / (v_.sqrt() + epsilon_)
-                + weight_decay_ * *theta_
-            );
+            *theta_ -= alpha_ * (m_ / (v_.sqrt() + epsilon_) + weight_decay_ * *theta_);
         }
 
         for (theta, d_theta, m, v) in izip!(
@@ -147,10 +144,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
             let v_ = *v / (one - beta_2_pow_t);
 
             // θt ← θt−1 − α ·̂ mt/(√̂ vt + epsilon) (Update parameters)
-            *theta -= alpha * (
-                m_ / (v_.sqrt() + epsilon)
-                + weight_decay * *theta
-            );
+            *theta -= alpha * (m_ / (v_.sqrt() + epsilon) + weight_decay * *theta);
         }
     }
 

@@ -18,9 +18,13 @@ use crate::{
         gym::Gym,
         gym_worker::GymWorker,
         worker_thread_2::WorkerThread2,
-    }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::{
+    },
+    physics_simulation_v3_drawer::DrawerObjects,
+    print_color::{color::PrintColor, print_color},
+    reinforcement_learning::{
         neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo,
-    }, triple_buffer, worker_thread,
+    },
+    triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
@@ -107,7 +111,6 @@ where
         let mut gym_worker = Vec::new();
         let mut gym_worker_thread = Vec::new();
 
-
         let n = 1;
         let m = 1;
         for i in 0..nr_gym_threads {
@@ -119,7 +122,7 @@ where
                 env.clone(),
                 n,
                 m,
-                Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 -0.5, 0.0),
+                Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 - 0.5, 0.0),
                 128,
             ))));
 
