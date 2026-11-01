@@ -41,7 +41,8 @@ pub struct GymHalfCheetah2 {
 impl GymHalfCheetah2 {
     pub fn new() -> Self {
         let mut physics = Xpbd::new();
-        let drawer = XpbdDrawer::new(&physics, 0.1, Vec3::zero());
+        let radius = 0.1;
+        let drawer = XpbdDrawer::new(&physics, radius, Vec3::zero());
 
         let body = XpbdRigidBody::new(
             Vec3::new(-1.0, 0.0, 1.5),
@@ -52,30 +53,35 @@ impl GymHalfCheetah2 {
                 Vec3::new(2.3, 0.0, 0.3),
             ],
             MASS, // 0.0
+            radius,
         );
 
         let log_0_0 = XpbdRigidBody::new(
             Vec3::new(-1.0, 0.0, 1.5),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
+            radius,
         );
 
         let log_1_0 = XpbdRigidBody::new(
             Vec3::new(1.0, 0.0, 1.5),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
+            radius,
         );
 
         let log_0_1 = XpbdRigidBody::new(
             Vec3::new(-1.0, 0.0, 1.0),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
+            radius,
         );
 
         let log_1_1 = XpbdRigidBody::new(
             Vec3::new(1.0, 0.0, 1.0),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
+            radius,
         );
 
         let index_body = physics.add_rigid_body(&body);

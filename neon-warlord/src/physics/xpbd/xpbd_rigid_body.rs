@@ -1,6 +1,6 @@
 //! RigidBody implementation using XPBD
 
-use cgmath::One;
+use cgmath::{One, SquareMatrix};
 
 use super::*;
 
@@ -14,9 +14,9 @@ pub struct XpbdRigidBody {
 }
 
 impl XpbdRigidBody {
-    pub fn new(pos: Vec3, particles: &[Vec3], mass: f32) -> Self {
+    pub fn new(pos: Vec3, particles: &[Vec3], particle_mass: f32, particle_radius: f32) -> Self {
         let _prev_pos = pos;
-        let overall_mass = particles.len() as f32 * mass;
+        let overall_mass = particles.len() as f32 * particle_mass;
         let inv_mass = if overall_mass > 0.0 {
             1.0 / overall_mass
         } else {
@@ -46,7 +46,6 @@ impl XpbdRigidBody {
         //
         // I⁻¹ = pseudo-inverse(I)
         //
-        let particle_mass = mass;
 
         // Calculate center of mass
         let mut center_of_mass = Vec3::zero();
@@ -55,16 +54,23 @@ impl XpbdRigidBody {
         }
         center_of_mass /= particles.len() as f32;
 
-        // Calculate inertia tensor
+        // Calculate inertia tensor, treating each particle as a solid sphere.
         let mut inertia_tensor = Mat3::zero();
+
+        //           2
+        // I_sphere​= --- ​m * r² * I
+        //           5
+        let particle_inertia = (2.0 / 5.0) * particle_mass * particle_radius * particle_radius;
 
         for particle in particles {
             let r = *particle - center_of_mass;
             let r_squared = r.dot(r);
 
-            inertia_tensor.x.x += particle_mass * (r_squared - r.x * r.x);
-            inertia_tensor.y.y += particle_mass * (r_squared - r.y * r.y);
-            inertia_tensor.z.z += particle_mass * (r_squared - r.z * r.z);
+            inertia_tensor.x.x += particle_mass * (r_squared - r.x * r.x) + particle_inertia;
+
+            inertia_tensor.y.y += particle_mass * (r_squared - r.y * r.y) + particle_inertia;
+
+            inertia_tensor.z.z += particle_mass * (r_squared - r.z * r.z) + particle_inertia;
 
             inertia_tensor.x.y -= particle_mass * r.x * r.y;
             inertia_tensor.y.x -= particle_mass * r.x * r.y;
@@ -76,12 +82,8 @@ impl XpbdRigidBody {
             inertia_tensor.z.y -= particle_mass * r.y * r.z;
         }
 
-        // let inverse_inertia_tensor = inertia_tensor
-        //     .invert()
-        //     .unwrap_or_else(Mat3::zero);
-        //     // .unwrap();
-
-        let inverse_inertia_tensor = symmetric_pseudo_inverse(inertia_tensor);
+        // Calculate inverse inertia tensor.
+        let inverse_inertia_tensor = inertia_tensor.invert().unwrap_or_else(Mat3::zero);
 
         // Move all particles by the center of mass
         let mut particles_centered = Vec::with_capacity(particles.len());
@@ -139,7 +141,7 @@ impl XpbdRigidBody {
 
 /// Computes the Moore-Penrose pseudoinverse of a symmetric 3x3 matrix
 /// using Jacobi eigenvalue decomposition.
-fn symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
+fn _symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
     // A = Q * D * Qᵀ
     // Q contains eigenvectors; D contains eigenvalues.
 

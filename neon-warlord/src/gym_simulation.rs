@@ -92,7 +92,7 @@ where
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
         let nr_ppo_threads = 16;
-        let nr_gym_threads = 16;
+        let nr_gym_threads = 2;
 
         let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
@@ -102,7 +102,8 @@ where
 
         let pos_graph_inputs = pos + Vec3::new(2.2, 1.0, 2.2);
 
-        let pos_env = pos + Vec3::new(2.0, -0.5, 1.0);
+        // let pos_env = pos + Vec3::new(2.0, -0.5, 1.0);
+        let pos_env = Vec3::new(2.0, -0.5, 0.0);
 
         let scale = 0.1;
 
@@ -124,6 +125,7 @@ where
                 m,
                 Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 - 0.5, 0.0),
                 128,
+                // 1,
             ))));
 
             gym_worker_thread.push(WorkerThread2::new(format!("Gym Worker {}", i)));
@@ -287,7 +289,7 @@ where
         let (reward, done) = self.env.get_reward();
 
         for (i, val) in new_state.iter().enumerate() {
-            self.graph_inputs.y_push_pop(i, *val * 0.01); // input graph
+            self.graph_inputs.y_push_pop(i, *val * 0.1); // input graph
         }
 
         for (i, val) in action.iter().enumerate() {
