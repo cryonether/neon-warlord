@@ -14,11 +14,7 @@ pub struct XpbdRigidBody {
 }
 
 impl XpbdRigidBody {
-    pub fn new(pos: Vec3, 
-        particles: &[Vec3], 
-        particle_mass: f32,
-        particle_radius: f32,
-    ) -> Self {
+    pub fn new(pos: Vec3, particles: &[Vec3], particle_mass: f32, particle_radius: f32) -> Self {
         let _prev_pos = pos;
         let overall_mass = particles.len() as f32 * particle_mass;
         let inv_mass = if overall_mass > 0.0 {
@@ -64,23 +60,17 @@ impl XpbdRigidBody {
         //           2
         // I_sphere​= --- ​m * r² * I
         //           5
-        let particle_inertia = (2.0 / 5.0)
-            * particle_mass
-            * particle_radius
-            * particle_radius;
+        let particle_inertia = (2.0 / 5.0) * particle_mass * particle_radius * particle_radius;
 
         for particle in particles {
             let r = *particle - center_of_mass;
             let r_squared = r.dot(r);
 
-            inertia_tensor.x.x += particle_mass * (r_squared - r.x * r.x)
-                + particle_inertia;
+            inertia_tensor.x.x += particle_mass * (r_squared - r.x * r.x) + particle_inertia;
 
-            inertia_tensor.y.y += particle_mass * (r_squared - r.y * r.y)
-                + particle_inertia;
+            inertia_tensor.y.y += particle_mass * (r_squared - r.y * r.y) + particle_inertia;
 
-            inertia_tensor.z.z += particle_mass * (r_squared - r.z * r.z)
-                + particle_inertia;
+            inertia_tensor.z.z += particle_mass * (r_squared - r.z * r.z) + particle_inertia;
 
             inertia_tensor.x.y -= particle_mass * r.x * r.y;
             inertia_tensor.y.x -= particle_mass * r.x * r.y;
@@ -93,9 +83,7 @@ impl XpbdRigidBody {
         }
 
         // Calculate inverse inertia tensor.
-        let inverse_inertia_tensor = inertia_tensor
-            .invert()
-            .unwrap_or_else(Mat3::zero);
+        let inverse_inertia_tensor = inertia_tensor.invert().unwrap_or_else(Mat3::zero);
 
         // Move all particles by the center of mass
         let mut particles_centered = Vec::with_capacity(particles.len());

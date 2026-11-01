@@ -84,10 +84,8 @@ impl XpbdHingeJoint {
     }
 
     pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
-
         const ITERATIONS: usize = 4;
         for _i in 0..ITERATIONS {
-
             // ##########################################################################
             // 1) Position constrain
             let attachment_point_0 = obj_0.local_to_world(&self.attachment_point_0);
@@ -117,16 +115,15 @@ impl XpbdHingeJoint {
 
             let _c0 = r0.rot.rotate_vector(self.c0);
             let _c1 = r1.rot.rotate_vector(self.c1);
-            
 
             // ########################################################################
             // One axis
 
             // Accurate
-            // let cos_alpha = a0.dot(a1); 
+            // let cos_alpha = a0.dot(a1);
             // let n = a0.cross(a1).normalize();
             // let alpha = cos_alpha.acos();
-            
+
             // if alpha.abs() > 0.1e-6 {
             //     self.angular_constraint
             //         .solve(obj_0, obj_1, &n, -alpha, sub_dt);
@@ -136,26 +133,22 @@ impl XpbdHingeJoint {
             let error = a0.cross(a1);
             let error_magnitude = error.magnitude();
             let n = error / error_magnitude;
-            
+
             if error_magnitude > 0.1e-6 {
                 self.angular_constraint
                     .solve(obj_0, obj_1, &n, -error_magnitude, dt);
             }
 
-
-            // println!(" alpha: {:.3}, a1_a0: {:.3}, n: {:?}, omega_0: {:?}, omega_1: {:?}", 
-            //     alpha, 
-            //     cos_alpha, 
-            //     n, 
+            // println!(" alpha: {:.3}, a1_a0: {:.3}, n: {:?}, omega_0: {:?}, omega_1: {:?}",
+            //     alpha,
+            //     cos_alpha,
+            //     n,
             //     obj_0.r.omega,
             //     obj_1.r.omega
             // );
-
         }
 
         // ########################################################################
-
-
 
         // ##########################################################################
         // Test 0: Align both angles
@@ -259,7 +252,6 @@ impl XpbdHingeJoint {
 
         // ##########################################################################
         // 3: Limit the target angle between alpha and beta
-
 
         let alpha = self.angle_limit_0;
         let beta = self.angle_limit_1;
@@ -366,8 +358,6 @@ impl RotationAxis {
         }
     }
 }
-
-
 
 pub fn _calculate_rotation_error_2(rotation_0: &Quad, rotation_1: &Quad) -> (Vec3, f32) {
     let mut q_err = (rotation_0 * rotation_1.conjugate()).normalize();
