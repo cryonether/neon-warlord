@@ -24,7 +24,40 @@ fn create_body(position: Vec3) -> XpbdRigidBody {
     )
 }
 
+
+fn create_body_skewed(position: Vec3) -> XpbdRigidBody {
+    // Asymmetric particle distribution to avoid degenerate inertia.
+    let particles = [
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new( 0.5, -0.5, -0.5),
+    ];
+
+    XpbdRigidBody::new(
+        position,
+        &particles,
+        1.0,
+        0.1,
+    )
+}
+
 fn create_joint(
+    lower_limit: f32,
+    upper_limit: f32,
+    rotation_axis: RotationAxis,
+) -> XpbdHingeJoint {
+    XpbdHingeJoint::new(
+        Vec3::zero(),
+        Vec3::zero(),
+        lower_limit,
+        upper_limit,
+        rotation_axis.clone(),
+        rotation_axis,
+        0.002,
+        0.002,
+    )
+}
+
+fn create_joint_fix(
     lower_limit: f32,
     upper_limit: f32,
     rotation_axis: RotationAxis,
@@ -40,6 +73,7 @@ fn create_joint(
         0.00,
     )
 }
+
 
 // Run the constraint solver for multiple iterations.
 // fn simulate_joint(
@@ -74,6 +108,8 @@ fn simulate_joint(
             body1.r.rot.v.y,
             body1.r.rot.v.z,
         ];
+
+        println!("body0: {:?}, body1: {:?}", body0.r.rot, body1.r.rot);
 
         assert!(
             rotations.iter().all(|x| x.is_finite()),
@@ -286,7 +322,7 @@ fn test_lower_angular_limit() {
     let lower_limit = -PI / 4.0;
     let upper_limit = PI / 4.0;
 
-    let mut joint = create_joint(
+    let mut joint = create_joint_fix(
         lower_limit,
         upper_limit,
         RotationAxis::Y
@@ -328,7 +364,7 @@ fn test_upper_angular_limit_y() {
     let lower_limit = -PI / 4.0;
     let upper_limit = PI / 4.0;
 
-    let mut joint = create_joint(
+    let mut joint = create_joint_fix(
         lower_limit,
         upper_limit,
         RotationAxis::Y
@@ -383,7 +419,7 @@ fn test_upper_angular_limit_x() {
     let lower_limit = -PI / 4.0;
     let upper_limit = PI / 4.0;
 
-    let mut joint = create_joint(
+    let mut joint = create_joint_fix(
         lower_limit,
         upper_limit,
         RotationAxis::X
@@ -438,7 +474,7 @@ fn test_upper_angular_limit_z() {
     let lower_limit = -PI / 4.0;
     let upper_limit = PI / 4.0;
 
-    let mut joint = create_joint(
+    let mut joint = create_joint_fix(
         lower_limit,
         upper_limit,
         RotationAxis::Z
@@ -486,6 +522,65 @@ fn test_upper_angular_limit_z() {
     );
 }
 
+
+#[test]
+fn test_upper_angular_limit_skewed() {
+    let mut body0 = create_body(Vec3::zero());
+    let mut body1 = create_body_skewed(Vec3::zero());
+
+    let lower_limit = -PI / 4.0;
+    let upper_limit = PI / 4.0;
+
+    let mut joint = create_joint(
+        lower_limit,
+        upper_limit,
+        RotationAxis::Y
+    );
+
+    // Rotate body 1 by +90 degrees.
+    body1.r.rot = Quad::from_axis_angle(
+        Vec3::unit_y(),
+        Rad(PI / 2.0),
+    );
+
+    let dt = 1.0 / 60.0;
+
+    simulate_joint(
+        &mut joint,
+        &mut body0,
+        &mut body1,
+        dt * 0.72,
+        100,
+    );
+
+    assert_angle_near(
+        joint.get_angle(),
+        upper_limit,
+        1e-2,
+    );
+
+    // // Rotate body 1 by +90 degrees.
+    // body1.r.rot = Quad::from_axis_angle(
+    //     Vec3::unit_y(),
+    //     Rad(-PI / 2.0),
+    // );
+
+    // simulate_joint(
+    //     &mut joint,
+    //     &mut body0,
+    //     &mut body1,
+    //     1.0 / 60.0,
+    //     100,
+    // );
+
+    // assert_angle_near(
+    //     joint.get_angle(),
+    //     lower_limit,
+    //     1e-2,
+    // );
+}
+
+
 // ------------------------------------------------------------
 // Test 5: Hinge axis alignment
 // ------------------------------------------------------------
@@ -495,7 +590,7 @@ fn test_hinge_axis_alignment() {
     let mut body0 = create_body(Vec3::zero());
     let mut body1 = create_body(Vec3::zero());
 
-    let mut joint = create_joint(
+    let mut joint = create_joint_fix(
         -PI,
         PI,
         RotationAxis::Y

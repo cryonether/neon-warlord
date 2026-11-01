@@ -253,6 +253,8 @@ impl RotationalQuantities {
         // Update angular velocity
         self.omega = 2.0 * Vec3::new(dq.v.x, dq.v.y, dq.v.z) / dt;
 
+        // self.omega *= 0.99;
+
         // Check if > 0
         if dq.s < 0.0 {
             self.omega = -self.omega

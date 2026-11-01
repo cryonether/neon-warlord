@@ -61,7 +61,7 @@ impl GymReacher {
             Vec3::new(0.0, 0.0, 2.0),
             &[
                 Vec3::zero(),
-                Vec3::new(1.0, 1.0, -1.0)
+                Vec3::new(1.0, -1.2, 1.0)
             ],
             MASS,
             radius,
@@ -95,15 +95,15 @@ impl GymReacher {
         let _index_fingertip = physics.add_rigid_body(&fingertip);
 
         let positional_compliance = 0.00;
-        let angular_compliance = 0.00;
+        let angular_compliance = 0.000;
 
         let hinge_rotor = XpbdHingeJoint::new(
             stator.particles[1],
             rotor.particles[0],
-            -1.0 * PI,
-            1.1 * PI,
-            RotationAxis::Y,
-            RotationAxis::Y,
+            -1.5 * PI,
+            1.5 * PI,
+            RotationAxis::X,
+            RotationAxis::X,
             positional_compliance,
             angular_compliance,
         );
@@ -204,8 +204,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
     }
 
     fn update_verlet_physics(&mut self, dt: f32) {
-        // self.physics.step(dt * 0.4);
         self.physics.step(dt * 1.0);
+        // self.physics.step(dt * 1.0);
         // self.verlet_physics.update(dt * 0.4);
 
         // let body = &self.physics.rigid_bodies[self.index_body];
