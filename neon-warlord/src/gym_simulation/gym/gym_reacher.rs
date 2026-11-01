@@ -32,8 +32,8 @@ pub struct GymReacher {
     _index_fingertip: usize,
 
     index_hinge_rotor: usize,
-    // index_hinge_first_arm: usize,
-    // index_hinge_second_arm: usize,
+    index_hinge_first_arm: usize,
+    index_hinge_second_arm: usize,
     // index_hinge_fingertip: usize,
 
     state: State,
@@ -61,22 +61,22 @@ impl GymReacher {
             Vec3::new(0.0, 0.0, 2.0),
             &[
                 Vec3::zero(),
-                Vec3::new(1.0, -1.2, 1.0)
+                Vec3::new(0.4, 0.0, 0.0)
             ],
             MASS,
             radius,
         );
 
         let first_arm = XpbdRigidBody::new(
-            Vec3::new(0.0, 0.0, stator_pos - 0.2),
-            &[Vec3::zero(), Vec3::new(1.0, 1.0, 1.0)],
+            Vec3::new(0.4, 0.0, 2.0),
+            &[Vec3::zero(), Vec3::new(0.8, 0.0, 0.0)],
             MASS,
             radius,
         );
 
         let second_arm = XpbdRigidBody::new(
-            Vec3::new(1.0, 0.0, stator_pos- 0.2),
-            &[Vec3::zero(), Vec3::new(1.0, 1.0, 1.0)],
+            Vec3::new(0.5 + 0.8, 0.0, 2.0),
+            &[Vec3::zero(), Vec3::new(0.8, 0.0, 0.0)],
             MASS,
             radius,
         );
@@ -95,15 +95,15 @@ impl GymReacher {
         let _index_fingertip = physics.add_rigid_body(&fingertip);
 
         let positional_compliance = 0.00;
-        let angular_compliance = 0.000;
+        let angular_compliance = 0.00;
 
         let hinge_rotor = XpbdHingeJoint::new(
             stator.particles[1],
             rotor.particles[0],
             -1.5 * PI,
             1.5 * PI,
-            RotationAxis::X,
-            RotationAxis::X,
+            RotationAxis::Z,
+            RotationAxis::Z,
             positional_compliance,
             angular_compliance,
         );
@@ -111,31 +111,31 @@ impl GymReacher {
             physics.add_hinge_joint(index_stator, index_rotor, hinge_rotor);
 
 
-        // let hinge_first_arm = XpbdHingeJoint::new(
-        //     rotor.particles[1],
-        //     first_arm.particles[0],
-        //     -0.9 * PI,
-        //     0.9 * PI,
-        //     RotationAxis::Y,
-        //     RotationAxis::Y,
-        //     positional_compliance,
-        //     angular_compliance,
-        // );
-        // let index_hinge_first_arm =
-        //     physics.add_hinge_joint(index_rotor, _index_first_arm, hinge_first_arm);
+        let hinge_first_arm = XpbdHingeJoint::new(
+            rotor.particles[1],
+            first_arm.particles[0],
+            -0.9 * PI,
+            0.9 * PI,
+            RotationAxis::Y,
+            RotationAxis::Y,
+            positional_compliance,
+            angular_compliance,
+        );
+        let index_hinge_first_arm =
+            physics.add_hinge_joint(index_rotor, _index_first_arm, hinge_first_arm);
 
-        // let hinge_second_arm = XpbdHingeJoint::new(
-        //     first_arm.particles[1],
-        //     second_arm.particles[0],
-        //     -0.9 * PI,
-        //     0.9 * PI,
-        //     RotationAxis::Y,
-        //     RotationAxis::Y,
-        //     positional_compliance,
-        //     angular_compliance,
-        // );
-        // let index_hinge_second_arm =
-        //     physics.add_hinge_joint(_index_first_arm, _index_second_arm, hinge_second_arm);
+        let hinge_second_arm = XpbdHingeJoint::new(
+            first_arm.particles[1],
+            second_arm.particles[0],
+            -0.9 * PI,
+            0.9 * PI,
+            RotationAxis::Y,
+            RotationAxis::Y,
+            positional_compliance,
+            angular_compliance,
+        );
+        let index_hinge_second_arm =
+            physics.add_hinge_joint(_index_first_arm, _index_second_arm, hinge_second_arm);
 
         // let hinge_fingertip = XpbdHingeJoint::new(
         //     second_arm.particles[1],
@@ -177,8 +177,8 @@ impl GymReacher {
             _index_second_arm,
             _index_fingertip,
             index_hinge_rotor,
-            // index_hinge_first_arm,
-            // index_hinge_second_arm,
+            index_hinge_first_arm,
+            index_hinge_second_arm,
             // index_hinge_fingertip,
             state,
         }
@@ -263,14 +263,14 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
             actions[3] * 10.0,
         ];
 
-        // let hinge_0 = &mut self.physics.hinge_joints[self.index_hinge_rotor].constraint;
-        // hinge_0.set_external_torque(torque[0]);
+        let hinge_0 = &mut self.physics.hinge_joints[self.index_hinge_rotor].constraint;
+        hinge_0.set_external_torque(torque[0]);
 
-        // let hinge_1 = &mut self.physics.hinge_joints[self.index_hinge_first_arm].constraint;
-        // hinge_1.set_external_torque(torque[1]);
+        let hinge_1 = &mut self.physics.hinge_joints[self.index_hinge_first_arm].constraint;
+        hinge_1.set_external_torque(torque[1]);
 
-        // let hinge_2 = &mut self.physics.hinge_joints[self.index_hinge_second_arm].constraint;
-        // hinge_2.set_external_torque(torque[2]);
+        let hinge_2 = &mut self.physics.hinge_joints[self.index_hinge_second_arm].constraint;
+        hinge_2.set_external_torque(torque[2]);
 
         // let hinge_1_1 = &mut self.physics.hinge_joints[self.index_hinge_joint_1_1].constraint;
         // hinge_1_1.set_external_torque(torque[3]);

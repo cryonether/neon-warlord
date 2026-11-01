@@ -109,8 +109,8 @@ where
                 let (action, _mean_action, log_probability) = self.ppo.get_action(&state);
 
                 // update
-                // env.update(&action, dt);
-                // env.update_verlet_physics(dt);
+                env.update(&action, dt);
+                env.update_verlet_physics(dt);
 
                 // reward
                 let (reward, terminated) = env.get_reward();

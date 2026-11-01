@@ -85,7 +85,7 @@ impl XpbdHingeJoint {
 
     pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
 
-        const ITERATIONS: usize = 4;
+        const ITERATIONS: usize = 8;
         // let sub_dt = dt / ITERATIONS as f32;
         let sub_dt = dt;
         for i in 0..ITERATIONS {
@@ -125,14 +125,14 @@ impl XpbdHingeJoint {
             // One axis
 
             // Accurate
-            let cos_alpha = a0.dot(a1); 
-            let n = a0.cross(a1).normalize();
-            let alpha = cos_alpha.acos();
+            // let cos_alpha = a0.dot(a1); 
+            // let n = a0.cross(a1).normalize();
+            // let alpha = cos_alpha.acos();
             
-            if alpha.abs() > 0.1e-6 {
-                self.angular_constraint
-                    .solve(obj_0, obj_1, &n, -alpha, sub_dt);
-            }
+            // if alpha.abs() > 0.1e-6 {
+            //     self.angular_constraint
+            //         .solve(obj_0, obj_1, &n, -alpha, sub_dt);
+            // }
 
             // Fast
             let error = a0.cross(a1);
@@ -288,12 +288,12 @@ impl XpbdHingeJoint {
             a0
         };
 
-        println!(
-            "axis alignment: {:.3}, phi: {:.3}, error: {:.3}",
-            a0.dot(a1),
-            phi,
-            phi - phi_target
-        );
+        // println!(
+        //     "axis alignment: {:.3}, phi: {:.3}, error: {:.3}",
+        //     a0.dot(a1),
+        //     phi,
+        //     phi - phi_target
+        // );
 
         // println!(
         //     "target perpendicularity: {}, actual perpendicularity: {}",
