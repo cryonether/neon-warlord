@@ -91,8 +91,8 @@ where
     pub fn new(mut env: ENV) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
-        let nr_ppo_threads = 1;
-        let nr_gym_threads = 1;
+        let nr_ppo_threads = 16;
+        let nr_gym_threads = 16;
 
         let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
@@ -102,7 +102,8 @@ where
 
         let pos_graph_inputs = pos + Vec3::new(2.2, 1.0, 2.2);
 
-        let pos_env = pos + Vec3::new(2.0, -0.5, 1.0);
+        // let pos_env = pos + Vec3::new(2.0, -0.5, 1.0);
+        let pos_env = Vec3::new(2.0, -0.5, 0.0);
 
         let scale = 0.1;
 
@@ -123,8 +124,8 @@ where
                 n,
                 m,
                 Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 - 0.5, 0.0),
-                // 128,
-                1,
+                128,
+                // 1,
             ))));
 
             gym_worker_thread.push(WorkerThread2::new(format!("Gym Worker {}", i)));
@@ -288,7 +289,7 @@ where
         let (reward, done) = self.env.get_reward();
 
         for (i, val) in new_state.iter().enumerate() {
-            self.graph_inputs.y_push_pop(i, *val * 0.01); // input graph
+            self.graph_inputs.y_push_pop(i, *val * 0.1); // input graph
         }
 
         for (i, val) in action.iter().enumerate() {
@@ -329,34 +330,34 @@ where
             input
         }
 
-        // print!("{}, ", self.ticks);
+        print!("{}, ", self.ticks);
 
-        // print!("reward: ");
-        // print_color(reward, 0.0, 2000.0, PrintColor::PurplePinkYellow);
-        // print!(", ");
+        print!("reward: ");
+        print_color(reward, 0.0, 2000.0, PrintColor::PurplePinkYellow);
+        print!(", ");
 
-        // print!("actor: [ ");
-        // let size = 10;
-        // for i in 0..size {
-        //     let input = create_input(i, size);
-        //     let y_pred = self.ppo.actor.forward(&input);
+        print!("actor: [ ");
+        let size = 10;
+        for i in 0..size {
+            let input = create_input(i, size);
+            let y_pred = self.ppo.actor.forward(&input);
 
-        //     print_color(y_pred[0], -1.0, 1.0, PrintColor::GreenCyanBlue);
-        // }
+            print_color(y_pred[0], -1.0, 1.0, PrintColor::GreenCyanBlue);
+        }
 
-        // print!("], critic: [ ");
-        // let size = 10;
-        // for i in 0..size {
-        //     let input = create_input(i, size);
-        //     let y_pred = self.ppo.critic.forward(&input);
+        print!("], critic: [ ");
+        let size = 10;
+        for i in 0..size {
+            let input = create_input(i, size);
+            let y_pred = self.ppo.critic.forward(&input);
 
-        //     print_color(y_pred[0], 0.0, 10.0, PrintColor::BluePurpleRed);
-        // }
-        // print!("], ");
-        // println!(
-        //     "actor_loss: {:+.6}, critic_loss: {:+.6}",
-        //     actor_loss, critic_loss
-        // );
+            print_color(y_pred[0], 0.0, 10.0, PrintColor::BluePurpleRed);
+        }
+        print!("], ");
+        println!(
+            "actor_loss: {:+.6}, critic_loss: {:+.6}",
+            actor_loss, critic_loss
+        );
 
         if self.ticks.is_multiple_of(100) {
             let reward = self.reward_sum_long / 100.0;

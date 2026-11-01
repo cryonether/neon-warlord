@@ -85,7 +85,7 @@ impl XpbdHingeJoint {
 
     pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
 
-        const ITERATIONS: usize = 8;
+        const ITERATIONS: usize = 4;
         // let sub_dt = dt / ITERATIONS as f32;
         let sub_dt = dt;
         for i in 0..ITERATIONS {

@@ -338,7 +338,7 @@ impl NeonWarlord {
             GymSimulation::new(GymHalfCheetah2::new());
 
         // Reacher
-        let _gym_simulation_5: GymSimulation<12, 4, 16, 2, false, GymReacher> =
+        let _gym_simulation_5: GymSimulation<12, 3, 32, 4, false, GymReacher> =
             GymSimulation::new(GymReacher::new());
 
         let gym_simulation = _gym_simulation_5;

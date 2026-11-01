@@ -23,7 +23,7 @@ type Vec3 = cgmath::Vector3<f32>;
 type Quad = cgmath::Quaternion<f32>;
 type Mat3 = cgmath::Matrix3<f32>;
 
-const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -10.0);
+const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -0.0);
 
 #[derive(Clone)]
 pub struct Xpbd {
@@ -161,7 +161,7 @@ pub struct PositionalQuantities {
     pub pos: Vec3,
 
     // Previous position
-    prev_pos: Vec3,
+    pub prev_pos: Vec3,
 
     // Velocity
     pub vel: Vec3,

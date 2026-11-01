@@ -3,7 +3,7 @@
 
 use std::f32::consts::PI;
 
-use cgmath::Zero;
+use cgmath::{InnerSpace, MetricSpace, Zero};
 
 use crate::{
     gym_simulation::{Vec3, gym::Gym},
@@ -16,7 +16,7 @@ use crate::{
 };
 
 const OBSERVATIONS: usize = 12;
-const ACTIONS: usize = 4;
+const ACTIONS: usize = 3;
 
 const MASS: f32 = 0.1;
 
@@ -28,8 +28,8 @@ pub struct GymReacher {
     index_stator: usize,
     index_rotor: usize,
     _index_first_arm: usize,
-    _index_second_arm: usize,
-    _index_fingertip: usize,
+    index_second_arm: usize,
+    index_goal: usize,
 
     index_hinge_rotor: usize,
     index_hinge_first_arm: usize,
@@ -81,21 +81,21 @@ impl GymReacher {
             radius,
         );
 
-        let fingertip = XpbdRigidBody::new(
+        let goal = XpbdRigidBody::new(
             Vec3::new(2.0, 0.0, stator_pos- 0.2),
             &[Vec3::zero()],
-            MASS,
+            0.0,
             radius,
         );
 
         let index_stator = physics.add_rigid_body(&stator);
         let index_rotor = physics.add_rigid_body(&rotor);
         let _index_first_arm = physics.add_rigid_body(&first_arm);
-        let _index_second_arm = physics.add_rigid_body(&second_arm);
-        let _index_fingertip = physics.add_rigid_body(&fingertip);
+        let index_second_arm = physics.add_rigid_body(&second_arm);
+        let index_goal = physics.add_rigid_body(&goal);
 
         let positional_compliance = 0.00;
-        let angular_compliance = 0.00;
+        let angular_compliance = 0.0001;
 
         let hinge_rotor = XpbdHingeJoint::new(
             stator.particles[1],
@@ -114,8 +114,8 @@ impl GymReacher {
         let hinge_first_arm = XpbdHingeJoint::new(
             rotor.particles[1],
             first_arm.particles[0],
-            -0.9 * PI,
-            0.9 * PI,
+            -1.9 * PI,
+            1.9 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -127,15 +127,15 @@ impl GymReacher {
         let hinge_second_arm = XpbdHingeJoint::new(
             first_arm.particles[1],
             second_arm.particles[0],
-            -0.9 * PI,
-            0.9 * PI,
+            -1.9 * PI,
+            1.9 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
             angular_compliance,
         );
         let index_hinge_second_arm =
-            physics.add_hinge_joint(_index_first_arm, _index_second_arm, hinge_second_arm);
+            physics.add_hinge_joint(_index_first_arm, index_second_arm, hinge_second_arm);
 
         // let hinge_fingertip = XpbdHingeJoint::new(
         //     second_arm.particles[1],
@@ -152,36 +152,46 @@ impl GymReacher {
 
 
         let state = State {
-            _pos_x: 0.0,
-            pos_z: 0.0,
-            vel_x: 0.0,
-            vel_z: 0.0,
-            rot_y: 0.0,
-            leg_angle_0: 0.0,
-            leg_angle_1: 0.0,
-            leg_angle_2: 0.0,
-            leg_angle_3: 0.0,
-            leg_angular_velocity_0: 0.0,
-            leg_angular_velocity_1: 0.0,
-            leg_angular_velocity_2: 0.0,
-            leg_angular_velocity_3: 0.0,
-            actions: [0.0; 4],
+            goal_pos_x: 0.0,
+            goal_pos_y: 0.0,
+            goal_pos_z: 0.0,
+            fingertip_pos_x: 0.0,
+            fingertip_pos_y: 0.0,
+            fingertip_pos_z: 0.0,
+            rotor_angle: 0.0,
+            first_arm_angle: 0.0,
+            second_arm_angle: 0.0,
+            rotor_angular_velocity: 0.0,
+            first_arm_angular_velocity: 0.0,
+            second_arm_angular_velocity: 0.0,
+
+            actions: [0.0; 3],
         };
 
-        Self {
+        let mut obj =Self {
             physics,
             drawer,
             index_stator,
             index_rotor,
             _index_first_arm,
-            _index_second_arm,
-            _index_fingertip,
+            index_second_arm,
+            index_goal,
             index_hinge_rotor,
             index_hinge_first_arm,
             index_hinge_second_arm,
             // index_hinge_fingertip,
             state,
-        }
+        };
+
+        obj.reset();
+
+        obj
+    }
+
+    fn hard_reset(&mut self) {
+        let drawer = self.drawer.clone();
+        *self = Self::new();
+        self.drawer = drawer;
     }
 }
 
@@ -206,31 +216,48 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
     fn update_verlet_physics(&mut self, dt: f32) {
         self.physics.step(dt * 1.0);
         // self.physics.step(dt * 1.0);
-        // self.verlet_physics.update(dt * 0.4);
 
-        // let body = &self.physics.rigid_bodies[self.index_body];
 
-        // let hinge_0_0 = &self.physics.hinge_joints[self.index_hinge_joint_0_0].constraint;
-        // let hinge_1_0 = &self.physics.hinge_joints[self.index_hinge_joint_1_0].constraint;
-        // let hinge_0_1 = &self.physics.hinge_joints[self.index_hinge_joint_0_1].constraint;
-        // let hinge_1_1 = &self.physics.hinge_joints[self.index_hinge_joint_1_1].constraint;
+        let index_goal = self.index_goal;
+        let index_second_arm = self.index_second_arm;
+
+        let index_hinge_rotor = self.index_hinge_rotor;
+        let index_hinge_first_arm = self.index_hinge_first_arm;
+        let index_hinge_second_arm = self.index_hinge_second_arm;
+
+        let goal = &self.physics.rigid_bodies[index_goal];
+        let second_arm = &self.physics.rigid_bodies[index_second_arm];
+       
+        let pos_goal = goal.p.pos;
+        let pos_fingertip = second_arm.particles[1];
+
+        let hinge_rotor = &self.physics.hinge_joints[index_hinge_rotor].constraint;
+        let hinge_first_arm = &self.physics.hinge_joints[index_hinge_first_arm].constraint;
+        let hinge_second_arm = &self.physics.hinge_joints[index_hinge_second_arm].constraint;
+
+
 
         // let state = State {
-        //     _pos_x: body.p.pos.x,
-        //     pos_z: body.p.pos.z,
-        //     vel_x: body.p.vel.x,
-        //     vel_z: body.p.vel.z,
-        //     rot_y: body.r.get_rotation_as_euler().y,
-        //     leg_angle_0: hinge_0_0.get_angle(),
-        //     leg_angle_1: hinge_1_0.get_angle(),
-        //     leg_angle_2: hinge_0_1.get_angle(),
-        //     leg_angle_3: hinge_1_1.get_angle(),
-        //     leg_angular_velocity_0: hinge_0_0.get_angular_velocity(),
-        //     leg_angular_velocity_1: hinge_1_0.get_angular_velocity(),
-        //     leg_angular_velocity_2: hinge_0_1.get_angular_velocity(),
-        //     leg_angular_velocity_3: hinge_1_1.get_angular_velocity(),
-        //     actions: self.state.actions,
+            self.state.goal_pos_x = pos_goal.x;
+            self.state.goal_pos_y = pos_goal.y;
+            self.state.goal_pos_z = pos_goal.z;
+            self.state.fingertip_pos_x = pos_fingertip.x;
+            self.state.fingertip_pos_y = pos_fingertip.y;
+            self.state.fingertip_pos_z = pos_fingertip.z;
+            self.state.rotor_angle = hinge_rotor.get_angle();
+            self.state.first_arm_angle = hinge_first_arm.get_angle();
+            self.state.second_arm_angle = hinge_second_arm.get_angle();
+            self.state.rotor_angular_velocity = hinge_rotor.get_angular_velocity();
+            self.state.first_arm_angular_velocity = hinge_first_arm.get_angular_velocity();
+            self.state.second_arm_angular_velocity = hinge_second_arm.get_angular_velocity();
         // };
+
+        for elem in self.get_state() {
+            if !elem.is_finite() {
+                self.hard_reset();
+                return;
+            }
+        }
 
         // self.state = state;
     }
@@ -238,18 +265,18 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
     fn get_state(&self) -> [f32; OBSERVATIONS] {
         let state = &self.state;
         [
-            state.pos_z,
-            state.vel_x,
-            state.vel_z,
-            state.rot_y,
-            state.leg_angle_0,
-            state.leg_angle_1,
-            state.leg_angle_2,
-            state.leg_angle_3,
-            state.leg_angular_velocity_0,
-            state.leg_angular_velocity_1,
-            state.leg_angular_velocity_2,
-            state.leg_angular_velocity_3,
+            state.goal_pos_x,
+            state.goal_pos_y,
+            state.goal_pos_z,
+            state.fingertip_pos_x,
+            state.fingertip_pos_y,
+            state.fingertip_pos_z,
+            state.rotor_angle,
+            state.first_arm_angle,
+            state.second_arm_angle,
+            state.rotor_angular_velocity,
+            state.first_arm_angular_velocity,
+            state.second_arm_angular_velocity,
         ]
     }
 
@@ -260,7 +287,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
             actions[0] * 10.0,
             actions[1] * 10.0,
             actions[2] * 10.0,
-            actions[3] * 10.0,
         ];
 
         let hinge_0 = &mut self.physics.hinge_joints[self.index_hinge_rotor].constraint;
@@ -279,6 +305,23 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
     }
 
     fn get_reward(&self) -> (f32, bool) {
+
+        let index_goal = self.index_goal;
+        let index_second_arm = self.index_second_arm;
+
+        let goal = &self.physics.rigid_bodies[index_goal];
+        let second_arm = &self.physics.rigid_bodies[index_second_arm];
+
+        let pos_goal = goal.p.pos;
+        let pos_fingertip = second_arm.particles[1];
+        let pos_fingertip = second_arm.local_to_world(&pos_fingertip);
+
+        let distance2 = (pos_fingertip - pos_goal).magnitude2();
+
+        let mut reward = 1.0 - distance2 * 0.2;
+
+
+
         // Reward target velocity
         // let target_velocity = 6.0;
         // let mut reward = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
@@ -292,46 +335,91 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
         // // let vel_z_cost = self.state.vel_z.powi(2);
         // // reward -= vel_z_cost * 0.1;
 
-        // // Penalize huge actions
-        // let mut action_cost = 0.0;
-        // for action in self.state.actions {
-        //     action_cost += action.powi(2);
-        // }
-        // reward -= action_cost * 0.1;
+        // Penalize angular velocity
+        let angular_velocity_cost = self.state.rotor_angular_velocity.powi(2)
+            + self.state.first_arm_angular_velocity.powi(2)
+            + self.state.second_arm_angular_velocity.powi(2);
+        reward -= angular_velocity_cost * 0.01;
 
-        // // No negative rewards
-        // let reward = reward.max(0.0);
+        // Penalize huge actions
+        let mut action_cost = 0.0;
+        for action in self.state.actions {
+            action_cost += action.powi(2);
+        }
+        reward -= action_cost * 0.1;
 
-        (0.0, false)
+        // No negative rewards
+        let reward = reward.max(0.0);
+
+        (reward, false)
     }
 
     fn reset(&mut self) {
-        let alpha = (fastrand::f32() * 2.0 - 1.0) * std::f32::consts::PI;
+        // let x = fastrand::f32() * 2.0 - 1.0;
+        // let y = fastrand::f32() * 2.0 - 1.0;
+        // let z = 0.5 +  fastrand::f32() * 2.0;
+        // let pos_goal = Vec3::new(x, y, z);
 
-        let _pol_sin_alpha = alpha.sin();
-        let _pol_cos_alpha = alpha.cos();
+        let v = get_point_sphere(
+            &Vec3::new(0.0, 0.0, 1.5), 
+            2.0
+        );
+        let pos_goal = v;
 
-        let drawer = self.drawer.clone();
-        *self = Self::new();
-        self.drawer = drawer;
+
+        let index_goal = self.index_goal;
+        let particle_goal = &mut self.physics.rigid_bodies[index_goal];
+
+        particle_goal.p.pos = pos_goal;
+        particle_goal.p.prev_pos = pos_goal;
+
+        // let alpha = (fastrand::f32() * 2.0 - 1.0) * std::f32::consts::PI;
+
+        // let _pol_sin_alpha = alpha.sin();
+        // let _pol_cos_alpha = alpha.cos();
+
+        // let drawer = self.drawer.clone();
+        // *self = Self::new();
+        // self.drawer = drawer;
+        
     }
+
+
+
+
 }
 
 #[derive(Clone)]
 pub struct State {
-    _pos_x: f32,
-    pos_z: f32,
-    vel_x: f32,
-    vel_z: f32,
-    rot_y: f32,
-    leg_angle_0: f32,
-    leg_angle_1: f32,
-    leg_angle_2: f32,
-    leg_angle_3: f32,
-    leg_angular_velocity_0: f32,
-    leg_angular_velocity_1: f32,
-    leg_angular_velocity_2: f32,
-    leg_angular_velocity_3: f32,
+    goal_pos_x: f32,
+    goal_pos_y: f32,
+    goal_pos_z: f32,
 
-    actions: [f32; 4],
+    fingertip_pos_x: f32,
+    fingertip_pos_y: f32,
+    fingertip_pos_z: f32,
+
+    rotor_angle: f32,
+    first_arm_angle: f32,
+    second_arm_angle: f32,
+
+    rotor_angular_velocity: f32,
+    first_arm_angular_velocity: f32,
+    second_arm_angular_velocity: f32,
+
+    actions: [f32; 3],
 }
+
+
+    fn get_point_sphere(p: &Vec3, r: f32) -> Vec3 {
+        loop {
+            let x = (fastrand::f32() * 2.0 - 1.0) * r;
+            let y = (fastrand::f32() * 2.0 - 1.0) * r;
+            let z = (fastrand::f32() * 2.0 - 1.0) * r;
+
+            let v = Vec3::new(x, y, z);
+            if v.magnitude2() <= r.powi(2) {
+                return p + v;
+            }
+        }
+    }
