@@ -92,7 +92,7 @@ where
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
         let nr_ppo_threads = 16;
-        let nr_gym_threads = 16;
+        let nr_gym_threads = 2;
 
         let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
