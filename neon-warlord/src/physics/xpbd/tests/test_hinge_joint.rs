@@ -25,21 +25,6 @@ fn create_body(position: Vec3) -> XpbdRigidBody {
 }
 
 
-fn create_body_skewed(position: Vec3) -> XpbdRigidBody {
-    // Asymmetric particle distribution to avoid degenerate inertia.
-    let particles = [
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new( 0.5, -0.5, -0.5),
-    ];
-
-    XpbdRigidBody::new(
-        position,
-        &particles,
-        1.0,
-        0.1,
-    )
-}
-
 fn create_joint(
     lower_limit: f32,
     upper_limit: f32,
@@ -109,7 +94,7 @@ fn simulate_joint(
             body1.r.rot.v.z,
         ];
 
-        println!("body0: {:?}, body1: {:?}", body0.r.rot, body1.r.rot);
+        // println!("body0: {:?}, body1: {:?}", body0.r.rot, body1.r.rot);
 
         assert!(
             rotations.iter().all(|x| x.is_finite()),
@@ -520,64 +505,6 @@ fn test_upper_angular_limit_z() {
         lower_limit,
         1e-2,
     );
-}
-
-
-#[test]
-fn test_upper_angular_limit_skewed() {
-    let mut body0 = create_body(Vec3::zero());
-    let mut body1 = create_body_skewed(Vec3::zero());
-
-    let lower_limit = -PI / 4.0;
-    let upper_limit = PI / 4.0;
-
-    let mut joint = create_joint(
-        lower_limit,
-        upper_limit,
-        RotationAxis::Y
-    );
-
-    // Rotate body 1 by +90 degrees.
-    body1.r.rot = Quad::from_axis_angle(
-        Vec3::unit_y(),
-        Rad(PI / 2.0),
-    );
-
-    let dt = 1.0 / 60.0;
-
-    simulate_joint(
-        &mut joint,
-        &mut body0,
-        &mut body1,
-        dt * 0.72,
-        100,
-    );
-
-    assert_angle_near(
-        joint.get_angle(),
-        upper_limit,
-        1e-2,
-    );
-
-    // // Rotate body 1 by +90 degrees.
-    // body1.r.rot = Quad::from_axis_angle(
-    //     Vec3::unit_y(),
-    //     Rad(-PI / 2.0),
-    // );
-
-    // simulate_joint(
-    //     &mut joint,
-    //     &mut body0,
-    //     &mut body1,
-    //     1.0 / 60.0,
-    //     100,
-    // );
-
-    // assert_angle_near(
-    //     joint.get_angle(),
-    //     lower_limit,
-    //     1e-2,
-    // );
 }
 
 

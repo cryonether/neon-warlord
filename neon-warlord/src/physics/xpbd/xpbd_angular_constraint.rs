@@ -146,9 +146,6 @@ impl XpbdAngularConstraint {
         r0.rot = r0.rot.normalize();
         r1.rot = r1.rot.normalize();
 
-        // apply_angular_correction(&mut r0.rot, 0.5 * i_p0 );
-        // apply_angular_correction(&mut r1.rot, -0.5 * i_p1 );
-
         // Calculate torque
         self.torque = self.lagrange_multiplier * n / (dt * dt);
     }
@@ -197,20 +194,4 @@ impl XpbdAngularConstraint {
 
         (corr / angle, angle)
     }
-}
-
-
-fn apply_angular_correction(rot: &mut Quad, delta: Vec3) {
-    let angle = delta.magnitude();
-
-    if angle < 1e-8 {
-        return;
-    }
-
-    let dq = Quad::from_axis_angle(
-        delta / angle,
-        Rad(angle),
-    );
-
-    *rot = (dq * *rot).normalize();
 }

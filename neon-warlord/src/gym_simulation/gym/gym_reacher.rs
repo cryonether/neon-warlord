@@ -25,8 +25,8 @@ pub struct GymReacher {
     pub physics: Xpbd,
     pub drawer: XpbdDrawer,
 
-    index_stator: usize,
-    index_rotor: usize,
+    _index_stator: usize,
+    _index_rotor: usize,
     _index_first_arm: usize,
     index_second_arm: usize,
     index_goal: usize,
@@ -34,7 +34,6 @@ pub struct GymReacher {
     index_hinge_rotor: usize,
     index_hinge_first_arm: usize,
     index_hinge_second_arm: usize,
-    // index_hinge_fingertip: usize,
 
     state: State,
 }
@@ -137,20 +136,6 @@ impl GymReacher {
         let index_hinge_second_arm =
             physics.add_hinge_joint(_index_first_arm, index_second_arm, hinge_second_arm);
 
-        // let hinge_fingertip = XpbdHingeJoint::new(
-        //     second_arm.particles[1],
-        //     fingertip.particles[0],
-        //     -0.5 * PI,
-        //     0.5 * PI,
-        //     RotationAxis::Y,
-        //     RotationAxis::Y,
-        //     positional_compliance,
-        //     angular_compliance,
-        // );
-        // let index_hinge_fingertip =
-        //     physics.add_hinge_joint(_index_second_arm, _index_fingertip, hinge_fingertip);
-
-
         let state = State {
             goal_pos_x: 0.0,
             goal_pos_y: 0.0,
@@ -171,15 +156,14 @@ impl GymReacher {
         let mut obj =Self {
             physics,
             drawer,
-            index_stator,
-            index_rotor,
+            _index_stator: index_stator,
+            _index_rotor: index_rotor,
             _index_first_arm,
             index_second_arm,
             index_goal,
             index_hinge_rotor,
             index_hinge_first_arm,
             index_hinge_second_arm,
-            // index_hinge_fingertip,
             state,
         };
 
@@ -236,7 +220,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
         let hinge_second_arm = &self.physics.hinge_joints[index_hinge_second_arm].constraint;
 
 
-
         // let state = State {
             self.state.goal_pos_x = pos_goal.x;
             self.state.goal_pos_y = pos_goal.y;
@@ -281,8 +264,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
     }
 
     fn update(&mut self, actions: &[f32; ACTIONS], _dt: f32) {
-        // self.apply_static_constraint();
-
         let torque = [
             actions[0] * 10.0,
             actions[1] * 10.0,
@@ -297,9 +278,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
 
         let hinge_2 = &mut self.physics.hinge_joints[self.index_hinge_second_arm].constraint;
         hinge_2.set_external_torque(torque[2]);
-
-        // let hinge_1_1 = &mut self.physics.hinge_joints[self.index_hinge_joint_1_1].constraint;
-        // hinge_1_1.set_external_torque(torque[3]);
 
         self.state.actions = *actions;
     }
@@ -319,21 +297,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
         let distance2 = (pos_fingertip - pos_goal).magnitude2();
 
         let mut reward = 1.0 - distance2 * 0.2;
-
-
-
-        // Reward target velocity
-        // let target_velocity = 6.0;
-        // let mut reward = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
-
-        // // Penalize rotation
-        // let rot_cost = self.state.rot_y.powi(2);
-        // reward -= rot_cost * 0.1;
-        // // println!("self.state.rot_y: {}", self.state.rot_y);
-
-        // // Penalize vel z
-        // // let vel_z_cost = self.state.vel_z.powi(2);
-        // // reward -= vel_z_cost * 0.1;
 
         // Penalize angular velocity
         let angular_velocity_cost = self.state.rotor_angular_velocity.powi(2)
@@ -355,11 +318,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
     }
 
     fn reset(&mut self) {
-        // let x = fastrand::f32() * 2.0 - 1.0;
-        // let y = fastrand::f32() * 2.0 - 1.0;
-        // let z = 0.5 +  fastrand::f32() * 2.0;
-        // let pos_goal = Vec3::new(x, y, z);
-
         let v = get_point_sphere(
             &Vec3::new(0.0, 0.0, 1.5), 
             2.0
@@ -373,20 +331,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
         particle_goal.p.pos = pos_goal;
         particle_goal.p.prev_pos = pos_goal;
 
-        // let alpha = (fastrand::f32() * 2.0 - 1.0) * std::f32::consts::PI;
-
-        // let _pol_sin_alpha = alpha.sin();
-        // let _pol_cos_alpha = alpha.cos();
-
         // let drawer = self.drawer.clone();
         // *self = Self::new();
         // self.drawer = drawer;
-        
     }
-
-
-
-
 }
 
 #[derive(Clone)]
@@ -411,15 +359,15 @@ pub struct State {
 }
 
 
-    fn get_point_sphere(p: &Vec3, r: f32) -> Vec3 {
-        loop {
-            let x = (fastrand::f32() * 2.0 - 1.0) * r;
-            let y = (fastrand::f32() * 2.0 - 1.0) * r;
-            let z = (fastrand::f32() * 2.0 - 1.0) * r;
+fn get_point_sphere(p: &Vec3, r: f32) -> Vec3 {
+    loop {
+        let x = (fastrand::f32() * 2.0 - 1.0) * r;
+        let y = (fastrand::f32() * 2.0 - 1.0) * r;
+        let z = (fastrand::f32() * 2.0 - 1.0) * r;
 
-            let v = Vec3::new(x, y, z);
-            if v.magnitude2() <= r.powi(2) {
-                return p + v;
-            }
+        let v = Vec3::new(x, y, z);
+        if v.magnitude2() <= r.powi(2) {
+            return p + v;
         }
     }
+}

@@ -86,8 +86,6 @@ impl XpbdHingeJoint {
     pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
 
         const ITERATIONS: usize = 4;
-        // let sub_dt = dt / ITERATIONS as f32;
-        let sub_dt = dt;
         for i in 0..ITERATIONS {
 
             // ##########################################################################
@@ -100,7 +98,7 @@ impl XpbdHingeJoint {
                 obj_1,
                 &attachment_point_0,
                 &attachment_point_1,
-                sub_dt,
+                dt,
             );
 
             // ##########################################################################
@@ -141,7 +139,7 @@ impl XpbdHingeJoint {
             
             if error_magnitude > 0.1e-6 {
                 self.angular_constraint
-                    .solve(obj_0, obj_1, &n, -error_magnitude, sub_dt);
+                    .solve(obj_0, obj_1, &n, -error_magnitude, dt);
             }
 
 
@@ -371,7 +369,7 @@ impl RotationAxis {
 
 
 
-pub fn calculate_rotation_error_2(rotation_0: &Quad, rotation_1: &Quad) -> (Vec3, f32) {
+pub fn _calculate_rotation_error_2(rotation_0: &Quad, rotation_1: &Quad) -> (Vec3, f32) {
     let mut q_err = (rotation_0 * rotation_1.conjugate()).normalize();
 
     // Choose the shortest rotation.
