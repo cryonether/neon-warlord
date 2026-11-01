@@ -1,6 +1,6 @@
 //! A angular constraint of two rigid bodies
 
-use cgmath::{InnerSpace, Rad, Rotation3, Zero};
+use cgmath::{InnerSpace, Zero};
 
 use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
 

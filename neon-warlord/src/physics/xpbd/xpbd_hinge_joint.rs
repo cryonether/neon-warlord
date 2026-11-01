@@ -86,7 +86,7 @@ impl XpbdHingeJoint {
     pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
 
         const ITERATIONS: usize = 4;
-        for i in 0..ITERATIONS {
+        for _i in 0..ITERATIONS {
 
             // ##########################################################################
             // 1) Position constrain
@@ -112,10 +112,10 @@ impl XpbdHingeJoint {
             let a0 = r0.rot.rotate_vector(self.a0);
             let a1 = r1.rot.rotate_vector(self.a1);
 
-            let b0 = r0.rot.rotate_vector(self.b0);
-            let b1 = r1.rot.rotate_vector(self.b1);
+            let _b0 = r0.rot.rotate_vector(self.b0);
+            let _b1 = r1.rot.rotate_vector(self.b1);
 
-            let c0 = r0.rot.rotate_vector(self.c0);
+            let _c0 = r0.rot.rotate_vector(self.c0);
             let _c1 = r1.rot.rotate_vector(self.c1);
             
 
@@ -251,7 +251,7 @@ impl XpbdHingeJoint {
         let b0 = r0.rot.rotate_vector(self.b0);
         let b1 = r1.rot.rotate_vector(self.b1);
 
-        let c0 = r0.rot.rotate_vector(self.c0);
+        let _c0 = r0.rot.rotate_vector(self.c0);
         let _c1 = r1.rot.rotate_vector(self.c1);
 
         obj_0.r.external_torque += self.external_torque * a0;

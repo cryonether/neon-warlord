@@ -3,7 +3,7 @@
 
 use std::f32::consts::PI;
 
-use cgmath::{InnerSpace, MetricSpace, Zero};
+use cgmath::{InnerSpace, Zero};
 
 use crate::{
     gym_simulation::{Vec3, gym::Gym},
