@@ -90,177 +90,74 @@ impl XpbdHingeJoint {
         let sub_dt = dt;
         for i in 0..ITERATIONS {
 
-        
+            // ##########################################################################
+            // 1) Position constrain
+            let attachment_point_0 = obj_0.local_to_world(&self.attachment_point_0);
+            let attachment_point_1 = obj_1.local_to_world(&self.attachment_point_1);
+
+            self.positional_constraint.solve(
+                obj_0,
+                obj_1,
+                &attachment_point_0,
+                &attachment_point_1,
+                sub_dt,
+            );
+
+            // ##########################################################################
+            // 2) Axis constrain
+
+            let _p0 = &obj_0.p;
+            let r0 = &obj_0.r;
+            let _p1 = &obj_1.p;
+            let r1 = &obj_1.r;
+
+            let a0 = r0.rot.rotate_vector(self.a0);
+            let a1 = r1.rot.rotate_vector(self.a1);
+
+            let b0 = r0.rot.rotate_vector(self.b0);
+            let b1 = r1.rot.rotate_vector(self.b1);
+
+            let c0 = r0.rot.rotate_vector(self.c0);
+            let _c1 = r1.rot.rotate_vector(self.c1);
+            
+
+            // ########################################################################
+            // One axis
+
+            // Accurate
+            let cos_alpha = a0.dot(a1); 
+            let n = a0.cross(a1).normalize();
+            let alpha = cos_alpha.acos();
+            
+            if alpha.abs() > 0.1e-6 {
+                self.angular_constraint
+                    .solve(obj_0, obj_1, &n, -alpha, sub_dt);
+            }
+
+            // Fast
+            let error = a0.cross(a1);
+            let error_magnitude = error.magnitude();
+            let n = error / error_magnitude;
+            
+            if error_magnitude > 0.1e-6 {
+                self.angular_constraint
+                    .solve(obj_0, obj_1, &n, -error_magnitude, sub_dt);
+            }
 
 
-        // ##########################################################################
-        // 1) Position constrain
-        let attachment_point_0 = obj_0.local_to_world(&self.attachment_point_0);
-        let attachment_point_1 = obj_1.local_to_world(&self.attachment_point_1);
+            // println!(" alpha: {:.3}, a1_a0: {:.3}, n: {:?}, omega_0: {:?}, omega_1: {:?}", 
+            //     alpha, 
+            //     cos_alpha, 
+            //     n, 
+            //     obj_0.r.omega,
+            //     obj_1.r.omega
+            // );
 
-        self.positional_constraint.solve(
-            obj_0,
-            obj_1,
-            &attachment_point_0,
-            &attachment_point_1,
-            sub_dt,
-        );
-
-        let _p0 = &obj_0.p;
-        let r0 = &obj_0.r;
-        let _p1 = &obj_1.p;
-        let r1 = &obj_1.r;
-
-        let a0 = r0.rot.rotate_vector(self.a0);
-        let a1 = r1.rot.rotate_vector(self.a1);
-
-        let b0 = r0.rot.rotate_vector(self.b0);
-        let b1 = r1.rot.rotate_vector(self.b1);
-
-        let c0 = r0.rot.rotate_vector(self.c0);
-        let _c1 = r1.rot.rotate_vector(self.c1);
-
-        // ##########################################################################
-        // 2) Axis constrain
-
-        // let cos = a0.dot(a1);
-        // let sin = b0.dot(a1);
-        // let n = c0;
-
-        // let phi = sin.atan2(cos);
-        // self.angular_constraint_2
-        //     .solve(obj_0, obj_1, &n, -phi, dt);
-
-        // println!(" phi: {:.3}, sin: {:.3}, cos: {:.3}, a0: {:?}, a1: {:?}, n: {:?}, omega_0: {:?}, omega_1: {:?}", 
-        //     phi, 
-        //     sin, 
-        //     cos, 
-        //     a0, 
-        //     a1, 
-        //     n, 
-        //     obj_0.r.omega,
-        //     obj_1.r.omega
-        // );
-
-        // ########################################################################
-        // Two axis
-
-        // let a1_a0 = a0.dot(a1);
-        // let a1_b0 = b0.dot(a1);
-        // let a1_c0 = c0.dot(a1);
-
-        // let phi = a1_b0.atan2(a1_a0);
-        // let theta = a1_c0.atan2(a1_a0);
-
-        // self.angular_constraint_2
-        //     .solve(obj_0, obj_1, &c0, -phi, dt);
-
-        // self.angular_constraint
-        //     .solve(obj_0, obj_1, &b0, theta, dt);
-
-
-        // println!(" phi: {:.3}, sin: {:.3}, cos: {:.3}, a0: {:?}, a1: {:?}, n: {:?}, omega_0: {:?}, omega_1: {:?}", 
-        //     phi, 
-        //     a1_b0, 
-        //     a1_a0, 
-        //     a0, 
-        //     a1, 
-        //     c0, 
-        //     obj_0.r.omega,
-        //     obj_1.r.omega
-        // );
-
-
-        // ########################################################################
-        // One axis
-
-        let cos_alpha = a0.dot(a1); // cos
-        let n = a0.cross(a1).normalize();
-        let alpha = cos_alpha.acos();
-        
-        if alpha.abs() > 0.1e-6 {
-            self.angular_constraint
-                .solve(obj_0, obj_1, &n, -alpha, sub_dt);
         }
 
-
-        // println!(" alpha: {:.3}, a1_a0: {:.3}, n: {:?}, omega_0: {:?}, omega_1: {:?}", 
-        //     alpha, 
-        //     cos_alpha, 
-        //     n, 
-        //     obj_0.r.omega,
-        //     obj_1.r.omega
-        // );
-
-    }
-
         // ########################################################################
 
-        // let cos = b0.dot(a1);
-        // let sin = c0.dot(a1);
-        // let n = a0;
 
-        // let phi = sin.atan2(cos);
-        // self.angular_constraint
-        //     .solve(obj_0, obj_1, &n, -phi, dt);
-
-
-        // // Angular error between hinge axes.
-        // let error = a0.cross(a1);
-
-        // // Two independent constraint directions.
-        // let error_b = error.dot(b0);
-        // let error_c = error.dot(c0);
-
-        // self.angular_constraint.solve(
-        //     obj_0,
-        //     obj_1,
-        //     &b0,
-        //     -error_b,
-        //     dt,
-        // );
-
-        // self.angular_constraint_2.solve(
-        //     obj_0,
-        //     obj_1,
-        //     &c0,
-        //     -error_c,
-        //     dt,
-        // );
-
-        // let n = a0.cross(a1);
-        // let sin = n.magnitude();
-        // if sin > 0.01 {
-        //     let cos = a0.dot(a1);
-        //     let phi = sin.atan2(cos);
-        //     let n = n / sin;
-        //     self.angular_constraint_2
-        //         .solve(obj_0, obj_1, &n, -phi, dt);
-
-        //     println!(" phi: {:.3}, sin: {:.3}, cos: {:.3}, a0: {:?}, a1: {:?}, n: {:?}, ", phi, sin, cos, a0, a1, n, );
-        // }
-        
-
-        // let error_1 = b0.dot(a1);
-        // let error_2 = c0.dot(a1);
-
-        // self.angular_constraint
-        //     .solve(obj_0, obj_1, &c0, -error_1, dt);
-
-        // self.angular_constraint_2
-        //     .solve(obj_0, obj_1, &b0, -error_2, dt);
-
-        // let (n, theta) = calculate_rotation_error_2(&r0.rot, &r1.rot);
-
-        // let n = Vec3::new(1.0, 1.0, 0.0).normalize();
-
-        // self.angular_constraint_2
-        //     .solve(obj_0, obj_1, &c0, 0.001, dt);
-
-        // ##########################################################################
-        // Apply external torque
-        // obj_0.r.external_torque += self.external_torque * a0;
-        // obj_1.r.external_torque -= self.external_torque * a1;
 
         // ##########################################################################
         // Test 0: Align both angles
@@ -343,7 +240,7 @@ impl XpbdHingeJoint {
         // );
 
         // ##########################################################################
-        // Test 3: Limit the target angle between alpha and beta
+        // Apply external torque
 
         let _p0 = &obj_0.p;
         let r0 = &obj_0.r;
@@ -359,13 +256,15 @@ impl XpbdHingeJoint {
         let c0 = r0.rot.rotate_vector(self.c0);
         let _c1 = r1.rot.rotate_vector(self.c1);
 
+        obj_0.r.external_torque += self.external_torque * a0;
+        obj_1.r.external_torque -= self.external_torque * a1;
+
+        // ##########################################################################
+        // 3: Limit the target angle between alpha and beta
+
 
         let alpha = self.angle_limit_0;
         let beta = self.angle_limit_1;
-
-        // let n = a0;
-        // let n0 = b0;
-        // let n1 = b1;
 
         let sin_phi = (b0.cross(b1)).dot(a0);
         let cos_phi = b0.dot(b1);
@@ -413,11 +312,11 @@ impl XpbdHingeJoint {
             .solve(obj_0, obj_1, &axis, angle, dt);
 
         // Save angle
-        // self.phi = phi;
+        self.phi = phi;
 
         // // Calculate angular velocity
         let omega_rel = obj_1.r.omega - obj_0.r.omega;
-        // self.angular_velocity = omega_rel.dot(n);
+        self.angular_velocity = omega_rel.dot(a0);
     }
 
     pub fn reset_lagrange_multiplier(&mut self) {
