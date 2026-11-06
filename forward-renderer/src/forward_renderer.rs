@@ -283,7 +283,7 @@ impl ForwardRenderer {
         Self::side_view_point(&mut camera);
 
         // light camera
-        let position = cgmath::Vector3::new(0.0, 80.0, 20.0);
+        let position = cgmath::Vector3::new(0.0, 60.0, 40.0);
         let look_at = cgmath::Vector3::new(0.0, 0.0, 0.0);
         let mut camera_light = Camera::new(cgmath::Point3::from_vec(position), yaw, pitch);
         camera_light.set_view_direction(look_at - position);
@@ -525,6 +525,8 @@ impl ForwardRenderer {
         animations: &[&dyn AnimationShaderDraw],
         vertex_color_objects: &[&dyn VertexColorShaderDraw],
         vertex_color_objects_lines: &[&dyn VertexColorShaderDrawLines],
+        particles_bilboard_sphere: &[&dyn ParticleShaderDraw],
+        particles_rectangle: &[&dyn ParticleShaderTwoPointDraw],
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Shadow Map Render Pass"),
@@ -584,6 +586,20 @@ impl ForwardRenderer {
             self.pipeline_lines
                 .draw_lines(&mut render_pass, camera, *elem);
         }
+
+        for elem in particles_bilboard_sphere {
+            self.pipeline_billboard_sphere.draw(
+                &mut render_pass,
+                camera,
+                *elem,
+            );
+        }
+
+        // for elem in particles_rectangle {
+        //     self.pipeline_rectangle
+        //         .draw(&mut render_pass, camera, *elem);
+        // }
+
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -823,6 +839,8 @@ impl ForwardRenderer {
             animations,
             vertex_color_objects,
             vertex_color_objects_lines,
+            particles_bilboard_sphere,
+            particles_rectangle,
         );
 
         self.render_forward(
