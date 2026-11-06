@@ -589,18 +589,14 @@ impl ForwardRenderer {
         }
 
         for elem in particles_bilboard_sphere {
-            self.pipeline_billboard_sphere.draw(
-                &mut render_pass,
-                camera,
-                *elem,
-            );
+            self.pipeline_billboard_sphere
+                .draw(&mut render_pass, camera, *elem);
         }
 
         // for elem in particles_rectangle {
         //     self.pipeline_rectangle
         //         .draw(&mut render_pass, camera, *elem);
         // }
-
     }
 
     #[allow(clippy::too_many_arguments)]

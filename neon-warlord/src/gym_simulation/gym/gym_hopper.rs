@@ -69,16 +69,15 @@ impl GymHopper {
         let foot = XpbdRigidBody::new(
             Vec3::new(0.0, 0.0, 0.4),
             &[
-                Vec3::zero(), 
-                Vec3::new( a, -a, -0.2),
-                Vec3::new( a, a, -0.2),
+                Vec3::zero(),
+                Vec3::new(a, -a, -0.2),
+                Vec3::new(a, a, -0.2),
                 Vec3::new(-a, a, -0.2),
                 Vec3::new(-a, -a, -0.2),
             ],
             MASS,
             radius,
         );
-
 
         let index_leg_0 = physics.add_rigid_body(&leg_0);
         let index_leg_1 = physics.add_rigid_body(&leg_1);
@@ -110,8 +109,7 @@ impl GymHopper {
             positional_compliance,
             angular_compliance,
         );
-        let index_hinge_leg_1 =
-            physics.add_hinge_joint(index_leg_1, _index_leg_2, hinge_leg_1);
+        let index_hinge_leg_1 = physics.add_hinge_joint(index_leg_1, _index_leg_2, hinge_leg_1);
 
         let hinge_leg_2 = XpbdHingeJoint::new(
             leg_2.particles[1],
@@ -123,8 +121,7 @@ impl GymHopper {
             positional_compliance,
             angular_compliance,
         );
-        let index_hinge_leg_2 =
-            physics.add_hinge_joint(_index_leg_2, index_foot, hinge_leg_2);
+        let index_hinge_leg_2 = physics.add_hinge_joint(_index_leg_2, index_foot, hinge_leg_2);
 
         let state = State {
             pos_z: 0.0,
@@ -139,10 +136,9 @@ impl GymHopper {
             angular_velocity_joint_0: 0.0,
             angular_velocity_joint_1: 0.0,
             angular_velocity_joint_2: 0.0,
-            
+
             actions: [0.0; 3],
         };
-
 
         let obj = Self {
             physics,
@@ -203,12 +199,11 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHopper {
         let leg_0 = &self.physics.rigid_bodies[index_leg_0];
         let leg_1 = &self.physics.rigid_bodies[index_leg_1];
         let leg_2 = &self.physics.rigid_bodies[index_leg_2];
-        let _foot =  &self.physics.rigid_bodies[index_foot];
+        let _foot = &self.physics.rigid_bodies[index_foot];
 
         let hinge_leg_0 = &self.physics.hinge_joints[index_hinge_leg_0].constraint;
         let hinge_leg_1 = &self.physics.hinge_joints[index_hinge_leg_1].constraint;
         let hinge_leg_2 = &self.physics.hinge_joints[index_hinge_leg_2].constraint;
-
 
         let pos_leg_0 = leg_0.p.pos;
         let rot_leg_0 = leg_0.r.get_rotation_as_euler();
@@ -216,7 +211,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHopper {
         let vel_leg_0 = leg_0.p.vel;
         let _vel_leg_1 = leg_1.p.vel;
         let _vel_leg_2 = leg_2.p.vel;
-
 
         self.state.pos_z = pos_leg_0.z;
         self.state.angle_x = rot_leg_0.x;
@@ -258,11 +252,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHopper {
     }
 
     fn update(&mut self, actions: &[f32; ACTIONS], _dt: f32) {
-        let torque = [
-            actions[0] * 40.0, 
-            actions[1] * 40.0, 
-            actions[2] * 40.0
-        ];
+        let torque = [actions[0] * 40.0, actions[1] * 40.0, actions[2] * 40.0];
 
         let hinge_0 = &mut self.physics.hinge_joints[self.index_hinge_leg_0].constraint;
         hinge_0.set_external_torque(torque[0]);
@@ -287,14 +277,14 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHopper {
         let angle_hinge_1 = self.state.angle_joint_1;
         let angle_hinge_2 = self.state.angle_joint_2;
 
-        // println!("angle_hinge_0: {}, angle_hinge_1: {}, angle_hinge_2: {}", 
-        //     angle_hinge_0, 
+        // println!("angle_hinge_0: {}, angle_hinge_1: {}, angle_hinge_2: {}",
+        //     angle_hinge_0,
         //     angle_hinge_1,
         //     angle_hinge_2,
         // );
 
         let target_velocity = 3.0;
-        let vel =  1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
+        let vel = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
 
         let mut reward = 1.0 + vel * 0.5;
 
@@ -302,11 +292,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHopper {
         let angle_cost = angle_x.powi(2) + angle_y.powi(2);
         reward -= angle_cost * 1.0;
 
-
         // Penalize hinge angle
-        let angle_hinge_cost = angle_hinge_0.powi(2) + angle_hinge_1.powi(2) + angle_hinge_2.powi(2);
+        let angle_hinge_cost =
+            angle_hinge_0.powi(2) + angle_hinge_1.powi(2) + angle_hinge_2.powi(2);
         reward -= angle_hinge_cost * 0.01;
-
 
         // // Penalize angular velocity
         // let angular_velocity_cost = self.state.leg_1_angular_velocity.powi(2)
@@ -328,7 +317,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHopper {
         //     return (10.0, true);
         // }
 
-        if angle_x.powi(2) > 0.4 || angle_y.powi(2) > 0.4 || pos_z < 1.0{
+        if angle_x.powi(2) > 0.4 || angle_y.powi(2) > 0.4 || pos_z < 1.0 {
             return (0.0, true);
         }
 
@@ -360,7 +349,6 @@ pub struct State {
     angle_x: f32,
     angle_y: f32,
     // angle_z: f32,
-
     vel_x: f32,
     vel_y: f32,
     vel_z: f32,
