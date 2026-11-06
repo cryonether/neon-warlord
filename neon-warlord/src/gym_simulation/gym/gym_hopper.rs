@@ -144,7 +144,7 @@ impl GymHopper {
         };
 
 
-        let mut obj = Self {
+        let obj = Self {
             physics,
             drawer,
             index_leg_2: index_leg_0,
@@ -278,7 +278,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHopper {
 
     fn get_reward(&self) -> (f32, bool) {
         let pos_z = self.state.pos_z;
-        let vel_x = self.state.vel_x;
+        let _vel_x = self.state.vel_x;
 
         let angle_x = self.state.angle_x;
         let angle_y = self.state.angle_y;
@@ -337,7 +337,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHopper {
 
     fn reset(&mut self) {
         let v = get_point_sphere(&Vec3::new(0.0, 0.0, 2.0), 1.8);
-        let pos_goal = v;
+        let _pos_goal = v;
 
         // let index_goal = self.index_goal;
         // let particle_goal = &mut self.physics.rigid_bodies[index_goal];

@@ -526,7 +526,7 @@ impl ForwardRenderer {
         vertex_color_objects: &[&dyn VertexColorShaderDraw],
         vertex_color_objects_lines: &[&dyn VertexColorShaderDrawLines],
         particles_bilboard_sphere: &[&dyn ParticleShaderDraw],
-        particles_rectangle: &[&dyn ParticleShaderTwoPointDraw],
+        _particles_rectangle: &[&dyn ParticleShaderTwoPointDraw],
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Shadow Map Render Pass"),
