@@ -127,6 +127,10 @@ where
                     truncated,
                 );
 
+                if terminated {
+                    env.reset();
+                }
+
                 if *ticks >= max_steps && i >= self.nr_steps - 1 {
                     env.reset();
                     *ticks = 0;

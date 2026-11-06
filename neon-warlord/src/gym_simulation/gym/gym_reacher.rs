@@ -299,11 +299,15 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
         // No negative rewards
         let reward = reward.max(0.0);
 
+        if distance2 < 0.1 {
+            return (10.0, true)
+        }
+
         (reward, false)
     }
 
     fn reset(&mut self) {
-        let v = get_point_sphere(&Vec3::new(0.0, 0.0, 1.5), 2.0);
+        let v = get_point_sphere(&Vec3::new(0.0, 0.0, 2.0), 1.8);
         let pos_goal = v;
 
         let index_goal = self.index_goal;
