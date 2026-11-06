@@ -517,6 +517,7 @@ impl ForwardRenderer {
     //     );
     // }
 
+    #[allow(clippy::too_many_arguments)]
     fn render_shadow_map(
         &self,
         view: &wgpu::TextureView,
