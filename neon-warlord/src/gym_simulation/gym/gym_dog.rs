@@ -72,6 +72,8 @@ impl GymDog {
             radius,
         );
 
+        // Upper legs
+
         let log_0_0 = XpbdRigidBody::new(
             Vec3::new(-1.0, 0.5, 1.5),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
@@ -101,6 +103,7 @@ impl GymDog {
             radius,
         );
 
+        // Lower legs
 
         let log_0_1 = XpbdRigidBody::new(
             Vec3::new(-1.0, 0.5, 1.0),
@@ -115,6 +118,21 @@ impl GymDog {
             MASS,
             radius,
         );
+
+        let log_1_1 = XpbdRigidBody::new(
+            Vec3::new(1.0, 0.5, 1.0),
+            &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
+            MASS,
+            radius,
+        );
+
+        let log_1_1 = XpbdRigidBody::new(
+            Vec3::new(1.0, 0.5, 1.0),
+            &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
+            MASS,
+            radius,
+        );
+
 
         let index_body = physics.add_rigid_body(&body);
         let _index_log_0_0 = physics.add_rigid_body(&log_0_0);
