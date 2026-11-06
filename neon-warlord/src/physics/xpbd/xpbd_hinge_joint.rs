@@ -84,7 +84,7 @@ impl XpbdHingeJoint {
     }
 
     pub fn solve(&mut self, obj_0: &mut XpbdRigidBody, obj_1: &mut XpbdRigidBody, dt: f32) {
-        const ITERATIONS: usize = 4;
+        const ITERATIONS: usize = 1;
         for _i in 0..ITERATIONS {
             // ##########################################################################
             // 1) Position constrain
