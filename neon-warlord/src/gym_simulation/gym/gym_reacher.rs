@@ -300,7 +300,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
         let reward = reward.max(0.0);
 
         if distance2 < 0.1 {
-            return (10.0, true)
+            return (10.0, true);
         }
 
         (reward, false)
