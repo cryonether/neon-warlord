@@ -319,7 +319,7 @@ where
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop_index(2);
 
-        if self.ticks.is_multiple_of(1000) {
+        if self.ticks.is_multiple_of(5000) {
             self.env.reset();
         }
 

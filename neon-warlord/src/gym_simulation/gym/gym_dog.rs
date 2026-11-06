@@ -450,7 +450,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let mut reward = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
 
         // Penalize rotation
-        let rot_cost = self.state.rot_y.powi(2);
+        let rot_cost = self.state.rot_y.powi(2) + self.state.rot_x.powi(2);
         reward -= rot_cost * 0.1;
         // println!("self.state.rot_y: {}", self.state.rot_y);
 
@@ -464,6 +464,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             action_cost += action.powi(2);
         }
         reward -= action_cost * 0.1;
+
+        if self.state.rot_y.powi(2) > 2.0  || self.state.rot_x.powi(2) > 2.0 || self.state.pos_z < 0.2 {
+            return (0.0, true)
+        }
 
         // No negative rewards
         let reward = reward.max(0.0);
