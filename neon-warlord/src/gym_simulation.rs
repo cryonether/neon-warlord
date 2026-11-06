@@ -91,8 +91,18 @@ where
     pub fn new(mut env: ENV) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
+
         let nr_ppo_threads = 16;
-        let nr_gym_threads = 16;
+
+        let nr_gym_threads;
+        #[cfg(target_arch = "wasm32")]
+        {
+            nr_gym_threads = 1;
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            nr_gym_threads = 16;
+        }
 
         let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
