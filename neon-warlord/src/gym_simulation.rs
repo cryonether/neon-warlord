@@ -92,7 +92,7 @@ where
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
         let nr_ppo_threads = 16;
-        let nr_gym_threads = 1;
+        let nr_gym_threads = 16;
 
         let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
@@ -112,7 +112,7 @@ where
         let mut gym_worker = Vec::new();
         let mut gym_worker_thread = Vec::new();
 
-        let n = 4;
+        let n = 1;
         let m = 1;
         for i in 0..nr_gym_threads {
             let x = 12.0;
