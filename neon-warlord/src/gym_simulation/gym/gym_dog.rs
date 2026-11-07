@@ -458,7 +458,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
     fn get_reward(&self) -> (f32, bool) {
         // Reward target velocity
-        let target_velocity = 2.0;
+        let target_velocity = 6.0;
         let velocity_cost = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
         let mut reward = 0.5 * velocity_cost;
 
