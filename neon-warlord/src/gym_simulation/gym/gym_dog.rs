@@ -2,7 +2,9 @@
 
 use std::f32::consts::PI;
 
-use cgmath::Zero;
+use cgmath::{InnerSpace, Zero};
+use forward_renderer::{particle_shader, to_rgb};
+use itertools::min;
 
 use crate::{
     gym_simulation::{Vec3, gym::Gym},
@@ -14,7 +16,7 @@ use crate::{
     },
 };
 
-const OBSERVATIONS: usize = 25;
+const OBSERVATIONS: usize = 26;
 const ACTIONS: usize = 8;
 
 const MASS: f32 = 0.1;
@@ -22,7 +24,7 @@ const MASS: f32 = 0.1;
 #[derive(Clone)]
 pub struct GymDog {
     pub physics: Xpbd,
-    pub drawer: XpbdDrawer,
+    drawer: XpbdDrawer,
 
     index_body: usize,
     index_leg_0_0: usize,
@@ -46,6 +48,9 @@ pub struct GymDog {
     index_hinge_joint_3_1: usize,
 
     state: State,
+
+    move_8: Move8,
+    move_8_drawer: Move8Drawer,
 }
 
 impl GymDog {
@@ -267,7 +272,9 @@ impl GymDog {
         let state = State {
             pos_z_target: 0.0,
             vel_x_target: 0.0,
+            vel_y_target: 0.0,
             _pos_x: 0.0,
+            _pos_y: 0.0,
             pos_z: 0.0,
             vel_x: 0.0,
             vel_y: 0.0,
@@ -295,6 +302,10 @@ impl GymDog {
             actions: [0.0; 8],
         };
 
+
+        let move_8 = Move8::new();
+        let move_8_drawer = Move8Drawer::new(0.1, Vec3::zero());
+
         let mut obj = Self {
             physics,
             drawer,
@@ -316,6 +327,8 @@ impl GymDog {
             index_hinge_joint_2_1,
             index_hinge_joint_3_1,
             state,
+            move_8,
+            move_8_drawer,
         };
 
         obj.set_target();
@@ -332,6 +345,7 @@ impl GymDog {
 impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
     fn set_drawer_position(&mut self, pos: &Vec3) {
         self.drawer.position = *pos;
+        self.move_8_drawer.position = *pos;
     }
 
     fn set_drawer_radius(&mut self, radius: f32) {
@@ -343,8 +357,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         producer_nodes: &mut Vec<forward_renderer::particle_shader::Instance>,
         producer_edges: &mut Vec<forward_renderer::particle_shader_two_point::Instance>,
     ) {
-        self.drawer
-            .update(&self.physics, producer_nodes, producer_edges);
+        self.drawer.update(&self.physics, producer_nodes, producer_edges);
+        self.move_8_drawer.draw(&self.move_8, producer_nodes);      
     }
 
     fn update_verlet_physics(&mut self, dt: f32) {
@@ -367,10 +381,15 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let hinge_2_1 = &self.physics.hinge_joints[self.index_hinge_joint_2_1].constraint;
         let hinge_3_1 = &self.physics.hinge_joints[self.index_hinge_joint_3_1].constraint;
 
+        let target_direction = self.move_8.get_dirction(&pos).normalize();
+        let target_velocity = target_direction * 6.0;
+
         let state = State {
             pos_z_target: self.state.pos_z_target,
-            vel_x_target: self.state.vel_x_target,
+            vel_x_target: target_velocity.x,
+            vel_y_target: target_velocity.y,
             _pos_x: pos.x,
+            _pos_y: pos.y,
             pos_z: pos.z,
             vel_x: vel.x,
             vel_y: vel.y,
@@ -412,6 +431,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         [
             state.pos_z_target,
             state.vel_x_target,
+            state.vel_y_target,
             state.pos_z,
             state.vel_x,
             state.vel_y,
@@ -470,9 +490,27 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
     fn get_reward(&self) -> (f32, bool) {
         // Reward target velocity
         // let target_velocity = 6.0;
-        let target_velocity = self.state.vel_x_target;
-        let velocity_cost = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
-        let mut reward = 1.0 * velocity_cost;
+        let vel = Vec3::new(
+            self.state.vel_x,
+            self.state.vel_y, 
+            self.state.vel_z
+        );
+        let target_vel = Vec3::new(
+            self.state.vel_x_target, 
+            self.state.vel_y_target,
+            0.0, 
+        );
+
+        let error = (vel - target_vel).magnitude2();
+        let target_magnitude = target_vel.magnitude2();
+
+        let velocity_cost = if target_magnitude > 1e-6 {
+            1.0 - error / target_magnitude
+        } else {
+            1.0 - error
+        };
+
+        let mut reward = velocity_cost * 1.0;
 
         // Reward target height
         let target_height = self.state.pos_z_target;
@@ -511,9 +549,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let _pol_sin_alpha = alpha.sin();
         let _pol_cos_alpha = alpha.cos();
 
-        let drawer = self.drawer.clone();
+        let position = self.drawer.position;
         *self = Self::new();
-        self.drawer = drawer;
+        self.set_drawer_position(&position);
     }
 }
 
@@ -521,8 +559,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 pub struct State {
     pos_z_target: f32,
     vel_x_target: f32,
+    vel_y_target: f32,
 
     _pos_x: f32,
+    _pos_y: f32,
     pos_z: f32,
 
     vel_x: f32,
@@ -559,4 +599,94 @@ pub struct State {
 
 
     actions: [f32; 8],
+}
+
+
+/// Moves in an 8
+#[derive(Clone)]
+struct Move8 {
+    points: Vec<Vec3>,
+
+    index: usize,
+}
+
+impl Move8 {
+    fn new() -> Self {
+        let middle = Vec3::zero();
+        let nr_points = 100; // Nr of points in the 8 path
+        let radius = 20.0;   // Radius of each circle on each side
+        let distance = 120.0; // Distance between the middle of both circles
+
+        let mut points: Vec<Vec3> = Vec::new();
+
+        // Generates a path on an 8 
+        for i in 0..nr_points {
+            let t = (i as f32 / nr_points as f32)
+                * 2.0 * std::f32::consts::PI;
+
+            let x = (distance / 2.0) * t.sin();
+            let y = radius * (2.0 * t).sin();
+
+            points.push(middle + Vec3::new(x, y, 0.0));
+        }
+
+        // println!("points: {:?}", points);
+        
+        Self { 
+            points,
+            index: 0  
+        }
+    }
+
+    pub fn get_next_position(&mut self, pos: &Vec3) -> Vec3 {
+        let min_distance = 4.0;
+
+        let next_pos = self.points[self.index];
+        let distance2 = (next_pos - pos).magnitude2();
+        if distance2 > min_distance * min_distance {
+            next_pos
+        } else {
+            self.index = (self.index+1) % self.points.len();
+            let next_pos = self.points[self.index];
+            next_pos
+        }
+    }
+
+    pub fn get_dirction(&mut self, pos: &Vec3) -> Vec3 {
+        let next_pos = self.get_next_position(pos);
+        next_pos - pos
+    }
+}
+
+#[derive(Clone)]
+struct Move8Drawer {
+    nodes_color_0: Vec3,
+
+    radius: f32,
+    pub position: Vec3,
+}
+
+impl Move8Drawer 
+{
+    pub fn new(radius: f32, position: Vec3) -> Self {    
+        let nodes_color_0: Vec3 = to_rgb("#51ffd9").into();
+
+        Self {
+            nodes_color_0,
+            radius,
+            position,
+        }
+    }
+
+    pub fn draw(&self, move_8: &Move8, producer_nodes: &mut Vec<particle_shader::Instance>) {
+        for point in &move_8.points {
+            let pos = *point + Vec3::new(0.0, 0.0, self.radius) + self.position;
+            producer_nodes.push(particle_shader::Instance {
+                position: pos.into(),
+                color: self.nodes_color_0.into(),
+                time: 1.0,
+                size: self.radius*2.0,
+            });
+        }   
+    }
 }

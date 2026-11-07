@@ -133,7 +133,7 @@ where
                 env.clone(),
                 n,
                 m,
-                Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 + 10.5, 0.0),
+                Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 + 50.5, 0.0),
                 400,
                 // 1,
             ))));
@@ -319,7 +319,7 @@ where
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop_index(2);
 
-        if self.ticks.is_multiple_of(5000) {
+        if self.ticks.is_multiple_of(50000) {
             self.env.reset();
         }
 
