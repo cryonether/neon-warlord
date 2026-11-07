@@ -346,7 +346,7 @@ impl NeonWarlord {
             GymSimulation::new(GymHopper::new());
 
         // Dog
-        let _gym_simulation_7: GymSimulation<24, 8, 32, 1, false, GymDog> =
+        let _gym_simulation_7: GymSimulation<25, 8, 32, 1, false, GymDog> =
             GymSimulation::new(GymDog::new());
 
 

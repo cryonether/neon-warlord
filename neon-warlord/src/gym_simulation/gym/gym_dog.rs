@@ -14,7 +14,7 @@ use crate::{
     },
 };
 
-const OBSERVATIONS: usize = 24;
+const OBSERVATIONS: usize = 25;
 const ACTIONS: usize = 8;
 
 const MASS: f32 = 0.1;
@@ -54,21 +54,22 @@ impl GymDog {
         let radius = 0.1;
         let drawer = XpbdDrawer::new(&physics, radius, Vec3::zero());
 
-        let width2 = 0.4;
+        let width2 = 0.3;
+        let length2 = 0.65;
 
         let body = XpbdRigidBody::new(
-            Vec3::new(-1.0, 0.0, 1.5),
+            Vec3::new(-length2, 0.0, 1.5),
             &[
                 Vec3::new(0.0, width2, 0.0),
-                Vec3::new(1.0, width2, 0.0),
-                Vec3::new(2.0, width2, 0.0),
+                Vec3::new(length2, width2, 0.0),
+                Vec3::new(length2 * 2.0, width2, 0.0),
 
                 Vec3::new(0.0, -width2, 0.0),
-                Vec3::new(1.0, -width2, 0.0),
-                Vec3::new(2.0, -width2, 0.0),
+                Vec3::new(length2, -width2, 0.0),
+                Vec3::new(length2 * 2.0, -width2, 0.0),
 
-                Vec3::new(2.0, 0.0, 0.0),
-                Vec3::new(2.3, 0.0, 0.3),
+                Vec3::new(length2 * 2.0, 0.0, 0.0),
+                Vec3::new(length2 * 2.0 + 0.3, 0.0, 0.3),
             ],
             MASS, // 0.0
             radius,
@@ -77,21 +78,21 @@ impl GymDog {
         // Upper legs
 
         let leg_0_0 = XpbdRigidBody::new(
-            Vec3::new(-1.0, width2, 1.5),
+            Vec3::new(-length2, width2, 1.5),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
             radius,
         );
 
         let leg_1_0 = XpbdRigidBody::new(
-            Vec3::new(1.0, width2, 1.5),
+            Vec3::new(length2, width2, 1.5),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
             radius,
         );
 
         let leg_2_0 = XpbdRigidBody::new(
-            Vec3::new(-1.0, -width2, 1.5),
+            Vec3::new(-length2, -width2, 1.5),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
             radius,
@@ -99,7 +100,7 @@ impl GymDog {
 
 
         let leg_3_0 = XpbdRigidBody::new(
-            Vec3::new(1.0, -width2, 1.5),
+            Vec3::new(length2, -width2, 1.5),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
             radius,
@@ -108,28 +109,28 @@ impl GymDog {
         // Lower legs
 
         let leg_0_1 = XpbdRigidBody::new(
-            Vec3::new(-1.0, width2, 1.0),
+            Vec3::new(-length2, width2, 1.0),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
             radius,
         );
 
         let leg_1_1 = XpbdRigidBody::new(
-            Vec3::new(1.0, width2, 1.0),
+            Vec3::new(length2, width2, 1.0),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
             radius,
         );
 
         let leg_2_1 = XpbdRigidBody::new(
-            Vec3::new(-1.0, -width2, 1.0),
+            Vec3::new(-length2, -width2, 1.0),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
             radius,
         );
 
         let leg_3_1 = XpbdRigidBody::new(
-            Vec3::new(1.0, -width2, 1.0),
+            Vec3::new(length2, -width2, 1.0),
             &[Vec3::zero(), Vec3::new(0.0, 0.0, -0.5)],
             MASS,
             radius,
@@ -156,8 +157,8 @@ impl GymDog {
         let hinge_joint_0_0 = XpbdHingeJoint::new(
             body.particles[0],
             leg_0_0.particles[0],
-            -0.5 * PI,
-            0.5 * PI,
+            -0.8 * PI,
+            0.8 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -169,8 +170,8 @@ impl GymDog {
         let hinge_joint_1_0 = XpbdHingeJoint::new(
             body.particles[2],
             leg_1_0.particles[0],
-            -0.5 * PI,
-            0.5 * PI,
+            -0.8 * PI,
+            0.8 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -183,8 +184,8 @@ impl GymDog {
         let hinge_joint_2_0 = XpbdHingeJoint::new(
             body.particles[3],
             leg_2_0.particles[0],
-            -0.5 * PI,
-            0.5 * PI,
+            -0.8 * PI,
+            0.8 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -196,8 +197,8 @@ impl GymDog {
         let hinge_joint_3_0 = XpbdHingeJoint::new(
             body.particles[5],
             leg_3_0.particles[0],
-            -0.5 * PI,
-            0.5 * PI,
+            -0.8 * PI,
+            0.8 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -265,6 +266,7 @@ impl GymDog {
 
         let state = State {
             pos_z_target: 0.0,
+            vel_x_target: 0.0,
             _pos_x: 0.0,
             pos_z: 0.0,
             vel_x: 0.0,
@@ -322,8 +324,8 @@ impl GymDog {
     }
 
     fn set_target(&mut self) {
-        let val = fastrand::f32();
-        self.state.pos_z_target = 0.8;
+        self.state.pos_z_target = 0.95;
+        self.state.vel_x_target = 2.0 + fastrand::f32() * 8.0
     }
 }
 
@@ -367,6 +369,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
         let state = State {
             pos_z_target: self.state.pos_z_target,
+            vel_x_target: self.state.vel_x_target,
             _pos_x: pos.x,
             pos_z: pos.z,
             vel_x: vel.x,
@@ -408,6 +411,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let state = &self.state;
         [
             state.pos_z_target,
+            state.vel_x_target,
             state.pos_z,
             state.vel_x,
             state.vel_y,
@@ -465,9 +469,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
     fn get_reward(&self) -> (f32, bool) {
         // Reward target velocity
-        let target_velocity = 6.0;
+        // let target_velocity = 6.0;
+        let target_velocity = self.state.vel_x_target;
         let velocity_cost = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
-        let mut reward = 0.5 * velocity_cost;
+        let mut reward = 1.0 * velocity_cost;
 
         // Reward target height
         let target_height = self.state.pos_z_target;
@@ -515,6 +520,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 #[derive(Clone)]
 pub struct State {
     pos_z_target: f32,
+    vel_x_target: f32,
 
     _pos_x: f32,
     pos_z: f32,
