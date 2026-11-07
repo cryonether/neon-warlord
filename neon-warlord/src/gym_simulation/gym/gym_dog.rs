@@ -14,7 +14,7 @@ use crate::{
     },
 };
 
-const OBSERVATIONS: usize = 23;
+const OBSERVATIONS: usize = 24;
 const ACTIONS: usize = 8;
 
 const MASS: f32 = 0.1;
@@ -264,6 +264,7 @@ impl GymDog {
 
 
         let state = State {
+            pos_z_target: 0.0,
             _pos_x: 0.0,
             pos_z: 0.0,
             vel_x: 0.0,
@@ -292,7 +293,7 @@ impl GymDog {
             actions: [0.0; 8],
         };
 
-        Self {
+        let mut obj = Self {
             physics,
             drawer,
             index_body,
@@ -313,7 +314,16 @@ impl GymDog {
             index_hinge_joint_2_1,
             index_hinge_joint_3_1,
             state,
-        }
+        };
+
+        obj.set_target();
+
+        obj
+    }
+
+    fn set_target(&mut self) {
+        let val = fastrand::f32();
+        self.state.pos_z_target = 0.8;
     }
 }
 
@@ -356,6 +366,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let hinge_3_1 = &self.physics.hinge_joints[self.index_hinge_joint_3_1].constraint;
 
         let state = State {
+            pos_z_target: self.state.pos_z_target,
             _pos_x: pos.x,
             pos_z: pos.z,
             vel_x: vel.x,
@@ -389,6 +400,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
     fn get_state(&self) -> [f32; OBSERVATIONS] {
         let state = &self.state;
         [
+            state.pos_z_target,
             state.pos_z,
             state.vel_x,
             state.vel_y,
@@ -446,12 +458,18 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
     fn get_reward(&self) -> (f32, bool) {
         // Reward target velocity
-        let target_velocity = 6.0;
-        let mut reward = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
+        let target_velocity = 2.0;
+        let velocity_cost = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
+        let mut reward = 0.5 * velocity_cost;
+
+        // Reward target height
+        let target_height = self.state.pos_z_target;
+        let height_cost = 1.0 - ((self.state.pos_z - target_height) / target_height).powi(2);
+        reward += 1.0 * height_cost;
 
         // Penalize rotation
         let rot_cost = self.state.rot_y.powi(2) + self.state.rot_x.powi(2);
-        reward -= rot_cost * 0.1;
+        reward -= rot_cost * 1.0;
         // println!("self.state.rot_y: {}", self.state.rot_y);
 
         // Penalize vel z
@@ -463,9 +481,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         for action in self.state.actions {
             action_cost += action.powi(2);
         }
-        reward -= action_cost * 0.1;
+        reward -= action_cost * 0.01;
 
-        if self.state.rot_y.powi(2) > 2.0  || self.state.rot_x.powi(2) > 2.0 || self.state.pos_z < 0.2 {
+        if self.state.rot_y.powi(2) > 2.0  || self.state.rot_x.powi(2) > 2.0 {
             return (0.0, true)
         }
 
@@ -489,6 +507,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
 #[derive(Clone)]
 pub struct State {
+    pos_z_target: f32,
+
     _pos_x: f32,
     pos_z: f32,
 
