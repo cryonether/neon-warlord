@@ -326,6 +326,30 @@ impl XpbdHingeJoint {
     pub fn set_external_torque(&mut self, torque: f32) {
         self.external_torque = torque;
     }
+
+    // pub fn force_step_angle(&mut self, 
+    //     obj_0: &mut XpbdRigidBody, 
+    //     obj_1: &mut XpbdRigidBody,
+    //     angle: f32, 
+    // ) {
+    //     let dt = 1.0 / 60.0;
+
+    //     let angle_limit_0 = self.angle_limit_0;
+    //     let angle_limit_1 = self.angle_limit_1 + 0.1;
+
+    //     self.angle_limit_0 = angle;
+    //     self.angle_limit_1 = angle;
+
+    //     for _i in 0..10 {
+    //         self.solve(obj_0, obj_1, dt);
+    //     }
+
+    //     obj_0.p.prev_pos = obj_0.p.pos;
+    //     obj_0.r.prev_rot = obj_0.r.rot;
+
+    //     self.angle_limit_0 = angle_limit_0;
+    //     self.angle_limit_1 = angle_limit_1;
+    // }
 }
 
 #[allow(unused)]
