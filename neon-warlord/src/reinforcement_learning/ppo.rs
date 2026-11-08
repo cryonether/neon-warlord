@@ -44,7 +44,11 @@ pub struct Ppo<
     pub transitions: Vec<Transition<INPUTS, OUTPUTS>>,
 
     _variance: f32,
-    std_dev: f32,
+    pub std_dev: f32,
+    initial_std_dev: f32,
+    episode: usize,
+    n_episodes: usize,
+
     gamma: f32,
     gae_lambda: f32,
     _clip: f32,
@@ -80,6 +84,7 @@ where
         // For choosing an action
         const VARIANCE: f32 = 0.5;
         const STD_DEV: f32 = 0.70710677; // sqrt(0.5)
+        const N_EPISODES: usize = 500_000;
 
         // Discount factor, for calculating the discounted reward
         const GAMMA: f32 = 0.95;
@@ -120,6 +125,9 @@ where
             transitions,
             _variance: VARIANCE,
             std_dev: STD_DEV,
+            initial_std_dev: STD_DEV,
+            n_episodes: N_EPISODES,
+            episode: 0,
             gamma: GAMMA,
             gae_lambda: GAE_LAMBDA,
             _clip: CLIP,
@@ -378,12 +386,18 @@ where
             single_threaded = true;
         }
 
-        if single_threaded {
+        let res = if single_threaded {
             self.learn_sequential()
         } else {
             // self.learn_sequential()
             self.learn_parallel()
-        }
+        };
+
+        // Update action std_dev
+        self.update_std_dev();
+        self.episode += 1;
+
+        res
     }
 
     pub fn calculate_gradients(
@@ -473,6 +487,11 @@ where
         }
 
         (actor_loss_sum, critic_loss_sum)
+    }
+
+    fn update_std_dev(&mut self) {
+        let progress = self.episode as f32 / self.n_episodes as f32;
+        self.std_dev = self.initial_std_dev * (1.0 - progress).clamp(0.001, 1.0);
     }
 }
 

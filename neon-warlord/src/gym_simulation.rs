@@ -258,6 +258,7 @@ where
             // copy policy
             gym_worker_.ppo.actor.copy_weights(&self.ppo.actor);
             gym_worker_.ppo.critic.copy_weights(&self.ppo.critic);
+            gym_worker_.ppo.std_dev = self.ppo.std_dev;
 
             gym_worker_thread.send(gym_worker_);
         }
