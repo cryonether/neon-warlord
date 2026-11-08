@@ -184,15 +184,13 @@ where
             y,
         };
 
-        let drawer_graph_actor_loss =
-            GraphLinesDrawer::new(scale, pos_graph_actor_loss)
-                .colors([to_rgb("#00ff62").into()])
-                .graph_length(40.0);
+        let drawer_graph_actor_loss = GraphLinesDrawer::new(scale, pos_graph_actor_loss)
+            .colors([to_rgb("#00ff62").into()])
+            .graph_length(40.0);
 
-        let drawer_graph_critic_loss =
-            GraphLinesDrawer::new(scale, pos_graph_critic_loss)
-                .colors([to_rgb("#ffd000").into()])
-                .graph_length(40.0);
+        let drawer_graph_critic_loss = GraphLinesDrawer::new(scale, pos_graph_critic_loss)
+            .colors([to_rgb("#ffd000").into()])
+            .graph_length(40.0);
 
         let colors: [Vec3; OUTPUTS] = PrintColor::Cool.into_vec();
         let drawer_graph_actions = GraphLinesDrawer::new(scale, pos_graph_actions).colors(colors);

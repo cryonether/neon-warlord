@@ -174,7 +174,6 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
 
         let mut value = -extent;
         while value <= extent {
-
             // Horizontal grid line.
             let p0 = self.position + Vec3::new(-graph_length, 0.0, value) * self.size;
             let p1 = self.position + Vec3::new(graph_length, 0.0, value) * self.size;

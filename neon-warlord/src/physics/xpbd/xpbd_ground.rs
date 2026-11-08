@@ -57,10 +57,10 @@ impl XpbdGround {
 
     ///
     /// Handle dynamic friction and restitution
-    /// 
+    ///
     /// Details:
     ///     Here we iterate once through all the contacts and update the new velocities
-    /// 
+    ///
     pub fn solve_velocity_level(&mut self, bodies: &mut [XpbdRigidBody], dt: f32) {
         for (index, contact_point) in &mut self.contact_points {
             let obj = &mut bodies[*index];
@@ -184,9 +184,9 @@ impl ContactPoint {
             }
         }
     }
-    
+
     /// Solve dynamic friction
-    /// 
+    ///
     /// // Typical friction coefficients for different materials.
     ///
     /// Material          | Static Friction (μs) | Dynamic Friction (μd)
@@ -210,7 +210,6 @@ impl ContactPoint {
     /// - Values are approximate and depend on surface finish, pressure,
     ///   lubrication, and environmental conditions.
     pub fn solve_velocity_level(&mut self, obj: &mut XpbdRigidBody, dt: f32) {
-        
         // Parameters
         let friction_coefficient = 0.8;
 
@@ -245,7 +244,7 @@ impl ContactPoint {
 
         let v = v1 + omega1.cross(r1);
         let v_n = n.dot(v);
-        let v_t = v - n *v_n;
+        let v_t = v - n * v_n;
 
         // Computes the explicit velocity correction due to dynamic Coulomb friction.
         //
@@ -272,14 +271,13 @@ impl ContactPoint {
         let u_d = friction_coefficient;
         let h = dt;
         let lambda_n = self.lagrange_multiplier_n;
-        let f_n = lambda_n / (h*h);
+        let f_n = lambda_n / (h * h);
         let f_n_magnitude = f_n.abs();
 
         // Tangential direction
         let tangent = v_t / v_t_magnitude;
 
-        let delta_v = - tangent * f32::min(h * u_d * f_n_magnitude, v_t_magnitude);
-
+        let delta_v = -tangent * f32::min(h * u_d * f_n_magnitude, v_t_magnitude);
 
         // Applies a velocity update Δv at the contact points of two bodies.
         //
