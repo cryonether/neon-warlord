@@ -327,10 +327,10 @@ impl XpbdHingeJoint {
         self.external_torque = torque;
     }
 
-    // pub fn force_step_angle(&mut self, 
-    //     obj_0: &mut XpbdRigidBody, 
+    // pub fn force_step_angle(&mut self,
+    //     obj_0: &mut XpbdRigidBody,
     //     obj_1: &mut XpbdRigidBody,
-    //     angle: f32, 
+    //     angle: f32,
     // ) {
     //     let dt = 1.0 / 60.0;
 

@@ -270,9 +270,6 @@ fn _symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
     matrix
 }
 
-
-
-
 pub fn transform_rigid_bodies(
     rigid_bodies: &mut [XpbdRigidBody],
     translation: Vec3,
@@ -286,8 +283,7 @@ pub fn transform_rigid_bodies(
 
         // Transform previous position consistently
         let previous_relative_pos = body.p.prev_pos - pivot;
-        body.p.prev_pos =
-            pivot + rotation.rotate_vector(previous_relative_pos) + translation;
+        body.p.prev_pos = pivot + rotation.rotate_vector(previous_relative_pos) + translation;
 
         // Rotate linear velocity
         body.p.vel = rotation.rotate_vector(body.p.vel);
