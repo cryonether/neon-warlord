@@ -218,10 +218,10 @@ impl ContactPoint {
         let r = &mut obj.r;
 
         let pos_world = r.rot * self.particle_local + p.pos;
-        let prev_pos_world = r.prev_rot * self.particle_local + p.prev_pos;
+        let _prev_pos_world = r.prev_rot * self.particle_local + p.prev_pos;
         let normal = Vec3::unit_z();
         let contact_point = pos_world - normal * self.particle_radius;
-        let separation = contact_point.z - GROUND_HEIGHT_Z;
+        let _separation = contact_point.z - GROUND_HEIGHT_Z;
         let r_ = contact_point - p.pos;
 
         // Computes the relative velocity at the contact point:
