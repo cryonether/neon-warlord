@@ -301,7 +301,7 @@ impl GymDog {
 
         move_8.set_random_position();
         let translation = move_8.get_position();
-        let rotation = move_8.get_dirction(&translation);
+        let rotation = move_8.get_direction(&translation);
         let angle = rotation.y.atan2(rotation.x);
         // let translation = Vec3::new(5.0, 0.0, 0.0);
         let rotation = Quat::from_axis_angle(Vec3::unit_z(), cgmath::Rad(angle));
@@ -390,7 +390,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let hinge_2_1 = &self.physics.hinge_joints[self.index_hinge_joint_2_1].constraint;
         let hinge_3_1 = &self.physics.hinge_joints[self.index_hinge_joint_3_1].constraint;
 
-        let target_direction = self.move_8.get_dirction(&pos).normalize();
+        let target_direction = self.move_8.get_direction(&pos).normalize();
         let target_velocity = target_direction * 6.0;
 
         let state = State {

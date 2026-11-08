@@ -49,7 +49,7 @@ impl Move8 {
         }
     }
 
-    pub fn get_dirction(&mut self, pos: &Vec3) -> Vec3 {
+    pub fn get_direction(&mut self, pos: &Vec3) -> Vec3 {
         let next_pos = self.get_next_position(pos);
         next_pos - pos
     }
