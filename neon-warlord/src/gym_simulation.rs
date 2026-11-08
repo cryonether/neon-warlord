@@ -104,8 +104,8 @@ where
             nr_gym_threads = 16;
         }
 
-        let pos_graph_actor_loss = pos + Vec3::new(-4.2, 1.0, 2.2);
-        let pos_graph_critic_loss = pos + Vec3::new(-4.2, 1.0, 0.0);
+        let pos_graph_actor_loss = pos + Vec3::new(-7.2, 1.0, 2.2);
+        let pos_graph_critic_loss = pos + Vec3::new(-7.2, 1.0, 0.0);
         let pos_graph_actions = pos + Vec3::new(-2.0, 1.0, 2.2);
         let pos_graph_mean_actions = pos + Vec3::new(-2.0, 1.0, 0.0);
         let pos_graph_quality = pos + Vec3::new(2.2, 1.0, 0.0);
@@ -146,9 +146,8 @@ where
         let watch_ups = Watch::new();
 
         // Graph
-        let graph_x: VecDeque<f32> = (0..100).map(|i| i as f32 * 0.1).collect();
-        // let graph_y: VecDeque<f32> = (0..100).map(|i| (i as f32 * 0.1).sin()).collect();
-        let graph_y: VecDeque<f32> = (0..100).map(|_i| 0.0).collect();
+        let graph_x: VecDeque<f32> = (0..400).map(|i| i as f32 * 10.0 / 400.0).collect();
+        let graph_y: VecDeque<f32> = (0..400).map(|_i| 0.0).collect();
         let graph_actor_loss = GraphLines {
             x: graph_x.clone(),
             y: [graph_y.clone()],
@@ -158,6 +157,9 @@ where
             x: graph_x.clone(),
             y: [graph_y.clone()],
         };
+
+        let graph_x: VecDeque<f32> = (0..100).map(|i| i as f32 * 0.1).collect();
+        let graph_y: VecDeque<f32> = (0..100).map(|_i| 0.0).collect();
 
         let y: [VecDeque<f32>; OUTPUTS] = std::array::from_fn(|_| graph_y.clone());
         let graph_actions = GraphLines {
@@ -182,15 +184,18 @@ where
             y,
         };
 
-        let drawer_graph_actor_loss =
-            GraphLinesDrawer::new(scale, pos_graph_actor_loss).colors([to_rgb("#00ff62").into()]);
-        let drawer_graph_critic_loss =
-            GraphLinesDrawer::new(scale, pos_graph_critic_loss).colors([to_rgb("#ffd000").into()]);
+        let drawer_graph_actor_loss = GraphLinesDrawer::new(scale, pos_graph_actor_loss)
+            .colors([to_rgb("#00ff62").into()])
+            .graph_length(40.0);
 
-        let colors: [Vec3; OUTPUTS] = std::array::from_fn(|_| to_rgb("#ff00e6").into());
+        let drawer_graph_critic_loss = GraphLinesDrawer::new(scale, pos_graph_critic_loss)
+            .colors([to_rgb("#ffd000").into()])
+            .graph_length(40.0);
+
+        let colors: [Vec3; OUTPUTS] = PrintColor::Cool.into_vec();
         let drawer_graph_actions = GraphLinesDrawer::new(scale, pos_graph_actions).colors(colors);
 
-        let colors: [Vec3; OUTPUTS] = std::array::from_fn(|_| to_rgb("#ff0932").into());
+        let colors: [Vec3; OUTPUTS] = PrintColor::BluePurpleRed.into_vec();
         let drawer_graph_mean_actions =
             GraphLinesDrawer::new(scale, pos_graph_mean_actions).colors(colors);
 
@@ -249,6 +254,7 @@ where
             // copy policy
             gym_worker_.ppo.actor.copy_weights(&self.ppo.actor);
             gym_worker_.ppo.critic.copy_weights(&self.ppo.critic);
+            gym_worker_.ppo.std_dev = self.ppo.std_dev;
 
             gym_worker_thread.send(gym_worker_);
         }

@@ -118,6 +118,10 @@ impl Xpbd {
             // ##########################################################
             // SolveVelocities(v_1, . . . v_n, w_1, . . . w_n);
 
+            // Ground
+            self.ground_constraint
+                .solve_velocity_level(&mut self.rigid_bodies, sub_dt);
+
             // for constraint in &self.velocity_constraints {
             //
             // }
