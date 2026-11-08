@@ -16,7 +16,7 @@ use crate::{
     },
 };
 
-type Quad = cgmath::Quaternion<f32>;
+type Quat = cgmath::Quaternion<f32>;
 
 const OBSERVATIONS: usize = 26;
 const ACTIONS: usize = 8;
@@ -304,7 +304,7 @@ impl GymDog {
         let rotation = move_8.get_dirction(&translation);
         let angle = rotation.y.atan2(rotation.x);
         // let translation = Vec3::new(5.0, 0.0, 0.0);
-        let rotation = Quad::from_axis_angle(Vec3::unit_z(), cgmath::Rad(angle));
+        let rotation = Quat::from_axis_angle(Vec3::unit_z(), cgmath::Rad(angle));
         let pivot = Vec3::new(0.0, 0.0, 0.0);
         xpbd_rigid_body::transform_rigid_bodies(
             &mut physics.rigid_bodies,

@@ -3,7 +3,7 @@
 use cgmath::{InnerSpace, Rad, Rotation, Rotation3};
 
 use crate::physics::xpbd::{
-    Quad, Vec3, xpbd_angular_constraint::XpbdAngularConstraint,
+    Quat, Vec3, xpbd_angular_constraint::XpbdAngularConstraint,
     xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody,
 };
 
@@ -264,7 +264,7 @@ impl XpbdHingeJoint {
 
         // println!("phi: {}, phi_target: {}", phi, phi_target);
 
-        let rotation = Quad::from_axis_angle(a0, Rad(phi_target));
+        let rotation = Quat::from_axis_angle(a0, Rad(phi_target));
         let n_target = rotation.rotate_vector(-b0);
 
         // Angular correction from the paper, Equation (21).
@@ -326,30 +326,6 @@ impl XpbdHingeJoint {
     pub fn set_external_torque(&mut self, torque: f32) {
         self.external_torque = torque;
     }
-
-    // pub fn force_step_angle(&mut self,
-    //     obj_0: &mut XpbdRigidBody,
-    //     obj_1: &mut XpbdRigidBody,
-    //     angle: f32,
-    // ) {
-    //     let dt = 1.0 / 60.0;
-
-    //     let angle_limit_0 = self.angle_limit_0;
-    //     let angle_limit_1 = self.angle_limit_1 + 0.1;
-
-    //     self.angle_limit_0 = angle;
-    //     self.angle_limit_1 = angle;
-
-    //     for _i in 0..10 {
-    //         self.solve(obj_0, obj_1, dt);
-    //     }
-
-    //     obj_0.p.prev_pos = obj_0.p.pos;
-    //     obj_0.r.prev_rot = obj_0.r.rot;
-
-    //     self.angle_limit_0 = angle_limit_0;
-    //     self.angle_limit_1 = angle_limit_1;
-    // }
 }
 
 #[allow(unused)]
@@ -383,7 +359,7 @@ impl RotationAxis {
     }
 }
 
-pub fn _calculate_rotation_error_2(rotation_0: &Quad, rotation_1: &Quad) -> (Vec3, f32) {
+pub fn _calculate_rotation_error_2(rotation_0: &Quat, rotation_1: &Quat) -> (Vec3, f32) {
     let mut q_err = (rotation_0 * rotation_1.conjugate()).normalize();
 
     // Choose the shortest rotation.

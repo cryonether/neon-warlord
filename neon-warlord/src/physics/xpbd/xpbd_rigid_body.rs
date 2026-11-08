@@ -23,7 +23,7 @@ impl XpbdRigidBody {
             0.0
         };
 
-        let rot = Quad::one();
+        let rot = Quat::one();
         let inv_rot = rot.invert();
         let prev_rot = rot;
         let omega = Vec3::zero();
@@ -270,10 +270,11 @@ fn _symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
     matrix
 }
 
+/// Moves and rotates all rigid bodies in a vector around a pivot point
 pub fn transform_rigid_bodies(
     rigid_bodies: &mut [XpbdRigidBody],
     translation: Vec3,
-    rotation: Quad,
+    rotation: Quat,
     pivot: Vec3,
 ) {
     for body in rigid_bodies.iter_mut() {

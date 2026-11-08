@@ -32,8 +32,6 @@ impl Move8 {
             points.push(middle + Vec3::new(x, y, 0.0));
         }
 
-        // println!("points: {:?}", points);
-
         Self { points, index: 0 }
     }
 
@@ -65,9 +63,11 @@ impl Move8 {
     }
 }
 
+
 /// #######################################################################
 /// Move8Drawer
 
+/// Draws Move8
 #[derive(Clone)]
 pub struct Move8Drawer {
     nodes_color_0: Vec3,

@@ -2,7 +2,7 @@
 
 use cgmath::InnerSpace;
 
-use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
+use crate::physics::xpbd::{Quat, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
 // Height of the ground plane
 const GROUND_HEIGHT_Z: f32 = 0.0;
@@ -114,7 +114,7 @@ impl ContactPoint {
             // Applies the rotational positional correction
             let dq0 = r.apply_inverse_inertia_world(&r0_world.cross(p_));
 
-            r.rot += 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r.rot;
+            r.rot += 0.5 * Quat::new(0.0, dq0.x, dq0.y, dq0.z) * r.rot;
         }
 
         // #########################################################
@@ -167,7 +167,7 @@ impl ContactPoint {
                 // Applies the rotational positional correction
                 let dq0 = r.apply_inverse_inertia_world(&r_contact.cross(p_));
 
-                r.rot += 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r.rot;
+                r.rot += 0.5 * Quat::new(0.0, dq0.x, dq0.y, dq0.z) * r.rot;
             }
         }
     }
