@@ -348,7 +348,7 @@ impl GymDog {
             move_8_drawer,
         };
 
-        // obj.set_target();
+        obj.set_target();
 
         obj
     }
@@ -379,8 +379,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
     }
 
     fn update_verlet_physics(&mut self, dt: f32) {
-        self.physics.step(dt * 0.0001);
-        // self.physics.step(dt * 1.0);
+        // self.physics.step(dt * 0.0001);
+        // self.physics.step(dt * 0.01);
+        self.physics.step(dt * 1.0);
         // self.physics.step(dt * 0.4);
 
         let body = &self.physics.rigid_bodies[self.index_body];
