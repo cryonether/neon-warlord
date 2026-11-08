@@ -3,9 +3,7 @@
 use std::f32::consts::PI;
 
 use cgmath::{InnerSpace, Zero};
-use cgmath::{Rad, Rotation3};
-use forward_renderer::{particle_shader, to_rgb};
-use itertools::min;
+use cgmath::Rotation3;
 
 use crate::gym_simulation::gym::move_8::{Move8, Move8Drawer};
 use crate::{
@@ -27,15 +25,15 @@ pub struct GymDog {
     drawer: XpbdDrawer,
 
     index_body: usize,
-    index_leg_0_0: usize,
-    index_leg_1_0: usize,
-    index_leg_2_0: usize,
-    index_leg_3_0: usize,
+    _index_leg_0_0: usize,
+    _index_leg_1_0: usize,
+    _index_leg_2_0: usize,
+    _index_leg_3_0: usize,
 
-    index_leg_0_1: usize,
-    index_leg_1_1: usize,
-    index_leg_2_1: usize,
-    index_leg_3_1: usize,
+    _index_leg_0_1: usize,
+    _index_leg_1_1: usize,
+    _index_leg_2_1: usize,
+    _index_leg_3_1: usize,
 
     index_hinge_joint_0_0: usize,
     index_hinge_joint_1_0: usize,
@@ -327,14 +325,14 @@ impl GymDog {
             physics,
             drawer,
             index_body,
-            index_leg_0_0,
-            index_leg_1_0,
-            index_leg_2_0,
-            index_leg_3_0,
-            index_leg_0_1,
-            index_leg_1_1,
-            index_leg_2_1,
-            index_leg_3_1,
+            _index_leg_0_0: index_leg_0_0,
+            _index_leg_1_0: index_leg_1_0,
+            _index_leg_2_0: index_leg_2_0,
+            _index_leg_3_0: index_leg_3_0,
+            _index_leg_0_1: index_leg_0_1,
+            _index_leg_1_1: index_leg_1_1,
+            _index_leg_2_1: index_leg_2_1,
+            _index_leg_3_1: index_leg_3_1,
             index_hinge_joint_0_0,
             index_hinge_joint_1_0,
             index_hinge_joint_2_0,
