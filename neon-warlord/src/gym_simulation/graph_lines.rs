@@ -18,7 +18,7 @@ impl<const SIZE: usize> GraphLines<SIZE> {
         self.x.push_back(val);
     }
 
-    // Pushes a value onto one of the Y lines and removes the oldest value.
+    /// Pushes a value onto one of the Y lines and removes the oldest value.
     pub fn y_push_pop(&mut self, line: usize, val: f32) {
         if line >= SIZE {
             return;
@@ -42,6 +42,7 @@ impl<const SIZE: usize> GraphLines<SIZE> {
 
 pub struct GraphLinesDrawer<const SIZE: usize> {
     size: f32,
+    graph_length: f32,
     colors: [Vec3; SIZE],
     position: Vec3,
 
@@ -73,6 +74,7 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
 
         Self {
             size,
+            graph_length: 10.0,
             colors,
             position,
 
@@ -85,6 +87,12 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
             grid_spacing: 2.0,
             grid_extent: 10.0,
         }
+    }
+
+    /// Set the graph length along the X axis.
+    pub fn graph_length(mut self, length: f32) -> Self {
+        self.graph_length = length;
+        self
     }
 
     /// Set the color of a particular line.
@@ -144,13 +152,13 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
 
         let extent = self.grid_extent;
         let spacing = self.grid_spacing;
+        let graph_length = self.graph_length;
 
-        let mut value = -extent;
+        let mut value = -graph_length;
 
-        while value <= extent {
+        while value <= graph_length {
             // Vertical grid line.
             let p0 = self.position + Vec3::new(value, 0.0, -extent) * self.size;
-
             let p1 = self.position + Vec3::new(value, 0.0, extent) * self.size;
 
             edges.push(particle_shader_two_point::Instance {
@@ -161,10 +169,15 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
                 size,
             });
 
-            // Horizontal grid line.
-            let p0 = self.position + Vec3::new(-extent, 0.0, value) * self.size;
+            value += spacing;
+        }
 
-            let p1 = self.position + Vec3::new(extent, 0.0, value) * self.size;
+        let mut value = -extent;
+        while value <= extent {
+
+            // Horizontal grid line.
+            let p0 = self.position + Vec3::new(-graph_length, 0.0, value) * self.size;
+            let p1 = self.position + Vec3::new(graph_length, 0.0, value) * self.size;
 
             edges.push(particle_shader_two_point::Instance {
                 position_0: p0.into(),
@@ -216,18 +229,17 @@ impl<const SIZE: usize> GraphLinesDrawer<SIZE> {
                 let y0 = (y0 - self.y_lim_start) / y_range;
                 let y1 = (y1 - self.y_lim_start) / y_range;
 
-                let x0 = x0 * self.grid_extent;
-                let x1 = x1 * self.grid_extent;
+                // Map X to [0, graph_length].
+                let x0 = x0 * self.graph_length;
+                let x1 = x1 * self.graph_length;
 
                 // Map [0, 1] -> [-grid_extent, grid_extent].
-                let x0 = x0 * 2.0 * self.grid_extent - self.grid_extent;
-                let x1 = x1 * 2.0 * self.grid_extent - self.grid_extent;
-
+                let x0 = x0 * 2.0 * self.grid_extent - self.graph_length;
+                let x1 = x1 * 2.0 * self.grid_extent - self.graph_length;
                 let y0 = y0 * 2.0 * self.grid_extent - self.grid_extent;
                 let y1 = y1 * 2.0 * self.grid_extent - self.grid_extent;
 
                 let p0 = self.position + Vec3::new(x0, 0.0, y0) * self.size;
-
                 let p1 = self.position + Vec3::new(x1, 0.0, y1) * self.size;
 
                 edges.push(particle_shader_two_point::Instance {
