@@ -7,6 +7,8 @@ use super::super::*;
 use cgmath::{InnerSpace, Rad, Rotation3};
 use std::f32::consts::PI;
 
+type Quad = cgmath::Quaternion<f32>;
+
 fn create_body(position: Vec3) -> XpbdRigidBody {
     // Asymmetric particle distribution to avoid degenerate inertia.
     let particles = [

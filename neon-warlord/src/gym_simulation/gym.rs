@@ -8,6 +8,7 @@ pub mod gym_hopper;
 pub mod gym_pole;
 pub mod gym_reacher;
 pub mod gym_dog;
+pub mod move_8;
 
 use forward_renderer::{particle_shader, particle_shader_two_point};
 
