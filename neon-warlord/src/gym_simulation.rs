@@ -195,11 +195,9 @@ where
                 .graph_length(40.0);
 
         let colors: [Vec3; OUTPUTS] = PrintColor::Cool.into_vec();
-        // let colors: [Vec3; OUTPUTS] = std::array::from_fn(|_| to_rgb("#ff00e6").into());
         let drawer_graph_actions = GraphLinesDrawer::new(scale, pos_graph_actions).colors(colors);
 
         let colors: [Vec3; OUTPUTS] = PrintColor::BluePurpleRed.into_vec();
-        // let colors: [Vec3; OUTPUTS] = std::array::from_fn(|_| to_rgb("#ff0932").into());
         let drawer_graph_mean_actions =
             GraphLinesDrawer::new(scale, pos_graph_mean_actions).colors(colors);
 
