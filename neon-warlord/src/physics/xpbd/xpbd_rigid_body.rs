@@ -23,7 +23,7 @@ impl XpbdRigidBody {
             0.0
         };
 
-        let rot = Quad::one();
+        let rot = Quat::one();
         let inv_rot = rot.invert();
         let prev_rot = rot;
         let omega = Vec3::zero();
@@ -268,4 +268,38 @@ fn _symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
     );
 
     matrix
+}
+
+/// Moves and rotates all rigid bodies in a vector around a pivot point
+pub fn transform_rigid_bodies(
+    rigid_bodies: &mut [XpbdRigidBody],
+    translation: Vec3,
+    rotation: Quat,
+    pivot: Vec3,
+) {
+    for body in rigid_bodies.iter_mut() {
+        // Transform position around the shared pivot
+        let relative_pos = body.p.pos - pivot;
+        body.p.pos = pivot + rotation.rotate_vector(relative_pos) + translation;
+
+        // Transform previous position consistently
+        let previous_relative_pos = body.p.prev_pos - pivot;
+        body.p.prev_pos = pivot + rotation.rotate_vector(previous_relative_pos) + translation;
+
+        // Rotate linear velocity
+        body.p.vel = rotation.rotate_vector(body.p.vel);
+
+        // Rotate orientation (world-space rotation)
+        body.r.rot = rotation * body.r.rot;
+
+        // Update inverse rotation
+        body.r.inv_rot = body.r.rot.conjugate();
+
+        // Rotate previous orientation
+        body.r.prev_rot = rotation * body.r.prev_rot;
+
+        // Rotate angular velocity and external torque
+        body.r.omega = rotation.rotate_vector(body.r.omega);
+        body.r.external_torque = rotation.rotate_vector(body.r.external_torque);
+    }
 }

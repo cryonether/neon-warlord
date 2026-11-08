@@ -96,7 +96,7 @@ where
 {
     fn run(&mut self) {
         let dt = 1.0 / 60.0;
-        let max_steps = 1000;
+        let max_steps = 50000;
 
         self.nodes.clear();
         self.edges.clear();

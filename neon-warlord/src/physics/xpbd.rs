@@ -20,7 +20,7 @@ use crate::physics::xpbd::{
 };
 
 type Vec3 = cgmath::Vector3<f32>;
-type Quad = cgmath::Quaternion<f32>;
+type Quat = cgmath::Quaternion<f32>;
 type Mat3 = cgmath::Matrix3<f32>;
 
 const GRAVITY: Vec3 = Vec3::new(0.0, 0.0, -10.0);
@@ -196,13 +196,13 @@ impl PositionalQuantities {
 #[derive(Clone)]
 pub struct RotationalQuantities {
     // Rotation (local space to world space)
-    pub rot: Quad,
+    pub rot: Quat,
 
     // Rotation (world space to local space)
-    pub inv_rot: Quad,
+    pub inv_rot: Quat,
 
     // Previous rotation
-    pub prev_rot: Quad,
+    pub prev_rot: Quat,
 
     // Angular velocity (in world space)
     pub omega: Vec3,
@@ -237,7 +237,7 @@ impl RotationalQuantities {
         // ########################################################################
         // Update orientation
         self.rot = self.rot
-            + dt * 0.5 * Quad::new(0.0, self.omega.x, self.omega.y, self.omega.z) * self.rot;
+            + dt * 0.5 * Quat::new(0.0, self.omega.x, self.omega.y, self.omega.z) * self.rot;
 
         // Normalize
         self.rot = self.rot / self.rot.magnitude();

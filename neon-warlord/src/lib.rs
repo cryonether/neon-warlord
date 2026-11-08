@@ -59,9 +59,9 @@ use crate::{
     gym_simulation::{
         GymSimulation, GymSimulationThread,
         gym::{
-            gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_half_cheetah::GymHalfCheetah,
-            gym_half_cheetah_2::GymHalfCheetah2, gym_hopper::GymHopper, gym_pole::GymPole,
-            gym_reacher::GymReacher,
+            gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_dog::GymDog,
+            gym_half_cheetah::GymHalfCheetah, gym_half_cheetah_2::GymHalfCheetah2,
+            gym_hopper::GymHopper, gym_pole::GymPole, gym_reacher::GymReacher,
         },
     },
     physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
@@ -358,7 +358,11 @@ impl NeonWarlord {
         let _gym_simulation_6: GymSimulation<12, 3, 64, 2, false, GymHopper> =
             GymSimulation::new(GymHopper::new());
 
-        let gym_simulation = _gym_simulation_6;
+        // Dog
+        let _gym_simulation_7: GymSimulation<26, 8, 32, 1, false, GymDog> =
+            GymSimulation::new(GymDog::new());
+
+        let gym_simulation = _gym_simulation_7;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
             sim: Box::new(gym_simulation),
             producer,

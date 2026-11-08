@@ -133,8 +133,8 @@ where
                 env.clone(),
                 n,
                 m,
-                Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 - 0.5, 0.0),
-                128,
+                Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 + 50.5, 0.0),
+                400,
                 // 1,
             ))));
 
@@ -299,7 +299,7 @@ where
         let (reward, done) = self.env.get_reward();
 
         for (i, val) in new_state.iter().enumerate() {
-            self.graph_inputs.y_push_pop(i, *val * 0.1); // input graph
+            self.graph_inputs.y_push_pop(i, *val * 0.01); // input graph
         }
 
         for (i, val) in action.iter().enumerate() {
@@ -319,7 +319,7 @@ where
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop_index(2);
 
-        if self.ticks.is_multiple_of(1000) {
+        if self.ticks.is_multiple_of(50000) {
             self.env.reset();
         }
 

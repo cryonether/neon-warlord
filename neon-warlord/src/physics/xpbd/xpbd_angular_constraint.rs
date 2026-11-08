@@ -2,7 +2,7 @@
 
 use cgmath::{InnerSpace, Zero};
 
-use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
+use crate::physics::xpbd::{Quat, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
 #[derive(Clone)]
 pub struct XpbdAngularConstraint {
@@ -140,8 +140,8 @@ impl XpbdAngularConstraint {
         let i_p0 = r0.apply_inverse_inertia_world(&p);
         let i_p1 = r1.apply_inverse_inertia_world(&p);
 
-        r0.rot = r0.rot + 0.5 * Quad::new(0.0, i_p0.x, i_p0.y, i_p0.z) * r0.rot;
-        r1.rot = r1.rot - 0.5 * Quad::new(0.0, i_p1.x, i_p1.y, i_p1.z) * r1.rot;
+        r0.rot = r0.rot + 0.5 * Quat::new(0.0, i_p0.x, i_p0.y, i_p0.z) * r0.rot;
+        r1.rot = r1.rot - 0.5 * Quat::new(0.0, i_p1.x, i_p1.y, i_p1.z) * r1.rot;
 
         r0.rot = r0.rot.normalize();
         r1.rot = r1.rot.normalize();
@@ -158,7 +158,7 @@ impl XpbdAngularConstraint {
         self.lagrange_multiplier = 0.0;
     }
 
-    pub fn _calculate_rotation_error_2(rotation_0: &Quad, rotation_1: &Quad) -> (Vec3, f32) {
+    pub fn _calculate_rotation_error_2(rotation_0: &Quat, rotation_1: &Quat) -> (Vec3, f32) {
         let mut q_err = (rotation_0 * rotation_1.conjugate()).normalize();
 
         // Choose the shortest rotation.
@@ -180,7 +180,7 @@ impl XpbdAngularConstraint {
     }
 
     // Suitable for small angle errors (paper's approximation)
-    pub fn _calculate_rotation_error(rotation_0: &Quad, rotation_1: &Quad) -> (Vec3, f32) {
+    pub fn _calculate_rotation_error(rotation_0: &Quat, rotation_1: &Quat) -> (Vec3, f32) {
         let dq = (*rotation_0 * rotation_1.conjugate()).normalize();
 
         let sign = if dq.s > 0.0 { -1.0 } else { 1.0 };

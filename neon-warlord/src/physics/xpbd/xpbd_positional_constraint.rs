@@ -2,7 +2,7 @@
 
 use cgmath::{InnerSpace, Rotation, Zero};
 
-use crate::physics::xpbd::{Quad, Vec3, xpbd_rigid_body::XpbdRigidBody};
+use crate::physics::xpbd::{Quat, Vec3, xpbd_rigid_body::XpbdRigidBody};
 
 #[derive(Clone)]
 pub struct XpbdPositionalConstraint {
@@ -188,8 +188,8 @@ impl XpbdPositionalConstraint {
         let dq0 = r0.apply_inverse_inertia_world(&r0_world.cross(p));
         let dq1 = r1.apply_inverse_inertia_world(&r1_world.cross(p));
 
-        r0.rot = r0.rot + 0.5 * Quad::new(0.0, dq0.x, dq0.y, dq0.z) * r0.rot;
-        r1.rot = r1.rot - 0.5 * Quad::new(0.0, dq1.x, dq1.y, dq1.z) * r1.rot;
+        r0.rot = r0.rot + 0.5 * Quat::new(0.0, dq0.x, dq0.y, dq0.z) * r0.rot;
+        r1.rot = r1.rot - 0.5 * Quat::new(0.0, dq1.x, dq1.y, dq1.z) * r1.rot;
 
         self.force = self.lagrange_multiplier * direction / (dt * dt)
     }
@@ -230,8 +230,8 @@ impl XpbdPositionalConstraint {
 
 /// Applies a local space inverse inertia tensor to a world space vector
 fn _apply_inverse_inertia_world(
-    rotation: Quad,
-    inverse_rotation: Quad,
+    rotation: Quat,
+    inverse_rotation: Quat,
     inverse_inertia_local: Vec3,
     v_world: Vec3,
 ) -> Vec3 {

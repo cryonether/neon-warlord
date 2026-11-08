@@ -2,11 +2,13 @@
 
 pub mod gym_cart;
 pub mod gym_cart_pole;
+pub mod gym_dog;
 pub mod gym_half_cheetah;
 pub mod gym_half_cheetah_2;
 pub mod gym_hopper;
 pub mod gym_pole;
 pub mod gym_reacher;
+pub mod move_8;
 
 use forward_renderer::{particle_shader, particle_shader_two_point};
 

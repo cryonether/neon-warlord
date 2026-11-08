@@ -3,7 +3,7 @@
 use cgmath::{InnerSpace, Rad, Rotation, Rotation3};
 
 use crate::physics::xpbd::{
-    Quad, Vec3, xpbd_angular_constraint::XpbdAngularConstraint,
+    Quat, Vec3, xpbd_angular_constraint::XpbdAngularConstraint,
     xpbd_positional_constraint::XpbdPositionalConstraint, xpbd_rigid_body::XpbdRigidBody,
 };
 
@@ -264,7 +264,7 @@ impl XpbdHingeJoint {
 
         // println!("phi: {}, phi_target: {}", phi, phi_target);
 
-        let rotation = Quad::from_axis_angle(a0, Rad(phi_target));
+        let rotation = Quat::from_axis_angle(a0, Rad(phi_target));
         let n_target = rotation.rotate_vector(-b0);
 
         // Angular correction from the paper, Equation (21).
@@ -359,7 +359,7 @@ impl RotationAxis {
     }
 }
 
-pub fn _calculate_rotation_error_2(rotation_0: &Quad, rotation_1: &Quad) -> (Vec3, f32) {
+pub fn _calculate_rotation_error_2(rotation_0: &Quat, rotation_1: &Quat) -> (Vec3, f32) {
     let mut q_err = (rotation_0 * rotation_1.conjugate()).normalize();
 
     // Choose the shortest rotation.

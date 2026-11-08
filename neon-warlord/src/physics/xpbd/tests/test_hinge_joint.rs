@@ -7,6 +7,8 @@ use super::super::*;
 use cgmath::{InnerSpace, Rad, Rotation3};
 use std::f32::consts::PI;
 
+type Quat = cgmath::Quaternion<f32>;
+
 fn create_body(position: Vec3) -> XpbdRigidBody {
     // Asymmetric particle distribution to avoid degenerate inertia.
     let particles = [
@@ -148,7 +150,7 @@ fn test_free_rotation_within_limits() {
 
     let mut joint = create_joint(-PI / 4.0, PI / 4.0, RotationAxis::Y);
 
-    body1.r.rot = Quad::from_axis_angle(Vec3::unit_y(), Rad(PI / 6.0));
+    body1.r.rot = Quat::from_axis_angle(Vec3::unit_y(), Rad(PI / 6.0));
 
     // Initialize the joint's measured angle.
     joint.solve(&mut body0, &mut body1, 1.0 / 60.0);
@@ -212,7 +214,7 @@ fn test_hinge_axis_misalignment_produces_finite_rotation() {
 
     let mut joint = create_joint(-PI, PI, RotationAxis::Y);
 
-    body1.r.rot = Quad::from_axis_angle(Vec3::unit_x(), Rad(PI / 6.0));
+    body1.r.rot = Quat::from_axis_angle(Vec3::unit_x(), Rad(PI / 6.0));
 
     joint.solve(&mut body0, &mut body1, 1.0 / 60.0);
 
@@ -239,7 +241,7 @@ fn test_lower_angular_limit() {
     let mut joint = create_joint_fix(lower_limit, upper_limit, RotationAxis::Y);
 
     // Rotate body 1 by -90 degrees.
-    body1.r.rot = Quad::from_axis_angle(
+    body1.r.rot = Quat::from_axis_angle(
         Vec3::unit_y(),
         Rad(-PI / 2.0),
         // Rad(PI),
@@ -267,14 +269,14 @@ fn test_upper_angular_limit_y() {
     let mut joint = create_joint_fix(lower_limit, upper_limit, RotationAxis::Y);
 
     // Rotate body 1 by +90 degrees.
-    body1.r.rot = Quad::from_axis_angle(Vec3::unit_y(), Rad(PI / 2.0));
+    body1.r.rot = Quat::from_axis_angle(Vec3::unit_y(), Rad(PI / 2.0));
 
     simulate_joint(&mut joint, &mut body0, &mut body1, 1.0 / 60.0, 100);
 
     assert_angle_near(joint.get_angle(), upper_limit, 1e-2);
 
     // Rotate body 1 by +90 degrees.
-    body1.r.rot = Quad::from_axis_angle(Vec3::unit_y(), Rad(-PI / 2.0));
+    body1.r.rot = Quat::from_axis_angle(Vec3::unit_y(), Rad(-PI / 2.0));
 
     simulate_joint(&mut joint, &mut body0, &mut body1, 1.0 / 60.0, 100);
 
@@ -292,14 +294,14 @@ fn test_upper_angular_limit_x() {
     let mut joint = create_joint_fix(lower_limit, upper_limit, RotationAxis::X);
 
     // Rotate body 1 by +90 degrees.
-    body1.r.rot = Quad::from_axis_angle(Vec3::unit_x(), Rad(PI / 2.0));
+    body1.r.rot = Quat::from_axis_angle(Vec3::unit_x(), Rad(PI / 2.0));
 
     simulate_joint(&mut joint, &mut body0, &mut body1, 1.0 / 60.0, 100);
 
     assert_angle_near(joint.get_angle(), upper_limit, 1e-2);
 
     // Rotate body 1 by +90 degrees.
-    body1.r.rot = Quad::from_axis_angle(Vec3::unit_x(), Rad(-PI / 2.0));
+    body1.r.rot = Quat::from_axis_angle(Vec3::unit_x(), Rad(-PI / 2.0));
 
     simulate_joint(&mut joint, &mut body0, &mut body1, 1.0 / 60.0, 100);
 
@@ -317,14 +319,14 @@ fn test_upper_angular_limit_z() {
     let mut joint = create_joint_fix(lower_limit, upper_limit, RotationAxis::Z);
 
     // Rotate body 1 by +90 degrees.
-    body1.r.rot = Quad::from_axis_angle(Vec3::unit_z(), Rad(PI / 2.0));
+    body1.r.rot = Quat::from_axis_angle(Vec3::unit_z(), Rad(PI / 2.0));
 
     simulate_joint(&mut joint, &mut body0, &mut body1, 1.0 / 60.0, 100);
 
     assert_angle_near(joint.get_angle(), upper_limit, 1e-2);
 
     // Rotate body 1 by +90 degrees.
-    body1.r.rot = Quad::from_axis_angle(Vec3::unit_z(), Rad(-PI / 2.0));
+    body1.r.rot = Quat::from_axis_angle(Vec3::unit_z(), Rad(-PI / 2.0));
 
     simulate_joint(&mut joint, &mut body0, &mut body1, 1.0 / 60.0, 100);
 
@@ -344,7 +346,7 @@ fn test_hinge_axis_alignment() {
 
     // Rotate body 1 by 30 degrees around X.
     // This misaligns its local Y hinge axis.
-    body1.r.rot = Quad::from_axis_angle(Vec3::unit_x(), Rad(PI / 6.0));
+    body1.r.rot = Quat::from_axis_angle(Vec3::unit_x(), Rad(PI / 6.0));
 
     simulate_joint(&mut joint, &mut body0, &mut body1, 1.0 / 60.0, 100);
 
