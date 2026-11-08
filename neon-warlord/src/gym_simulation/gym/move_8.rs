@@ -51,8 +51,8 @@ impl Move8 {
             next_pos
         } else {
             self.index = (self.index+1) % self.points.len();
-            let next_pos = self.points[self.index];
-            next_pos
+            
+            self.points[self.index]
         }
     }
 

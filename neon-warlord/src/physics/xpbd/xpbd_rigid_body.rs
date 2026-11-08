@@ -274,7 +274,7 @@ fn _symmetric_pseudo_inverse(mut matrix: Mat3) -> Mat3 {
 
 
 pub fn transform_rigid_bodies(
-    rigid_bodies: &mut Vec<XpbdRigidBody>,
+    rigid_bodies: &mut [XpbdRigidBody],
     translation: Vec3,
     rotation: Quad,
     pivot: Vec3,
