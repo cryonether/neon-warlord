@@ -1,6 +1,7 @@
 //! A pendulum, try to balance it
 
 use std::f32::consts::PI;
+use std::iter::zip;
 
 use cgmath::Rotation3;
 use cgmath::{InnerSpace, Zero};
@@ -18,7 +19,7 @@ use crate::{
 
 type Quat = cgmath::Quaternion<f32>;
 
-const OBSERVATIONS: usize = 26;
+const OBSERVATIONS: usize = 34;
 const ACTIONS: usize = 8;
 
 const MASS: f32 = 0.1;
@@ -294,6 +295,7 @@ impl GymDog {
             leg_angular_velocity_3_1: 0.0,
 
             actions: [0.0; 8],
+            prev_actions: [0.0; 8],
         };
 
         let mut move_8 = Move8::new();
@@ -344,7 +346,7 @@ impl GymDog {
     }
 
     fn set_target(&mut self) {
-        self.state.pos_z_target = 0.95;
+        self.state.pos_z_target = 0.8;
         self.state.vel_x_target = 2.0 + fastrand::f32() * 8.0
     }
 }
@@ -423,6 +425,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             leg_angular_velocity_2_1: hinge_2_1.get_angular_velocity(),
             leg_angular_velocity_3_1: hinge_3_1.get_angular_velocity(),
             actions: self.state.actions,
+            prev_actions: self.state.prev_actions,
         };
 
         self.state = state;
@@ -464,6 +467,14 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             state.leg_angular_velocity_1_1,
             state.leg_angular_velocity_2_1,
             state.leg_angular_velocity_3_1,
+            state.prev_actions[0],
+            state.prev_actions[1],
+            state.prev_actions[2],
+            state.prev_actions[3],
+            state.prev_actions[4],
+            state.prev_actions[5],
+            state.prev_actions[6],
+            state.prev_actions[7],
         ]
     }
 
@@ -507,6 +518,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             .constraint
             .set_external_torque(torque[7]);
 
+        self.state.prev_actions = self.state.actions;
         self.state.actions = *actions;
     }
 
@@ -525,7 +537,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             1.0 - error
         };
 
-        let mut reward = velocity_cost * 1.0;
+        let mut reward = velocity_cost * 0.4;
 
         // Reward target height
         let target_height = self.state.pos_z_target;
@@ -546,14 +558,25 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         for action in self.state.actions {
             action_cost += action.powi(2);
         }
-        reward -= action_cost * 0.01;
+        reward -= action_cost * 0.1;
+
+        // Penalize huge action change
+        let mut action_change_cost = 0.0;
+        for (action, prev_action) in zip(self.state.actions, self.state.prev_actions) {
+            action_change_cost += (action - prev_action).powi(2);
+        }
+        reward -= action_change_cost * 0.01;
 
         if self.state.rot_y.powi(2) > 2.0 || self.state.rot_x.powi(2) > 2.0 {
             return (0.0, true);
         }
 
+        // if self.state.pos_z < 0.2 {
+        //     return (0.0, true);
+        // }
+
         // No negative rewards
-        let reward = reward.max(0.0);
+        let reward = reward.clamp(0.0, 2.0);
 
         (reward, false)
     }
@@ -613,4 +636,5 @@ pub struct State {
     leg_angular_velocity_3_1: f32,
 
     actions: [f32; 8],
+    prev_actions: [f32; 8],
 }
