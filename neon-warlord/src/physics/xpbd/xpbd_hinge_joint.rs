@@ -91,6 +91,8 @@ impl XpbdHingeJoint {
             let attachment_point_0 = obj_0.local_to_world(&self.attachment_point_0);
             let attachment_point_1 = obj_1.local_to_world(&self.attachment_point_1);
 
+            println!("rot0: obj_0: {:?}, obj_1: {:?}", obj_0.r.rot, obj_1.r.rot);
+
             self.positional_constraint.solve(
                 obj_0,
                 obj_1,
@@ -130,14 +132,14 @@ impl XpbdHingeJoint {
             // }
 
             // Fast
-            let error = a0.cross(a1);
-            let error_magnitude = error.magnitude();
-            let n = error / error_magnitude;
+            // let error = a0.cross(a1);
+            // let error_magnitude = error.magnitude();
+            // let n = error / error_magnitude;
 
-            if error_magnitude > 0.1e-6 {
-                self.angular_constraint
-                    .solve(obj_0, obj_1, &n, -error_magnitude, dt);
-            }
+            // if error_magnitude > 0.1e-6 {
+            //     self.angular_constraint
+            //         .solve(obj_0, obj_1, &n, -error_magnitude, dt);
+            // }
 
             // println!(" alpha: {:.3}, a1_a0: {:.3}, n: {:?}, omega_0: {:?}, omega_1: {:?}",
             //     alpha,
@@ -152,32 +154,55 @@ impl XpbdHingeJoint {
 
         // ##########################################################################
         // Test 0: Align both angles
+        for _i in 0..1 {
+            let _p0 = &obj_0.p;
+            let r0 = &obj_0.r;
+            let _p1 = &obj_1.p;
+            let r1 = &obj_1.r;
 
-        // let mut q_err = (r0.rot * r1.rot.conjugate()).normalize();
+            let a0 = r0.rot.rotate_vector(self.a0);
+            let a1 = r1.rot.rotate_vector(self.a1);
 
-        // // Choose the shortest rotation.
-        // if q_err.s < 0.0 {
-        //     q_err = -q_err;
-        // }
+            let b0 = r0.rot.rotate_vector(self.b0);
+            let b1 = r1.rot.rotate_vector(self.b1);
 
-        // let v = Vec3::new(q_err.v.x, q_err.v.y, q_err.v.z);
-        // let sin_half = v.magnitude();
+            let _c0 = r0.rot.rotate_vector(self.c0);
+            let _c1 = r1.rot.rotate_vector(self.c1);
 
-        // let (axis, angle) = if sin_half < 1e-6 {
-        //     (Vec3::unit_x(), 0.0)
-        // } else {
-        //     let axis = v / sin_half;
-        //     let angle = 2.0 * sin_half.atan2(q_err.s);
-        //     (axis, angle)
-        // };
+            let mut q_err = (r0.rot * r1.rot.conjugate()).normalize();
 
-        // self.angular_constraint.solve(
-        //     obj_0,
-        //     obj_1,
-        //     &axis,
-        //     angle,
-        //     dt
-        // );
+            // Choose the shortest rotation.
+            if q_err.s < 0.0 {
+                q_err = -q_err;
+            }
+
+            let v = Vec3::new(q_err.v.x, q_err.v.y, q_err.v.z);
+            let sin_half = v.magnitude();
+
+            let (axis, angle) = if sin_half < 1e-6 {
+                (Vec3::unit_x(), 0.0)
+            } else {
+                let axis = v / sin_half;
+                let angle = 2.0 * sin_half.atan2(q_err.s);
+                (axis, angle)
+            };
+
+            println!("angle: {}", angle);
+            println!("rot1: obj_0: {:?}, obj_1: {:?}", obj_0.r.rot, obj_1.r.rot);
+
+            self.angular_constraint.solve(
+                obj_0,
+                obj_1,
+                &axis,
+                angle,
+                dt
+            );
+
+            println!("rot2: obj_0: {:?}, obj_1: {:?}", obj_0.r.rot, obj_1.r.rot);
+            println!("");
+        }
+
+
 
         // ##########################################################################
         // Test 1: Free rotation around the y axis
@@ -233,50 +258,50 @@ impl XpbdHingeJoint {
         // ##########################################################################
         // Apply external torque
 
-        let _p0 = &obj_0.p;
-        let r0 = &obj_0.r;
-        let _p1 = &obj_1.p;
-        let r1 = &obj_1.r;
+        // let _p0 = &obj_0.p;
+        // let r0 = &obj_0.r;
+        // let _p1 = &obj_1.p;
+        // let r1 = &obj_1.r;
 
-        let a0 = r0.rot.rotate_vector(self.a0);
-        let a1 = r1.rot.rotate_vector(self.a1);
+        // let a0 = r0.rot.rotate_vector(self.a0);
+        // let a1 = r1.rot.rotate_vector(self.a1);
 
-        let b0 = r0.rot.rotate_vector(self.b0);
-        let b1 = r1.rot.rotate_vector(self.b1);
+        // let b0 = r0.rot.rotate_vector(self.b0);
+        // let b1 = r1.rot.rotate_vector(self.b1);
 
-        let _c0 = r0.rot.rotate_vector(self.c0);
-        let _c1 = r1.rot.rotate_vector(self.c1);
+        // let _c0 = r0.rot.rotate_vector(self.c0);
+        // let _c1 = r1.rot.rotate_vector(self.c1);
 
-        obj_0.r.external_torque += self.external_torque * a0;
-        obj_1.r.external_torque -= self.external_torque * a1;
+        // obj_0.r.external_torque += self.external_torque * a0;
+        // obj_1.r.external_torque -= self.external_torque * a1;
 
         // ##########################################################################
         // 3: Limit the target angle between alpha and beta
 
-        let alpha = self.angle_limit_0;
-        let beta = self.angle_limit_1;
+        // let alpha = self.angle_limit_0;
+        // let beta = self.angle_limit_1;
 
-        let sin_phi = (b0.cross(b1)).dot(a0);
-        let cos_phi = b0.dot(b1);
-        let phi = sin_phi.atan2(cos_phi);
+        // let sin_phi = (b0.cross(b1)).dot(a0);
+        // let cos_phi = b0.dot(b1);
+        // let phi = sin_phi.atan2(cos_phi);
 
-        let phi_target = phi.clamp(alpha, beta);
+        // let phi_target = phi.clamp(alpha, beta);
 
-        // println!("phi: {}, phi_target: {}", phi, phi_target);
+        // // println!("phi: {}, phi_target: {}", phi, phi_target);
 
-        let rotation = Quat::from_axis_angle(a0, Rad(phi_target));
-        let n_target = rotation.rotate_vector(-b0);
+        // let rotation = Quat::from_axis_angle(a0, Rad(phi_target));
+        // let n_target = rotation.rotate_vector(-b0);
 
-        // Angular correction from the paper, Equation (21).
-        let angular_error = n_target.cross(b1);
+        // // Angular correction from the paper, Equation (21).
+        // let angular_error = n_target.cross(b1);
 
-        let angle = angular_error.magnitude();
-        let axis = if angle > 1e-6 {
-            angular_error / angle
-        } else {
-            // Vec3::unit_y()
-            a0
-        };
+        // let angle = angular_error.magnitude();
+        // let axis = if angle > 1e-6 {
+        //     angular_error / angle
+        // } else {
+        //     // Vec3::unit_y()
+        //     a0
+        // };
 
         // println!(
         //     "axis alignment: {:.3}, phi: {:.3}, error: {:.3}",
@@ -298,15 +323,15 @@ impl XpbdHingeJoint {
         //     phi,
         // );
 
-        self.angular_constraint_2
-            .solve(obj_0, obj_1, &axis, angle, dt);
+        // self.angular_constraint_2
+        //     .solve(obj_0, obj_1, &axis, angle, dt);
 
-        // Save angle
-        self.phi = phi;
+        // // Save angle
+        // self.phi = phi;
 
         // // Calculate angular velocity
         let omega_rel = obj_1.r.omega - obj_0.r.omega;
-        self.angular_velocity = omega_rel.dot(a0);
+        // self.angular_velocity = omega_rel.dot(a0);
     }
 
     pub fn reset_lagrange_multiplier(&mut self) {

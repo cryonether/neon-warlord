@@ -140,11 +140,16 @@ impl XpbdAngularConstraint {
         let i_p0 = r0.apply_inverse_inertia_world(&p);
         let i_p1 = r1.apply_inverse_inertia_world(&p);
 
-        r0.rot = r0.rot + 0.5 * Quat::new(0.0, i_p0.x, i_p0.y, i_p0.z) * r0.rot;
-        r1.rot = r1.rot - 0.5 * Quat::new(0.0, i_p1.x, i_p1.y, i_p1.z) * r1.rot;
+        // r0.rot = r0.rot + 0.5 * Quat::new(0.0, i_p0.x, i_p0.y, i_p0.z) * r0.rot;
+        // r1.rot = r1.rot - 0.5 * Quat::new(0.0, i_p1.x, i_p1.y, i_p1.z) * r1.rot;
 
-        r0.rot = r0.rot.normalize();
-        r1.rot = r1.rot.normalize();
+        // r0.rot = r0.rot.normalize();
+        // r1.rot = r1.rot.normalize();
+
+        println!("wo: {:?}, w1: {:?}, p: {:?}, i_p0: {:?}, i_p1: {:?}", w0, w1, p, i_p0, i_p1);
+
+        apply_rotation_correction(&mut r0.rot, i_p0);
+        apply_rotation_correction(&mut r1.rot, -i_p1);
 
         // Calculate torque
         self.torque = self.lagrange_multiplier * n / (dt * dt);
@@ -194,4 +199,25 @@ impl XpbdAngularConstraint {
 
         (corr / angle, angle)
     }
+}
+
+
+pub fn apply_rotation_correction(rot: &mut Quat, delta: Vec3) {
+    let angle = delta.magnitude();
+
+    if angle < 1e-8 {
+        return;
+    }
+
+    let axis = delta / angle;
+    let half_angle = angle * 0.5;
+
+    let dq = Quat::new(
+        half_angle.cos(),
+        axis.x * half_angle.sin(),
+        axis.y * half_angle.sin(),
+        axis.z * half_angle.sin(),
+    );
+
+    *rot = (dq * *rot).normalize();
 }

@@ -46,7 +46,7 @@ pub struct GymHingeTest {
     // _index_leg_2_1: usize,
     // _index_leg_3_1: usize,
 
-    index_hinge_joint_s_0_0: usize,
+    // index_hinge_joint_s_0_0: usize,
     // index_hinge_joint_s_1_0: usize,
     // index_hinge_joint_s_2_0: usize,
     // index_hinge_joint_s_3_0: usize,
@@ -90,7 +90,7 @@ impl GymHingeTest {
 
         let shoulder_0_0 = XpbdRigidBody::new(
             Vec3::new(1.0, 0.0, 3.0),
-            &[Vec3::zero(), Vec3::new(1.0, 0.1, 0.0)],
+            &[Vec3::zero(), Vec3::new(1.0, 0.5, 0.0)],
             MASS,
             radius,
         );
@@ -122,7 +122,7 @@ impl GymHingeTest {
         let leg_0_0 = XpbdRigidBody::new(
             Vec3::new(2.0, 0.0, 3.0),
             &[Vec3::zero(), Vec3::new(1.0, 0.0, 0.0)],
-            MASS * 6.0,
+            MASS * 10.0,
             radius,
         );
 
@@ -194,8 +194,8 @@ impl GymHingeTest {
         // let index_leg_2_1 = physics.add_rigid_body(&leg_2_1);
         // let index_leg_3_1 = physics.add_rigid_body(&leg_3_1);
 
-        let positional_compliance = 0.001;
-        let angular_compliance = 0.001;
+        let positional_compliance = 0.0;
+        let angular_compliance = 0.000;
 
 
        // Shoulders
@@ -437,7 +437,7 @@ impl GymHingeTest {
             // _index_leg_1_1: index_leg_1_1,
             // _index_leg_2_1: index_leg_2_1,
             // _index_leg_3_1: index_leg_3_1,
-            index_hinge_joint_s_0_0,
+            // index_hinge_joint_s_0_0,
             // index_hinge_joint_s_1_0,
             // index_hinge_joint_s_2_0,
             // index_hinge_joint_s_3_0,
@@ -496,7 +496,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
         let vel = body.p.vel;
         let rot = body.r.get_rotation_as_euler();
 
-        let hinge_s_0_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_0_0].constraint;
+        // let hinge_s_0_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_0_0].constraint;
         // let hinge_s_1_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_1_0].constraint;
         // let hinge_s_2_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_2_0].constraint;
         // let hinge_s_3_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_3_0].constraint;
@@ -528,7 +528,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
             rot_y: rot.y,
             rot_z: rot.z,
 
-            shoulder_angle_0_0: hinge_s_0_0.get_angle(),
+            shoulder_angle_0_0: 0.0, // hinge_s_0_0.get_angle(),
             shoulder_angle_1_0: 0.0, // hinge_s_1_0.get_angle(),
             shoulder_angle_2_0: 0.0, // hinge_s_2_0.get_angle(),
             shoulder_angle_3_0: 0.0, // hinge_s_3_0.get_angle(),
@@ -543,7 +543,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
             leg_angle_2_1: 0.0, // hinge_2_1.get_angle(),
             leg_angle_3_1: 0.0, // hinge_3_1.get_angle(),
 
-            shoulder_angular_velocity_0_0: hinge_s_0_0.get_angular_velocity(),
+            shoulder_angular_velocity_0_0: 0.0, // hinge_s_0_0.get_angular_velocity(),
             shoulder_angular_velocity_1_0: 0.0, // hinge_s_1_0.get_angular_velocity(),
             shoulder_angular_velocity_2_0: 0.0, // hinge_s_2_0.get_angular_velocity(),
             shoulder_angular_velocity_3_0: 0.0, // hinge_s_3_0.get_angular_velocity(),
