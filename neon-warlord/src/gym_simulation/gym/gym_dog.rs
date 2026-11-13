@@ -211,8 +211,8 @@ impl GymDog {
         let hinge_joint_s_0_0 = XpbdHingeJoint::new(
             body.particles[0],
             shoulder_0_0.particles[0],
-            -0.25 * PI,
-            0.25 * PI,
+            -0.025 * PI,
+            0.025 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -224,8 +224,8 @@ impl GymDog {
         let hinge_joint_s_1_0 = XpbdHingeJoint::new(
             body.particles[2],
             shoulder_1_0.particles[0],
-            -0.25 * PI,
-            0.25 * PI,
+            -0.025 * PI,
+            0.025 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -237,8 +237,8 @@ impl GymDog {
         let hinge_joint_s_2_0 = XpbdHingeJoint::new(
             body.particles[3],
             shoulder_2_0.particles[0],
-            -0.25 * PI,
-            0.25 * PI,
+            -0.025 * PI,
+            0.025 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -250,8 +250,8 @@ impl GymDog {
         let hinge_joint_s_3_0 = XpbdHingeJoint::new(
             body.particles[5],
             shoulder_3_0.particles[0],
-            -0.25 * PI,
-            0.25 * PI,
+            -0.025 * PI,
+            0.025 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -267,8 +267,8 @@ impl GymDog {
         let hinge_joint_0_0 = XpbdHingeJoint::new(
             shoulder_0_0.particles[1],
             leg_0_0.particles[0],
-            -0.8 * PI,
-            0.8 * PI,
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -280,8 +280,8 @@ impl GymDog {
         let hinge_joint_1_0 = XpbdHingeJoint::new(
             shoulder_1_0.particles[1],
             leg_1_0.particles[0],
-            -0.8 * PI,
-            0.8 * PI,
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -293,8 +293,8 @@ impl GymDog {
         let hinge_joint_2_0 = XpbdHingeJoint::new(
             shoulder_2_0.particles[1],
             leg_2_0.particles[0],
-            -0.8 * PI,
-            0.8 * PI,
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -306,8 +306,8 @@ impl GymDog {
         let hinge_joint_3_0 = XpbdHingeJoint::new(
             shoulder_3_0.particles[1],
             leg_3_0.particles[0],
-            -0.8 * PI,
-            0.8 * PI,
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -724,7 +724,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             1.0 - error
         };
 
-        let mut reward = velocity_cost * 0.4;
+        let mut reward = velocity_cost * 0.0;
 
         // Reward target height
         let target_height = self.state.pos_z_target;
@@ -745,14 +745,14 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         for action in self.state.actions {
             action_cost += action.powi(2);
         }
-        reward -= action_cost * 0.1;
+        // reward -= action_cost * 0.1;
 
         // Penalize huge action change
         let mut action_change_cost = 0.0;
         for (action, prev_action) in zip(self.state.actions, self.state.prev_actions) {
             action_change_cost += (action - prev_action).powi(2);
         }
-        reward -= action_change_cost * 0.01;
+        // reward -= action_change_cost * 0.01;
 
         if self.state.rot_y.powi(2) > 2.0 || self.state.rot_x.powi(2) > 2.0 {
             return (0.0, true);
