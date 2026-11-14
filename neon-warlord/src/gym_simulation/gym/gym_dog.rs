@@ -567,8 +567,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             leg_angular_velocity_3_1: hinge_3_1.get_angular_velocity(),
             actions: self.state.actions,
             prev_actions: self.state.prev_actions,
-
-
         };
 
         self.state = state;
