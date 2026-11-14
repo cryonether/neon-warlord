@@ -353,7 +353,7 @@ impl NeonWarlord {
         let _gym_simulation_8: GymSimulation<46, 12, 64, 2, false, GymHingeTest> =
             GymSimulation::new(GymHingeTest::new());
 
-        let gym_simulation = _gym_simulation_8;
+        let gym_simulation = _gym_simulation_7;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
             sim: Box::new(gym_simulation),
             producer,

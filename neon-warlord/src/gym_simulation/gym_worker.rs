@@ -96,7 +96,7 @@ where
 {
     fn run(&mut self) {
         let dt = 1.0 / 60.0;
-        let max_steps = 50000;
+        let max_steps = 1000;
 
         self.nodes.clear();
         self.edges.clear();
@@ -109,8 +109,8 @@ where
                 let (action, _mean_action, log_probability) = self.ppo.get_action(&state);
 
                 // update
-                // env.update(&action, dt);
-                // env.update_verlet_physics(dt);
+                env.update(&action, dt);
+                env.update_verlet_physics(dt);
 
                 // reward
                 let (reward, terminated) = env.get_reward();

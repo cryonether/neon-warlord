@@ -53,7 +53,7 @@ impl<const INPUTS: usize, const OUTPUTS: usize> Adam<INPUTS, OUTPUTS> {
         let beta_2 = 0.999;
         let epsilon = 1e-6;
         // let weight_decay = 0.0;
-        let weight_decay = 1e-4;
+        let weight_decay = 1e-2;
 
         let m_w = SMat16::zero();
         let m_b = SVec16::zero();

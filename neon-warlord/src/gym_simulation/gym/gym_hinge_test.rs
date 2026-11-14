@@ -90,7 +90,7 @@ impl GymHingeTest {
 
         let shoulder_0_0 = XpbdRigidBody::new(
             Vec3::new(1.0, 0.0, 3.0),
-            &[Vec3::zero(), Vec3::new(1.0, 0.5, 0.0)],
+            &[Vec3::zero(), Vec3::new(1.0, 1.0, 1.0)],
             MASS,
             radius,
         );
@@ -121,8 +121,8 @@ impl GymHingeTest {
 
         let leg_0_0 = XpbdRigidBody::new(
             Vec3::new(2.0, 0.0, 3.0),
-            &[Vec3::zero(), Vec3::new(1.0, 0.0, 0.0)],
-            MASS * 10.0,
+            &[Vec3::zero(), Vec3::new(0.0, 0.0, 0.5)],
+            MASS * 1.0,
             radius,
         );
 
@@ -194,7 +194,7 @@ impl GymHingeTest {
         // let index_leg_2_1 = physics.add_rigid_body(&leg_2_1);
         // let index_leg_3_1 = physics.add_rigid_body(&leg_3_1);
 
-        let positional_compliance = 0.0;
+        let positional_compliance = 0.000;
         let angular_compliance = 0.000;
 
 
@@ -259,10 +259,10 @@ impl GymHingeTest {
         let hinge_joint_0_0 = XpbdHingeJoint::new(
             shoulder_0_0.particles[1],
             leg_0_0.particles[0],
-            -1.0 * PI,
-            1.0 * PI,
-            RotationAxis::Y,
-            RotationAxis::Y,
+            -0.5 * PI,
+            0.5 * PI,
+            RotationAxis::X,
+            RotationAxis::X,
             positional_compliance,
             angular_compliance,
         );

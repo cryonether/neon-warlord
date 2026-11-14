@@ -211,8 +211,8 @@ impl GymDog {
         let hinge_joint_s_0_0 = XpbdHingeJoint::new(
             body.particles[0],
             shoulder_0_0.particles[0],
-            -0.025 * PI,
-            0.025 * PI,
+            -0.25 * PI,
+            0.25 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -224,8 +224,8 @@ impl GymDog {
         let hinge_joint_s_1_0 = XpbdHingeJoint::new(
             body.particles[2],
             shoulder_1_0.particles[0],
-            -0.025 * PI,
-            0.025 * PI,
+            -0.25 * PI,
+            0.25 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -237,8 +237,8 @@ impl GymDog {
         let hinge_joint_s_2_0 = XpbdHingeJoint::new(
             body.particles[3],
             shoulder_2_0.particles[0],
-            -0.025 * PI,
-            0.025 * PI,
+            -0.25 * PI,
+            0.25 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -250,8 +250,8 @@ impl GymDog {
         let hinge_joint_s_3_0 = XpbdHingeJoint::new(
             body.particles[5],
             shoulder_3_0.particles[0],
-            -0.025 * PI,
-            0.025 * PI,
+            -0.25 * PI,
+            0.25 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -422,12 +422,12 @@ impl GymDog {
         // let translation = Vec3::new(5.0, 0.0, 0.0);
         let rotation = Quat::from_axis_angle(Vec3::unit_z(), cgmath::Rad(angle));
         let pivot = Vec3::new(0.0, 0.0, 0.0);
-        // xpbd_rigid_body::transform_rigid_bodies(
-        //     &mut physics.rigid_bodies,
-        //     translation,
-        //     rotation,
-        //     pivot,
-        // );
+        xpbd_rigid_body::transform_rigid_bodies(
+            &mut physics.rigid_bodies,
+            translation,
+            rotation,
+            pivot,
+        );
 
         let mut obj = Self {
             physics,
@@ -468,7 +468,7 @@ impl GymDog {
     }
 
     fn set_target(&mut self) {
-        self.state.pos_z_target = 0.8;
+        self.state.pos_z_target = 1.0;
         self.state.vel_x_target = 2.0 + fastrand::f32() * 8.0
     }
 }
@@ -650,18 +650,16 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         // self.apply_static_constraint();
 
         let torque = [
-            actions[0] * 10.0,
-            actions[1] * 10.0,
-            actions[2] * 10.0,
-            actions[3] * 10.0,
-
-            actions[4] * 10.0,
-            actions[5] * 10.0,
-            actions[6] * 10.0,
-            actions[7] * 10.0,
-
-            actions[8] * 10.0,
-            actions[9] * 10.0,
+            actions[0] *  10.0,
+            actions[1] *  10.0,
+            actions[2] *  10.0,
+            actions[3] *  10.0,
+            actions[4] *  10.0,
+            actions[5] *  10.0,
+            actions[6] *  10.0,
+            actions[7] *  10.0,
+            actions[8] *  10.0,
+            actions[9] *  10.0,
             actions[10] * 10.0,
             actions[11] * 10.0,
         ];
@@ -724,7 +722,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             1.0 - error
         };
 
-        let mut reward = velocity_cost * 0.0;
+        let mut reward = velocity_cost * 0.6;
 
         // Reward target height
         let target_height = self.state.pos_z_target;
@@ -745,7 +743,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         for action in self.state.actions {
             action_cost += action.powi(2);
         }
-        // reward -= action_cost * 0.1;
+        reward -= action_cost * 0.02;
 
         // Penalize huge action change
         let mut action_change_cost = 0.0;

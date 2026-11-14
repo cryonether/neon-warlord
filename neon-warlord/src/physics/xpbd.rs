@@ -7,6 +7,7 @@ pub mod xpbd_angular_constraint;
 pub mod xpbd_drawer;
 pub mod xpbd_ground;
 pub mod xpbd_hinge_joint;
+pub mod xpbd_fake_angular_constraint;
 pub mod xpbd_positional_constraint;
 pub mod xpbd_rigid_body;
 
@@ -55,7 +56,7 @@ impl Xpbd {
 
     pub fn step(&mut self, dt: f32) {
         // const DT: f32 = 1.0 / 60.0;
-        const SUB_STEPS: usize = 1;
+        const SUB_STEPS: usize = 4;
         let sub_dt = dt / SUB_STEPS as f32;
 
         // ##########################################################
