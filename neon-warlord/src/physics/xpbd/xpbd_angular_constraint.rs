@@ -26,6 +26,7 @@ impl XpbdAngularConstraint {
         }
     }
 
+    #[allow(clippy::needless_late_init)]
     pub fn solve(
         &mut self,
         obj_0: &mut XpbdRigidBody,
@@ -80,7 +81,7 @@ impl XpbdAngularConstraint {
 
         let w0;
         let w1;
-        if USE_INERTIA_MATRIX {
+        if USE_INERTIA_MATRIX {  
             w0 = n.dot(i_n0);
             w1 = n.dot(i_n1);
         } else {
