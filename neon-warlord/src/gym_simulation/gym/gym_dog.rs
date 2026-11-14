@@ -468,7 +468,7 @@ impl GymDog {
     }
 
     fn set_target(&mut self) {
-        self.state.pos_z_target = 6.0;
+        self.state.pos_z_target = 0.9;
         self.state.vel_x_target = 2.0 + fastrand::f32() * 8.0
     }
 }
