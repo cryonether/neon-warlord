@@ -320,6 +320,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
         // *self = Self::new();
         // self.drawer = drawer;
     }
+    
+    fn get_current_position(&self) -> Vec3 {
+        Vec3::zero()
+    }
 }
 
 #[derive(Clone)]

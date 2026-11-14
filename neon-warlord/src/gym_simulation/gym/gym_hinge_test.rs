@@ -772,6 +772,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
         *self = Self::new();
         self.set_drawer_position(&position);
     }
+    
+    fn get_current_position(&self) -> Vec3 {
+        Vec3::zero()
+    }
 }
 
 #[derive(Clone)]

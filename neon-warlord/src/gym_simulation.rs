@@ -415,6 +415,8 @@ where
             }
         }
 
+        objects.current_position = self.env.get_current_position();
+
         self.watch_ups.stop_index(3);
 
         objects.ups = self.ups.get();

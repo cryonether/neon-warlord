@@ -776,6 +776,14 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         *self = Self::new();
         self.set_drawer_position(&position);
     }
+    
+    fn get_current_position(&self) -> Vec3 {
+        let x = self.state._pos_x;
+        let y = self.state._pos_y;
+        let z = self.state.pos_z;
+
+        Vec3::new(x, y, z)
+    }
 }
 
 #[derive(Clone)]

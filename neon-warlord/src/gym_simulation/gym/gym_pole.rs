@@ -170,6 +170,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPole {
             angular_velocity: 0.0,
         }
     }
+    
+    fn get_current_position(&self) -> Vec3 {
+        Vec3::zero()
+    }
 }
 
 #[derive(Clone)]

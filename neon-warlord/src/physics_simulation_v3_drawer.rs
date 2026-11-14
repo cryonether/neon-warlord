@@ -1,5 +1,6 @@
 //! Draws Objects from the physics simulation
 
+use cgmath::Zero;
 use forward_renderer::{
     geometry,
     particle_shader::{self, ParticleShaderDrawRange},
@@ -7,6 +8,8 @@ use forward_renderer::{
 };
 use wgpu_renderer::performance_monitor::watch::{self};
 use wgpu_renderer::wgpu_renderer::WgpuRendererInterface;
+
+type Vec3 = cgmath::Vector3<f32>;
 
 pub struct PhysicsSimulationV3Drawer {
     genome_nodes_mesh: particle_shader::Mesh,
@@ -180,6 +183,8 @@ pub struct DrawerObjects {
 
     pub ups: u32,
     pub watch_ups: watch::WatchViewerData<WATCH_POINTS_SIZE>,
+
+    pub current_position: Vec3,
 }
 
 impl DrawerObjects {
@@ -205,6 +210,7 @@ impl DrawerObjects {
             verlet_object_edges,
             ups: 0,
             watch_ups,
+            current_position: Vec3::zero(),
         }
     }
 }

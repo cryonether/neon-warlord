@@ -155,6 +155,8 @@ struct NeonWarlord {
     // Worker
     worker: WorkerInstance,
     ant_positions: [AntPosition; 1],
+
+    camera_follow_object: bool,
 }
 
 impl NeonWarlord {
@@ -403,6 +405,7 @@ impl NeonWarlord {
             physics_simulation_consumer: consumer,
             // physics_simulation_v3_thread,
             gym_simulation_thread,
+            camera_follow_object: true,
         }
     }
 }
@@ -641,6 +644,14 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 self.physics_simulation_v3_drawer
                     .update(renderer_interface, data);
 
+                if self.camera_follow_object {
+                    self.renderer.camera.position = cgmath::Point3::new(
+                        data.current_position.x, 
+                        data.current_position.y - 10.0, 
+                        data.current_position.z + 2.0
+                    );
+                }
+
                 self.ups = data.ups;
                 self.performance_monitor_ups.update_from_data(
                     renderer_interface,
@@ -784,6 +795,20 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 ..
             } => {
                 self.gym_simulation_thread.limit_ups_toggle();
+                true
+            }
+            // #########################################################
+            WindowEvent::KeyboardInput {
+                event:
+                    winit::event::KeyEvent {
+                        physical_key:
+                            winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::F4),
+                        state: ElementState::Pressed,
+                        ..
+                    },
+                ..
+            } => {
+                self.camera_follow_object = !self.camera_follow_object;
                 true
             }
             // #########################################################

@@ -32,4 +32,6 @@ pub trait Gym<const OBSERVATIONS: usize, const ACTIONS: usize> {
     fn get_reward(&self) -> (f32, bool);
 
     fn reset(&mut self);
+
+    fn get_current_position(&self) -> Vec3;
 }
