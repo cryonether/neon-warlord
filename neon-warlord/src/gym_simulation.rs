@@ -134,7 +134,7 @@ where
                 n,
                 m,
                 Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 + 50.5, 0.0),
-                400,
+                250,
                 // 1,
             ))));
 
@@ -325,7 +325,7 @@ where
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop_index(2);
 
-        if self.ticks.is_multiple_of(50000) {
+        if self.ticks.is_multiple_of(10000) {
             self.env.reset();
         }
 
@@ -414,6 +414,8 @@ where
                 edges.push(*edge);
             }
         }
+
+        objects.current_position = self.env.get_current_position();
 
         self.watch_ups.stop_index(3);
 

@@ -152,32 +152,55 @@ impl XpbdHingeJoint {
 
         // ##########################################################################
         // Test 0: Align both angles
+        // for _i in 0..1 {
+        //     let _p0 = &obj_0.p;
+        //     let r0 = &obj_0.r;
+        //     let _p1 = &obj_1.p;
+        //     let r1 = &obj_1.r;
 
-        // let mut q_err = (r0.rot * r1.rot.conjugate()).normalize();
+        //     let a0 = r0.rot.rotate_vector(self.a0);
+        //     let a1 = r1.rot.rotate_vector(self.a1);
 
-        // // Choose the shortest rotation.
-        // if q_err.s < 0.0 {
-        //     q_err = -q_err;
+        //     let b0 = r0.rot.rotate_vector(self.b0);
+        //     let b1 = r1.rot.rotate_vector(self.b1);
+
+        //     let _c0 = r0.rot.rotate_vector(self.c0);
+        //     let _c1 = r1.rot.rotate_vector(self.c1);
+
+        //     let mut q_err = (r0.rot * r1.rot.conjugate()).normalize();
+
+        //     // Choose the shortest rotation.
+        //     if q_err.s < 0.0 {
+        //         q_err = -q_err;
+        //     }
+
+        //     let v = Vec3::new(q_err.v.x, q_err.v.y, q_err.v.z);
+        //     let sin_half = v.magnitude();
+
+        //     let (axis, angle) = if sin_half < 1e-6 {
+        //         (Vec3::unit_x(), 0.0)
+        //     } else {
+        //         let axis = v / sin_half;
+        //         let angle = 2.0 * sin_half.atan2(q_err.s);
+        //         (axis, angle)
+        //     };
+
+        //     println!("rot1: obj_0: {:?}, obj_1: {:?}", obj_0.r.rot, obj_1.r.rot);
+        //     println!("angle: {}", angle);
+
+        //     // obj_1.r.rot = obj_0.r.rot;
+
+        //     self.angular_constraint.solve(
+        //         obj_0,
+        //         obj_1,
+        //         &axis,
+        //         angle,
+        //         dt
+        //     );
+
+        //     println!("rot2: obj_0: {:?}, obj_1: {:?}", obj_0.r.rot, obj_1.r.rot);
+        //     println!("");
         // }
-
-        // let v = Vec3::new(q_err.v.x, q_err.v.y, q_err.v.z);
-        // let sin_half = v.magnitude();
-
-        // let (axis, angle) = if sin_half < 1e-6 {
-        //     (Vec3::unit_x(), 0.0)
-        // } else {
-        //     let axis = v / sin_half;
-        //     let angle = 2.0 * sin_half.atan2(q_err.s);
-        //     (axis, angle)
-        // };
-
-        // self.angular_constraint.solve(
-        //     obj_0,
-        //     obj_1,
-        //     &axis,
-        //     angle,
-        //     dt
-        // );
 
         // ##########################################################################
         // Test 1: Free rotation around the y axis
@@ -304,7 +327,7 @@ impl XpbdHingeJoint {
         // Save angle
         self.phi = phi;
 
-        // // Calculate angular velocity
+        // Calculate angular velocity
         let omega_rel = obj_1.r.omega - obj_0.r.omega;
         self.angular_velocity = omega_rel.dot(a0);
     }

@@ -141,6 +141,7 @@ impl Tree {
         let index = node.children_base_index;
         let nr_children = node.nr_children;
 
+        #[allow(clippy::needless_range_loop)]
         for i in index..index + nr_children {
             let node = &self.nodes[i];
             let pos_1 = node.position;

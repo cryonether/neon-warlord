@@ -24,7 +24,7 @@ impl XpbdRigidBody {
         };
 
         let rot = Quat::one();
-        let inv_rot = rot.invert();
+        let _inv_rot = rot.invert();
         let prev_rot = rot;
         let omega = Vec3::zero();
 
@@ -102,7 +102,6 @@ impl XpbdRigidBody {
             },
             r: RotationalQuantities {
                 rot,
-                inv_rot,
                 prev_rot,
                 omega,
                 inertia_tensor,
@@ -135,7 +134,7 @@ impl XpbdRigidBody {
         let p = &self.p;
         let r = &self.r;
 
-        r.inv_rot * (*world_pos - p.pos)
+        r.inv_rot() * (*world_pos - p.pos)
     }
 }
 
@@ -293,7 +292,7 @@ pub fn transform_rigid_bodies(
         body.r.rot = rotation * body.r.rot;
 
         // Update inverse rotation
-        body.r.inv_rot = body.r.rot.conjugate();
+        // body.r.inv_rot = body.r.rot.conjugate();
 
         // Rotate previous orientation
         body.r.prev_rot = rotation * body.r.prev_rot;

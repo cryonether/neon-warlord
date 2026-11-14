@@ -5,6 +5,7 @@ pub mod gym_cart_pole;
 pub mod gym_dog;
 pub mod gym_half_cheetah;
 pub mod gym_half_cheetah_2;
+pub mod gym_hinge_test;
 pub mod gym_hopper;
 pub mod gym_pole;
 pub mod gym_reacher;
@@ -31,4 +32,6 @@ pub trait Gym<const OBSERVATIONS: usize, const ACTIONS: usize> {
     fn get_reward(&self) -> (f32, bool);
 
     fn reset(&mut self);
+
+    fn get_current_position(&self) -> Vec3;
 }

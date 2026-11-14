@@ -26,6 +26,7 @@ impl XpbdAngularConstraint {
         }
     }
 
+    #[allow(clippy::needless_late_init)]
     pub fn solve(
         &mut self,
         obj_0: &mut XpbdRigidBody,
@@ -34,9 +35,11 @@ impl XpbdAngularConstraint {
         angle: f32,
         dt: f32,
     ) {
-        // let p0 = &mut obj_0.p;
+        const USE_INERTIA_MATRIX: bool = true;
+
+        let p0 = &mut obj_0.p;
         let r0 = &mut obj_0.r;
-        // let p1 = &mut obj_1.p;
+        let p1 = &mut obj_1.p;
         let r1 = &mut obj_1.r;
 
         // If the rotation axis is stored in body 0s local frame
@@ -76,8 +79,15 @@ impl XpbdAngularConstraint {
         let i_n0 = r0.apply_inverse_inertia_world(&n);
         let i_n1 = r1.apply_inverse_inertia_world(&n);
 
-        let w0 = n.dot(i_n0);
-        let w1 = n.dot(i_n1);
+        let w0;
+        let w1;
+        if USE_INERTIA_MATRIX {
+            w0 = n.dot(i_n0);
+            w1 = n.dot(i_n1);
+        } else {
+            w0 = p0.inv_mass;
+            w1 = p1.inv_mass;
+        }
 
         //
         // Calculates the Lagrange multiplier correction for a compliant angular
@@ -137,14 +147,25 @@ impl XpbdAngularConstraint {
         // - I₀⁻¹ = Inverse inertia tensor of body 0
         // - [I₀⁻¹ p, 0] = Quaternion with I₀⁻¹ p as its vector part
         //   and zero as its scalar part
-        let i_p0 = r0.apply_inverse_inertia_world(&p);
-        let i_p1 = r1.apply_inverse_inertia_world(&p);
+        let i_p0;
+        let i_p1;
+        if USE_INERTIA_MATRIX {
+            i_p0 = r0.apply_inverse_inertia_world(&p);
+            i_p1 = r1.apply_inverse_inertia_world(&p);
+        } else {
+            i_p0 = p * p0.inv_mass;
+            i_p1 = p * p1.inv_mass;
+        }
 
         r0.rot = r0.rot + 0.5 * Quat::new(0.0, i_p0.x, i_p0.y, i_p0.z) * r0.rot;
         r1.rot = r1.rot - 0.5 * Quat::new(0.0, i_p1.x, i_p1.y, i_p1.z) * r1.rot;
 
         r0.rot = r0.rot.normalize();
         r1.rot = r1.rot.normalize();
+
+        // More accurate version (seems to be not required)
+        // apply_rotation_correction(&mut r0.rot, i_p0);
+        // apply_rotation_correction(&mut r1.rot, -i_p1);
 
         // Calculate torque
         self.torque = self.lagrange_multiplier * n / (dt * dt);
@@ -194,4 +215,25 @@ impl XpbdAngularConstraint {
 
         (corr / angle, angle)
     }
+}
+
+// more accurate version to apply the rotation correction
+pub fn _apply_rotation_correction(rot: &mut Quat, delta: Vec3) {
+    let angle = delta.magnitude();
+
+    if angle < 1e-8 {
+        return;
+    }
+
+    let axis = delta / angle;
+    let half_angle = angle * 0.5;
+
+    let dq = Quat::new(
+        half_angle.cos(),
+        axis.x * half_angle.sin(),
+        axis.y * half_angle.sin(),
+        axis.z * half_angle.sin(),
+    );
+
+    *rot = (dq * *rot).normalize();
 }

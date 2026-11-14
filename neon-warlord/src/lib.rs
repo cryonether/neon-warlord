@@ -61,7 +61,8 @@ use crate::{
         gym::{
             gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_dog::GymDog,
             gym_half_cheetah::GymHalfCheetah, gym_half_cheetah_2::GymHalfCheetah2,
-            gym_hopper::GymHopper, gym_pole::GymPole, gym_reacher::GymReacher,
+            gym_hinge_test::GymHingeTest, gym_hopper::GymHopper, gym_pole::GymPole,
+            gym_reacher::GymReacher,
         },
     },
     physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
@@ -168,6 +169,9 @@ struct NeonWarlord {
     // Worker
     worker: WorkerInstance,
     ant_positions: [AntPosition; 1],
+
+    // Lock the camera to the main object
+    camera_follow_object: bool,
 }
 
 impl NeonWarlord {
@@ -359,8 +363,12 @@ impl NeonWarlord {
             GymSimulation::new(GymHopper::new());
 
         // Dog
-        let _gym_simulation_7: GymSimulation<26, 8, 32, 1, false, GymDog> =
+        let _gym_simulation_7: GymSimulation<46, 12, 64, 2, false, GymDog> =
             GymSimulation::new(GymDog::new());
+
+        // Dog
+        let _gym_simulation_8: GymSimulation<46, 12, 64, 2, false, GymHingeTest> =
+            GymSimulation::new(GymHingeTest::new());
 
         let gym_simulation = _gym_simulation_7;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {
@@ -412,6 +420,7 @@ impl NeonWarlord {
             physics_simulation_consumer: consumer,
             // physics_simulation_v3_thread,
             gym_simulation_thread,
+            camera_follow_object: true,
         }
     }
 }
@@ -650,6 +659,15 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 self.physics_simulation_v3_drawer
                     .update(renderer_interface, data);
 
+                // Lock the camera to the main object
+                if self.camera_follow_object {
+                    self.renderer.camera.position = cgmath::Point3::new(
+                        data.current_position.x,
+                        data.current_position.y - 10.0,
+                        data.current_position.z + 2.0,
+                    );
+                }
+
                 self.ups = data.ups;
                 self.performance_monitor_ups.update_from_data(
                     renderer_interface,
@@ -793,6 +811,20 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 ..
             } => {
                 self.gym_simulation_thread.limit_ups_toggle();
+                true
+            }
+            // #########################################################
+            WindowEvent::KeyboardInput {
+                event:
+                    winit::event::KeyEvent {
+                        physical_key:
+                            winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::F4),
+                        state: ElementState::Pressed,
+                        ..
+                    },
+                ..
+            } => {
+                self.camera_follow_object = !self.camera_follow_object;
                 true
             }
             // #########################################################

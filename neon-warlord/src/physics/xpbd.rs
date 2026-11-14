@@ -203,7 +203,7 @@ pub struct RotationalQuantities {
     pub rot: Quat,
 
     // Rotation (world space to local space)
-    pub inv_rot: Quat,
+    // pub inv_rot: Quat,
 
     // Previous rotation
     pub prev_rot: Quat,
@@ -247,7 +247,7 @@ impl RotationalQuantities {
         self.rot = self.rot / self.rot.magnitude();
 
         // Calculate inverse rotation
-        self.inv_rot = self.rot.invert();
+        // self.inv_rot = self.rot.invert();
     }
 
     fn update_angular_velocity(&mut self, dt: f32) {
@@ -267,7 +267,7 @@ impl RotationalQuantities {
 
     fn apply_inverse_inertia_world(&self, v_world: &Vec3) -> Vec3 {
         // Transform the vector into local space.
-        let v_local = self.inv_rot.rotate_vector(*v_world);
+        let v_local = self.inv_rot().rotate_vector(*v_world);
 
         // Apply the full local-space inverse inertia tensor.
         let result_local = self.inverse_inertia_tensor * v_local;
@@ -278,7 +278,7 @@ impl RotationalQuantities {
 
     fn apply_inertia_world(&self, v_world: &Vec3) -> Vec3 {
         // Transform the vector into local space.
-        let v_local = self.inv_rot.rotate_vector(*v_world);
+        let v_local = self.inv_rot().rotate_vector(*v_world);
 
         // Apply the full local-space inverse inertia tensor.
         let result_local = self.inertia_tensor * v_local;
@@ -291,6 +291,10 @@ impl RotationalQuantities {
         let euler: Euler<Rad<f32>> = self.rot.into();
 
         Vec3::new(euler.x.0, euler.y.0, euler.z.0)
+    }
+
+    pub fn inv_rot(&self) -> Quat {
+        self.rot.conjugate()
     }
 }
 

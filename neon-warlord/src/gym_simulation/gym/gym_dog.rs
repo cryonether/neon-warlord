@@ -1,6 +1,7 @@
 //! A pendulum, try to balance it
 
 use std::f32::consts::PI;
+use std::iter::zip;
 
 use cgmath::Rotation3;
 use cgmath::{InnerSpace, Zero};
@@ -18,8 +19,8 @@ use crate::{
 
 type Quat = cgmath::Quaternion<f32>;
 
-const OBSERVATIONS: usize = 26;
-const ACTIONS: usize = 8;
+const OBSERVATIONS: usize = 46;
+const ACTIONS: usize = 12;
 
 const MASS: f32 = 0.1;
 
@@ -29,6 +30,12 @@ pub struct GymDog {
     drawer: XpbdDrawer,
 
     index_body: usize,
+
+    _index_shoulder_0_0: usize,
+    _index_shoulder_1_0: usize,
+    _index_shoulder_2_0: usize,
+    _index_shoulder_3_0: usize,
+
     _index_leg_0_0: usize,
     _index_leg_1_0: usize,
     _index_leg_2_0: usize,
@@ -38,6 +45,11 @@ pub struct GymDog {
     _index_leg_1_1: usize,
     _index_leg_2_1: usize,
     _index_leg_3_1: usize,
+
+    index_hinge_joint_s_0_0: usize,
+    index_hinge_joint_s_1_0: usize,
+    index_hinge_joint_s_2_0: usize,
+    index_hinge_joint_s_3_0: usize,
 
     index_hinge_joint_0_0: usize,
     index_hinge_joint_1_0: usize,
@@ -65,18 +77,48 @@ impl GymDog {
         let length2 = 0.65;
 
         let body = XpbdRigidBody::new(
-            Vec3::new(-length2, 0.0, 1.5),
+            Vec3::new(0.0, 0.0, 1.5),
             &[
+                Vec3::new(-length2 + 0.2, width2, 0.0),
                 Vec3::new(0.0, width2, 0.0),
-                Vec3::new(length2, width2, 0.0),
-                Vec3::new(length2 * 2.0, width2, 0.0),
+                Vec3::new(length2 - 0.2, width2, 0.0),
+                Vec3::new(-length2 + 0.2, -width2, 0.0),
                 Vec3::new(0.0, -width2, 0.0),
-                Vec3::new(length2, -width2, 0.0),
-                Vec3::new(length2 * 2.0, -width2, 0.0),
-                Vec3::new(length2 * 2.0, 0.0, 0.0),
-                Vec3::new(length2 * 2.0 + 0.3, 0.0, 0.3),
+                Vec3::new(length2 - 0.2, -width2, 0.0),
+                Vec3::new(length2, 0.0, 0.0),
+                Vec3::new(length2 + 0.3, 0.0, 0.3),
             ],
             MASS, // 0.0
+            radius,
+        );
+
+        // Shoulders
+
+        let shoulder_0_0 = XpbdRigidBody::new(
+            Vec3::new(-length2 + 0.2, width2, 1.5),
+            &[Vec3::zero(), Vec3::new(-0.2, 0.0, 0.0)],
+            MASS,
+            radius,
+        );
+
+        let shoulder_1_0 = XpbdRigidBody::new(
+            Vec3::new(length2 - 0.2, width2, 1.5),
+            &[Vec3::zero(), Vec3::new(0.2, 0.0, 0.0)],
+            MASS,
+            radius,
+        );
+
+        let shoulder_2_0 = XpbdRigidBody::new(
+            Vec3::new(-length2 + 0.2, -width2, 1.5),
+            &[Vec3::zero(), Vec3::new(-0.2, 0.0, 0.0)],
+            MASS,
+            radius,
+        );
+
+        let shoulder_3_0 = XpbdRigidBody::new(
+            Vec3::new(length2 - 0.2, -width2, 1.5),
+            &[Vec3::zero(), Vec3::new(0.2, 0.0, 0.0)],
+            MASS,
             radius,
         );
 
@@ -142,6 +184,11 @@ impl GymDog {
 
         let index_body = physics.add_rigid_body(&body);
 
+        let index_shoulder_0_0 = physics.add_rigid_body(&shoulder_0_0);
+        let index_shoulder_1_0 = physics.add_rigid_body(&shoulder_1_0);
+        let index_shoulder_2_0 = physics.add_rigid_body(&shoulder_2_0);
+        let index_shoulder_3_0 = physics.add_rigid_body(&shoulder_3_0);
+
         let index_leg_0_0 = physics.add_rigid_body(&leg_0_0);
         let index_leg_1_0 = physics.add_rigid_body(&leg_1_0);
         let index_leg_2_0 = physics.add_rigid_body(&leg_2_0);
@@ -155,59 +202,113 @@ impl GymDog {
         let positional_compliance = 0.000;
         let angular_compliance = 0.000;
 
-        // Upper legs
+        // Shoulders
 
-        let hinge_joint_0_0 = XpbdHingeJoint::new(
+        let hinge_joint_s_0_0 = XpbdHingeJoint::new(
             body.particles[0],
-            leg_0_0.particles[0],
-            -0.8 * PI,
-            0.8 * PI,
-            RotationAxis::Y,
-            RotationAxis::Y,
+            shoulder_0_0.particles[0],
+            -0.25 * PI,
+            0.25 * PI,
+            RotationAxis::X,
+            RotationAxis::X,
             positional_compliance,
             angular_compliance,
         );
         let index_hinge_joint_0_0 =
-            physics.add_hinge_joint(index_body, index_leg_0_0, hinge_joint_0_0);
+            physics.add_hinge_joint(index_body, index_shoulder_0_0, hinge_joint_s_0_0);
 
-        let hinge_joint_1_0 = XpbdHingeJoint::new(
+        let hinge_joint_s_1_0 = XpbdHingeJoint::new(
             body.particles[2],
-            leg_1_0.particles[0],
-            -0.8 * PI,
-            0.8 * PI,
-            RotationAxis::Y,
-            RotationAxis::Y,
+            shoulder_1_0.particles[0],
+            -0.25 * PI,
+            0.25 * PI,
+            RotationAxis::X,
+            RotationAxis::X,
             positional_compliance,
             angular_compliance,
         );
         let index_hinge_joint_1_0 =
-            physics.add_hinge_joint(index_body, index_leg_1_0, hinge_joint_1_0);
+            physics.add_hinge_joint(index_body, index_shoulder_1_0, hinge_joint_s_1_0);
 
-        let hinge_joint_2_0 = XpbdHingeJoint::new(
+        let hinge_joint_s_2_0 = XpbdHingeJoint::new(
             body.particles[3],
-            leg_2_0.particles[0],
-            -0.8 * PI,
-            0.8 * PI,
-            RotationAxis::Y,
-            RotationAxis::Y,
+            shoulder_2_0.particles[0],
+            -0.25 * PI,
+            0.25 * PI,
+            RotationAxis::X,
+            RotationAxis::X,
             positional_compliance,
             angular_compliance,
         );
         let index_hinge_joint_2_0 =
-            physics.add_hinge_joint(index_body, index_leg_2_0, hinge_joint_2_0);
+            physics.add_hinge_joint(index_body, index_shoulder_2_0, hinge_joint_s_2_0);
 
-        let hinge_joint_3_0 = XpbdHingeJoint::new(
+        let hinge_joint_s_3_0 = XpbdHingeJoint::new(
             body.particles[5],
-            leg_3_0.particles[0],
-            -0.8 * PI,
-            0.8 * PI,
+            shoulder_3_0.particles[0],
+            -0.25 * PI,
+            0.25 * PI,
+            RotationAxis::X,
+            RotationAxis::X,
+            positional_compliance,
+            angular_compliance,
+        );
+        let index_hinge_joint_3_0 =
+            physics.add_hinge_joint(index_body, index_shoulder_3_0, hinge_joint_s_3_0);
+
+        // Upper legs
+
+        let hinge_joint_0_0 = XpbdHingeJoint::new(
+            shoulder_0_0.particles[1],
+            leg_0_0.particles[0],
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
             angular_compliance,
         );
-        let index_hinge_joint_3_0 =
-            physics.add_hinge_joint(index_body, index_leg_3_0, hinge_joint_3_0);
+        let index_hinge_joint_s_0_0 =
+            physics.add_hinge_joint(index_shoulder_0_0, index_leg_0_0, hinge_joint_0_0);
+
+        let hinge_joint_1_0 = XpbdHingeJoint::new(
+            shoulder_1_0.particles[1],
+            leg_1_0.particles[0],
+            -0.5 * PI,
+            0.5 * PI,
+            RotationAxis::Y,
+            RotationAxis::Y,
+            positional_compliance,
+            angular_compliance,
+        );
+        let index_hinge_joint_s_1_0 =
+            physics.add_hinge_joint(index_shoulder_1_0, index_leg_1_0, hinge_joint_1_0);
+
+        let hinge_joint_2_0 = XpbdHingeJoint::new(
+            shoulder_2_0.particles[1],
+            leg_2_0.particles[0],
+            -0.5 * PI,
+            0.5 * PI,
+            RotationAxis::Y,
+            RotationAxis::Y,
+            positional_compliance,
+            angular_compliance,
+        );
+        let index_hinge_joint_s_2_0 =
+            physics.add_hinge_joint(index_shoulder_2_0, index_leg_2_0, hinge_joint_2_0);
+
+        let hinge_joint_3_0 = XpbdHingeJoint::new(
+            shoulder_3_0.particles[1],
+            leg_3_0.particles[0],
+            -0.5 * PI,
+            0.5 * PI,
+            RotationAxis::Y,
+            RotationAxis::Y,
+            positional_compliance,
+            angular_compliance,
+        );
+        let index_hinge_joint_s_3_0 =
+            physics.add_hinge_joint(index_shoulder_3_0, index_leg_3_0, hinge_joint_3_0);
 
         // Lower legs
 
@@ -276,6 +377,10 @@ impl GymDog {
             rot_x: 0.0,
             rot_y: 0.0,
             rot_z: 0.0,
+            shoulder_angle_0_0: 0.0,
+            shoulder_angle_1_0: 0.0,
+            shoulder_angle_2_0: 0.0,
+            shoulder_angle_3_0: 0.0,
             leg_angle_0_0: 0.0,
             leg_angle_1_0: 0.0,
             leg_angle_2_0: 0.0,
@@ -284,6 +389,10 @@ impl GymDog {
             leg_angle_1_1: 0.0,
             leg_angle_2_1: 0.0,
             leg_angle_3_1: 0.0,
+            shoulder_angular_velocity_0_0: 0.0,
+            shoulder_angular_velocity_1_0: 0.0,
+            shoulder_angular_velocity_2_0: 0.0,
+            shoulder_angular_velocity_3_0: 0.0,
             leg_angular_velocity_0_0: 0.0,
             leg_angular_velocity_1_0: 0.0,
             leg_angular_velocity_2_0: 0.0,
@@ -293,7 +402,8 @@ impl GymDog {
             leg_angular_velocity_2_1: 0.0,
             leg_angular_velocity_3_1: 0.0,
 
-            actions: [0.0; 8],
+            actions: [0.0; 12],
+            prev_actions: [0.0; 12],
         };
 
         let mut move_8 = Move8::new();
@@ -317,6 +427,10 @@ impl GymDog {
             physics,
             drawer,
             index_body,
+            _index_shoulder_0_0: index_shoulder_0_0,
+            _index_shoulder_1_0: index_shoulder_1_0,
+            _index_shoulder_2_0: index_shoulder_2_0,
+            _index_shoulder_3_0: index_shoulder_3_0,
             _index_leg_0_0: index_leg_0_0,
             _index_leg_1_0: index_leg_1_0,
             _index_leg_2_0: index_leg_2_0,
@@ -325,6 +439,10 @@ impl GymDog {
             _index_leg_1_1: index_leg_1_1,
             _index_leg_2_1: index_leg_2_1,
             _index_leg_3_1: index_leg_3_1,
+            index_hinge_joint_s_0_0,
+            index_hinge_joint_s_1_0,
+            index_hinge_joint_s_2_0,
+            index_hinge_joint_s_3_0,
             index_hinge_joint_0_0,
             index_hinge_joint_1_0,
             index_hinge_joint_2_0,
@@ -344,7 +462,7 @@ impl GymDog {
     }
 
     fn set_target(&mut self) {
-        self.state.pos_z_target = 0.95;
+        self.state.pos_z_target = 0.9;
         self.state.vel_x_target = 2.0 + fastrand::f32() * 8.0
     }
 }
@@ -370,7 +488,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
     }
 
     fn update_verlet_physics(&mut self, dt: f32) {
-        // self.physics.step(dt * 0.0001);
+        // self.physics.step(dt * 0.0111);
         // self.physics.step(dt * 0.01);
         self.physics.step(dt * 1.0);
         // self.physics.step(dt * 0.4);
@@ -379,6 +497,11 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let pos = body.p.pos;
         let vel = body.p.vel;
         let rot = body.r.get_rotation_as_euler();
+
+        let hinge_s_0_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_0_0].constraint;
+        let hinge_s_1_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_1_0].constraint;
+        let hinge_s_2_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_2_0].constraint;
+        let hinge_s_3_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_3_0].constraint;
 
         let hinge_0_0 = &self.physics.hinge_joints[self.index_hinge_joint_0_0].constraint;
         let hinge_1_0 = &self.physics.hinge_joints[self.index_hinge_joint_1_0].constraint;
@@ -406,23 +529,38 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             rot_x: rot.x,
             rot_y: rot.y,
             rot_z: rot.z,
+
+            shoulder_angle_0_0: hinge_s_0_0.get_angle(),
+            shoulder_angle_1_0: hinge_s_1_0.get_angle(),
+            shoulder_angle_2_0: hinge_s_2_0.get_angle(),
+            shoulder_angle_3_0: hinge_s_3_0.get_angle(),
+
             leg_angle_0_0: hinge_0_0.get_angle(),
             leg_angle_1_0: hinge_1_0.get_angle(),
             leg_angle_2_0: hinge_2_0.get_angle(),
             leg_angle_3_0: hinge_3_0.get_angle(),
+
             leg_angle_0_1: hinge_0_1.get_angle(),
             leg_angle_1_1: hinge_1_1.get_angle(),
             leg_angle_2_1: hinge_2_1.get_angle(),
             leg_angle_3_1: hinge_3_1.get_angle(),
+
+            shoulder_angular_velocity_0_0: hinge_s_0_0.get_angular_velocity(),
+            shoulder_angular_velocity_1_0: hinge_s_1_0.get_angular_velocity(),
+            shoulder_angular_velocity_2_0: hinge_s_2_0.get_angular_velocity(),
+            shoulder_angular_velocity_3_0: hinge_s_3_0.get_angular_velocity(),
+
             leg_angular_velocity_0_0: hinge_0_0.get_angular_velocity(),
             leg_angular_velocity_1_0: hinge_1_0.get_angular_velocity(),
             leg_angular_velocity_2_0: hinge_2_0.get_angular_velocity(),
             leg_angular_velocity_3_0: hinge_3_0.get_angular_velocity(),
+
             leg_angular_velocity_0_1: hinge_0_1.get_angular_velocity(),
             leg_angular_velocity_1_1: hinge_1_1.get_angular_velocity(),
             leg_angular_velocity_2_1: hinge_2_1.get_angular_velocity(),
             leg_angular_velocity_3_1: hinge_3_1.get_angular_velocity(),
             actions: self.state.actions,
+            prev_actions: self.state.prev_actions,
         };
 
         self.state = state;
@@ -448,6 +586,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             state.rot_x,
             state.rot_y,
             state.rot_z,
+            state.shoulder_angle_0_0,
+            state.shoulder_angle_1_0,
+            state.shoulder_angle_2_0,
+            state.shoulder_angle_3_0,
             state.leg_angle_0_0,
             state.leg_angle_1_0,
             state.leg_angle_2_0,
@@ -456,6 +598,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             state.leg_angle_1_1,
             state.leg_angle_2_1,
             state.leg_angle_3_1,
+            state.shoulder_angular_velocity_0_0,
+            state.shoulder_angular_velocity_1_0,
+            state.shoulder_angular_velocity_2_0,
+            state.shoulder_angular_velocity_3_0,
             state.leg_angular_velocity_0_0,
             state.leg_angular_velocity_1_0,
             state.leg_angular_velocity_2_0,
@@ -464,6 +610,18 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             state.leg_angular_velocity_1_1,
             state.leg_angular_velocity_2_1,
             state.leg_angular_velocity_3_1,
+            state.prev_actions[0],
+            state.prev_actions[1],
+            state.prev_actions[2],
+            state.prev_actions[3],
+            state.prev_actions[4],
+            state.prev_actions[5],
+            state.prev_actions[6],
+            state.prev_actions[7],
+            state.prev_actions[8],
+            state.prev_actions[9],
+            state.prev_actions[10],
+            state.prev_actions[11],
         ]
     }
 
@@ -479,34 +637,52 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             actions[5] * 10.0,
             actions[6] * 10.0,
             actions[7] * 10.0,
+            actions[8] * 10.0,
+            actions[9] * 10.0,
+            actions[10] * 10.0,
+            actions[11] * 10.0,
         ];
 
-        self.physics.hinge_joints[self.index_hinge_joint_0_0]
+        self.physics.hinge_joints[self.index_hinge_joint_s_0_0]
             .constraint
             .set_external_torque(torque[0]);
-        self.physics.hinge_joints[self.index_hinge_joint_1_0]
+        self.physics.hinge_joints[self.index_hinge_joint_s_1_0]
             .constraint
             .set_external_torque(torque[1]);
-        self.physics.hinge_joints[self.index_hinge_joint_2_0]
+        self.physics.hinge_joints[self.index_hinge_joint_s_2_0]
             .constraint
             .set_external_torque(torque[2]);
-        self.physics.hinge_joints[self.index_hinge_joint_3_0]
+        self.physics.hinge_joints[self.index_hinge_joint_s_3_0]
             .constraint
             .set_external_torque(torque[3]);
 
-        self.physics.hinge_joints[self.index_hinge_joint_0_1]
+        self.physics.hinge_joints[self.index_hinge_joint_0_0]
             .constraint
             .set_external_torque(torque[4]);
-        self.physics.hinge_joints[self.index_hinge_joint_1_1]
+        self.physics.hinge_joints[self.index_hinge_joint_1_0]
             .constraint
             .set_external_torque(torque[5]);
-        self.physics.hinge_joints[self.index_hinge_joint_2_1]
+        self.physics.hinge_joints[self.index_hinge_joint_2_0]
             .constraint
             .set_external_torque(torque[6]);
-        self.physics.hinge_joints[self.index_hinge_joint_3_1]
+        self.physics.hinge_joints[self.index_hinge_joint_3_0]
             .constraint
             .set_external_torque(torque[7]);
 
+        self.physics.hinge_joints[self.index_hinge_joint_0_1]
+            .constraint
+            .set_external_torque(torque[8]);
+        self.physics.hinge_joints[self.index_hinge_joint_1_1]
+            .constraint
+            .set_external_torque(torque[9]);
+        self.physics.hinge_joints[self.index_hinge_joint_2_1]
+            .constraint
+            .set_external_torque(torque[10]);
+        self.physics.hinge_joints[self.index_hinge_joint_3_1]
+            .constraint
+            .set_external_torque(torque[11]);
+
+        self.state.prev_actions = self.state.actions;
         self.state.actions = *actions;
     }
 
@@ -525,7 +701,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             1.0 - error
         };
 
-        let mut reward = velocity_cost * 1.0;
+        let mut reward = velocity_cost * 0.6;
 
         // Reward target height
         let target_height = self.state.pos_z_target;
@@ -548,12 +724,23 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         }
         reward -= action_cost * 0.01;
 
+        // Penalize huge action change
+        let mut _action_change_cost = 0.0;
+        for (action, prev_action) in zip(self.state.actions, self.state.prev_actions) {
+            _action_change_cost += (action - prev_action).powi(2);
+        }
+        // reward -= action_change_cost * 0.01;
+
         if self.state.rot_y.powi(2) > 2.0 || self.state.rot_x.powi(2) > 2.0 {
             return (0.0, true);
         }
 
+        // if self.state.pos_z < 0.2 {
+        //     return (0.0, true);
+        // }
+
         // No negative rewards
-        let reward = reward.max(0.0);
+        let reward = reward.clamp(0.0, 2.0);
 
         (reward, false)
     }
@@ -567,6 +754,14 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let position = self.drawer.position;
         *self = Self::new();
         self.set_drawer_position(&position);
+    }
+
+    fn get_current_position(&self) -> Vec3 {
+        let x = self.state._pos_x;
+        let y = self.state._pos_y;
+        let z = self.state.pos_z;
+
+        Vec3::new(x, y, z)
     }
 }
 
@@ -588,6 +783,12 @@ pub struct State {
     rot_y: f32,
     rot_z: f32,
 
+    // Shoulder
+    shoulder_angle_0_0: f32,
+    shoulder_angle_1_0: f32,
+    shoulder_angle_2_0: f32,
+    shoulder_angle_3_0: f32,
+
     // Upper leg
     leg_angle_0_0: f32,
     leg_angle_1_0: f32,
@@ -599,6 +800,12 @@ pub struct State {
     leg_angle_1_1: f32,
     leg_angle_2_1: f32,
     leg_angle_3_1: f32,
+
+    // Shoulder log
+    shoulder_angular_velocity_0_0: f32,
+    shoulder_angular_velocity_1_0: f32,
+    shoulder_angular_velocity_2_0: f32,
+    shoulder_angular_velocity_3_0: f32,
 
     // Upper log
     leg_angular_velocity_0_0: f32,
@@ -612,5 +819,6 @@ pub struct State {
     leg_angular_velocity_2_1: f32,
     leg_angular_velocity_3_1: f32,
 
-    actions: [f32; 8],
+    actions: [f32; 12],
+    prev_actions: [f32; 12],
 }
