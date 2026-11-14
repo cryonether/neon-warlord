@@ -155,7 +155,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymCart {
             Vec3::new((fastrand::f32() - 0.5) * 2.0 * 1.8, 0.0, 0.0),
         );
     }
-    
+
     fn get_current_position(&self) -> Vec3 {
         Vec3::zero()
     }

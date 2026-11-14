@@ -3,9 +3,9 @@
 pub mod gym_cart;
 pub mod gym_cart_pole;
 pub mod gym_dog;
-pub mod gym_hinge_test;
 pub mod gym_half_cheetah;
 pub mod gym_half_cheetah_2;
+pub mod gym_hinge_test;
 pub mod gym_hopper;
 pub mod gym_pole;
 pub mod gym_reacher;

@@ -35,7 +35,7 @@ impl XpbdAngularConstraint {
         angle: f32,
         dt: f32,
     ) {
-        const USE_INERTIA_MATRIX:bool = true;
+        const USE_INERTIA_MATRIX: bool = true;
 
         let p0 = &mut obj_0.p;
         let r0 = &mut obj_0.r;
@@ -81,7 +81,7 @@ impl XpbdAngularConstraint {
 
         let w0;
         let w1;
-        if USE_INERTIA_MATRIX {  
+        if USE_INERTIA_MATRIX {
             w0 = n.dot(i_n0);
             w1 = n.dot(i_n1);
         } else {

@@ -44,10 +44,7 @@ impl GymHingeTest {
 
         let body = XpbdRigidBody::new(
             Vec3::new(0.0, 0.0, 3.0),
-            &[
-                Vec3::zero(),
-                Vec3::new(1.0, 0.0, 0.0),
-            ],
+            &[Vec3::zero(), Vec3::new(1.0, 0.0, 0.0)],
             0.0, // 0.0
             radius,
         );
@@ -79,8 +76,7 @@ impl GymHingeTest {
         let positional_compliance = 0.000;
         let angular_compliance = 0.000;
 
-
-       // Shoulders
+        // Shoulders
 
         let hinge_joint_s_0_0 = XpbdHingeJoint::new(
             body.particles[1],
@@ -204,7 +200,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
 
         let hinge_0_0 = &self.physics.hinge_joints[self.index_hinge_joint_0_0].constraint;
 
-
         let state = State {
             pos_z_target: self.state.pos_z_target,
             vel_x_target: 0.0,
@@ -243,15 +238,13 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
             leg_angular_velocity_1_0: 0.0,
             leg_angular_velocity_2_0: 0.0,
             leg_angular_velocity_3_0: 0.0,
-            
+
             leg_angular_velocity_0_1: 0.0,
             leg_angular_velocity_1_1: 0.0,
             leg_angular_velocity_2_1: 0.0,
             leg_angular_velocity_3_1: 0.0,
             actions: self.state.actions,
             prev_actions: self.state.prev_actions,
-
-
         };
 
         self.state = state;
@@ -268,60 +261,47 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
         let state = &self.state;
         [
             state.pos_z_target,
-
             state.vel_x_target,
             state.vel_y_target,
-
             state.pos_z,
-
             state.vel_x,
             state.vel_y,
             state.vel_z,
-
             state.rot_x,
             state.rot_y,
             state.rot_z,
-
             state.shoulder_angle_0_0,
             state.shoulder_angle_1_0,
             state.shoulder_angle_2_0,
             state.shoulder_angle_3_0,
-
             state.leg_angle_0_0,
             state.leg_angle_1_0,
             state.leg_angle_2_0,
             state.leg_angle_3_0,
-
             state.leg_angle_0_1,
             state.leg_angle_1_1,
             state.leg_angle_2_1,
             state.leg_angle_3_1,
-
             state.shoulder_angular_velocity_0_0,
             state.shoulder_angular_velocity_1_0,
             state.shoulder_angular_velocity_2_0,
             state.shoulder_angular_velocity_3_0,
-
             state.leg_angular_velocity_0_0,
             state.leg_angular_velocity_1_0,
             state.leg_angular_velocity_2_0,
             state.leg_angular_velocity_3_0,
-
             state.leg_angular_velocity_0_1,
             state.leg_angular_velocity_1_1,
             state.leg_angular_velocity_2_1,
             state.leg_angular_velocity_3_1,
-
             state.prev_actions[0],
             state.prev_actions[1],
             state.prev_actions[2],
             state.prev_actions[3],
-
             state.prev_actions[4],
             state.prev_actions[5],
             state.prev_actions[6],
             state.prev_actions[7],
-
             state.prev_actions[8],
             state.prev_actions[9],
             state.prev_actions[10],
@@ -337,12 +317,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
             actions[1] * 10.0,
             actions[2] * 10.0,
             actions[3] * 10.0,
-
             actions[4] * 10.0,
             actions[5] * 10.0,
             actions[6] * 10.0,
             actions[7] * 10.0,
-
             actions[8] * 10.0,
             actions[9] * 10.0,
             actions[10] * 10.0,
@@ -367,7 +345,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
         *self = Self::new();
         self.set_drawer_position(&position);
     }
-    
+
     fn get_current_position(&self) -> Vec3 {
         Vec3::zero()
     }

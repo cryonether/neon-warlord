@@ -82,11 +82,9 @@ impl GymDog {
                 Vec3::new(-length2 + 0.2, width2, 0.0),
                 Vec3::new(0.0, width2, 0.0),
                 Vec3::new(length2 - 0.2, width2, 0.0),
-                
                 Vec3::new(-length2 + 0.2, -width2, 0.0),
                 Vec3::new(0.0, -width2, 0.0),
                 Vec3::new(length2 - 0.2, -width2, 0.0),
-
                 Vec3::new(length2, 0.0, 0.0),
                 Vec3::new(length2 + 0.3, 0.0, 0.3),
             ],
@@ -123,7 +121,6 @@ impl GymDog {
             MASS,
             radius,
         );
-
 
         // Upper legs
 
@@ -205,8 +202,7 @@ impl GymDog {
         let positional_compliance = 0.000;
         let angular_compliance = 0.000;
 
-
-       // Shoulders
+        // Shoulders
 
         let hinge_joint_s_0_0 = XpbdHingeJoint::new(
             body.particles[0],
@@ -259,8 +255,6 @@ impl GymDog {
         );
         let index_hinge_joint_3_0 =
             physics.add_hinge_joint(index_body, index_shoulder_3_0, hinge_joint_s_3_0);
-
-
 
         // Upper legs
 
@@ -560,7 +554,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             leg_angular_velocity_1_0: hinge_1_0.get_angular_velocity(),
             leg_angular_velocity_2_0: hinge_2_0.get_angular_velocity(),
             leg_angular_velocity_3_0: hinge_3_0.get_angular_velocity(),
-            
+
             leg_angular_velocity_0_1: hinge_0_1.get_angular_velocity(),
             leg_angular_velocity_1_1: hinge_1_1.get_angular_velocity(),
             leg_angular_velocity_2_1: hinge_2_1.get_angular_velocity(),
@@ -583,60 +577,47 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let state = &self.state;
         [
             state.pos_z_target,
-
             state.vel_x_target,
             state.vel_y_target,
-
             state.pos_z,
-
             state.vel_x,
             state.vel_y,
             state.vel_z,
-
             state.rot_x,
             state.rot_y,
             state.rot_z,
-
             state.shoulder_angle_0_0,
             state.shoulder_angle_1_0,
             state.shoulder_angle_2_0,
             state.shoulder_angle_3_0,
-
             state.leg_angle_0_0,
             state.leg_angle_1_0,
             state.leg_angle_2_0,
             state.leg_angle_3_0,
-
             state.leg_angle_0_1,
             state.leg_angle_1_1,
             state.leg_angle_2_1,
             state.leg_angle_3_1,
-
             state.shoulder_angular_velocity_0_0,
             state.shoulder_angular_velocity_1_0,
             state.shoulder_angular_velocity_2_0,
             state.shoulder_angular_velocity_3_0,
-
             state.leg_angular_velocity_0_0,
             state.leg_angular_velocity_1_0,
             state.leg_angular_velocity_2_0,
             state.leg_angular_velocity_3_0,
-
             state.leg_angular_velocity_0_1,
             state.leg_angular_velocity_1_1,
             state.leg_angular_velocity_2_1,
             state.leg_angular_velocity_3_1,
-
             state.prev_actions[0],
             state.prev_actions[1],
             state.prev_actions[2],
             state.prev_actions[3],
-
             state.prev_actions[4],
             state.prev_actions[5],
             state.prev_actions[6],
             state.prev_actions[7],
-
             state.prev_actions[8],
             state.prev_actions[9],
             state.prev_actions[10],
@@ -648,16 +629,16 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         // self.apply_static_constraint();
 
         let torque = [
-            actions[0] *  10.0,
-            actions[1] *  10.0,
-            actions[2] *  10.0,
-            actions[3] *  10.0,
-            actions[4] *  10.0,
-            actions[5] *  10.0,
-            actions[6] *  10.0,
-            actions[7] *  10.0,
-            actions[8] *  10.0,
-            actions[9] *  10.0,
+            actions[0] * 10.0,
+            actions[1] * 10.0,
+            actions[2] * 10.0,
+            actions[3] * 10.0,
+            actions[4] * 10.0,
+            actions[5] * 10.0,
+            actions[6] * 10.0,
+            actions[7] * 10.0,
+            actions[8] * 10.0,
+            actions[9] * 10.0,
             actions[10] * 10.0,
             actions[11] * 10.0,
         ];
@@ -774,7 +755,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         *self = Self::new();
         self.set_drawer_position(&position);
     }
-    
+
     fn get_current_position(&self) -> Vec3 {
         let x = self.state._pos_x;
         let y = self.state._pos_y;

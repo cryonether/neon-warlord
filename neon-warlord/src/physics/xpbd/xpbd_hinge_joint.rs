@@ -202,8 +202,6 @@ impl XpbdHingeJoint {
         //     println!("");
         // }
 
-
-
         // ##########################################################################
         // Test 1: Free rotation around the y axis
 
