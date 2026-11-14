@@ -45,9 +45,9 @@ pub struct Ppo<
 
     _variance: f32,
     pub std_dev: f32,
-    initial_std_dev: f32,
+    _initial_std_dev: f32,
     episode: usize,
-    n_episodes: usize,
+    _n_episodes: usize,
 
     gamma: f32,
     gae_lambda: f32,
@@ -125,8 +125,8 @@ where
             transitions,
             _variance: VARIANCE,
             std_dev: STD_DEV,
-            initial_std_dev: STD_DEV,
-            n_episodes: N_EPISODES,
+            _initial_std_dev: STD_DEV,
+            _n_episodes: N_EPISODES,
             episode: 0,
             gamma: GAMMA,
             gae_lambda: GAE_LAMBDA,
@@ -489,9 +489,9 @@ where
         (actor_loss_sum, critic_loss_sum)
     }
 
-    fn update_std_dev(&mut self) {
-        let progress = self.episode as f32 / self.n_episodes as f32;
-        self.std_dev = self.initial_std_dev * (1.0 - progress).clamp(0.001, 1.0);
+    fn _update_std_dev(&mut self) {
+        let progress = self.episode as f32 / self._n_episodes as f32;
+        self.std_dev = self._initial_std_dev * (1.0 - progress).clamp(0.001, 1.0);
     }
 }
 

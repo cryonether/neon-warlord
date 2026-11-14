@@ -13,7 +13,7 @@ pub mod xpbd_rigid_body;
 #[cfg(test)]
 mod tests;
 
-use cgmath::{Euler, InnerSpace, Matrix, Rad, Rotation, Zero};
+use cgmath::{Euler, InnerSpace, Rad, Rotation, Zero};
 
 use crate::physics::xpbd::{
     xpbd_ground::XpbdGround, xpbd_hinge_joint::XpbdHingeJoint, xpbd_rigid_body::XpbdRigidBody,

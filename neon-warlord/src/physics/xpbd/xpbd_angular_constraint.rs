@@ -217,7 +217,7 @@ impl XpbdAngularConstraint {
 }
 
 // more accurate version to apply the rotation correction
-pub fn apply_rotation_correction(rot: &mut Quat, delta: Vec3) {
+pub fn _apply_rotation_correction(rot: &mut Quat, delta: Vec3) {
     let angle = delta.magnitude();
 
     if angle < 1e-8 {

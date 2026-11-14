@@ -744,9 +744,9 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         reward -= action_cost * 0.01;
 
         // Penalize huge action change
-        let mut action_change_cost = 0.0;
+        let mut _action_change_cost = 0.0;
         for (action, prev_action) in zip(self.state.actions, self.state.prev_actions) {
-            action_change_cost += (action - prev_action).powi(2);
+            _action_change_cost += (action - prev_action).powi(2);
         }
         // reward -= action_change_cost * 0.01;
 

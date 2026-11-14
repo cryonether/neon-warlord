@@ -24,7 +24,7 @@ impl XpbdRigidBody {
         };
 
         let rot = Quat::one();
-        let inv_rot = rot.invert();
+        let _inv_rot = rot.invert();
         let prev_rot = rot;
         let omega = Vec3::zero();
 

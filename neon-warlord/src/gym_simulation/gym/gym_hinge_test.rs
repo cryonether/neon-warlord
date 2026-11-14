@@ -1,23 +1,18 @@
 //! Some stuff thrown together for testing
 
 use std::f32::consts::PI;
-use std::iter::zip;
 
-use cgmath::Rotation3;
-use cgmath::{InnerSpace, Zero};
+use cgmath::Zero;
 
-use crate::gym_simulation::gym::move_8::{Move8, Move8Drawer};
 use crate::{
     gym_simulation::{Vec3, gym::Gym},
     physics::xpbd::{
         Xpbd,
         xpbd_drawer::XpbdDrawer,
         xpbd_hinge_joint::{RotationAxis, XpbdHingeJoint},
-        xpbd_rigid_body::{self, XpbdRigidBody},
+        xpbd_rigid_body::XpbdRigidBody,
     },
 };
-
-type Quat = cgmath::Quaternion<f32>;
 
 const OBSERVATIONS: usize = 46;
 const ACTIONS: usize = 12;
@@ -44,8 +39,8 @@ impl GymHingeTest {
         let radius = 0.1;
         let drawer = XpbdDrawer::new(&physics, radius, Vec3::zero());
 
-        let width2 = 0.3;
-        let length2 = 0.65;
+        let _width2 = 0.3;
+        let _length2 = 0.65;
 
         let body = XpbdRigidBody::new(
             Vec3::new(0.0, 0.0, 3.0),
@@ -112,7 +107,7 @@ impl GymHingeTest {
             positional_compliance,
             angular_compliance,
         );
-        let index_hinge_joint_s_0_0 =
+        let _index_hinge_joint_s_0_0 =
             physics.add_hinge_joint(index_shoulder_0_0, index_leg_0_0, hinge_joint_0_0);
 
         let state = State {
@@ -337,7 +332,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
     fn update(&mut self, actions: &[f32; ACTIONS], _dt: f32) {
         // self.apply_static_constraint();
 
-        let torque = [
+        let _torque = [
             actions[0] * 10.0,
             actions[1] * 10.0,
             actions[2] * 10.0,
@@ -359,62 +354,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
     }
 
     fn get_reward(&self) -> (f32, bool) {
-        // Reward target velocity
-        // let target_velocity = 6.0;
-        let vel = Vec3::new(self.state.vel_x, self.state.vel_y, self.state.vel_z);
-        let target_vel = Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0);
-
-        let error = (vel - target_vel).magnitude2();
-        let target_magnitude = target_vel.magnitude2();
-
-        let velocity_cost = if target_magnitude > 1e-6 {
-            1.0 - error / target_magnitude
-        } else {
-            1.0 - error
-        };
-
-        let mut reward = velocity_cost * 0.0;
-
-        // Reward target height
-        let target_height = self.state.pos_z_target;
-        let height_cost = 1.0 - ((self.state.pos_z - target_height) / target_height).powi(2);
-        reward += 1.0 * height_cost;
-
-        // Penalize rotation
-        let rot_cost = self.state.rot_y.powi(2) + self.state.rot_x.powi(2);
-        reward -= rot_cost * 1.0;
-        // println!("self.state.rot_y: {}", self.state.rot_y);
-
-        // Penalize vel z
-        // let vel_z_cost = self.state.vel_z.powi(2);
-        // reward -= vel_z_cost * 0.1;
-
-        // Penalize huge actions
-        let mut action_cost = 0.0;
-        for action in self.state.actions {
-            action_cost += action.powi(2);
-        }
-        // reward -= action_cost * 0.1;
-
-        // Penalize huge action change
-        let mut action_change_cost = 0.0;
-        for (action, prev_action) in zip(self.state.actions, self.state.prev_actions) {
-            action_change_cost += (action - prev_action).powi(2);
-        }
-        // reward -= action_change_cost * 0.01;
-
-        if self.state.rot_y.powi(2) > 2.0 || self.state.rot_x.powi(2) > 2.0 {
-            return (0.0, true);
-        }
-
-        // if self.state.pos_z < 0.2 {
-        //     return (0.0, true);
-        // }
-
-        // No negative rewards
-        let reward = reward.clamp(0.0, 2.0);
-
-        (reward, false)
+        (0.0, false)
     }
 
     fn reset(&mut self) {
