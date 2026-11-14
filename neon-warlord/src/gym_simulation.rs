@@ -134,7 +134,7 @@ where
                 n,
                 m,
                 Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 + 50.5, 0.0),
-                200,
+                250,
                 // 1,
             ))));
 
@@ -325,7 +325,7 @@ where
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop_index(2);
 
-        if self.ticks.is_multiple_of(1000) {
+        if self.ticks.is_multiple_of(10000) {
             self.env.reset();
         }
 
