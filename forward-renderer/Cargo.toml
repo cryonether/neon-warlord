@@ -20,9 +20,7 @@ cgmath = "0.18"
 log = "0.4"
 bytemuck = { version = "1.25", features = [ "derive" ] }
 rusttype = "0.9"
-fastrand = "2.4"
 gltf = "1.4.1"
-noise = "0.9.0"
 colorous = "1.0.16"
 
 [dependencies.image]

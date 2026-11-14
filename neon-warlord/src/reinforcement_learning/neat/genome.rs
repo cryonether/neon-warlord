@@ -109,6 +109,7 @@ impl Genome {
         let pos = self.edges.partition_point(|e| e.index_to < edge.index_to);
 
         // Check if element is duplicated
+         #[allow(clippy::needless_range_loop)]
         for i in pos..self.edges.len() {
             let edge = &self.edges[i];
             if edge.index_to == index_to && edge.index_from == index_from {
