@@ -102,7 +102,6 @@ impl XpbdRigidBody {
             },
             r: RotationalQuantities {
                 rot,
-                // inv_rot,
                 prev_rot,
                 omega,
                 inertia_tensor,

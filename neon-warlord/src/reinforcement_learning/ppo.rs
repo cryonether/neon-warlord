@@ -45,7 +45,7 @@ pub struct Ppo<
 
     _variance: f32,
     pub std_dev: f32,
-    initial_variance: f32,
+    initial_std_dev: f32,
     episode: usize,
     n_episodes: usize,
 
@@ -83,9 +83,8 @@ where
 
         // For choosing an action
         const VARIANCE: f32 = 0.5;
-        // const STD_DEV: f32 = 0.70710677; // sqrt(0.5)
-        let std_dev: f32 = f32::sqrt(VARIANCE); // sqrt(0.5)
-        const N_EPISODES: usize = 1_000_000;
+        const STD_DEV: f32 = 0.70710677; // sqrt(0.5)
+        const N_EPISODES: usize = 500_000;
 
         // Discount factor, for calculating the discounted reward
         const GAMMA: f32 = 0.95;
@@ -95,7 +94,7 @@ where
         const CLIP: f32 = 0.2;
 
         // Number of times to update the network from the same batch of data
-        const NR_UPDATES_PER_ITERATION: usize = 2;
+        const NR_UPDATES_PER_ITERATION: usize = 5;
 
         let actor = NeuralNetworkSimd::new_rand(seed);
         let critic = NeuralNetworkSimd::new_rand(seed);
@@ -113,7 +112,7 @@ where
                 value_targets: Vec::new(),
                 actor_loss_sum: 0.0,
                 critic_loss_sum: 0.0,
-                std_dev,
+                std_dev: STD_DEV,
                 clip: CLIP,
             })));
 
@@ -125,8 +124,8 @@ where
             critic,
             transitions,
             _variance: VARIANCE,
-            std_dev,
-            initial_variance: VARIANCE,
+            std_dev: STD_DEV,
+            initial_std_dev: STD_DEV,
             n_episodes: N_EPISODES,
             episode: 0,
             gamma: GAMMA,
@@ -492,7 +491,7 @@ where
 
     fn update_std_dev(&mut self) {
         let progress = self.episode as f32 / self.n_episodes as f32;
-        self.std_dev = self.initial_variance.sqrt() * (1.0 - progress).clamp(0.001, 1.0);
+        self.std_dev = self.initial_std_dev * (1.0 - progress).clamp(0.001, 1.0);
     }
 }
 

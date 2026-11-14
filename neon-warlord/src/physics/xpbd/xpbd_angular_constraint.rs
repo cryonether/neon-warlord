@@ -162,10 +162,9 @@ impl XpbdAngularConstraint {
         r0.rot = r0.rot.normalize();
         r1.rot = r1.rot.normalize();
 
-        // println!("wo: {:?}, w1: {:?}, p: {:?}, i_p0: {:?}, i_p1: {:?}", w0, w1, p, i_p0, i_p1);
-
-        // apply_rotation_correction_fast(&mut r0.rot, i_p0);
-        // apply_rotation_correction_fast(&mut r1.rot, -i_p1);
+        // More accurate version (seems to be not required)
+        // apply_rotation_correction(&mut r0.rot, i_p0);
+        // apply_rotation_correction(&mut r1.rot, -i_p1);
 
         // Calculate torque
         self.torque = self.lagrange_multiplier * n / (dt * dt);
@@ -236,11 +235,4 @@ pub fn apply_rotation_correction(rot: &mut Quat, delta: Vec3) {
     );
 
     *rot = (dq * *rot).normalize();
-}
-
-pub fn apply_rotation_correction_fast(rot: &mut Quat, delta: Vec3) {
-    
-        *rot += 0.5 * Quat::new(0.0, delta.x, delta.y, delta.z);
-
-        *rot = rot.normalize();
 }

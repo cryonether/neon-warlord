@@ -91,8 +91,6 @@ impl XpbdHingeJoint {
             let attachment_point_0 = obj_0.local_to_world(&self.attachment_point_0);
             let attachment_point_1 = obj_1.local_to_world(&self.attachment_point_1);
 
-            // println!("rot0: obj_0: {:?}, obj_1: {:?}", obj_0.r.rot, obj_1.r.rot);
-
             self.positional_constraint.solve(
                 obj_0,
                 obj_1,
@@ -131,7 +129,7 @@ impl XpbdHingeJoint {
             //         .solve(obj_0, obj_1, &n, -alpha, sub_dt);
             // }
 
-            //Fast
+            // Fast
             let error = a0.cross(a1);
             let error_magnitude = error.magnitude();
             let n = error / error_magnitude;

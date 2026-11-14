@@ -156,6 +156,7 @@ struct NeonWarlord {
     worker: WorkerInstance,
     ant_positions: [AntPosition; 1],
 
+    // Lock the camera to the main object
     camera_follow_object: bool,
 }
 
@@ -644,6 +645,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 self.physics_simulation_v3_drawer
                     .update(renderer_interface, data);
 
+                // Lock the camera to the main object
                 if self.camera_follow_object {
                     self.renderer.camera.position = cgmath::Point3::new(
                         data.current_position.x, 

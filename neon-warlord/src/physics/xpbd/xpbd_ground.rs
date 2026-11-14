@@ -135,7 +135,6 @@ impl ContactPoint {
         {
             // Parameters
             let friction_coefficient = 1.0;
-            // let friction_coefficient = 1.0 * 2.0;
             let compliance = 0.0000;
 
             // Recompute contact position after normal correction.
@@ -213,7 +212,6 @@ impl ContactPoint {
     pub fn solve_velocity_level(&mut self, obj: &mut XpbdRigidBody, dt: f32) {
         // Parameters
         let friction_coefficient = 0.8;
-        // let friction_coefficient = 0.8 * 2.0;
 
         let p = &mut obj.p;
         let r = &mut obj.r;

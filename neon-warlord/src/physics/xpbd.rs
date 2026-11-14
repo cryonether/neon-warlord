@@ -7,7 +7,6 @@ pub mod xpbd_angular_constraint;
 pub mod xpbd_drawer;
 pub mod xpbd_ground;
 pub mod xpbd_hinge_joint;
-pub mod xpbd_fake_angular_constraint;
 pub mod xpbd_positional_constraint;
 pub mod xpbd_rigid_body;
 
@@ -269,7 +268,6 @@ impl RotationalQuantities {
     fn apply_inverse_inertia_world(&self, v_world: &Vec3) -> Vec3 {
         // Transform the vector into local space.
         let v_local = self.inv_rot().rotate_vector(*v_world);
-        // let v_local = self.rot.conjugate().rotate_vector(*v_world);
 
         // Apply the full local-space inverse inertia tensor.
         let result_local = self.inverse_inertia_tensor * v_local;
