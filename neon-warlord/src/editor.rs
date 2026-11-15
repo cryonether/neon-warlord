@@ -42,8 +42,7 @@ impl Editor {
         let drawer = XpbdDrawer::new(&physics, radius, position);
 
         // Mouse selector
-        let mouse_selector =
-            MouseSelector::new(width, height);
+        let mouse_selector = MouseSelector::new(width, height);
 
         let _grid = Box::new([[[Field::None; N]; N]; N]);
 
@@ -74,15 +73,14 @@ impl Editor {
 
     pub fn _key_event(&mut self) {}
 
-    pub fn update(&mut self, 
-        camera: &Camera,
-        projection: &Projection,
-    ) {
+    pub fn update(&mut self, camera: &Camera, projection: &Projection) {
         let dt = 1.0 / 60.0;
 
         let mouse_pos = self.mouse_pos;
 
-        let cursor_pos = self.mouse_selector.calculate_position(mouse_pos, camera, projection);
+        let cursor_pos = self
+            .mouse_selector
+            .calculate_position(mouse_pos, camera, projection);
         if let Some(cursor_pos) = cursor_pos {
             self.cursor_pos = cursor_pos + Vec3::new(0.0, 0.0, 0.0);
         }
@@ -98,7 +96,7 @@ impl Editor {
         self.drawer.update(&self.physics, nodes, edges);
 
         let pos_color: Vec3 = to_rgb("#32ddff").into();
-        nodes.push(forward_renderer::particle_shader::Instance{
+        nodes.push(forward_renderer::particle_shader::Instance {
             position: self.cursor_pos.into(),
             color: pos_color.into(),
             time: 1.0,

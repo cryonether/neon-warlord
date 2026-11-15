@@ -10,6 +10,7 @@ mod ant_state;
 mod ant_storage;
 mod camera_controller;
 mod debug_overlay;
+mod editor;
 mod game_board;
 mod gym_simulation;
 mod heightmap_generator;
@@ -29,7 +30,6 @@ mod triple_buffer;
 mod worker;
 mod worker_instance;
 mod worker_thread;
-mod editor;
 
 use cgmath::Vector2;
 use forward_renderer::{
@@ -53,7 +53,13 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, editor::Editor, gym_simulation::{
+    ant_controller::AntPosition,
+    ant_generator::AntGenerator,
+    ant_storage::AntStorage,
+    camera_controller::CameraController,
+    debug_overlay::DebugOverlay,
+    editor::Editor,
+    gym_simulation::{
         GymSimulation, GymSimulationThread,
         gym::{
             gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_dog::GymDog,
@@ -61,7 +67,12 @@ use crate::{
             gym_hinge_test::GymHingeTest, gym_hopper::GymHopper, gym_pole::GymPole,
             gym_reacher::GymReacher,
         },
-    }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
+    },
+    physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
+    simple_physics_simulation::SimplePhysicsSimulation,
+    sun_storage::SunStorage,
+    worker_instance::WorkerInstance,
+    worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -377,10 +388,7 @@ impl NeonWarlord {
         let ant_positions = [AntPosition::new(); 1];
 
         // Editor
-        let editor = Editor::new(
-            size.width,
-            size.height,
-        );
+        let editor = Editor::new(size.width, size.height);
 
         Self {
             _settings: settings,
@@ -659,7 +667,6 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 consumer.acquire_latest();
                 let data = consumer.buffer();
 
-
                 // Lock the camera to the main object
                 if self.camera_follow_object {
                     self.renderer.camera.position = cgmath::Point3::new(
@@ -671,9 +678,14 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
 
                 // Editor update
                 let mut data = data.clone();
-                self.editor.mouse_event(Vector2::new(self.mouse_pos_x as f32, self.mouse_pos_y as f32));
-                self.editor.update(&self.renderer.camera, &self.renderer.projection);
-                self.editor.draw(&mut data.verlet_object_nodes, &mut data.verlet_object_edges);
+                self.editor.mouse_event(Vector2::new(
+                    self.mouse_pos_x as f32,
+                    self.mouse_pos_y as f32,
+                ));
+                self.editor
+                    .update(&self.renderer.camera, &self.renderer.projection);
+                self.editor
+                    .draw(&mut data.verlet_object_nodes, &mut data.verlet_object_edges);
 
                 // Draw
                 self.physics_simulation_v3_drawer

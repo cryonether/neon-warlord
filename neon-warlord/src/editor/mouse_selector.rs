@@ -4,7 +4,7 @@
 use cgmath::{InnerSpace, SquareMatrix, Zero};
 use wgpu_renderer::wgpu_renderer::camera::{Camera, Projection};
 
-use crate::editor::{Vec3};
+use crate::editor::Vec3;
 type Vec4 = cgmath::Vector4<f32>;
 
 pub struct MouseSelector {
@@ -16,10 +16,7 @@ pub struct MouseSelector {
 }
 
 impl MouseSelector {
-    pub fn new(
-        width: u32,
-        height: u32,
-    ) -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         Self {
             width,
             height,
@@ -40,7 +37,6 @@ impl MouseSelector {
         camera: &Camera,
         projection: &Projection,
     ) -> Option<Vec3> {
-
         // Centering (0 is the bottom left corner of the screen)
         let ndc_x = (mouse_pos.x / self.width as f32) * 2.0 - 1.0;
         let ndc_y = (mouse_pos.y / self.height as f32) * 2.0 - 1.0;
@@ -64,10 +60,7 @@ impl MouseSelector {
     }
 
     /// Intersects a point with direction with the z-plane
-    fn intersect_plane_z0(
-        point: Vec3,
-        direction: Vec3,
-    ) -> Option<Vec3> {
+    fn intersect_plane_z0(point: Vec3, direction: Vec3) -> Option<Vec3> {
         // Select points with distance 1000 * camera_y from the current position
         let relative_range = 1000.0;
 
@@ -84,4 +77,3 @@ impl MouseSelector {
         Some(point + direction * lambda)
     }
 }
-
