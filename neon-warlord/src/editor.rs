@@ -1,13 +1,14 @@
 //! Edit physic based actors
-//! 
+//!
 pub mod mouse_selector;
 
 use cgmath::{One, Zero};
 use forward_renderer::to_rgb;
-use wgpu_renderer::wgpu_renderer::camera::Camera;
+use wgpu_renderer::wgpu_renderer::camera::{Camera, Projection};
 
 use crate::{
-    editor::mouse_selector::MouseSelector, physics::xpbd::{Xpbd, xpbd_drawer::XpbdDrawer, xpbd_rigid_body::XpbdRigidBody},
+    editor::mouse_selector::MouseSelector,
+    physics::xpbd::{Xpbd, xpbd_drawer::XpbdDrawer, xpbd_rigid_body::XpbdRigidBody},
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -29,16 +30,12 @@ pub struct Editor {
     grid: Box<[[[Field; N]; N]; N]>,
 
     cursor_pos: Vec3,
+
+    n_pos: Vec<Vec3>,
 }
 
 impl Editor {
-    pub fn new(
-        width: u32,
-        height: u32,
-        fovy: f32,
-
-    ) -> Self {
-
+    pub fn new(width: u32, height: u32, fovy: f32) -> Self {
         // Physics
         let mut physics = Xpbd::new();
 
@@ -46,21 +43,14 @@ impl Editor {
         let radius = 0.05;
         let position = Vec3::zero();
         let drawer = XpbdDrawer::new(&physics, radius, position);
-        
+
         // Mouse selector
         let plane_position: Vec3 = Vec3::zero();
         let plane_rotation: Quat = Quat::one();
-        let mouse_selector = MouseSelector::new(
-            width,
-            height,
-            fovy,
-            plane_position,
-            plane_rotation,
-        );
+        let mouse_selector =
+            MouseSelector::new(width, height, fovy, plane_position, plane_rotation);
 
-        let grid = Box::new(
-            [[[Field::None; N]; N]; N]
-        );
+        let grid = Box::new([[[Field::None; N]; N]; N]);
 
         // Add objects
         let cursor_index = Self::create_objects(&mut physics, radius);
@@ -69,13 +59,14 @@ impl Editor {
             physics,
             mouse_selector,
             drawer,
-          
+
             cursor_index,
             radius,
 
             mouse_pos: Vec2::zero(),
             grid,
             cursor_pos: Vec3::zero(),
+            n_pos: Vec::new(),
         }
     }
 
@@ -87,16 +78,17 @@ impl Editor {
         self.mouse_pos = mouse_pos
     }
 
-    pub fn key_event(&mut self) {
+    pub fn key_event(&mut self) {}
 
-    }
-
-    pub fn update(&mut self, camera: &Camera) {
+    pub fn update(&mut self, 
+        camera: &Camera,
+        projection: &Projection,
+    ) {
         let dt = 1.0 / 60.0;
 
         let mouse_pos = self.mouse_pos;
-        
-        let cursor_pos = self.mouse_selector.calculate_position(mouse_pos, camera);
+
+        let cursor_pos = self.mouse_selector.calculate_position(mouse_pos, camera, projection);
         if let Some(cursor_pos) = cursor_pos {
             self.cursor_pos = cursor_pos;
 
@@ -104,10 +96,19 @@ impl Editor {
             // cursor.p.pos = cursor_pos + Vec3::new(0.0, 0.0, self.radius);
         }
 
+        self.n_pos.clear();
+        for i in 1..10 {
+            let pos0 = self.mouse_selector.p;
+            let n = self.mouse_selector.n;
+
+            self.n_pos.push(pos0 + n * i as f32 *  2.0);
+        }
+
         self.physics.step(dt * 1.0);
     }
 
-    pub fn draw(&self,
+    pub fn draw(
+        &self,
         nodes: &mut Vec<forward_renderer::particle_shader::Instance>,
         edges: &mut Vec<forward_renderer::particle_shader_two_point::Instance>,
     ) {
@@ -120,19 +121,28 @@ impl Editor {
             time: 1.0,
             size: self.radius,
         });
+
+        // for &elem in &self.n_pos {
+        //     nodes.push(forward_renderer::particle_shader::Instance {
+        //         position: elem.into(),
+        //         color: pos_color.into(),
+        //         time: 1.0,
+        //         size: self.radius,
+        //     });
+        // }
     }
 
     fn create_objects(physics: &mut Xpbd, radius: f32) -> usize {
         const MASS: f32 = 0.1;
         let n = 10;
         let d = 1.0;
-        
+
         // for y in 0..n {
         //     for x in 0..n {
         //         let elem = XpbdRigidBody::new(
         //             Vec3::new(
-        //                 x as f32 * d - (n / 2) as f32, 
-        //                 y as f32 * d - (n / 2) as f32, 
+        //                 x as f32 * d - (n / 2) as f32,
+        //                 y as f32 * d - (n / 2) as f32,
         //                 1.5
         //             ),
         //             &[Vec3::zero(), Vec3::new(-0.5, 0.0, 0.25)],
@@ -144,21 +154,11 @@ impl Editor {
         //     }
         // }
 
-        let cursor = XpbdRigidBody::new(
-            Vec3::new(
-                0.0, 
-                0.0, 
-                radius
-            ),
-            &[Vec3::zero()],
-            0.0,
-            radius,
-        );
+        let cursor = XpbdRigidBody::new(Vec3::new(0.0, 0.0, radius), &[Vec3::zero()], 0.0, radius);
 
         physics.add_rigid_body(&cursor)
     }
 }
-
 
 #[derive(Clone, Copy)]
 enum Field {
