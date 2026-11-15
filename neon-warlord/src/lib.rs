@@ -31,6 +31,7 @@ mod worker_instance;
 mod worker_thread;
 mod editor;
 
+use cgmath::Vector2;
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
     height_map::height_map_drawer::HeightMapDrawer, particle_storage::ParticleStorage,
@@ -477,6 +478,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
             new_size.height,
             new_size.width,
         );
+        self.editor.resize(new_size.width, new_size.height);
     }
 
     fn update_scale_factor(
@@ -670,6 +672,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
 
                 // Editor update
                 let mut data = data.clone();
+                self.editor.mouse_event(Vector2::new(self.mouse_pos_x as f32, self.mouse_pos_y as f32));
                 self.editor.update();
                 self.editor.draw(&mut data.verlet_object_nodes, &mut data.verlet_object_edges);
 

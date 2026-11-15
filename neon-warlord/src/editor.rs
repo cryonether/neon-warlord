@@ -19,6 +19,8 @@ pub struct Editor {
 
     drawer: XpbdDrawer,
 
+    cursor_index: usize,
+
     // Local variables
     mouse_pos: Vec2,
 }
@@ -51,12 +53,14 @@ impl Editor {
         // );
 
         // Add objects
-        Self::create_objects(&mut physics, radius);
+        let cursor_index = Self::create_objects(&mut physics, radius);
 
         Self {
             physics,
             // mouse_selector,
             drawer,
+          
+            cursor_index,
 
             mouse_pos: Vec2::zero(),
         }
@@ -76,8 +80,13 @@ impl Editor {
 
     pub fn update(&mut self) {
         let dt = 1.0 / 60.0;
+
+        let mouse_pos = self.mouse_pos;
         
         // self.mouse_selector.calculate_position(self.mouse_pos);
+
+        let cursor = &mut self.physics.rigid_bodies[self.cursor_index];
+        cursor.p.pos = Vec3::new(mouse_pos.x * 0.01, mouse_pos.y * 0.01, 2.0);
 
         self.physics.step(dt * 0.1);
     }
@@ -89,7 +98,7 @@ impl Editor {
         self.drawer.update(&self.physics, nodes, edges);
     }
 
-    fn create_objects(physics: &mut Xpbd, radius: f32) {
+    fn create_objects(physics: &mut Xpbd, radius: f32) -> usize {
         const MASS: f32 = 0.1;
         let n = 10;
         let d = 1.0;
@@ -110,5 +119,18 @@ impl Editor {
                 physics.add_rigid_body(&elem);
             }
         }
+
+        let cursor = XpbdRigidBody::new(
+            Vec3::new(
+                0.0, 
+                0.0, 
+                radius
+            ),
+            &[Vec3::zero()],
+            MASS,
+            radius,
+        );
+
+        physics.add_rigid_body(&cursor)
     }
 }
