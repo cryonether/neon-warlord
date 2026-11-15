@@ -1,6 +1,7 @@
 //! A layer of a neural network
 
 use std::{iter::zip, marker::PhantomData};
+use serde::{Serialize, Deserialize};
 
 use crate::reinforcement_learning::neural_network_simd::{
     activation_function::ActivationFunction,
@@ -12,6 +13,7 @@ use crate::reinforcement_learning::neural_network_simd::{
 };
 
 /// A simd layer
+#[derive(Serialize, Deserialize)]
 #[derive(Clone)]
 pub struct LayerSimd<
     const INPUTS: usize,

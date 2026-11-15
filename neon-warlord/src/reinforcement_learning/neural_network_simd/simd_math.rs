@@ -14,14 +14,19 @@ mod test_simd_vec;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::{iter::zip, ops::Mul};
-
 use wide::f32x16;
+use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
 
 const LANES: usize = 16;
 
+#[derive(Serialize, Deserialize)]
 #[repr(align(64))]
 #[derive(Debug, Copy, Clone)]
-pub struct AlignedVec<const N: usize>(pub [f32; N]);
+pub struct AlignedVec<const N: usize>(
+    #[serde(with = "BigArray")]
+    pub [f32; N]
+);
 
 impl<const N: usize> AlignedVec<N> {
     pub fn simd_iter(&self) -> impl Iterator<Item = &f32x16> {

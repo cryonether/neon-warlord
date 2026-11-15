@@ -8,6 +8,7 @@ pub mod verlet_physics_drawer;
 pub mod worker_thread_2;
 
 use std::{collections::VecDeque, iter::zip};
+use serde::{Serialize, Deserialize};
 
 use forward_renderer::to_rgb;
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
@@ -18,13 +19,9 @@ use crate::{
         gym::Gym,
         gym_worker::GymWorker,
         worker_thread_2::WorkerThread2,
-    },
-    physics_simulation_v3_drawer::DrawerObjects,
-    print_color::{color::PrintColor, print_color},
-    reinforcement_learning::{
-        neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo,
-    },
-    triple_buffer, worker_thread,
+    }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::{
+        neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_tan_h::ActivationTanH}}, ppo::Ppo,
+    }, triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
@@ -326,6 +323,8 @@ where
         self.watch_ups.stop_index(2);
 
         if self.ticks.is_multiple_of(10000) {
+            save_network(&self.ppo.actor, "test_network.json");
+            panic!("done");
             self.env.reset();
         }
 
@@ -471,3 +470,27 @@ impl worker_thread::Update for GymSimulationThread {
 }
 
 unsafe impl Send for GymSimulationThread {}
+
+
+pub fn save_network<
+    const INPUTS: usize,
+    const OUTPUTS: usize,
+    const NEURONS: usize,
+    const NR_LAYERS: usize,
+    const RESIDUAL: bool,
+    OutputActivation: ActivationFunction<OUTPUTS> + Serialize,
+>(
+    network: &NeuralNetworkSimd<
+        INPUTS,
+        OUTPUTS,
+        NEURONS,
+        NR_LAYERS,
+        RESIDUAL,
+        OutputActivation,
+    >,
+    path: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let file = std::fs::File::create(path)?;
+    serde_json::to_writer_pretty(file, network)?;
+    Ok(())
+}

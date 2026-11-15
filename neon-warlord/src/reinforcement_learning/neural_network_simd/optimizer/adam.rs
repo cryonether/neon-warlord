@@ -4,11 +4,11 @@
 
 use itertools::izip;
 use wide::f32x16;
+use serde::{Deserialize, Serialize};
 
 use crate::reinforcement_learning::neural_network_simd::simd_math::{
     AlignedVec, simd_mat::SMat16, simd_vec::SVec16,
 };
-
 /// Adaptive Moment Estimation (Adam)
 ///
 /// An algorithm for first-order gradient-based optimization of
@@ -19,6 +19,7 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::{
 ///     AdaGrad (Duchi et al., 2011): works well with sparse gradients
 ///     RMSProp (Tieleman & Hinton, 2012): works well in on-line and non-stationary settings
 ///
+#[derive(Serialize, Deserialize)]
 #[derive(Clone)]
 pub struct Adam<const INPUTS: usize, const OUTPUTS: usize> {
     /// Step size
