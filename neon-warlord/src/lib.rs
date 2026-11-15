@@ -673,7 +673,7 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 // Editor update
                 let mut data = data.clone();
                 self.editor.mouse_event(Vector2::new(self.mouse_pos_x as f32, self.mouse_pos_y as f32));
-                self.editor.update();
+                self.editor.update(&self.renderer.camera);
                 self.editor.draw(&mut data.verlet_object_nodes, &mut data.verlet_object_edges);
 
                 // Draw
