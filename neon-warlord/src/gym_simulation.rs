@@ -89,7 +89,7 @@ where
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
 
-        let nr_ppo_threads = 16;
+        let nr_ppo_threads = 1;
 
         let nr_gym_threads;
         #[cfg(target_arch = "wasm32")]
@@ -98,7 +98,7 @@ where
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            nr_gym_threads = 16;
+            nr_gym_threads = 1;
         }
 
         let pos_graph_actor_loss = pos + Vec3::new(-7.2, 1.0, 2.2);
