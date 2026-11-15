@@ -3,6 +3,7 @@
 pub mod mouse_selector;
 
 use cgmath::{One, Zero};
+use forward_renderer::to_rgb;
 use wgpu_renderer::wgpu_renderer::camera::Camera;
 
 use crate::{
@@ -26,6 +27,8 @@ pub struct Editor {
     // Local variables
     mouse_pos: Vec2,
     grid: Box<[[[Field; N]; N]; N]>,
+
+    cursor_pos: Vec3,
 }
 
 impl Editor {
@@ -94,8 +97,10 @@ impl Editor {
         
         let cursor_pos = self.mouse_selector.calculate_position(mouse_pos, camera);
         if let Some(cursor_pos) = cursor_pos {
-            let cursor = &mut self.physics.rigid_bodies[self.cursor_index];
-            cursor.p.pos = cursor_pos + Vec3::new(0.0, 0.0, self.radius);
+            self.cursor_pos = cursor_pos;
+
+            // let cursor = &mut self.physics.rigid_bodies[self.cursor_index];
+            // cursor.p.pos = cursor_pos + Vec3::new(0.0, 0.0, self.radius);
         }
 
         self.physics.step(dt * 1.0);
@@ -106,6 +111,14 @@ impl Editor {
         edges: &mut Vec<forward_renderer::particle_shader_two_point::Instance>,
     ) {
         self.drawer.update(&self.physics, nodes, edges);
+
+        let pos_color: Vec3 = to_rgb("#32ddff").into();
+        nodes.push(forward_renderer::particle_shader::Instance{
+            position: self.cursor_pos.into(),
+            color: pos_color.into(),
+            time: 1.0,
+            size: self.radius,
+        });
     }
 
     fn create_objects(physics: &mut Xpbd, radius: f32) -> usize {
