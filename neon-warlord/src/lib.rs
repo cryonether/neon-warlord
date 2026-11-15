@@ -29,6 +29,7 @@ mod triple_buffer;
 mod worker;
 mod worker_instance;
 mod worker_thread;
+mod editor;
 
 use forward_renderer::{
     AnimatedObjectStorage, ForwardRenderer, PerformanceMonitor, glow_storage::GlowStorage,
