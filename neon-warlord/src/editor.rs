@@ -43,7 +43,7 @@ impl Editor {
         let mut physics = Xpbd::new();
 
         // Physics Drawer
-        let radius = 0.1;
+        let radius = 0.01;
         let position = Vec3::zero();
         let drawer = XpbdDrawer::new(&physics, radius, position);
         
@@ -75,6 +75,7 @@ impl Editor {
 
             mouse_pos: Vec2::zero(),
             grid,
+            cursor_pos: Vec3::zero(),
         }
     }
 
