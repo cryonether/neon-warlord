@@ -26,7 +26,7 @@ impl<
     RESIDUAL,
     OutputActivation,
 > {
-    pub fn export(
+    pub fn export_safetensors(
         &self,
         path: &std::path::Path,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -104,26 +104,7 @@ impl<
 
         Ok(())
     }
-
-
-
 }
-
-
-fn push_tensor<const A: usize, const B: usize>(
-    tensors: &mut Vec<(String, Vec<usize>, Vec<u8>)>,
-    name: String,
-    data: &[f32],
-    shape: Vec<usize>,
-) {
-    let bytes = data
-        .iter()
-        .flat_map(|x| x.to_le_bytes())
-        .collect();
-
-    tensors.push((name, shape, bytes));
-}
-
 
 fn push_vec16<const N: usize>(
     tensors: &mut Vec<(String, Vec<usize>, Vec<u8>)>,

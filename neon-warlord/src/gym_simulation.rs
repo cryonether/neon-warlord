@@ -7,7 +7,7 @@ pub mod neural_network_drawer;
 pub mod verlet_physics_drawer;
 pub mod worker_thread_2;
 
-use std::{collections::VecDeque, iter::zip};
+use std::{collections::VecDeque, iter::zip, path::Path};
 use serde::{Serialize, Deserialize};
 
 use forward_renderer::to_rgb;
@@ -323,7 +323,8 @@ where
         self.watch_ups.stop_index(2);
 
         if self.ticks.is_multiple_of(10000) {
-            save_network(&self.ppo.actor, "test_network.json");
+            let _ = self.ppo.actor.export_safetensors( Path::new("test_network.safetensors"));
+
             panic!("done");
             self.env.reset();
         }
