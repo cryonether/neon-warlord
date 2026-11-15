@@ -48,12 +48,8 @@ impl MouseSelector {
         let near = Vec4::new(ndc_x, ndc_y, 0.0, 1.0);
         let far = Vec4::new(ndc_x, ndc_y, 1.0, 1.0);
 
-        let inverse_view_projection = (projection.calc_matrix() * camera.calc_matrix()).invert();
-        if inverse_view_projection.is_none() {
-            return None;
-        }
+        let inverse_view_projection = (projection.calc_matrix() * camera.calc_matrix()).invert()?;
 
-        let inverse_view_projection = inverse_view_projection.unwrap();
         let near_world = inverse_view_projection * near;
         let far_world = inverse_view_projection * far;
 
