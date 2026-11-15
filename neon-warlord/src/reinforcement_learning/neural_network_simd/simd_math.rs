@@ -22,7 +22,7 @@ const LANES: usize = 16;
 
 #[derive(Serialize, Deserialize)]
 #[repr(align(64))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct AlignedVec<const N: usize>(
     #[serde(with = "BigArray")]
     pub [f32; N]

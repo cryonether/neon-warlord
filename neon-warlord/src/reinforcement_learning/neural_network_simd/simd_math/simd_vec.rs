@@ -10,7 +10,7 @@ use super::simd_row_vec::SRowVec16;
 use super::*;
 
 #[derive(Serialize, Deserialize)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SVec16<const N: usize>(pub AlignedVec<N>);
 
 impl<const N: usize> SVec16<N> {

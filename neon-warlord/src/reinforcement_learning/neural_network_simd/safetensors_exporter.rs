@@ -19,6 +19,21 @@ where
     ActorNetwork: ExportSafetensors, 
     CriticNetwork: ExportSafetensors,
 {
+    let bytes = export_ppo_bytes(actor, critic)?;
+    std::fs::write(path, bytes)?;
+
+    Ok(())
+}
+
+
+pub fn export_ppo_bytes<ActorNetwork, CriticNetwork>(
+    actor: &ActorNetwork,
+    critic: &CriticNetwork,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>>
+where 
+    ActorNetwork: ExportSafetensors, 
+    CriticNetwork: ExportSafetensors,
+{
     let mut storage = Vec::new();
 
     actor.append_safetensors(&mut storage, "actor");
@@ -38,9 +53,9 @@ where
             })
             .collect::<Result<_, SafeTensorError>>()?;
 
-    safetensors::serialize_to_file(&tensors, None, path)?;
+    let bytes = safetensors::serialize(&tensors, None)?;
 
-    Ok(())
+    Ok(bytes)
 }
 
 pub fn import_ppo<ActorNetwork, CriticNetwork>(
@@ -53,7 +68,18 @@ where
     CriticNetwork: ImportSafetensors,
 {
     let data = std::fs::read(path)?;
+    import_ppo_bytes(actor, critic, data)
+}
 
+pub fn import_ppo_bytes<ActorNetwork, CriticNetwork>(
+    actor: &mut ActorNetwork,
+    critic: &mut CriticNetwork,
+    data: Vec<u8>,
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    ActorNetwork: ImportSafetensors,
+    CriticNetwork: ImportSafetensors,
+{
     let tensors = safetensors::SafeTensors::deserialize(&data)?;
 
     actor.load_safetensors(&tensors, "actor")?;

@@ -14,3 +14,6 @@ mod test_predict_maze;
 
 #[cfg(test)]
 mod test_fit_function;
+
+#[cfg(test)]
+mod test_safetensors_exporter;

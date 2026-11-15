@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
 #[derive(Serialize, Deserialize)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SMat16<const M: usize, const N: usize>(
     #[serde(with = "BigArray")]
     pub [AlignedVec<N>; M]
