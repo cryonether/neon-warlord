@@ -32,7 +32,7 @@ impl Editor {
     pub fn new(
         width: u32,
         height: u32,
-        fovy_half_tan: f32,
+        fovy: f32,
 
     ) -> Self {
 
@@ -50,7 +50,7 @@ impl Editor {
         let mouse_selector = MouseSelector::new(
             width,
             height,
-            fovy_half_tan,
+            fovy,
             plane_position,
             plane_rotation,
         );
