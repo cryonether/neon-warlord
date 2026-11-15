@@ -293,7 +293,7 @@ impl ForwardRenderer {
         let height = wgpu_renderer.surface_height();
         let fovy = cgmath::Deg(45.0);
         let znear = 0.1;
-        let zfar = 1.0;
+        let zfar = 100.0;
         let projection = Projection::new(width, height, fovy, znear, zfar);
 
         // let fovy = cgmath::Deg(175.0);

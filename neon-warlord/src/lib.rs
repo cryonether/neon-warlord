@@ -380,7 +380,6 @@ impl NeonWarlord {
         let editor = Editor::new(
             size.width,
             size.height,
-            renderer.projection.fovy.0,
         );
 
         Self {

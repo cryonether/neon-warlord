@@ -1,20 +1,15 @@
-//! Calcutes the direction the mouse is pointing at analogous to the camera, and determines the point on a plane clicked on by the mouse
+//! Calculates the direction the mouse is pointing at analogous to the camera, and determines the point on a plane clicked on by the mouse
 //!
 
-use std::f32::consts::FRAC_PI_2;
-
-use cgmath::{InnerSpace, Rad, SquareMatrix, Zero};
+use cgmath::{InnerSpace, SquareMatrix, Zero};
 use wgpu_renderer::wgpu_renderer::camera::{Camera, Projection};
 
-use crate::editor::{Quat, Vec3};
+use crate::editor::{Vec3};
 type Vec4 = cgmath::Vector4<f32>;
 
 pub struct MouseSelector {
     width: u32,
     height: u32,
-    fovy_half_tan: f32,
-    plane_position: Vec3,
-    plane_rotation: Quat,
 
     pub n: Vec3,
     pub p: Vec3,
@@ -24,18 +19,10 @@ impl MouseSelector {
     pub fn new(
         width: u32,
         height: u32,
-        fovy: f32,
-        plane_position: Vec3,
-        plane_rotation: Quat,
     ) -> Self {
-        // Somehow this needs an factor 1.5 to work, we dont know why.
-        // (fovy/2.).tan() is the offset of the vertical borders from the center, on the plane with distance 1.
         Self {
             width,
             height,
-            fovy_half_tan: (fovy / 2.).tan() * 1.5,
-            plane_position,
-            plane_rotation,
             n: Vec3::zero(),
             p: Vec3::zero(),
         }
