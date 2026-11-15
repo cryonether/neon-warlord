@@ -12,17 +12,19 @@ type Vec3 = cgmath::Vector3<f32>;
 type Vec2 = cgmath::Vector2<f32>;
 type Quat = cgmath::Quaternion<f32>;
 
+const N: usize = 10;
+
 /// Edit physic based actors
 pub struct Editor {
     physics: Xpbd,
     // mouse_selector: MouseSelector,
-
     drawer: XpbdDrawer,
-
     cursor_index: usize,
+    radius: f32,
 
     // Local variables
     mouse_pos: Vec2,
+    grid: Box<[[[Field; N]; N]; N]>,
 }
 
 impl Editor {
@@ -52,6 +54,10 @@ impl Editor {
         //     plane_rotation,
         // );
 
+        let grid = Box::new(
+            [[[Field::None; N]; N]; N]
+        );
+
         // Add objects
         let cursor_index = Self::create_objects(&mut physics, radius);
 
@@ -61,8 +67,10 @@ impl Editor {
             drawer,
           
             cursor_index,
+            radius,
 
             mouse_pos: Vec2::zero(),
+            grid,
         }
     }
 
@@ -86,9 +94,9 @@ impl Editor {
         // self.mouse_selector.calculate_position(self.mouse_pos);
 
         let cursor = &mut self.physics.rigid_bodies[self.cursor_index];
-        cursor.p.pos = Vec3::new(mouse_pos.x * 0.01, mouse_pos.y * 0.01, 2.0);
+        cursor.p.pos = Vec3::new(mouse_pos.x * 0.01, mouse_pos.y * 0.01, self.radius);
 
-        self.physics.step(dt * 0.1);
+        self.physics.step(dt * 1.0);
     }
 
     pub fn draw(&self,
@@ -103,22 +111,22 @@ impl Editor {
         let n = 10;
         let d = 1.0;
         
-        for y in 0..n {
-            for x in 0..n {
-                let elem = XpbdRigidBody::new(
-                    Vec3::new(
-                        x as f32 * d - (n / 2) as f32, 
-                        y as f32 * d - (n / 2) as f32, 
-                        1.5
-                    ),
-                    &[Vec3::zero(), Vec3::new(-0.5, 0.0, 0.25)],
-                    MASS,
-                    radius,
-                );
+        // for y in 0..n {
+        //     for x in 0..n {
+        //         let elem = XpbdRigidBody::new(
+        //             Vec3::new(
+        //                 x as f32 * d - (n / 2) as f32, 
+        //                 y as f32 * d - (n / 2) as f32, 
+        //                 1.5
+        //             ),
+        //             &[Vec3::zero(), Vec3::new(-0.5, 0.0, 0.25)],
+        //             MASS,
+        //             radius,
+        //         );
 
-                physics.add_rigid_body(&elem);
-            }
-        }
+        //         physics.add_rigid_body(&elem);
+        //     }
+        // }
 
         let cursor = XpbdRigidBody::new(
             Vec3::new(
@@ -127,10 +135,17 @@ impl Editor {
                 radius
             ),
             &[Vec3::zero()],
-            MASS,
+            0.0,
             radius,
         );
 
         physics.add_rigid_body(&cursor)
     }
+}
+
+
+#[derive(Clone, Copy)]
+enum Field {
+    None,
+    Node,
 }
