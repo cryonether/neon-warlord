@@ -56,4 +56,8 @@ impl MouseSelector
         
         (pos2.y + lambda * direction.y, pos2.x + lambda * direction.x)
     }
+    
+    pub(crate) fn calculate_position(&self, mouse_pos: cgmath::Vector2<f32>) -> _ {
+        todo!()
+    }
 }
