@@ -19,9 +19,11 @@ pub struct MouseSelector
 
 impl MouseSelector
 {
-    pub fn new(width: u32, height: u32, fovy_half_tan: f32, plane_position: Vec3, plane_rotation: Quat) -> Self
+    pub fn new(width: u32, height: u32, fovy: f32, plane_position: Vec3, plane_rotation: Quat) -> Self
     {
-        Self { width, height, fovy_half_tan, plane_position, plane_rotation}
+        // Somehow this needs an factor 1.5 to work, we dont know why.
+        // (fovy/2.).tan() is the offset of the vertical borders from the center, on the plane with distance 1. 
+        Self { width, height, fovy_half_tan: (fovy/2.).tan() * 1.5, plane_position, plane_rotation}
     }
 
     pub fn resize(&mut self, new_width: u32, new_height: u32) {
