@@ -52,12 +52,7 @@ use wgpu_renderer::{
 use winit::event::{ElementState, WindowEvent};
 
 use crate::{
-    ant_controller::AntPosition,
-    ant_generator::AntGenerator,
-    ant_storage::AntStorage,
-    camera_controller::CameraController,
-    debug_overlay::DebugOverlay,
-    gym_simulation::{
+    ant_controller::AntPosition, ant_generator::AntGenerator, ant_storage::AntStorage, camera_controller::CameraController, debug_overlay::DebugOverlay, editor::Editor, gym_simulation::{
         GymSimulation, GymSimulationThread,
         gym::{
             gym_cart::GymCart, gym_cart_pole::GymCartPole, gym_dog::GymDog,
@@ -65,12 +60,7 @@ use crate::{
             gym_hinge_test::GymHingeTest, gym_hopper::GymHopper, gym_pole::GymPole,
             gym_reacher::GymReacher,
         },
-    },
-    physics_simulation_v3_drawer::PhysicsSimulationV3Drawer,
-    simple_physics_simulation::SimplePhysicsSimulation,
-    sun_storage::SunStorage,
-    worker_instance::WorkerInstance,
-    worker_thread::WorkerThread,
+    }, physics_simulation_v3_drawer::PhysicsSimulationV3Drawer, simple_physics_simulation::SimplePhysicsSimulation, sun_storage::SunStorage, worker_instance::WorkerInstance, worker_thread::WorkerThread,
 };
 
 const WATCH_POINTS_SIZE: usize = 10;
@@ -173,6 +163,9 @@ struct NeonWarlord {
 
     // Lock the camera to the main object
     camera_follow_object: bool,
+
+    // Editor
+    editor: Editor,
 }
 
 impl NeonWarlord {
@@ -382,6 +375,13 @@ impl NeonWarlord {
 
         let ant_positions = [AntPosition::new(); 1];
 
+        // Editor
+        let editor = Editor::new(
+            size.width,
+            size.height,
+            renderer.projection.fovy.0,
+        );
+
         Self {
             _settings: settings,
             size,
@@ -421,7 +421,8 @@ impl NeonWarlord {
             physics_simulation_consumer: consumer,
             // physics_simulation_v3_thread,
             gym_simulation_thread,
-            camera_follow_object: true,
+            camera_follow_object: false,
+            editor,
         }
     }
 }
@@ -657,8 +658,6 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                 consumer.acquire_latest();
                 let data = consumer.buffer();
 
-                self.physics_simulation_v3_drawer
-                    .update(renderer_interface, data);
 
                 // Lock the camera to the main object
                 if self.camera_follow_object {
@@ -669,6 +668,16 @@ impl DefaultApplicationInterfaceRuntime for NeonWarlord {
                     );
                 }
 
+                // Editor update
+                let mut data = data.clone();
+                self.editor.update();
+                self.editor.draw(&mut data.verlet_object_nodes, &mut data.verlet_object_edges);
+
+                // Draw
+                self.physics_simulation_v3_drawer
+                    .update(renderer_interface, &data);
+
+                // Update ups
                 self.ups = data.ups;
                 self.performance_monitor_ups.update_from_data(
                     renderer_interface,

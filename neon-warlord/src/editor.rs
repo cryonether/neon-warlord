@@ -5,7 +5,7 @@ pub mod mouse_selector;
 use cgmath::{One, Zero};
 
 use crate::{
-    editor::mouse_selector::MouseSelector, physics::xpbd::{Xpbd, xpbd_drawer::XpbdDrawer, xpbd_rigid_body::XpbdRigidBody},
+    physics::xpbd::{Xpbd, xpbd_drawer::XpbdDrawer, xpbd_rigid_body::XpbdRigidBody},
 };
 
 type Vec3 = cgmath::Vector3<f32>;
@@ -15,7 +15,7 @@ type Quat = cgmath::Quaternion<f32>;
 /// Edit physic based actors
 pub struct Editor {
     physics: Xpbd,
-    mouse_selector: MouseSelector,
+    // mouse_selector: MouseSelector,
 
     drawer: XpbdDrawer,
 
@@ -25,8 +25,8 @@ pub struct Editor {
 
 impl Editor {
     pub fn new(
-        surface_width: u32,
-        surface_height: u32,
+        width: u32,
+        height: u32,
         fovy_half_tan: f32,
 
     ) -> Self {
@@ -42,20 +42,20 @@ impl Editor {
         // Mouse selector
         let plane_position: Vec3 = Vec3::zero();
         let plane_rotation: Quat = Quat::one();
-        let mouse_selector = MouseSelector::new(
-            surface_width,
-            surface_height,
-            fovy_half_tan,
-            plane_position,
-            plane_rotation,
-        );
+        // let mouse_selector = MouseSelector::new(
+        //     width,
+        //     height,
+        //     fovy_half_tan,
+        //     plane_position,
+        //     plane_rotation,
+        // );
 
         // Add objects
         Self::create_objects(&mut physics, radius);
 
         Self {
             physics,
-            mouse_selector,
+            // mouse_selector,
             drawer,
 
             mouse_pos: Vec2::zero(),
@@ -63,7 +63,7 @@ impl Editor {
     }
 
     pub fn resize(&mut self, with: u32, height: u32) {
-        self.mouse_selector.resize(with, height);
+        // self.mouse_selector.resize(with, height);
     }
 
     pub fn mouse_event(&mut self, mouse_pos: Vec2) {
@@ -77,9 +77,9 @@ impl Editor {
     pub fn update(&mut self) {
         let dt = 1.0 / 60.0;
         
-        self.mouse_selector.calculate_position(self.mouse_pos);
+        // self.mouse_selector.calculate_position(self.mouse_pos);
 
-        self.physics.step(dt);
+        self.physics.step(dt * 0.1);
     }
 
     pub fn draw(&self,
