@@ -1,63 +1,63 @@
 //! Calcutes the direction the mouse is pointing at analogous to the camera, and determines the point on a plane clicked on by the mouse 
 //! 
 
-use wgpu_renderer::{vertex_color_shader, wgpu_renderer::camera::Camera};
+use cgmath::Zero;
+use wgpu_renderer::wgpu_renderer::camera::Camera;
+
+use crate::editor::{Quat, Vec3};
 
 pub struct MouseSelector
 {
     width: u32,
     height: u32,
     fovy_half_tan: f32,
-    trans: vertex_color_shader::Instance,
-    mouse_pos: glam::Vec3,
+    plane_position: Vec3,
+    plane_rotation: Quat,
 }
 
 impl MouseSelector
 {
-    pub fn new(width: u32, height: u32, fovy_half_tan: f32, trans: vertex_color_shader::Instance) -> Self
+    pub fn new(width: u32, height: u32, fovy_half_tan: f32, plane_position: Vec3, plane_rotation: Quat) -> Self
     {
-        Self { width, height, fovy_half_tan, trans, mouse_pos: glam::Vec3::ZERO, }
+        Self { width, height, fovy_half_tan, plane_position, plane_rotation}
     }
 
     pub fn resize(&mut self, new_width: u32, new_height: u32) {
         self.width = new_width;
         self.height = new_height;
     }
+   
+    // Calculates the intersection of the ray cast by the mouse with global plane z=0
+    pub(crate) fn calculate_position(&self, mouse_pos: cgmath::Vector2<f32>, camera: &Camera) -> Option<Vec3> {
+        let mut direction:Vec3 = Vec3::zero();
 
-    pub fn calc_mouse_position_on_screen(&mut self, x_pos: f32, y_pos: f32) {
-        // Invert y
-        self.mouse_pos.y = self.height as f32 - y_pos;
+        // Centering (0 is the bottom left corner of the screen)
+        direction.x = mouse_pos.x - self.width as f32 / 2.;
+        direction.y = mouse_pos.y - self.height as f32 / 2.;
 
-        // Centering
-        self.mouse_pos.x = x_pos - self.width as f32 / 2.;
-        self.mouse_pos.y -= self.height as f32 / 2.;
+        // Norming and switching coordinates to global rhs coordinate system (z is vertical)
+        let display_scale = self.fovy_half_tan * 2. / (self.height as f32);
+        direction.z = direction.y * display_scale;
+        direction.y = - direction.x * display_scale;
+        direction.x = 1.;
 
-        // Norming and switching coordinates to global coordinate system
-        self.mouse_pos.z = self.mouse_pos.x * self.fovy_half_tan * 2. / (self.height as f32);
-        self.mouse_pos.x = 1.;
-        self.mouse_pos.y *= self.fovy_half_tan * 2. / (self.height as f32);
-    }
+        let cam_pos = Vec3::new(camera.position.x, camera.position.y, camera.position.z);
+        let cam_rotation = cgmath::Matrix3::from_angle_z(camera.yaw) * cgmath::Matrix3::from_angle_y(-camera.pitch);
+        direction = cam_rotation * direction;
 
-    /// returns the direction of the mouse cursor in the camera coordinate system
-    pub fn _get_mouse_position_on_screen(&self) -> glam::Vec3 {
-        self.mouse_pos
-    }
+        // You can select points with distance 1000 * camera_y from your position
+        let relative_range = 1000.;
+        if direction.z.abs() < 1. / relative_range {
+            return Option::None;
+        }
 
-    pub fn mouse_position_on_grid(&self, camera: &Camera) -> (f32, f32) {
-        let pos = camera.position;
-        let mut pos2 = glam::Vec3::new(pos.x, pos.y, pos.z);
-        let cam_trans = glam::Mat3::from_rotation_y(-camera.yaw.0) * glam::Mat3::from_rotation_z(camera.pitch.0);
+        let lambda = -cam_pos.z / direction.z;
 
-        let mut direction = cam_trans * self.mouse_pos;
-        pos2 -= self.trans.position;
-        pos2 = self.trans.rotation.mul_vec3(pos2); //Validate!!
-        direction = self.trans.rotation.mul_vec3(direction); //Validate!!
-        let lambda = -pos2.z / direction.z;
-        
-        (pos2.y + lambda * direction.y, pos2.x + lambda * direction.x)
-    }
-    
-    pub(crate) fn calculate_position(&self, mouse_pos: cgmath::Vector2<f32>) -> _ {
-        todo!()
+        // Looking away from plane
+        if lambda < 0. {
+            return Option::None;
+        }
+
+        Some(cam_pos + lambda * direction)
     }
 }
