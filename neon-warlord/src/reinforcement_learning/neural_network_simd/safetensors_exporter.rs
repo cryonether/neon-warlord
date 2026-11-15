@@ -10,6 +10,46 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::simd_vec::SVe
 use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, activation_function::ActivationFunction};
 
 
+pub fn export_ppo<ActorNetwork, CriticNetwork>(
+    actor: &ActorNetwork,
+    critic: &CriticNetwork,
+    path: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>>
+where 
+    ActorNetwork: ExportSafetensors, 
+    CriticNetwork: ExportSafetensors,
+{
+    let mut storage = Vec::new();
+
+    actor.append_safetensors(&mut storage, "actor");
+    critic.append_safetensors(&mut storage, "critic");
+
+    let tensors: HashMap<String, TensorView<'_>> =
+        storage.iter()
+            .map(|(name, shape, bytes)| {
+                Ok((
+                    name.clone(),
+                    TensorView::new(
+                        Dtype::F32,
+                        shape.clone(),
+                        bytes,
+                    )?,
+                ))
+            })
+            .collect::<Result<_, SafeTensorError>>()?;
+
+    safetensors::serialize_to_file(&tensors, None, path)?;
+
+    Ok(())
+}
+
+trait ExportSafetensors {
+    fn append_safetensors(
+        &self,
+        storage: &mut Vec<(String, Vec<usize>, Vec<u8>)>,
+        prefix: &str,
+    );
+}
 
 impl<
     const INPUTS: usize,
@@ -18,91 +58,62 @@ impl<
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
     OutputActivation: ActivationFunction<OUTPUTS>,
-> NeuralNetworkSimd<
+> ExportSafetensors for NeuralNetworkSimd<
     INPUTS,
     OUTPUTS,
     NEURONS,
     NR_LAYERS,
     RESIDUAL,
     OutputActivation,
-> {
-    pub fn export_safetensors(
+> {    
+    fn append_safetensors(
         &self,
-        path: &std::path::Path,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-
-        // Owned tensor buffers
-        let mut storage = Vec::new();
-
-        // Input layer
+        storage: &mut Vec<(String, Vec<usize>, Vec<u8>)>,
+        prefix: &str,
+    ) {
         push_mat16(
-            &mut storage,
-            "input.weight".into(),
+            storage,
+            format!("{prefix}.input.weight"),
             &self.input.w,
             vec![NEURONS, INPUTS],
         );
 
         push_vec16(
-            &mut storage,
-            "input.bias".into(),
+            storage,
+            format!("{prefix}.input.bias"),
             &self.input.b,
             vec![NEURONS],
         );
 
-        // Hidden layers
         for (i, layer) in self.layers.iter().enumerate() {
             push_mat16(
-                &mut storage,
-                format!("layers.{i}.weight"),
+                storage,
+                format!("{prefix}.layers.{i}.weight"),
                 &layer.w,
                 vec![NEURONS, NEURONS],
             );
 
             push_vec16(
-                &mut storage,
-                format!("layers.{i}.bias"),
+                storage,
+                format!("{prefix}.layers.{i}.bias"),
                 &layer.b,
                 vec![NEURONS],
             );
         }
 
-        // Output layer
         push_mat16(
-            &mut storage,
-            "output.weight".into(),
+            storage,
+            format!("{prefix}.output.weight"),
             &self.output.w,
             vec![OUTPUTS, NEURONS],
         );
 
         push_vec16(
-            &mut storage,
-            "output.bias".into(),
+            storage,
+            format!("{prefix}.output.bias"),
             &self.output.b,
             vec![OUTPUTS],
         );
-
-        // Create TensorViews referencing owned buffers
-        let tensors: HashMap<String, TensorView<'_>> =
-            storage.iter()
-                .map(|(name, shape, bytes)| {
-                    Ok((
-                        name.clone(),
-                        TensorView::new(
-                            Dtype::F32,
-                            shape.clone(),
-                            bytes,
-                        )?,
-                    ))
-                })
-                .collect::<Result<_, SafeTensorError>>()?;
-
-        safetensors::serialize_to_file(
-            &tensors,
-            None,
-            path,
-        )?;
-
-        Ok(())
     }
 }
 
@@ -136,3 +147,5 @@ fn push_mat16<const M: usize, const N: usize>(
 
     tensors.push((name, shape, bytes));
 }
+
+

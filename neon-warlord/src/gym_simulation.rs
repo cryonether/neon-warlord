@@ -20,7 +20,7 @@ use crate::{
         gym_worker::GymWorker,
         worker_thread_2::WorkerThread2,
     }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::{
-        neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_tan_h::ActivationTanH}}, ppo::Ppo,
+        neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_tan_h::ActivationTanH}, safetensors_exporter::export_ppo}, ppo::Ppo,
     }, triple_buffer, worker_thread,
 };
 
@@ -322,8 +322,8 @@ where
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop_index(2);
 
-        if self.ticks.is_multiple_of(10000) {
-            let _ = self.ppo.actor.export_safetensors( Path::new("test_network.safetensors"));
+        if self.ticks.is_multiple_of(1000) {
+            let _ = export_ppo(&self.ppo.actor, &self.ppo.critic, Path::new(&format!("test_network_{}.safetensors", self.ticks)));
 
             panic!("done");
             self.env.reset();
