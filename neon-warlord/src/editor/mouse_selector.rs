@@ -1,7 +1,9 @@
 //! Calcutes the direction the mouse is pointing at analogous to the camera, and determines the point on a plane clicked on by the mouse 
 //! 
 
-use cgmath::Zero;
+use std::f32::consts::FRAC_PI_2;
+
+use cgmath::{Rad, Zero};
 use wgpu_renderer::wgpu_renderer::camera::Camera;
 
 use crate::editor::{Quat, Vec3};
@@ -42,7 +44,7 @@ impl MouseSelector
         direction.x = 1.;
 
         let cam_pos = Vec3::new(camera.position.x, camera.position.y, camera.position.z);
-        let cam_rotation = cgmath::Matrix3::from_angle_z(camera.yaw) * cgmath::Matrix3::from_angle_y(-camera.pitch);
+        let cam_rotation = cgmath::Matrix3::from_angle_z(camera.yaw) * cgmath::Matrix3::from_angle_y(-(camera.pitch - Rad(FRAC_PI_2)));
         direction = cam_rotation * direction;
 
         // You can select points with distance 1000 * camera_y from your position
