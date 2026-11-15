@@ -44,7 +44,7 @@ impl MouseSelector
         direction.x = 1.;
 
         let cam_pos = Vec3::new(camera.position.x, camera.position.y, camera.position.z);
-        let cam_rotation = cgmath::Matrix3::from_angle_z(camera.yaw) * cgmath::Matrix3::from_angle_y(-(camera.pitch - Rad(FRAC_PI_2)));
+        let cam_rotation = cgmath::Matrix3::from_angle_z(-camera.yaw) * cgmath::Matrix3::from_angle_y(-(camera.pitch - Rad(FRAC_PI_2)));
         direction = cam_rotation * direction;
 
         // You can select points with distance 1000 * camera_y from your position
