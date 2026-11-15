@@ -14,7 +14,6 @@ pub mod ppo;
 #[allow(dead_code)]
 pub mod q_learning;
 
-pub mod safe_tensors_exporter;
 
 pub fn _assert_f32_eq(a: f32, b: f32, epsilon: f32) {
     assert!(

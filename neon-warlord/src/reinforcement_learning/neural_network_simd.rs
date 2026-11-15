@@ -16,6 +16,7 @@ pub mod epoch;
 pub mod layer_simd;
 pub mod optimizer;
 pub mod simd_math;
+pub mod safe_tensors_exporter;
 
 #[cfg(test)]
 mod tests;
