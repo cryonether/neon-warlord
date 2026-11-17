@@ -89,12 +89,12 @@ where
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
 
-        let nr_ppo_threads = 1;
+        let nr_ppo_threads = 16;
 
         let nr_gym_threads;
         #[cfg(target_arch = "wasm32")]
         {
-            nr_gym_threads = 16;
+            nr_gym_threads = 1;
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
