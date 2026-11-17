@@ -19,7 +19,7 @@ use crate::{
 
 type Quat = cgmath::Quaternion<f32>;
 
-const OBSERVATIONS: usize = 46;
+const OBSERVATIONS: usize = 34;
 const ACTIONS: usize = 12;
 
 const MASS: f32 = 0.1;
@@ -610,18 +610,18 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             state.leg_angular_velocity_1_1,
             state.leg_angular_velocity_2_1,
             state.leg_angular_velocity_3_1,
-            state.prev_actions[0],
-            state.prev_actions[1],
-            state.prev_actions[2],
-            state.prev_actions[3],
-            state.prev_actions[4],
-            state.prev_actions[5],
-            state.prev_actions[6],
-            state.prev_actions[7],
-            state.prev_actions[8],
-            state.prev_actions[9],
-            state.prev_actions[10],
-            state.prev_actions[11],
+            // state.prev_actions[0],
+            // state.prev_actions[1],
+            // state.prev_actions[2],
+            // state.prev_actions[3],
+            // state.prev_actions[4],
+            // state.prev_actions[5],
+            // state.prev_actions[6],
+            // state.prev_actions[7],
+            // state.prev_actions[8],
+            // state.prev_actions[9],
+            // state.prev_actions[10],
+            // state.prev_actions[11],
         ]
     }
 

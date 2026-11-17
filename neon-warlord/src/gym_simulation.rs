@@ -117,11 +117,14 @@ where
         let mut ppo = Ppo::new(0, nr_ppo_threads);
 
         // load old model
-        let _ = import_ppo(
+        let res = import_ppo(
             &mut ppo.actor, 
             &mut ppo.critic, 
-            Path::new(&format!("test_network_{}.safetensors", 1000))
+            Path::new(&format!("test_network_{}.safetensors", 40000))
         );
+        if let Err(err) = res {
+            println!("Failed to load ppo: {}", err)
+        }
 
         let mut gym_worker = Vec::new();
         let mut gym_worker_thread = Vec::new();
