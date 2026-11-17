@@ -63,7 +63,7 @@ pub struct GymSimulation<
 
     env: ENV,
     _steps: u64,
-    _episode: u64,
+    episode: u64,
 
     reward_sum_long: f32,
     reward_sum_super_long: f32,
@@ -117,10 +117,11 @@ where
         let mut ppo = Ppo::new(0, nr_ppo_threads);
 
         // load old model
+        let episode = 40_000;
         let res = import_ppo(
             &mut ppo.actor, 
             &mut ppo.critic, 
-            Path::new(&format!("test_network_{}.safetensors", 40000))
+            Path::new(&format!("test_network_{}.safetensors", episode))
         );
         if let Err(err) = res {
             println!("Failed to load ppo: {}", err)
@@ -221,7 +222,7 @@ where
         Self {
             ticks: 0,
             _steps: 0,
-            _episode: 0,
+            episode,
             reward_sum_long: 0.0,
             reward_sum_super_long: 0.0,
             gym_worker,
@@ -301,6 +302,7 @@ where
 
         let dt = 1.0 / 60.0;
         self.ticks += 1;
+        self.episode += 1;
 
         self.watch_ups.start_index(2, "Sim");
         let state = self.env.get_state();
@@ -332,11 +334,12 @@ where
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop_index(2);
 
-        if self.ticks.is_multiple_of(10000) {
-            let _ = export_ppo(&self.ppo.actor, &self.ppo.critic, Path::new(&format!("test_network_{}.safetensors", self.ticks)));
-
-            // panic!("done");
+        if self.ticks.is_multiple_of(10_000) {
             self.env.reset();
+        }
+
+        if self.episode.is_multiple_of(10_000) {
+            let _ = export_ppo(&self.ppo.actor, &self.ppo.critic, Path::new(&format!("test_network_{}.safetensors", self.episode)));
         }
 
         // ups
@@ -356,7 +359,7 @@ where
             input
         }
 
-        print!("{}, ", self.ticks);
+        print!("{}, ", self.episode);
 
         print!("reward: ");
         print_color(reward, 0.0, 2000.0, PrintColor::PurplePinkYellow);
