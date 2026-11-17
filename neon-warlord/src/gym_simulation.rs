@@ -20,7 +20,7 @@ use crate::{
         gym_worker::GymWorker,
         worker_thread_2::WorkerThread2,
     }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::{
-        neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_tan_h::ActivationTanH}, safetensors_exporter::export_ppo}, ppo::Ppo,
+        neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_tan_h::ActivationTanH}, safetensors_exporter::{export_ppo, import_ppo}}, ppo::Ppo,
     }, triple_buffer, worker_thread,
 };
 
@@ -94,11 +94,11 @@ where
         let nr_gym_threads;
         #[cfg(target_arch = "wasm32")]
         {
-            nr_gym_threads = 1;
+            nr_gym_threads = 16;
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            nr_gym_threads = 1;
+            nr_gym_threads = 16;
         }
 
         let pos_graph_actor_loss = pos + Vec3::new(-7.2, 1.0, 2.2);
@@ -114,7 +114,14 @@ where
 
         let scale = 0.1;
 
-        let ppo = Ppo::new(0, nr_ppo_threads);
+        let mut ppo = Ppo::new(0, nr_ppo_threads);
+
+        // load old model
+        let _ = import_ppo(
+            &mut ppo.actor, 
+            &mut ppo.critic, 
+            Path::new(&format!("test_network_{}.safetensors", 1000))
+        );
 
         let mut gym_worker = Vec::new();
         let mut gym_worker_thread = Vec::new();
@@ -322,10 +329,10 @@ where
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop_index(2);
 
-        if self.ticks.is_multiple_of(1000) {
+        if self.ticks.is_multiple_of(10000) {
             let _ = export_ppo(&self.ppo.actor, &self.ppo.critic, Path::new(&format!("test_network_{}.safetensors", self.ticks)));
 
-            panic!("done");
+            // panic!("done");
             self.env.reset();
         }
 
@@ -472,26 +479,3 @@ impl worker_thread::Update for GymSimulationThread {
 
 unsafe impl Send for GymSimulationThread {}
 
-
-pub fn save_network<
-    const INPUTS: usize,
-    const OUTPUTS: usize,
-    const NEURONS: usize,
-    const NR_LAYERS: usize,
-    const RESIDUAL: bool,
-    OutputActivation: ActivationFunction<OUTPUTS> + Serialize,
->(
-    network: &NeuralNetworkSimd<
-        INPUTS,
-        OUTPUTS,
-        NEURONS,
-        NR_LAYERS,
-        RESIDUAL,
-        OutputActivation,
-    >,
-    path: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let file = std::fs::File::create(path)?;
-    serde_json::to_writer_pretty(file, network)?;
-    Ok(())
-}
