@@ -1,7 +1,6 @@
 // N column vector
 
 use std::ops::MulAssign;
-use serde::{Serialize, Deserialize};
 
 use itertools::izip;
 
@@ -9,7 +8,6 @@ use super::simd_mat::SMat16;
 use super::simd_row_vec::SRowVec16;
 use super::*;
 
-#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct SVec16<const N: usize>(pub AlignedVec<N>);
 

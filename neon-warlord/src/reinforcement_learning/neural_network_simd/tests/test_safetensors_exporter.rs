@@ -7,15 +7,17 @@ fn test_import_export_ppo() {
     let actor_0: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> = NeuralNetworkSimd::new_rand(42);
     let critic_0: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> = NeuralNetworkSimd::new_rand(42);
 
-    let bytes = export_ppo_bytes(&actor_0, &critic_0).unwrap();
+    let episode = 1000;
+    let bytes = export_ppo_bytes(&actor_0, &critic_0, episode).unwrap();
 
     let mut actor_1: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> = NeuralNetworkSimd::new_zero_one();
     let mut critic_1: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> = NeuralNetworkSimd::new_zero_one();
-
-    let _ = import_ppo_bytes(&mut actor_1, &mut critic_1, bytes).unwrap();
+    let mut episode_1 = 0;
+    let _ = import_ppo_bytes(&mut actor_1, &mut critic_1, &mut episode_1, &bytes).unwrap();
 
     assert_network_equal(&actor_0, &actor_1);
     assert_network_equal(&critic_0, &critic_1);
+    assert_eq!(episode, episode_1);
 }
 
 fn assert_network_equal<

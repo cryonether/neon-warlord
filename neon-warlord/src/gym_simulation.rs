@@ -8,7 +8,6 @@ pub mod verlet_physics_drawer;
 pub mod worker_thread_2;
 
 use std::{collections::VecDeque, iter::zip, path::Path};
-use serde::{Serialize, Deserialize};
 
 use forward_renderer::to_rgb;
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};

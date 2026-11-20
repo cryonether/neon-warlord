@@ -2,9 +2,6 @@
 
 use std::iter::zip;
 
-use serde::{Deserialize, Serialize};
-use serde_big_array::BigArray;
-
 use crate::reinforcement_learning::neural_network_simd::{
     activation_function::{ActivationFunction, activation_leaky_relu::ActivationLeakyReLu},
     layer_simd::LayerSimd,
@@ -22,7 +19,6 @@ pub mod safetensors_exporter;
 mod tests;
 
 /// A universal function approximator implemented using simd operations
-#[derive(Serialize, Deserialize)]
 #[derive(Clone)]
 pub struct NeuralNetworkSimd<
     const INPUTS: usize,
@@ -33,7 +29,6 @@ pub struct NeuralNetworkSimd<
     OutputActivation: ActivationFunction<OUTPUTS>,
 > {
     pub input: Box<LayerSimd<INPUTS, NEURONS, RESIDUAL, ActivationLeakyReLu>>,
-    #[serde(with = "BigArray")]
     pub layers: [Box<LayerSimd<NEURONS, NEURONS, RESIDUAL, ActivationLeakyReLu>>; NR_LAYERS],
     pub output: Box<LayerSimd<NEURONS, OUTPUTS, RESIDUAL, OutputActivation>>,
 }
