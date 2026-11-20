@@ -350,7 +350,7 @@ where
             let _ = export_ppo(
                 &self.ppo.actor,
                 &self.ppo.critic,
-                Path::new(&format!("gym/episode_latest.safetensors")),
+                Path::new("gym/episode_latest.safetensors"),
                 self.episode,
             );
         }
