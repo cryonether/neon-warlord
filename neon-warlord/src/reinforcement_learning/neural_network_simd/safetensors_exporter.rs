@@ -130,7 +130,7 @@ fn load_f32<const N: usize>(
 
     for (i, chunk) in bytes.chunks_exact(4).enumerate() {
         result[i] = f32::from_le_bytes(
-            chunk.try_into()?
+            (*chunk).try_into()?
         );
     }
 
