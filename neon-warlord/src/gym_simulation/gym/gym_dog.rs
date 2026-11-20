@@ -66,6 +66,7 @@ pub struct GymDog {
     move_8: Move8,
     move_8_drawer: Move8Drawer,
     moving_direction: bool,
+    radius: f32,
 }
 
 impl GymDog {
@@ -459,6 +460,7 @@ impl GymDog {
             move_8,
             move_8_drawer,
             moving_direction: false,
+            radius,
         };
 
         obj.set_target();
@@ -793,32 +795,44 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         //     - Symmetrical left/right movement.
         //     - Minimal unnecessary joint movement.
 
-        if episode > 500_000 {
+        if episode > 100_000 {
+            let feet_pos = [
+                &self.state.foot_0_pos, 
+                &self.state.foot_1_pos,
+                &self.state.foot_2_pos,
+                &self.state.foot_3_pos,
+            ];
+            let feet_vel = [
+                &self.state.foot_0_vel, 
+                &self.state.foot_1_vel,
+                &self.state.foot_2_vel,
+                &self.state.foot_3_vel,
+            ];
+
             // Low foot slipping 0.15 Stable stance
-            // let mut slip_cost = 0.0;
+            let mut slip_cost = 0.0;
 
-            // for foot in &self.state.feet {
-            //     if foot.in_contact {
-            //         slip_cost += foot.velocity_x.powi(2)
-            //             + foot.velocity_y.powi(2);
-            //     }
-            // }
+            for (foot_pos, foot_vel) in zip(feet_pos, feet_vel) {
+                if foot_pos.z <= self.radius {
+                    slip_cost += foot_vel.x.powi(2) + foot_vel.y.powi(2);
+                }
+            }
 
-            // reward -= slip_cost * 0.1;
+            reward -= slip_cost * 0.1;
 
             // // Food clearance 0.15 Lift feet during swing
-            // let mut clearance_reward = 0.0;
+            let mut clearance_reward = 0.0;
 
-            // for foot in &self.state.feet {
-            //     if !foot.in_contact {
-            //         let target_clearance = 0.08;
+            for (foot_pos, _foot_vel) in zip(feet_pos, feet_vel) {
+                if foot_pos.z > self.radius {
+                    let target_clearance = 0.08;
 
-            //         let error = foot.height - target_clearance;
-            //         clearance_reward += (-error.powi(2) * 100.0).exp();
-            //     }
-            // }
+                    let error = foot_pos.z - self.radius - target_clearance;
+                    clearance_reward += (-error.powi(2) * 100.0).exp();
+                }
+            }
 
-            // reward += clearance_reward * 0.15;
+            reward += clearance_reward * 0.15;
         }
 
 
