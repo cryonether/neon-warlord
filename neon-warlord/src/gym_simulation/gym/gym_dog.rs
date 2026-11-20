@@ -19,7 +19,7 @@ use crate::{
 
 type Quat = cgmath::Quaternion<f32>;
 
-const OBSERVATIONS: usize = 34;
+const OBSERVATIONS: usize = 50;
 const ACTIONS: usize = 12;
 
 const MASS: f32 = 0.1;
@@ -633,33 +633,62 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             state.pos_z_target,
             state.vel_x_target,
             state.vel_y_target,
+            
             state.body_pos.z,
+            
             state.body_vel.x,
             state.body_vel.y,
             state.body_vel.z,
+            
             state.body_rot.x,
             state.body_rot.y,
             state.body_rot.z,
+
+            state.foot_0_pos.z,
+            state.foot_1_pos.z,
+            state.foot_2_pos.z,
+            state.foot_3_pos.z,
+
+            state.foot_0_vel.x,
+            state.foot_1_vel.x,
+            state.foot_2_vel.x,
+            state.foot_3_vel.x,
+
+            state.foot_0_vel.y,
+            state.foot_1_vel.y,
+            state.foot_2_vel.y,
+            state.foot_3_vel.y,
+
+            state.foot_0_vel.z,
+            state.foot_1_vel.z,
+            state.foot_2_vel.z,
+            state.foot_3_vel.z,
+
             state.shoulder_angle_0_0,
             state.shoulder_angle_1_0,
             state.shoulder_angle_2_0,
             state.shoulder_angle_3_0,
+
             state.leg_angle_0_0,
             state.leg_angle_1_0,
             state.leg_angle_2_0,
             state.leg_angle_3_0,
+
             state.leg_angle_0_1,
             state.leg_angle_1_1,
             state.leg_angle_2_1,
             state.leg_angle_3_1,
+
             state.shoulder_angular_velocity_0_0,
             state.shoulder_angular_velocity_1_0,
             state.shoulder_angular_velocity_2_0,
             state.shoulder_angular_velocity_3_0,
+
             state.leg_angular_velocity_0_0,
             state.leg_angular_velocity_1_0,
             state.leg_angular_velocity_2_0,
             state.leg_angular_velocity_3_0,
+
             state.leg_angular_velocity_0_1,
             state.leg_angular_velocity_1_1,
             state.leg_angular_velocity_2_1,
@@ -768,7 +797,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         }
 
         // Move
-        if episode > 20_000 {
+        if episode > 10_000 {
             // Reward target velocity
             let vel = Vec3::new(self.state.body_vel.x, self.state.body_vel.y, self.state.body_vel.z);
             let target_vel = Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0);
@@ -794,21 +823,21 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         //     - Minimal slipping.
         //     - Symmetrical left/right movement.
         //     - Minimal unnecessary joint movement.
+        let feet_pos = [
+            &self.state.foot_0_pos, 
+            &self.state.foot_1_pos,
+            &self.state.foot_2_pos,
+            &self.state.foot_3_pos,
+        ];
+        let feet_vel = [
+            &self.state.foot_0_vel, 
+            &self.state.foot_1_vel,
+            &self.state.foot_2_vel,
+            &self.state.foot_3_vel,
+        ];
+
 
         if episode > 100_000 {
-            let feet_pos = [
-                &self.state.foot_0_pos, 
-                &self.state.foot_1_pos,
-                &self.state.foot_2_pos,
-                &self.state.foot_3_pos,
-            ];
-            let feet_vel = [
-                &self.state.foot_0_vel, 
-                &self.state.foot_1_vel,
-                &self.state.foot_2_vel,
-                &self.state.foot_3_vel,
-            ];
-
             // Low foot slipping 0.15 Stable stance
             let mut slip_cost = 0.0;
 
