@@ -19,7 +19,7 @@ use crate::{
         gym_worker::GymWorker,
         worker_thread_2::WorkerThread2,
     }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::{
-        neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_none::ActivationNone, activation_tan_h::ActivationTanH}, safetensors_exporter::{export_ppo, import_ppo, import_ppo_bytes}}, ppo::Ppo,
+        neural_network_simd::{activation_function::activation_tan_h::ActivationTanH, safetensors_exporter::{export_ppo, import_ppo_bytes}}, ppo::Ppo,
     }, triple_buffer, worker_thread,
 };
 
