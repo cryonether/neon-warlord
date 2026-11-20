@@ -495,6 +495,7 @@ where
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct Transition<const INPUTS: usize, const OUTPUTS: usize> {
     observation: [f32; INPUTS],

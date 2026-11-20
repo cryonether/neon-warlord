@@ -35,6 +35,7 @@ pub const WATCH_POINTS_SIZE: usize = 10;
 type Vec3 = cgmath::Vector3<f32>;
 
 /// Uses Ppo to estimate a value function for different environments
+#[allow(dead_code)]
 pub struct GymSimulation<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -244,6 +245,7 @@ where
         }
     }
 
+    #[allow(dead_code)]
     fn run_workers(&mut self) {
         let mut reward = 0.0;
 
@@ -343,6 +345,12 @@ where
                 &self.ppo.actor,
                 &self.ppo.critic,
                 Path::new(&format!("gym/episode_{}.safetensors", self.episode)),
+                self.episode,
+            );
+            let _ = export_ppo(
+                &self.ppo.actor,
+                &self.ppo.critic,
+                Path::new(&format!("gym/episode_latest.safetensors")),
                 self.episode,
             );
         }
