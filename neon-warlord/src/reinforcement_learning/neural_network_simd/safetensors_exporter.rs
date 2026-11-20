@@ -403,7 +403,7 @@ fn load_mat16<const M: usize, const N: usize>(
         let col = i % N;
 
         result[row][col] = f32::from_le_bytes(
-            chunk.try_into()?
+            (*chunk).try_into()?
         );
     }
 
