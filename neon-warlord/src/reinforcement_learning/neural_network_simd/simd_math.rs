@@ -14,13 +14,12 @@ mod test_simd_vec;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::{iter::zip, ops::Mul};
-
 use wide::f32x16;
 
 const LANES: usize = 16;
 
 #[repr(align(64))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct AlignedVec<const N: usize>(pub [f32; N]);
 
 impl<const N: usize> AlignedVec<N> {

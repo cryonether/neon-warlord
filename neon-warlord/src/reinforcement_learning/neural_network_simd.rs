@@ -12,22 +12,11 @@ pub mod activation_function;
 pub mod epoch;
 pub mod layer_simd;
 pub mod optimizer;
+pub mod safetensors_exporter;
 pub mod simd_math;
 
 #[cfg(test)]
-mod test_neural_network_simd;
-
-#[cfg(test)]
-mod test_logic_functions;
-
-#[cfg(test)]
-mod test_logic_functions3;
-
-#[cfg(test)]
-mod test_predict_maze;
-
-#[cfg(test)]
-mod test_fit_function;
+mod tests;
 
 /// A universal function approximator implemented using simd operations
 #[derive(Clone)]

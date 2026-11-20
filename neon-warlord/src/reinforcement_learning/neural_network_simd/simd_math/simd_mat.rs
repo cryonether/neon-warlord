@@ -9,7 +9,7 @@ use crate::reinforcement_learning::neural_network_simd::simd_math::simd_row_vec:
 use super::simd_vec::SVec16;
 use super::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SMat16<const M: usize, const N: usize>(pub [AlignedVec<N>; M]);
 
 impl<const M: usize, const N: usize> SMat16<M, N> {

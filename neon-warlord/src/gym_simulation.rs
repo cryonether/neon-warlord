@@ -7,7 +7,7 @@ pub mod neural_network_drawer;
 pub mod verlet_physics_drawer;
 pub mod worker_thread_2;
 
-use std::{collections::VecDeque, iter::zip};
+use std::{collections::VecDeque, iter::zip, path::Path};
 
 use forward_renderer::to_rgb;
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
@@ -22,7 +22,11 @@ use crate::{
     physics_simulation_v3_drawer::DrawerObjects,
     print_color::{color::PrintColor, print_color},
     reinforcement_learning::{
-        neural_network_simd::activation_function::activation_tan_h::ActivationTanH, ppo::Ppo,
+        neural_network_simd::{
+            activation_function::activation_tan_h::ActivationTanH,
+            safetensors_exporter::{export_ppo, import_ppo_bytes},
+        },
+        ppo::Ppo,
     },
     triple_buffer, worker_thread,
 };
@@ -31,6 +35,7 @@ pub const WATCH_POINTS_SIZE: usize = 10;
 type Vec3 = cgmath::Vector3<f32>;
 
 /// Uses Ppo to estimate a value function for different environments
+#[allow(dead_code)]
 pub struct GymSimulation<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -66,7 +71,7 @@ pub struct GymSimulation<
 
     env: ENV,
     _steps: u64,
-    _episode: u64,
+    episode: u64,
 
     reward_sum_long: f32,
     reward_sum_super_long: f32,
@@ -88,21 +93,12 @@ impl<
 where
     ENV: std::clone::Clone + Send + 'static,
 {
-    pub fn new(mut env: ENV) -> Self {
+    pub fn new(mut env: ENV, bytes: &[u8]) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
 
-        let nr_ppo_threads = 1;
-
-        let nr_gym_threads;
-        #[cfg(target_arch = "wasm32")]
-        {
-            nr_gym_threads = 1;
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            nr_gym_threads = 1;
-        }
+        let nr_ppo_threads = 16;
+        let nr_gym_threads = 16;
 
         let pos_graph_actor_loss = pos + Vec3::new(-7.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-7.2, 1.0, 0.0);
@@ -117,7 +113,16 @@ where
 
         let scale = 0.1;
 
-        let ppo = Ppo::new(0, nr_ppo_threads);
+        let mut ppo = Ppo::new(0, nr_ppo_threads);
+
+        // load old model
+        let mut episode: u64 = 0;
+        if !bytes.is_empty() {
+            let res = import_ppo_bytes(&mut ppo.actor, &mut ppo.critic, &mut episode, bytes);
+            if let Err(err) = res {
+                log::warn!("Failed to load ppo: {}", err)
+            }
+        }
 
         let mut gym_worker = Vec::new();
         let mut gym_worker_thread = Vec::new();
@@ -214,7 +219,7 @@ where
         Self {
             ticks: 0,
             _steps: 0,
-            _episode: 0,
+            episode,
             reward_sum_long: 0.0,
             reward_sum_super_long: 0.0,
             gym_worker,
@@ -240,6 +245,7 @@ where
         }
     }
 
+    #[allow(dead_code)]
     fn run_workers(&mut self) {
         let mut reward = 0.0;
 
@@ -290,10 +296,14 @@ where
     }
 
     pub fn update_physics(&mut self) {
-        self.run_workers();
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.run_workers();
+        }
 
         let dt = 1.0 / 60.0;
         self.ticks += 1;
+        self.episode += 1;
 
         self.watch_ups.start_index(2, "Sim");
         let state = self.env.get_state();
@@ -325,8 +335,24 @@ where
         self.env.update_verlet_physics(dt);
         self.watch_ups.stop_index(2);
 
-        if self.ticks.is_multiple_of(10000) {
+        if self.ticks.is_multiple_of(10_000) {
             self.env.reset();
+        }
+
+        if self.episode.is_multiple_of(10_000) {
+            std::fs::create_dir_all("gym").expect("Failed to create gym directory");
+            let _ = export_ppo(
+                &self.ppo.actor,
+                &self.ppo.critic,
+                Path::new(&format!("gym/episode_{}.safetensors", self.episode)),
+                self.episode,
+            );
+            let _ = export_ppo(
+                &self.ppo.actor,
+                &self.ppo.critic,
+                Path::new("gym/episode_latest.safetensors"),
+                self.episode,
+            );
         }
 
         // ups
@@ -346,7 +372,7 @@ where
             input
         }
 
-        print!("{}, ", self.ticks);
+        print!("{}, ", self.episode);
 
         print!("reward: ");
         print_color(reward, 0.0, 2000.0, PrintColor::PurplePinkYellow);
