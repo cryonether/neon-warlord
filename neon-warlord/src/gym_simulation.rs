@@ -18,9 +18,17 @@ use crate::{
         gym::Gym,
         gym_worker::GymWorker,
         worker_thread_2::WorkerThread2,
-    }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::{
-        neural_network_simd::{activation_function::activation_tan_h::ActivationTanH, safetensors_exporter::{export_ppo, import_ppo_bytes}}, ppo::Ppo,
-    }, triple_buffer, worker_thread,
+    },
+    physics_simulation_v3_drawer::DrawerObjects,
+    print_color::{color::PrintColor, print_color},
+    reinforcement_learning::{
+        neural_network_simd::{
+            activation_function::activation_tan_h::ActivationTanH,
+            safetensors_exporter::{export_ppo, import_ppo_bytes},
+        },
+        ppo::Ppo,
+    },
+    triple_buffer, worker_thread,
 };
 
 pub const WATCH_POINTS_SIZE: usize = 10;
@@ -89,7 +97,7 @@ where
         let pos = Vec3::new(0.0, 0.0, 2.0);
 
         let nr_ppo_threads = 16;
-        let  nr_gym_threads = 16;
+        let nr_gym_threads = 16;
 
         let pos_graph_actor_loss = pos + Vec3::new(-7.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-7.2, 1.0, 0.0);
@@ -109,14 +117,9 @@ where
         // load old model
         let mut episode: u64 = 0;
         if !bytes.is_empty() {
-            let res = import_ppo_bytes(
-                &mut ppo.actor, 
-                &mut ppo.critic, 
-                &mut episode,
-                bytes
-            );
+            let res = import_ppo_bytes(&mut ppo.actor, &mut ppo.critic, &mut episode, bytes);
             if let Err(err) = res {
-            log::warn!("Failed to load ppo: {}", err)
+                log::warn!("Failed to load ppo: {}", err)
             }
         }
 
@@ -337,9 +340,9 @@ where
         if self.episode.is_multiple_of(10_000) {
             std::fs::create_dir_all("gym").expect("Failed to create gym directory");
             let _ = export_ppo(
-                &self.ppo.actor, 
-                &self.ppo.critic, 
-                Path::new(&format!("gym/episode_{}.safetensors", self.episode)), 
+                &self.ppo.actor,
+                &self.ppo.critic,
+                Path::new(&format!("gym/episode_{}.safetensors", self.episode)),
                 self.episode,
             );
         }
@@ -486,4 +489,3 @@ impl worker_thread::Update for GymSimulationThread {
 }
 
 unsafe impl Send for GymSimulationThread {}
-

@@ -2,13 +2,14 @@
 
 use std::collections::HashMap;
 
+use safetensors::SafeTensorError;
 use safetensors::tensor::{Dtype, TensorView};
-use safetensors::{SafeTensorError};
 
 use crate::reinforcement_learning::neural_network_simd::simd_math::simd_mat::SMat16;
 use crate::reinforcement_learning::neural_network_simd::simd_math::simd_vec::SVec16;
-use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, activation_function::ActivationFunction};
-
+use crate::reinforcement_learning::neural_network_simd::{
+    NeuralNetworkSimd, activation_function::ActivationFunction,
+};
 
 pub fn export_ppo<ActorNetwork, CriticNetwork>(
     actor: &ActorNetwork,
@@ -16,8 +17,8 @@ pub fn export_ppo<ActorNetwork, CriticNetwork>(
     path: &std::path::Path,
     episode: u64,
 ) -> Result<(), Box<dyn std::error::Error>>
-where 
-    ActorNetwork: ExportSafetensors, 
+where
+    ActorNetwork: ExportSafetensors,
     CriticNetwork: ExportSafetensors,
 {
     let bytes = export_ppo_bytes(actor, critic, episode)?;
@@ -26,14 +27,13 @@ where
     Ok(())
 }
 
-
 pub fn export_ppo_bytes<ActorNetwork, CriticNetwork>(
     actor: &ActorNetwork,
     critic: &CriticNetwork,
     episode: u64,
 ) -> Result<Vec<u8>, Box<dyn std::error::Error>>
-where 
-    ActorNetwork: ExportSafetensors, 
+where
+    ActorNetwork: ExportSafetensors,
     CriticNetwork: ExportSafetensors,
 {
     let mut storage = Vec::new();
@@ -41,23 +41,20 @@ where
     actor.append_safetensors(&mut storage, "actor");
     critic.append_safetensors(&mut storage, "critic");
 
-    let tensors: HashMap<String, TensorView<'_>> =
-        storage.iter()
-            .map(|(name, shape, bytes)| {
-                Ok((
-                    name.clone(),
-                    TensorView::new(
-                        Dtype::F32,
-                        shape.clone(),
-                        bytes,
-                    )?,
-                ))
-            })
-            .collect::<Result<_, SafeTensorError>>()?;
+    let tensors: HashMap<String, TensorView<'_>> = storage
+        .iter()
+        .map(|(name, shape, bytes)| {
+            Ok((
+                name.clone(),
+                TensorView::new(Dtype::F32, shape.clone(), bytes)?,
+            ))
+        })
+        .collect::<Result<_, SafeTensorError>>()?;
 
-    let metadata = Some(HashMap::from([
-        ("episode".to_string(), episode.to_string()),
-    ]));
+    let metadata = Some(HashMap::from([(
+        "episode".to_string(),
+        episode.to_string(),
+    )]));
 
     let bytes = safetensors::serialize(&tensors, metadata)?;
 
@@ -129,20 +126,14 @@ fn load_f32<const N: usize>(
     let mut result = [0.0f32; N];
 
     for (i, chunk) in bytes.as_chunks::<4>().0.iter().enumerate() {
-        result[i] = f32::from_le_bytes(
-            *chunk
-        );
+        result[i] = f32::from_le_bytes(*chunk);
     }
 
     Ok(result)
 }
 
 pub trait ExportSafetensors {
-    fn append_safetensors(
-        &self,
-        storage: &mut Vec<(String, Vec<usize>, Vec<u8>)>,
-        prefix: &str,
-    );
+    fn append_safetensors(&self, storage: &mut Vec<(String, Vec<usize>, Vec<u8>)>, prefix: &str);
 }
 
 pub trait ImportSafetensors {
@@ -160,19 +151,10 @@ impl<
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
     OutputActivation: ActivationFunction<OUTPUTS>,
-> ExportSafetensors for NeuralNetworkSimd<
-    INPUTS,
-    OUTPUTS,
-    NEURONS,
-    NR_LAYERS,
-    RESIDUAL,
-    OutputActivation,
-> {    
-    fn append_safetensors(
-        &self,
-        storage: &mut Vec<(String, Vec<usize>, Vec<u8>)>,
-        prefix: &str,
-    ) {
+> ExportSafetensors
+    for NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL, OutputActivation>
+{
+    fn append_safetensors(&self, storage: &mut Vec<(String, Vec<usize>, Vec<u8>)>, prefix: &str) {
         push_mat16(
             storage,
             format!("{prefix}.input.weight"),
@@ -224,12 +206,8 @@ fn push_vec16<const N: usize>(
     name: String,
     data: &SVec16<N>,
     shape: Vec<usize>,
-)
-{
-    let bytes = data
-        .iter()
-        .flat_map(|x| x.to_le_bytes())
-        .collect();
+) {
+    let bytes = data.iter().flat_map(|x| x.to_le_bytes()).collect();
 
     tensors.push((name, shape, bytes));
 }
@@ -239,8 +217,7 @@ fn push_mat16<const M: usize, const N: usize>(
     name: String,
     data: &SMat16<M, N>,
     shape: Vec<usize>,
-)
-{
+) {
     let bytes = data
         .iter()
         .flat_map(|row| row.iter())
@@ -250,7 +227,6 @@ fn push_mat16<const M: usize, const N: usize>(
     tensors.push((name, shape, bytes));
 }
 
-
 impl<
     const INPUTS: usize,
     const OUTPUTS: usize,
@@ -258,58 +234,35 @@ impl<
     const NR_LAYERS: usize,
     const RESIDUAL: bool,
     OutputActivation: ActivationFunction<OUTPUTS>,
-> ImportSafetensors for NeuralNetworkSimd<
-    INPUTS,
-    OUTPUTS,
-    NEURONS,
-    NR_LAYERS,
-    RESIDUAL,
-    OutputActivation,
-> {
+> ImportSafetensors
+    for NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL, OutputActivation>
+{
     fn load_safetensors(
         &mut self,
         tensors: &safetensors::SafeTensors,
         prefix: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-
         // Load input layer
-        let input_w = load_mat16::<NEURONS, INPUTS>(
-            tensors,
-            &format!("{prefix}.input.weight"),
-        )?;
+        let input_w = load_mat16::<NEURONS, INPUTS>(tensors, &format!("{prefix}.input.weight"))?;
 
-        let input_b = load_vec16::<NEURONS>(
-            tensors,
-            &format!("{prefix}.input.bias"),
-        )?;
+        let input_b = load_vec16::<NEURONS>(tensors, &format!("{prefix}.input.bias"))?;
 
         // Load hidden layers
         let mut layers = Vec::with_capacity(NR_LAYERS);
 
         for i in 0..NR_LAYERS {
-            let w = load_mat16::<NEURONS, NEURONS>(
-                tensors,
-                &format!("{prefix}.layers.{i}.weight"),
-            )?;
+            let w =
+                load_mat16::<NEURONS, NEURONS>(tensors, &format!("{prefix}.layers.{i}.weight"))?;
 
-            let b = load_vec16::<NEURONS>(
-                tensors,
-                &format!("{prefix}.layers.{i}.bias"),
-            )?;
+            let b = load_vec16::<NEURONS>(tensors, &format!("{prefix}.layers.{i}.bias"))?;
 
             layers.push((w, b));
         }
 
         // Load output layer
-        let output_w = load_mat16::<OUTPUTS, NEURONS>(
-            tensors,
-            &format!("{prefix}.output.weight"),
-        )?;
+        let output_w = load_mat16::<OUTPUTS, NEURONS>(tensors, &format!("{prefix}.output.weight"))?;
 
-        let output_b = load_vec16::<OUTPUTS>(
-            tensors,
-            &format!("{prefix}.output.bias"),
-        )?;
+        let output_b = load_vec16::<OUTPUTS>(tensors, &format!("{prefix}.output.bias"))?;
 
         // All tensors successfully loaded and validated.
         // Now update the network.
@@ -333,36 +286,30 @@ fn load_vec16<const N: usize>(
     tensors: &safetensors::SafeTensors,
     name: &str,
 ) -> Result<SVec16<N>, Box<dyn std::error::Error>> {
-
     let tensor = tensors.tensor(name)?;
 
     if tensor.dtype() != Dtype::F32 {
-        return Err(format!(
-            "Invalid dtype for {name}: expected F32"
-        ).into());
+        return Err(format!("Invalid dtype for {name}: expected F32").into());
     }
 
     if tensor.shape() != [N] {
         return Err(format!(
             "Invalid shape for {name}: expected [{N}], got {:?}",
             tensor.shape()
-        ).into());
+        )
+        .into());
     }
 
     let bytes = tensor.data();
 
     if bytes.len() != N * 4 {
-        return Err(format!(
-            "Invalid byte length for {name}"
-        ).into());
+        return Err(format!("Invalid byte length for {name}").into());
     }
 
     let mut result = SVec16::<N>::zero();
 
     for (i, chunk) in bytes.as_chunks::<4>().0.iter().enumerate() {
-        result[i] = f32::from_le_bytes(
-            *chunk
-        );
+        result[i] = f32::from_le_bytes(*chunk);
     }
 
     Ok(result)
@@ -372,28 +319,24 @@ fn load_mat16<const M: usize, const N: usize>(
     tensors: &safetensors::SafeTensors,
     name: &str,
 ) -> Result<SMat16<M, N>, Box<dyn std::error::Error>> {
-
     let tensor = tensors.tensor(name)?;
 
     if tensor.dtype() != Dtype::F32 {
-        return Err(format!(
-            "Invalid dtype for {name}: expected F32"
-        ).into());
+        return Err(format!("Invalid dtype for {name}: expected F32").into());
     }
 
     if tensor.shape() != [M, N] {
         return Err(format!(
             "Invalid shape for {name}: expected [{M}, {N}], got {:?}",
             tensor.shape()
-        ).into());
+        )
+        .into());
     }
 
     let bytes = tensor.data();
 
     if bytes.len() != M * N * 4 {
-        return Err(format!(
-            "Invalid byte length for {name}"
-        ).into());
+        return Err(format!("Invalid byte length for {name}").into());
     }
 
     let mut result = SMat16::<M, N>::zero();
@@ -402,9 +345,7 @@ fn load_mat16<const M: usize, const N: usize>(
         let row = i / N;
         let col = i % N;
 
-        result[row][col] = f32::from_le_bytes(
-            *chunk
-        );
+        result[row][col] = f32::from_le_bytes(*chunk);
     }
 
     Ok(result)

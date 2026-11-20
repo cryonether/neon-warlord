@@ -12,8 +12,8 @@ pub mod activation_function;
 pub mod epoch;
 pub mod layer_simd;
 pub mod optimizer;
-pub mod simd_math;
 pub mod safetensors_exporter;
+pub mod simd_math;
 
 #[cfg(test)]
 mod tests;

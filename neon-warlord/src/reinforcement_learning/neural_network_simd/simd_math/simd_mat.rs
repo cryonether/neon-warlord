@@ -10,9 +10,7 @@ use super::simd_vec::SVec16;
 use super::*;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SMat16<const M: usize, const N: usize>(
-    pub [AlignedVec<N>; M]
-);
+pub struct SMat16<const M: usize, const N: usize>(pub [AlignedVec<N>; M]);
 
 impl<const M: usize, const N: usize> SMat16<M, N> {
     pub fn new(m: [[f32; N]; M]) -> Self {

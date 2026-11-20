@@ -1,17 +1,25 @@
 //! Tests safetensors_exporter
 
-use crate::reinforcement_learning::neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_none::ActivationNone}, safetensors_exporter::{export_ppo_bytes, import_ppo_bytes}};
+use crate::reinforcement_learning::neural_network_simd::{
+    NeuralNetworkSimd,
+    activation_function::{ActivationFunction, activation_none::ActivationNone},
+    safetensors_exporter::{export_ppo_bytes, import_ppo_bytes},
+};
 
 #[test]
 fn test_import_export_ppo() {
-    let actor_0: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> = NeuralNetworkSimd::new_rand(42);
-    let critic_0: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> = NeuralNetworkSimd::new_rand(42);
+    let actor_0: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> =
+        NeuralNetworkSimd::new_rand(42);
+    let critic_0: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> =
+        NeuralNetworkSimd::new_rand(42);
 
     let episode = 1000;
     let bytes = export_ppo_bytes(&actor_0, &critic_0, episode).unwrap();
 
-    let mut actor_1: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> = NeuralNetworkSimd::new_zero_one();
-    let mut critic_1: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> = NeuralNetworkSimd::new_zero_one();
+    let mut actor_1: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> =
+        NeuralNetworkSimd::new_zero_one();
+    let mut critic_1: NeuralNetworkSimd<2, 2, 2, 2, false, ActivationNone> =
+        NeuralNetworkSimd::new_zero_one();
     let mut episode_1 = 0;
     let _ = import_ppo_bytes(&mut actor_1, &mut critic_1, &mut episode_1, &bytes).unwrap();
 
@@ -28,12 +36,8 @@ fn assert_network_equal<
     const RESIDUAL: bool,
     A: ActivationFunction<OUTPUTS>,
 >(
-    a: &NeuralNetworkSimd<
-        INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL, A
-    >,
-    b: &NeuralNetworkSimd<
-        INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL, A
-    >,
+    a: &NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL, A>,
+    b: &NeuralNetworkSimd<INPUTS, OUTPUTS, NEURONS, NR_LAYERS, RESIDUAL, A>,
 ) {
     // Input layer
     assert_eq!(a.input.w, b.input.w);

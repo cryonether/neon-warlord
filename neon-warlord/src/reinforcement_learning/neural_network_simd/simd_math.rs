@@ -20,9 +20,7 @@ const LANES: usize = 16;
 
 #[repr(align(64))]
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct AlignedVec<const N: usize>(
-    pub [f32; N]
-);
+pub struct AlignedVec<const N: usize>(pub [f32; N]);
 
 impl<const N: usize> AlignedVec<N> {
     pub fn simd_iter(&self) -> impl Iterator<Item = &f32x16> {
