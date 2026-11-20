@@ -88,7 +88,7 @@ where
     ActorNetwork: ImportSafetensors,
     CriticNetwork: ImportSafetensors,
 {
-    let tensors = safetensors::SafeTensors::deserialize(&data)?;
+    let tensors = safetensors::SafeTensors::deserialize(data)?;
 
     actor.load_safetensors(&tensors, "actor")?;
     critic.load_safetensors(&tensors, "critic")?;
@@ -128,9 +128,9 @@ fn load_f32<const N: usize>(
 
     let mut result = [0.0f32; N];
 
-    for (i, chunk) in bytes.chunks_exact(4).enumerate() {
+    for (i, chunk) in bytes.as_chunks::<4>().0.iter().enumerate() {
         result[i] = f32::from_le_bytes(
-            (*chunk).try_into()?
+            *chunk
         );
     }
 
@@ -359,9 +359,9 @@ fn load_vec16<const N: usize>(
 
     let mut result = SVec16::<N>::zero();
 
-    for (i, chunk) in bytes.chunks_exact(4).enumerate() {
+    for (i, chunk) in bytes.as_chunks::<4>().0.iter().enumerate() {
         result[i] = f32::from_le_bytes(
-            (*chunk).try_into()?
+            *chunk
         );
     }
 
@@ -398,12 +398,12 @@ fn load_mat16<const M: usize, const N: usize>(
 
     let mut result = SMat16::<M, N>::zero();
 
-    for (i, chunk) in bytes.chunks_exact(4).enumerate() {
+    for (i, chunk) in bytes.as_chunks::<4>().0.iter().enumerate() {
         let row = i / N;
         let col = i % N;
 
         result[row][col] = f32::from_le_bytes(
-            (*chunk).try_into()?
+            *chunk
         );
     }
 

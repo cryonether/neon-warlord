@@ -108,7 +108,7 @@ where
 
         // load old model
         let mut episode: u64 = 0;
-        if bytes.len() > 0 {
+        if !bytes.is_empty() {
             let res = import_ppo_bytes(
                 &mut ppo.actor, 
                 &mut ppo.critic, 
