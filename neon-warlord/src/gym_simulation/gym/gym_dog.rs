@@ -837,7 +837,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         ];
 
 
-        if episode > 100_000 {
+        if episode > 20_000 {
             // Low foot slipping 0.15 Stable stance
             let mut slip_cost = 0.0;
 
@@ -866,27 +866,27 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
 
         // Gait
-        if episode > 1_000_000 {
+        if episode > 30_000 {
 
-            // // Diagonal coordination 0.20 Encourage trot
-            // let diagonal_1 = (fl_vel - rr_vel).magnitude2();
-            // let diagonal_2 = (fr_vel - rl_vel).magnitude2();
+            // Diagonal coordination 0.20 Encourage trot
+            let diagonal_1 = (feet_vel[0] - feet_vel[2]).magnitude2();
+            let diagonal_2 = (feet_vel[1] - feet_vel[3]).magnitude2();
 
-            // let diagonal_reward = (-(diagonal_1 + diagonal_2) * 2.0).exp();
+            let diagonal_reward = (-(diagonal_1 + diagonal_2) * 2.0).exp();
 
-            // reward += diagonal_reward * 0.2;
+            reward += diagonal_reward * 0.04;
 
-            // // Smoothness 0.15 Avoid jerky movement
-            // let mut smoothness_cost = 0.0;
+            // Smoothness 0.15 Avoid jerky movement
+            let mut smoothness_cost = 0.0;
 
-            // for i in 0..self.state.actions.len() {
-            //     let delta = self.state.actions[i]
-            //         - self.state.previous_actions[i];
+            for i in 0..self.state.actions.len() {
+                let delta = self.state.actions[i]
+                    - self.state.prev_actions[i];
 
-            //     smoothness_cost += delta.powi(2);
-            // }
+                smoothness_cost += delta.powi(2);
+            }
 
-            // reward -= smoothness_cost * 0.02;
+            reward -= smoothness_cost * 0.01;
         }
 
         if episode > 1_500_000 {

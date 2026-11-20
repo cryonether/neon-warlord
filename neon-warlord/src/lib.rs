@@ -94,7 +94,7 @@ const HEIGHT_MAP_INNER_HEIGHT: usize = 64;
 const HEIGHT_MAP_TILE_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH + 2;
 const HEIGHT_MAP_TILE_HEIGHT: usize = HEIGHT_MAP_INNER_HEIGHT + 2;
 
-const HEIGHT_MAP_NR_TILES_X: usize = 4;
+const HEIGHT_MAP_NR_TILES_X: usize = 12;
 const HEIGHT_MAP_NR_TILES_Y: usize = 4;
 
 const HEIGHT_MAP_WIDTH: usize = HEIGHT_MAP_INNER_WIDTH * HEIGHT_MAP_NR_TILES_X;
@@ -369,8 +369,8 @@ impl NeonWarlord {
             GymSimulation::new(GymHopper::new(), &[]);
 
         // Dog
-        // let bytes = include_bytes!("../../gym/episode_100000.safetensors");
-        let bytes = &[];
+        let bytes = include_bytes!("../../gym/episode_30000.safetensors");
+        // let bytes = &[];
         let _gym_simulation_7: GymSimulation<50, 12, 64, 2, false, GymDog> =
             GymSimulation::new(GymDog::new(), bytes);
 
