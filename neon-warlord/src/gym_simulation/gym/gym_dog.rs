@@ -686,7 +686,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         self.state.actions = *actions;
     }
 
-    fn get_reward(&self) -> (f32, bool) {
+    fn get_reward(&self, episode: u64) -> (f32, bool) {
         // Reward target velocity
         // let target_velocity = 6.0;
         let vel = Vec3::new(self.state.vel_x, self.state.vel_y, self.state.vel_z);

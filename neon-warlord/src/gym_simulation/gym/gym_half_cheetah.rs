@@ -306,7 +306,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah {
         self.vel_x_average = (self.vel_x_average + self.state.vel_x) * 0.92;
     }
 
-    fn get_reward(&self) -> (f32, bool) {
+    fn get_reward(&self, episode: u64) -> (f32, bool) {
         let vel_x = self.state.vel_x * 0.1;
         let reward = vel_x.clamp(0.0, 1.0);
         (reward, false)

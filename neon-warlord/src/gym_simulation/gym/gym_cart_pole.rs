@@ -235,7 +235,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymCartPole {
         };
     }
 
-    fn get_reward(&self) -> (f32, bool) {
+    fn get_reward(&self, _episode: u64) -> (f32, bool) {
         let cart_pos = self.state.cart_pos;
         let angular_velocity = self.state.angular_velocity;
 

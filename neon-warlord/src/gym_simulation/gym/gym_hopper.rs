@@ -266,7 +266,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHopper {
         self.state.actions = *actions;
     }
 
-    fn get_reward(&self) -> (f32, bool) {
+    fn get_reward(&self, episode: u64) -> (f32, bool) {
         let pos_z = self.state.pos_z;
         let _vel_x = self.state.vel_x;
 

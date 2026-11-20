@@ -140,6 +140,7 @@ where
                 m,
                 Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 + 50.5, 0.0),
                 250,
+                episode,
                 // 1,
             ))));
 
@@ -261,6 +262,7 @@ where
             gym_worker_.ppo.actor.copy_weights(&self.ppo.actor);
             gym_worker_.ppo.critic.copy_weights(&self.ppo.critic);
             gym_worker_.ppo.std_dev = self.ppo.std_dev;
+            gym_worker_.episode = self.episode;
 
             gym_worker_thread.send(gym_worker_);
         }
@@ -312,7 +314,7 @@ where
 
         self.env.update(&mean_action, dt);
         let new_state = self.env.get_state();
-        let (reward, done) = self.env.get_reward();
+        let (reward, done) = self.env.get_reward(self.episode);
 
         for (i, val) in new_state.iter().enumerate() {
             self.graph_inputs.y_push_pop(i, *val * 0.01); // input graph

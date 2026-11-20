@@ -331,7 +331,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHingeTest {
         self.state.actions = *actions;
     }
 
-    fn get_reward(&self) -> (f32, bool) {
+    fn get_reward(&self, episode: u64) -> (f32, bool) {
         (0.0, false)
     }
 

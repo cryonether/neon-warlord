@@ -268,7 +268,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymReacher {
         self.state.actions = *actions;
     }
 
-    fn get_reward(&self) -> (f32, bool) {
+    fn get_reward(&self, episode: u64) -> (f32, bool) {
         let index_goal = self.index_goal;
         let index_second_arm = self.index_second_arm;
 

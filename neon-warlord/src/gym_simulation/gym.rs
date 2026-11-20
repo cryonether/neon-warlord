@@ -29,7 +29,7 @@ pub trait Gym<const OBSERVATIONS: usize, const ACTIONS: usize> {
 
     fn get_state(&self) -> [f32; OBSERVATIONS];
     fn update(&mut self, actions: &[f32; ACTIONS], dt: f32);
-    fn get_reward(&self) -> (f32, bool);
+    fn get_reward(&self, episode: u64) -> (f32, bool);
 
     fn reset(&mut self);
 
