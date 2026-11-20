@@ -430,7 +430,7 @@ impl NeonWarlord {
             physics_simulation_consumer: consumer,
             // physics_simulation_v3_thread,
             gym_simulation_thread,
-            camera_follow_object: false,
+            camera_follow_object: true,
             editor,
         }
     }
