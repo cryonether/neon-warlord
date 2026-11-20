@@ -369,15 +369,17 @@ impl GymDog {
             pos_z_target: 0.0,
             vel_x_target: 0.0,
             vel_y_target: 0.0,
-            _pos_x: 0.0,
-            _pos_y: 0.0,
-            pos_z: 0.0,
-            vel_x: 0.0,
-            vel_y: 0.0,
-            vel_z: 0.0,
-            rot_x: 0.0,
-            rot_y: 0.0,
-            rot_z: 0.0,
+            body_pos: Vec3::zero(),
+            body_vel: Vec3::zero(),
+            body_rot: Vec3::zero(),
+            foot_0_pos: Vec3::zero(),
+            foot_1_pos: Vec3::zero(),
+            foot_2_pos: Vec3::zero(),
+            foot_3_pos: Vec3::zero(),
+            foot_0_vel: Vec3::zero(),
+            foot_1_vel: Vec3::zero(),
+            foot_2_vel: Vec3::zero(),
+            foot_3_vel: Vec3::zero(),
             shoulder_angle_0_0: 0.0,
             shoulder_angle_1_0: 0.0,
             shoulder_angle_2_0: 0.0,
@@ -405,6 +407,7 @@ impl GymDog {
 
             actions: [0.0; 12],
             prev_actions: [0.0; 12],
+
         };
 
         let mut move_8 = Move8::new();
@@ -521,6 +524,11 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let vel = body.p.vel;
         let rot = body.r.get_rotation_as_euler();
 
+        let leg_0_1 = &self.physics.rigid_bodies[self._index_leg_0_1];
+        let leg_1_1 = &self.physics.rigid_bodies[self._index_leg_1_1];
+        let leg_2_1 = &self.physics.rigid_bodies[self._index_leg_2_1];
+        let leg_3_1 = &self.physics.rigid_bodies[self._index_leg_3_1];
+
         let hinge_s_0_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_0_0].constraint;
         let hinge_s_1_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_1_0].constraint;
         let hinge_s_2_0 = &self.physics.hinge_joints[self.index_hinge_joint_s_2_0].constraint;
@@ -536,6 +544,15 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let hinge_2_1 = &self.physics.hinge_joints[self.index_hinge_joint_2_1].constraint;
         let hinge_3_1 = &self.physics.hinge_joints[self.index_hinge_joint_3_1].constraint;
 
+        let foot_0_pos = leg_0_1.local_to_world(&leg_0_1.particles[1]);
+        let foot_1_pos = leg_1_1.local_to_world(&leg_1_1.particles[1]);
+        let foot_2_pos = leg_2_1.local_to_world(&leg_2_1.particles[1]);
+        let foot_3_pos = leg_3_1.local_to_world(&leg_3_1.particles[1]);
+
+        let foot_0_vel = leg_0_1.get_point_velocity(leg_0_1.particles[1]);
+        let foot_1_vel = leg_1_1.get_point_velocity(leg_1_1.particles[1]);
+        let foot_2_vel = leg_2_1.get_point_velocity(leg_2_1.particles[1]);
+        let foot_3_vel = leg_3_1.get_point_velocity(leg_3_1.particles[1]);
 
         let target_velocity = if self.moving_direction {
             let target_direction = self.move_8.get_direction(&pos).normalize();
@@ -550,15 +567,20 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             pos_z_target: self.state.pos_z_target,
             vel_x_target: target_velocity.x,
             vel_y_target: target_velocity.y,
-            _pos_x: pos.x,
-            _pos_y: pos.y,
-            pos_z: pos.z,
-            vel_x: vel.x,
-            vel_y: vel.y,
-            vel_z: vel.z,
-            rot_x: rot.x,
-            rot_y: rot.y,
-            rot_z: rot.z,
+
+            body_pos: pos,
+            body_vel: vel,
+            body_rot: rot,
+
+            foot_0_pos,
+            foot_1_pos,
+            foot_2_pos,
+            foot_3_pos,
+
+            foot_0_vel,
+            foot_1_vel,
+            foot_2_vel,
+            foot_3_vel,
 
             shoulder_angle_0_0: hinge_s_0_0.get_angle(),
             shoulder_angle_1_0: hinge_s_1_0.get_angle(),
@@ -609,13 +631,13 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             state.pos_z_target,
             state.vel_x_target,
             state.vel_y_target,
-            state.pos_z,
-            state.vel_x,
-            state.vel_y,
-            state.vel_z,
-            state.rot_x,
-            state.rot_y,
-            state.rot_z,
+            state.body_pos.z,
+            state.body_vel.x,
+            state.body_vel.y,
+            state.body_vel.z,
+            state.body_rot.x,
+            state.body_rot.y,
+            state.body_rot.z,
             state.shoulder_angle_0_0,
             state.shoulder_angle_1_0,
             state.shoulder_angle_2_0,
@@ -721,10 +743,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let mut reward = 0.0;
 
         // Penalize rotation
-        let rot_cost = self.state.rot_y.powi(2) + self.state.rot_x.powi(2);
+        let rot_cost = self.state.body_rot.y.powi(2) + self.state.body_rot.x.powi(2);
         reward -= rot_cost * 1.0;
 
-        if self.state.rot_y.powi(2) > 2.0 || self.state.rot_x.powi(2) > 2.0 {
+        if self.state.body_rot.y.powi(2) > 2.0 || self.state.body_rot.x.powi(2) > 2.0 {
             return (0.0, true);
         }
 
@@ -739,14 +761,14 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         if episode > 1 {
             // Reward target height
             let target_height = self.state.pos_z_target;
-            let height_cost = 1.0 - ((self.state.pos_z - target_height) / target_height).powi(2);
+            let height_cost = 1.0 - ((self.state.body_pos.z - target_height) / target_height).powi(2);
             reward += 1.0 * height_cost;
         }
 
         // Move
         if episode > 20_000 {
             // Reward target velocity
-            let vel = Vec3::new(self.state.vel_x, self.state.vel_y, self.state.vel_z);
+            let vel = Vec3::new(self.state.body_vel.x, self.state.body_vel.y, self.state.body_vel.z);
             let target_vel = Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0);
 
             let error = (vel - target_vel).magnitude2();
@@ -848,11 +870,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
     }
 
     fn get_current_position(&self) -> Vec3 {
-        let x = self.state._pos_x;
-        let y = self.state._pos_y;
-        let z = self.state.pos_z;
-
-        Vec3::new(x, y, z)
+        self.state.body_pos
     }
 }
 
@@ -867,21 +885,27 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
 #[derive(Clone)]
 pub struct State {
+    // Target
     pos_z_target: f32,
     vel_x_target: f32,
     vel_y_target: f32,
 
-    _pos_x: f32,
-    _pos_y: f32,
-    pos_z: f32,
+    // Body
+    body_pos: Vec3,
+    body_vel: Vec3,
+    body_rot: Vec3,
 
-    vel_x: f32,
-    vel_y: f32,
-    vel_z: f32,
+    // Foot position
+    foot_0_pos: Vec3,
+    foot_1_pos: Vec3,
+    foot_2_pos: Vec3,
+    foot_3_pos: Vec3,
 
-    rot_x: f32,
-    rot_y: f32,
-    rot_z: f32,
+    // Foot velocity
+    foot_0_vel: Vec3,
+    foot_1_vel: Vec3,
+    foot_2_vel: Vec3,
+    foot_3_vel: Vec3,
 
     // Shoulder
     shoulder_angle_0_0: f32,
