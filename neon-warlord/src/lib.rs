@@ -369,8 +369,8 @@ impl NeonWarlord {
             GymSimulation::new(GymHopper::new(), &[]);
 
         // Dog
-        // let bytes = include_bytes!("../../gym/episode_latest.safetensors");
-        let bytes = &[];
+        let bytes = include_bytes!("../../gym/episode_700000.safetensors");
+        // let bytes = &[];
         let _gym_simulation_7: GymSimulation<34, 12, 64, 2, false, GymDog> =
             GymSimulation::new(GymDog::new(), bytes);
 

@@ -65,6 +65,7 @@ pub struct GymDog {
 
     move_8: Move8,
     move_8_drawer: Move8Drawer,
+    moving_direction: bool,
 }
 
 impl GymDog {
@@ -409,19 +410,19 @@ impl GymDog {
         let mut move_8 = Move8::new();
         let move_8_drawer = Move8Drawer::new(0.1, Vec3::zero());
 
-        move_8.set_random_position();
-        let translation = move_8.get_position();
-        let rotation = move_8.get_direction(&translation);
-        let angle = rotation.y.atan2(rotation.x);
-        // let translation = Vec3::new(5.0, 0.0, 0.0);
-        let rotation = Quat::from_axis_angle(Vec3::unit_z(), cgmath::Rad(angle));
-        let pivot = Vec3::new(0.0, 0.0, 0.0);
-        xpbd_rigid_body::transform_rigid_bodies(
-            &mut physics.rigid_bodies,
-            translation,
-            rotation,
-            pivot,
-        );
+        // move_8.set_random_position();
+        // let translation = move_8.get_position();
+        // let rotation = move_8.get_direction(&translation);
+        // let angle = rotation.y.atan2(rotation.x);
+        // // let translation = Vec3::new(5.0, 0.0, 0.0);
+        // let rotation = Quat::from_axis_angle(Vec3::unit_z(), cgmath::Rad(angle));
+        // let pivot = Vec3::new(0.0, 0.0, 0.0);
+        // xpbd_rigid_body::transform_rigid_bodies(
+        //     &mut physics.rigid_bodies,
+        //     translation,
+        //     rotation,
+        //     pivot,
+        // );
 
         let mut obj = Self {
             physics,
@@ -454,6 +455,7 @@ impl GymDog {
             state,
             move_8,
             move_8_drawer,
+            moving_direction: false,
         };
 
         obj.set_target();
@@ -461,9 +463,30 @@ impl GymDog {
         obj
     }
 
+    fn set_random_position(&mut self) {
+        self.move_8.set_random_position();
+        let translation = self.move_8.get_position();
+        let rotation = self.move_8.get_direction(&translation);
+        let angle = rotation.y.atan2(rotation.x);
+        // let translation = Vec3::new(5.0, 0.0, 0.0);
+        let rotation = Quat::from_axis_angle(Vec3::unit_z(), cgmath::Rad(angle));
+        let pivot = Vec3::new(0.0, 0.0, 0.0);
+        xpbd_rigid_body::transform_rigid_bodies(
+            &mut self.physics.rigid_bodies,
+            translation,
+            rotation,
+            pivot,
+        );
+    }
+
+    fn set_moving_direction(&mut self) {
+        self.moving_direction = true;
+    }
+
     fn set_target(&mut self) {
         self.state.pos_z_target = 0.9;
-        self.state.vel_x_target = 2.0 + fastrand::f32() * 8.0
+        self.state.vel_x_target = 6.0;
+        // self.state.vel_x_target = 2.0 + fastrand::f32() * 8.0
     }
 }
 
@@ -513,8 +536,15 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let hinge_2_1 = &self.physics.hinge_joints[self.index_hinge_joint_2_1].constraint;
         let hinge_3_1 = &self.physics.hinge_joints[self.index_hinge_joint_3_1].constraint;
 
-        let target_direction = self.move_8.get_direction(&pos).normalize();
-        let target_velocity = target_direction * 6.0;
+
+        let target_velocity = if self.moving_direction {
+            let target_direction = self.move_8.get_direction(&pos).normalize();
+            target_direction * 6.0
+        }
+        else {
+           Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0)
+        };
+
 
         let state = State {
             pos_z_target: self.state.pos_z_target,
@@ -686,36 +716,17 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         self.state.actions = *actions;
     }
 
-    fn get_reward(&self, _episode: u64) -> (f32, bool) {
-        // Reward target velocity
-        // let target_velocity = 6.0;
-        let vel = Vec3::new(self.state.vel_x, self.state.vel_y, self.state.vel_z);
-        let target_vel = Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0);
+    fn get_reward(&self, episode: u64) -> (f32, bool) {
 
-        let error = (vel - target_vel).magnitude2();
-        let target_magnitude = target_vel.magnitude2();
-
-        let velocity_cost = if target_magnitude > 1e-6 {
-            1.0 - error / target_magnitude
-        } else {
-            1.0 - error
-        };
-
-        let mut reward = velocity_cost * 0.6;
-
-        // Reward target height
-        let target_height = self.state.pos_z_target;
-        let height_cost = 1.0 - ((self.state.pos_z - target_height) / target_height).powi(2);
-        reward += 1.0 * height_cost;
+        let mut reward = 0.0;
 
         // Penalize rotation
         let rot_cost = self.state.rot_y.powi(2) + self.state.rot_x.powi(2);
         reward -= rot_cost * 1.0;
-        // println!("self.state.rot_y: {}", self.state.rot_y);
 
-        // Penalize vel z
-        // let vel_z_cost = self.state.vel_z.powi(2);
-        // reward -= vel_z_cost * 0.1;
+        if self.state.rot_y.powi(2) > 2.0 || self.state.rot_x.powi(2) > 2.0 {
+            return (0.0, true);
+        }
 
         // Penalize huge actions
         let mut action_cost = 0.0;
@@ -724,23 +735,103 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         }
         reward -= action_cost * 0.01;
 
-        // Penalize huge action change
-        let mut _action_change_cost = 0.0;
-        for (action, prev_action) in zip(self.state.actions, self.state.prev_actions) {
-            _action_change_cost += (action - prev_action).powi(2);
-        }
-        // reward -= action_change_cost * 0.01;
-
-        if self.state.rot_y.powi(2) > 2.0 || self.state.rot_x.powi(2) > 2.0 {
-            return (0.0, true);
+        // Stand up
+        if episode > 1 {
+            // Reward target height
+            let target_height = self.state.pos_z_target;
+            let height_cost = 1.0 - ((self.state.pos_z - target_height) / target_height).powi(2);
+            reward += 1.0 * height_cost;
         }
 
-        // if self.state.pos_z < 0.2 {
-        //     return (0.0, true);
-        // }
+        // Move
+        if episode > 20_000 {
+            // Reward target velocity
+            let vel = Vec3::new(self.state.vel_x, self.state.vel_y, self.state.vel_z);
+            let target_vel = Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0);
+
+            let error = (vel - target_vel).magnitude2();
+            let target_magnitude = target_vel.magnitude2();
+
+            let velocity_cost = if target_magnitude > 1e-6 {
+                1.0 - error / target_magnitude
+            } else {
+                1.0 - error
+            };
+
+            reward += velocity_cost * 0.6;
+        }
+
+        // A beautiful dog gait generally has:
+        //     - Alternating diagonal leg pairs (trot).
+        //     - Consistent stride frequency.
+        //     - Consistent stride length.
+        //     - Good foot clearance during swing.
+        //     - Smooth foot placement during stance.
+        //     - Minimal slipping.
+        //     - Symmetrical left/right movement.
+        //     - Minimal unnecessary joint movement.
+
+        if episode > 500_000 {
+            // Low foot slipping 0.15 Stable stance
+            // let mut slip_cost = 0.0;
+
+            // for foot in &self.state.feet {
+            //     if foot.in_contact {
+            //         slip_cost += foot.velocity_x.powi(2)
+            //             + foot.velocity_y.powi(2);
+            //     }
+            // }
+
+            // reward -= slip_cost * 0.1;
+
+            // // Food clearance 0.15 Lift feet during swing
+            // let mut clearance_reward = 0.0;
+
+            // for foot in &self.state.feet {
+            //     if !foot.in_contact {
+            //         let target_clearance = 0.08;
+
+            //         let error = foot.height - target_clearance;
+            //         clearance_reward += (-error.powi(2) * 100.0).exp();
+            //     }
+            // }
+
+            // reward += clearance_reward * 0.15;
+        }
+
+
+        // Gait
+        if episode > 1_000_000 {
+
+            // // Diagonal coordination 0.20 Encourage trot
+            // let diagonal_1 = (fl_vel - rr_vel).magnitude2();
+            // let diagonal_2 = (fr_vel - rl_vel).magnitude2();
+
+            // let diagonal_reward = (-(diagonal_1 + diagonal_2) * 2.0).exp();
+
+            // reward += diagonal_reward * 0.2;
+
+            // // Smoothness 0.15 Avoid jerky movement
+            // let mut smoothness_cost = 0.0;
+
+            // for i in 0..self.state.actions.len() {
+            //     let delta = self.state.actions[i]
+            //         - self.state.previous_actions[i];
+
+            //     smoothness_cost += delta.powi(2);
+            // }
+
+            // reward -= smoothness_cost * 0.02;
+        }
+
+        if episode > 1_500_000 {
+            // Foot placement 0.20 Consistent steps
+
+            // Gait symmetry 0.15 Left/right symmetry
+        }
 
         // No negative rewards
-        let reward = reward.clamp(0.0, 2.0);
+        let reward = reward.clamp(0.0, 4.0) * 0.25;
 
         (reward, false)
     }
@@ -764,6 +855,15 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         Vec3::new(x, y, z)
     }
 }
+
+
+// Penalize huge action change
+// let mut _action_change_cost = 0.0;
+// for (action, prev_action) in zip(self.state.actions, self.state.prev_actions) {
+//     _action_change_cost += (action - prev_action).powi(2);
+// }
+// reward -= action_change_cost * 0.01;
+
 
 #[derive(Clone)]
 pub struct State {

@@ -136,6 +136,17 @@ impl XpbdRigidBody {
 
         r.inv_rot() * (*world_pos - p.pos)
     }
+
+    pub fn get_point_velocity(&self, local_point: Vec3) -> Vec3 {
+        // Transform local point into world space
+        let world_point = self.p.pos + self.r.rot.rotate_vector(local_point);
+
+        // Offset from center of mass
+        let r = world_point - self.p.pos;
+
+        // Linear + angular velocity
+        self.p.vel + self.r.omega.cross(r)
+    }
 }
 
 /// Computes the Moore-Penrose pseudoinverse of a symmetric 3x3 matrix
