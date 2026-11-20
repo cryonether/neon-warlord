@@ -20,7 +20,7 @@ use crate::{
         gym_worker::GymWorker,
         worker_thread_2::WorkerThread2,
     }, physics_simulation_v3_drawer::DrawerObjects, print_color::{color::PrintColor, print_color}, reinforcement_learning::{
-        neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_tan_h::ActivationTanH}, safetensors_exporter::{export_ppo, import_ppo}}, ppo::Ppo,
+        neural_network_simd::{NeuralNetworkSimd, activation_function::{ActivationFunction, activation_none::ActivationNone, activation_tan_h::ActivationTanH}, safetensors_exporter::{export_ppo, import_ppo, import_ppo_bytes}}, ppo::Ppo,
     }, triple_buffer, worker_thread,
 };
 
@@ -85,21 +85,12 @@ impl<
 where
     ENV: std::clone::Clone + Send + 'static,
 {
-    pub fn new(mut env: ENV) -> Self {
+    pub fn new(mut env: ENV, bytes: &[u8]) -> Self {
         // agent 0
         let pos = Vec3::new(0.0, 0.0, 2.0);
 
         let nr_ppo_threads = 16;
-
-        let nr_gym_threads;
-        #[cfg(target_arch = "wasm32")]
-        {
-            nr_gym_threads = 1;
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            nr_gym_threads = 16;
-        }
+        let  nr_gym_threads = 16;
 
         let pos_graph_actor_loss = pos + Vec3::new(-7.2, 1.0, 2.2);
         let pos_graph_critic_loss = pos + Vec3::new(-7.2, 1.0, 0.0);
@@ -117,14 +108,17 @@ where
         let mut ppo = Ppo::new(0, nr_ppo_threads);
 
         // load old model
-        let episode = 40_000;
-        let res = import_ppo(
-            &mut ppo.actor, 
-            &mut ppo.critic, 
-            Path::new(&format!("test_network_{}.safetensors", episode))
-        );
-        if let Err(err) = res {
-            println!("Failed to load ppo: {}", err)
+        let mut episode: u64 = 0;
+        if bytes.len() > 0 {
+            let res = import_ppo_bytes(
+                &mut ppo.actor, 
+                &mut ppo.critic, 
+                &mut episode,
+                bytes
+            );
+            if let Err(err) = res {
+            log::warn!("Failed to load ppo: {}", err)
+            }
         }
 
         let mut gym_worker = Vec::new();
@@ -298,7 +292,10 @@ where
     }
 
     pub fn update_physics(&mut self) {
-        self.run_workers();
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.run_workers();
+        }
 
         let dt = 1.0 / 60.0;
         self.ticks += 1;
@@ -339,7 +336,13 @@ where
         }
 
         if self.episode.is_multiple_of(10_000) {
-            let _ = export_ppo(&self.ppo.actor, &self.ppo.critic, Path::new(&format!("test_network_{}.safetensors", self.episode)));
+            std::fs::create_dir_all("gym").expect("Failed to create gym directory");
+            let _ = export_ppo(
+                &self.ppo.actor, 
+                &self.ppo.critic, 
+                Path::new(&format!("gym/episode_{}.safetensors", self.episode)), 
+                self.episode,
+            );
         }
 
         // ups

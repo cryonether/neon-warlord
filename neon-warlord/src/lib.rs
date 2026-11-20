@@ -342,39 +342,40 @@ impl NeonWarlord {
 
         // Cart
         let _gym_simulation_0: GymSimulation<2, 1, 16, 1, false, GymCart> =
-            GymSimulation::new(GymCart::new());
+            GymSimulation::new(GymCart::new(), &[]);
 
         // Pole
         let _gym_simulation_1: GymSimulation<3, 1, 16, 1, false, GymPole> =
-            GymSimulation::new(GymPole::new());
+            GymSimulation::new(GymPole::new(), &[]);
 
         // CartPole
         let _gym_simulation_2: GymSimulation<5, 1, 16, 1, false, GymCartPole> =
-            GymSimulation::new(GymCartPole::new());
+            GymSimulation::new(GymCartPole::new(), &[]);
 
         // HalfCheetah
         let _gym_simulation_3: GymSimulation<11, 4, 16, 1, false, GymHalfCheetah> =
-            GymSimulation::new(GymHalfCheetah::new());
+            GymSimulation::new(GymHalfCheetah::new(), &[]);
 
         // HalfCheetah2
         let _gym_simulation_4: GymSimulation<12, 4, 64, 2, false, GymHalfCheetah2> =
-            GymSimulation::new(GymHalfCheetah2::new());
+            GymSimulation::new(GymHalfCheetah2::new(), &[]);
 
         // Reacher
         let _gym_simulation_5: GymSimulation<12, 3, 32, 4, false, GymReacher> =
-            GymSimulation::new(GymReacher::new());
+            GymSimulation::new(GymReacher::new(), &[]);
 
         // Hopper
         let _gym_simulation_6: GymSimulation<12, 3, 64, 2, false, GymHopper> =
-            GymSimulation::new(GymHopper::new());
+            GymSimulation::new(GymHopper::new(), &[]);
 
         // Dog
+        let bytes = include_bytes!("../../gym/episode_7000.safetensors");
         let _gym_simulation_7: GymSimulation<34, 12, 64, 2, false, GymDog> =
-            GymSimulation::new(GymDog::new());
+            GymSimulation::new(GymDog::new(), bytes);
 
-        // Dog
+        // HingeTest
         let _gym_simulation_8: GymSimulation<46, 12, 64, 2, false, GymHingeTest> =
-            GymSimulation::new(GymHingeTest::new());
+            GymSimulation::new(GymHingeTest::new(), &[]);
 
         let gym_simulation = _gym_simulation_7;
         let gym_simulation_thread = WorkerThread::spawn(GymSimulationThread {

@@ -14,12 +14,13 @@ pub fn export_ppo<ActorNetwork, CriticNetwork>(
     actor: &ActorNetwork,
     critic: &CriticNetwork,
     path: &std::path::Path,
+    episode: u64,
 ) -> Result<(), Box<dyn std::error::Error>>
 where 
     ActorNetwork: ExportSafetensors, 
     CriticNetwork: ExportSafetensors,
 {
-    let bytes = export_ppo_bytes(actor, critic)?;
+    let bytes = export_ppo_bytes(actor, critic, episode)?;
     std::fs::write(path, bytes)?;
 
     Ok(())
@@ -29,6 +30,7 @@ where
 pub fn export_ppo_bytes<ActorNetwork, CriticNetwork>(
     actor: &ActorNetwork,
     critic: &CriticNetwork,
+    episode: u64,
 ) -> Result<Vec<u8>, Box<dyn std::error::Error>>
 where 
     ActorNetwork: ExportSafetensors, 
@@ -53,7 +55,11 @@ where
             })
             .collect::<Result<_, SafeTensorError>>()?;
 
-    let bytes = safetensors::serialize(&tensors, None)?;
+    let metadata = Some(HashMap::from([
+        ("episode".to_string(), episode.to_string()),
+    ]));
+
+    let bytes = safetensors::serialize(&tensors, metadata)?;
 
     Ok(bytes)
 }
@@ -61,6 +67,7 @@ where
 pub fn import_ppo<ActorNetwork, CriticNetwork>(
     actor: &mut ActorNetwork,
     critic: &mut CriticNetwork,
+    episode: &mut u64,
     path: &std::path::Path,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
@@ -68,13 +75,14 @@ where
     CriticNetwork: ImportSafetensors,
 {
     let data = std::fs::read(path)?;
-    import_ppo_bytes(actor, critic, data)
+    import_ppo_bytes(actor, critic, episode, &data)
 }
 
 pub fn import_ppo_bytes<ActorNetwork, CriticNetwork>(
     actor: &mut ActorNetwork,
     critic: &mut CriticNetwork,
-    data: Vec<u8>,
+    episode: &mut u64,
+    data: &[u8],
 ) -> Result<(), Box<dyn std::error::Error>>
 where
     ActorNetwork: ImportSafetensors,
@@ -84,6 +92,15 @@ where
 
     actor.load_safetensors(&tensors, "actor")?;
     critic.load_safetensors(&tensors, "critic")?;
+
+    let (_, metadata) = safetensors::SafeTensors::read_metadata(data)?;
+
+    *episode = metadata
+        .metadata()
+        .as_ref()
+        .and_then(|m| m.get("episode"))
+        .ok_or("Missing episode metadata")?
+        .parse::<u64>()?;
 
     Ok(())
 }
