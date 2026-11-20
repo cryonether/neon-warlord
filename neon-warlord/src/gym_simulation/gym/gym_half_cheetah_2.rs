@@ -272,7 +272,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymHalfCheetah2 {
         self.state.actions = *actions;
     }
 
-    fn get_reward(&self, episode: u64) -> (f32, bool) {
+    fn get_reward(&self, _episode: u64) -> (f32, bool) {
         // Reward target velocity
         let target_velocity = 6.0;
         let mut reward = 1.0 - ((self.state.vel_x - target_velocity) / target_velocity).powi(2);
