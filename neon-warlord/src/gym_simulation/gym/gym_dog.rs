@@ -373,6 +373,7 @@ impl GymDog {
             body_pos: Vec3::zero(),
             body_vel: Vec3::zero(),
             body_rot: Vec3::zero(),
+            body_dir: Vec3::zero(),
             foot_0_pos: Vec3::zero(),
             foot_1_pos: Vec3::zero(),
             foot_2_pos: Vec3::zero(),
@@ -464,6 +465,8 @@ impl GymDog {
         };
 
         obj.set_target();
+        obj.set_random_position();
+        obj.set_moving_direction();
 
         obj
     }
@@ -522,9 +525,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         // self.physics.step(dt * 0.4);
 
         let body = &self.physics.rigid_bodies[self.index_body];
-        let pos = body.p.pos;
-        let vel = body.p.vel;
-        let rot = body.r.get_rotation_as_euler();
+        let body_dir = body.r.rot * Vec3::unit_x();
+        let body_pos = body.p.pos;
+        let body_vel = body.p.vel;
+        let body_rot = body.r.get_rotation_as_euler();
 
         let leg_0_1 = &self.physics.rigid_bodies[self._index_leg_0_1];
         let leg_1_1 = &self.physics.rigid_bodies[self._index_leg_1_1];
@@ -557,7 +561,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let foot_3_vel = leg_3_1.get_point_velocity(leg_3_1.particles[1]);
 
         let target_velocity = if self.moving_direction {
-            let target_direction = self.move_8.get_direction(&pos).normalize();
+            let target_direction = self.move_8.get_direction(&body_pos).normalize();
             target_direction * 6.0
         }
         else {
@@ -570,9 +574,10 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             vel_x_target: target_velocity.x,
             vel_y_target: target_velocity.y,
 
-            body_pos: pos,
-            body_vel: vel,
-            body_rot: rot,
+            body_pos,
+            body_vel,
+            body_rot,
+            body_dir,
 
             foot_0_pos,
             foot_1_pos,
@@ -796,6 +801,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             reward += 1.0 * height_cost;
         }
 
+        
+
         // Move
         if episode > 10_000 {
             // Reward target velocity
@@ -812,6 +819,11 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             };
 
             reward += velocity_cost * 0.6;
+
+
+            // Align to target vector
+            let alignment_error = 1.0 - target_vel.normalize().dot(self.state.body_dir).max(0.0);
+            reward -= alignment_error * 0.2;
         }
 
         // A beautiful dog gait generally has:
@@ -837,7 +849,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         ];
 
 
-        if episode > 20_000 {
+        if episode > 30_000 {
             // Low foot slipping 0.15 Stable stance
             let mut slip_cost = 0.0;
 
@@ -846,35 +858,40 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
                     slip_cost += foot_vel.x.powi(2) + foot_vel.y.powi(2);
                 }
             }
+            // let progress = ((episode as f32 - 30_000.0) / 100_000.0).clamp(0.0, 1.0);
+            // reward -= slip_cost * (0.04 * progress);
+            reward -= slip_cost * (0.03);
 
-            reward -= slip_cost * 0.1;
 
-            // // Food clearance 0.15 Lift feet during swing
+        }
+
+        if episode > 100_000 {
+            // Food clearance 0.15 Lift feet during swing
             let mut clearance_reward = 0.0;
 
             for (foot_pos, _foot_vel) in zip(feet_pos, feet_vel) {
                 if foot_pos.z > self.radius {
-                    let target_clearance = 0.08;
+                    let target_clearance = 0.2;
 
                     let error = foot_pos.z - self.radius - target_clearance;
                     clearance_reward += (-error.powi(2) * 100.0).exp();
                 }
             }
 
-            reward += clearance_reward * 0.15;
+            reward += clearance_reward * 0.10;
         }
 
 
         // Gait
-        if episode > 30_000 {
+        if episode > 200_000 {
 
             // Diagonal coordination 0.20 Encourage trot
-            let diagonal_1 = (feet_vel[0] - feet_vel[2]).magnitude2();
-            let diagonal_2 = (feet_vel[1] - feet_vel[3]).magnitude2();
+            let diagonal_1 = (feet_vel[0] - feet_vel[3]).magnitude2();
+            let diagonal_2 = (feet_vel[1] - feet_vel[2]).magnitude2();
 
             let diagonal_reward = (-(diagonal_1 + diagonal_2) * 2.0).exp();
 
-            reward += diagonal_reward * 0.04;
+            reward += diagonal_reward * 0.02;
 
             // Smoothness 0.15 Avoid jerky movement
             let mut smoothness_cost = 0.0;
@@ -937,6 +954,7 @@ pub struct State {
     body_pos: Vec3,
     body_vel: Vec3,
     body_rot: Vec3,
+    body_dir: Vec3,
 
     // Foot position
     foot_0_pos: Vec3,
