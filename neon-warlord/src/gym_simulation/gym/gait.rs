@@ -1,16 +1,25 @@
 //! Gait, like walk or trot
 
+/// Gait generator for a quadruped robot.
 #[derive(Clone)]
 pub struct Gait {
-    pub sequence: [[f32; 4]; 100],
+    /// Normalized gait phase [0.0, 1.0).
+    pub phase: f32,
 
-    pub index: usize,
+    /// Duration of one complete gait cycle in seconds.
     pub duration: f32,
-    pub t: f32,
+
+    /// Phase offsets: LF, LH, RF, RH.
+    offsets: [f32; 4],
+
+    /// Fraction of the gait cycle spent in stance.
+    duty_factor: f32,
 }
 
 impl Gait {
     pub fn new(gait_kind: GaitKind, duration: f32) -> Self {
+        assert!(duration.is_finite() && duration > 0.0);
+
         let (offsets, duty_factor) = match gait_kind {
             GaitKind::Trot => (
                 [0.0, 0.5, 0.5, 0.0],
@@ -23,70 +32,44 @@ impl Gait {
         };
 
         Self {
-            sequence: Self::generate(offsets, duty_factor),
-            index: 0,
+            phase: 0.0,
             duration,
-            t: 0.0,
+            offsets,
+            duty_factor,
         }
     }
 
-    // fn generate(
-    //     offsets: [f32; 4],
-    //     duty_factor: f32,
-    // ) -> [[f32; 4]; 10] {
-    //     std::array::from_fn(|i| {
-    //         std::array::from_fn(|leg| {
-    //             let phase = (
-    //                 i as f32 / 10.0 - offsets[leg]
-    //             ).rem_euclid(1.0);
-
-    //             if phase < duty_factor {
-    //                 1.0
-    //             } else {
-    //                 0.0
-    //             }
-    //         })
-    //     })
-    // }
-
-    fn generate(
-        offsets: [f32; 4],
-        duty_factor: f32,
-    ) -> [[f32; 4]; 100] {
-        std::array::from_fn(|i| {
-            std::array::from_fn(|leg| {
-                let phase = (
-                    i as f32 / 100.0 - offsets[leg]
-                ).rem_euclid(1.0);
-
-                if phase < duty_factor {
-                    // Stance: foot on the ground
-                    0.0
-                } else {
-                    // Swing: smooth foot lift and landing
-                    let swing_phase =
-                        (phase - duty_factor) / (1.0 - duty_factor);
-
-                    (std::f32::consts::PI * swing_phase).sin()
-                }
-            })
-        })
-    }
-    
+    /// Advance the gait by dt seconds.
     pub fn update(&mut self, dt: f32) {
-        self.t = (self.t + dt).rem_euclid(self.duration);
+        assert!(dt.is_finite() && dt >= 0.0);
 
-        let steps = self.sequence.len() as f32;
-
-        self.index = (self.t / self.duration * steps) as usize;
-        self.index = self.index.min(self.sequence.len() - 1);
+        self.phase = (
+            self.phase + dt / self.duration
+        ).rem_euclid(1.0);
     }
 
+    /// Calculate the current normalized foot heights.
+    /// Order: LF, LH, RF, RH.
     pub fn get_current(&self) -> [f32; 4] {
-        self.sequence[self.index]
-    }
+        std::array::from_fn(|leg| {
+        let phase = (
+            self.phase - self.offsets[leg]
+        ).rem_euclid(1.0);
+
+        if phase < self.duty_factor {
+            0.0
+        } else {
+            let swing_phase =
+                (phase - self.duty_factor)
+                / (1.0 - self.duty_factor);
+
+            (std::f32::consts::PI * swing_phase).sin()
+        }
+    })
+}
 }
 
+#[derive(Clone, Copy)]
 pub enum GaitKind {
     Trot,
     Walk,
@@ -97,18 +80,22 @@ fn print_movement() {
     // LF, left fore; LH, left hind; RF, right fore; RH, right hind
     
     println!("Walk: ");
-    let gait = Gait::new(GaitKind::Walk, 10.0);
+    let mut gait = Gait::new(GaitKind::Walk, 10.0);
     println!("LF   LH   RF   RH");
-    for elem in &gait.sequence {
+    for i in 0..100 {
+        let elem = gait.get_current();
         println!("{:.2}  {:.2}  {:.2}  {:.2}", elem[0], elem[1], elem[2], elem[3]);
+        gait.update(10.0 / 100.0);
     }
     println!("");
 
     println!("Trot: ");
     println!("LF   LH   RF   RH");
-    let gait = Gait::new(GaitKind::Trot, 10.0);
-    for elem in &gait.sequence {
+    let mut gait = Gait::new(GaitKind::Trot, 10.0);
+    for i in 0..100 {
+        let elem = gait.get_current();
         println!("{:.2}  {:.2}  {:.2}  {:.2}", elem[0], elem[1], elem[2], elem[3]);
+        gait.update(10.0 / 100.0);
     }
     println!("");
 }
