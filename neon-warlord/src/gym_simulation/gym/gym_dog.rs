@@ -6,6 +6,7 @@ use std::iter::zip;
 use cgmath::Rotation3;
 use cgmath::{InnerSpace, Zero};
 
+use crate::gym_simulation::gym::gait::{Gait, GaitKind};
 use crate::gym_simulation::gym::move_8::{Move8, Move8Drawer};
 use crate::{
     gym_simulation::{Vec3, gym::Gym},
@@ -19,7 +20,7 @@ use crate::{
 
 type Quat = cgmath::Quaternion<f32>;
 
-const OBSERVATIONS: usize = 50;
+const OBSERVATIONS: usize = 54;
 const ACTIONS: usize = 12;
 
 const MASS: f32 = 0.1;
@@ -67,6 +68,8 @@ pub struct GymDog {
     move_8_drawer: Move8Drawer,
     moving_direction: bool,
     radius: f32,
+
+    gait: Gait,
 }
 
 impl GymDog {
@@ -429,6 +432,8 @@ impl GymDog {
         //     pivot,
         // );
 
+        let gait = Gait::new(GaitKind::Trot, 4.0);
+
         let mut obj = Self {
             physics,
             drawer,
@@ -462,6 +467,7 @@ impl GymDog {
             move_8_drawer,
             moving_direction: false,
             radius,
+            gait,
         };
 
         obj.set_target();
@@ -568,6 +574,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
            Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0)
         };
 
+        self.gait.update(dt);
 
         let state = State {
             pos_z_target: self.state.pos_z_target,
@@ -633,6 +640,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
     }
 
     fn get_state(&self) -> [f32; OBSERVATIONS] {
+        let gait = self.gait.get_current();
+
         let state = &self.state;
         [
             state.pos_z_target,
@@ -710,6 +719,11 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             // state.prev_actions[9],
             // state.prev_actions[10],
             // state.prev_actions[11],
+
+            gait[0],
+            gait[1],
+            gait[2],
+            gait[3],
         ]
     }
 
@@ -791,7 +805,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         for action in self.state.actions {
             action_cost += action.powi(2);
         }
-        reward -= action_cost * 0.001;
+        reward -= action_cost * 0.01;
 
         // Stand up
         if episode > 1 {
@@ -848,8 +862,27 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             &self.state.foot_3_vel,
         ];
 
+        // Gait
+        if episode > 100_000 {
+            let mut penalty = 0.0;
+            
+            println!("LF LH RF RH");
+            let gait = self.gait.get_current();
+            let lf = gait[0];
+            let lh = gait[0];
+            let rf = gait[0];
+            let rh = gait[0];
 
-        if episode > 200_000 {
+
+            // for (foot, is_on_ground) in zip(feet_pos, self.gait.get_current()) {
+            //     if is_on_ground > 0.0 {
+            //         foot
+            //     }
+            // }
+        }
+
+
+        if episode > 2_000_000 {
             // Low foot slipping 0.15 Stable stance
             let mut slip_cost = 0.0;
 
@@ -865,7 +898,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
         }
 
-        if episode > 100_000 {
+        if episode > 1_000_000 {
             // Food clearance 0.15 Lift feet during swing
             let mut clearance_reward = 0.0;
 
@@ -883,7 +916,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
 
         // Gait
-        if episode > 500_000 {
+        if episode > 5_000_000 {
 
             // Diagonal coordination 0.20 Encourage trot
             let diagonal_1 = (feet_vel[0] - feet_vel[3]).magnitude2();
@@ -906,7 +939,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             reward -= smoothness_cost * 0.001;
         }
 
-        if episode > 100_000 {
+        if episode > 1_000_000 {
             // Foot placement 0.20 Consistent steps
 
             // Gait symmetry: Encourage left/right symmetry
