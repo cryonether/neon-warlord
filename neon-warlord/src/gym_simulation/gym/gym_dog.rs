@@ -209,8 +209,8 @@ impl GymDog {
         let hinge_joint_s_0_0 = XpbdHingeJoint::new(
             body.particles[0],
             shoulder_0_0.particles[0],
-            -0.25 * PI,
-            0.25 * PI,
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -222,8 +222,8 @@ impl GymDog {
         let hinge_joint_s_1_0 = XpbdHingeJoint::new(
             body.particles[2],
             shoulder_1_0.particles[0],
-            -0.25 * PI,
-            0.25 * PI,
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -235,8 +235,8 @@ impl GymDog {
         let hinge_joint_s_2_0 = XpbdHingeJoint::new(
             body.particles[3],
             shoulder_2_0.particles[0],
-            -0.25 * PI,
-            0.25 * PI,
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -248,8 +248,8 @@ impl GymDog {
         let hinge_joint_s_3_0 = XpbdHingeJoint::new(
             body.particles[5],
             shoulder_3_0.particles[0],
-            -0.25 * PI,
-            0.25 * PI,
+            -0.5 * PI,
+            0.5 * PI,
             RotationAxis::X,
             RotationAxis::X,
             positional_compliance,
@@ -317,8 +317,8 @@ impl GymDog {
         let hinge_joint_0_1 = XpbdHingeJoint::new(
             leg_0_0.particles[1],
             leg_0_1.particles[0],
-            -0.8 * PI,
-            0.0 * PI,
+            -0.0 * PI,
+            0.8 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -343,8 +343,8 @@ impl GymDog {
         let hinge_joint_2_1 = XpbdHingeJoint::new(
             leg_2_0.particles[1],
             leg_2_1.particles[0],
-            -0.8 * PI,
-            0.0 * PI,
+            -0.0 * PI,
+            0.8 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -791,7 +791,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         for action in self.state.actions {
             action_cost += action.powi(2);
         }
-        reward -= action_cost * 0.01;
+        reward -= action_cost * 0.001;
 
         // Stand up
         if episode > 1 {
@@ -823,7 +823,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
             // Align to target vector
             let alignment_error = 1.0 - target_vel.normalize().dot(self.state.body_dir).max(0.0);
-            reward -= alignment_error * 0.2;
+            reward -= alignment_error * 0.4;
         }
 
         // A beautiful dog gait generally has:
@@ -849,7 +849,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         ];
 
 
-        if episode > 30_000 {
+        if episode > 200_000 {
             // Low foot slipping 0.15 Stable stance
             let mut slip_cost = 0.0;
 
@@ -860,7 +860,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             }
             // let progress = ((episode as f32 - 30_000.0) / 100_000.0).clamp(0.0, 1.0);
             // reward -= slip_cost * (0.04 * progress);
-            reward -= slip_cost * (0.03);
+            reward -= slip_cost * (0.004);
 
 
         }
@@ -883,11 +883,11 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
 
         // Gait
-        if episode > 200_000 {
+        if episode > 500_000 {
 
             // Diagonal coordination 0.20 Encourage trot
             let diagonal_1 = (feet_vel[0] - feet_vel[3]).magnitude2();
-            let diagonal_2 = (feet_vel[1] - feet_vel[2]).magnitude2();
+            let diagonal_2 = (feet_vel[2] - feet_vel[1]).magnitude2();
 
             let diagonal_reward = (-(diagonal_1 + diagonal_2) * 2.0).exp();
 
@@ -903,13 +903,37 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
                 smoothness_cost += delta.powi(2);
             }
 
-            reward -= smoothness_cost * 0.01;
+            reward -= smoothness_cost * 0.001;
         }
 
-        if episode > 1_500_000 {
+        if episode > 100_000 {
             // Foot placement 0.20 Consistent steps
 
-            // Gait symmetry 0.15 Left/right symmetry
+            // Gait symmetry: Encourage left/right symmetry
+
+            let shoulder_symmetry =
+                (self.state.shoulder_angle_0_0 - self.state.shoulder_angle_3_0).powi(2)
+                + (self.state.shoulder_angle_2_0 - self.state.shoulder_angle_1_0).powi(2);
+             reward -= shoulder_symmetry * 0.01;
+
+            let upper_symmetry =
+                (self.state.leg_angle_0_0 + self.state.leg_angle_3_0).powi(2)
+                + (self.state.leg_angle_2_0 + self.state.leg_angle_1_0).powi(2);
+            reward -= upper_symmetry * 0.04;
+
+            let lower_symmetry =
+                (self.state.leg_angle_0_1 + self.state.leg_angle_3_1).powi(2)
+                + (self.state.leg_angle_2_1 + self.state.leg_angle_1_1).powi(2);
+            reward -= lower_symmetry * 0.01;
+
+            // let symmetry_error =
+            //     shoulder_symmetry + upper_symmetry + lower_symmetry;
+
+            // let symmetry_reward = 1.0 - symmetry_error;
+
+            // reward += symmetry_reward * 0.01;
+
+                        
         }
 
         // No negative rewards
