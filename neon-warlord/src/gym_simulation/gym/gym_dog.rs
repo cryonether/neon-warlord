@@ -317,8 +317,8 @@ impl GymDog {
         let hinge_joint_0_1 = XpbdHingeJoint::new(
             leg_0_0.particles[1],
             leg_0_1.particles[0],
-            -0.0 * PI,
-            0.8 * PI,
+            -0.8 * PI,
+            0.0 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
@@ -343,8 +343,8 @@ impl GymDog {
         let hinge_joint_2_1 = XpbdHingeJoint::new(
             leg_2_0.particles[1],
             leg_2_1.particles[0],
-            -0.0 * PI,
-            0.8 * PI,
+            -0.8 * PI,
+            0.0 * PI,
             RotationAxis::Y,
             RotationAxis::Y,
             positional_compliance,
