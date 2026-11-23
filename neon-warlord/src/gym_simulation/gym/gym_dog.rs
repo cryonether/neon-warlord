@@ -432,7 +432,7 @@ impl GymDog {
         //     pivot,
         // );
 
-        let gait = Gait::new(GaitKind::Trot, 4.0);
+        let gait = Gait::new(GaitKind::Trot, 1.0);
 
         let mut obj = Self {
             physics,
@@ -818,7 +818,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         
 
         // Move
-        if episode > 10_000 {
+        if episode > 30_000 {
             // Reward target velocity
             let vel = Vec3::new(self.state.body_vel.x, self.state.body_vel.y, self.state.body_vel.z);
             let target_vel = Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0);
@@ -863,26 +863,25 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         ];
 
         // Gait
-        if episode > 100_000 {
-            let mut penalty = 0.0;
-            
-            println!("LF LH RF RH");
+        if episode > 20_000 {
+            // "LF LH RF RH"
             let gait = self.gait.get_current();
             let lf = gait[0];
-            let lh = gait[0];
-            let rf = gait[0];
-            let rh = gait[0];
+            let lh = gait[1];
+            let rf = gait[2];
+            let rh = gait[3];
+            let gait = [rh, rf, lh, lf];
 
-
-            // for (foot, is_on_ground) in zip(feet_pos, self.gait.get_current()) {
-            //     if is_on_ground > 0.0 {
-            //         foot
-            //     }
-            // }
+            let mut penalty = 0.0;
+            let max_height = 0.4;
+            for (foot, height) in zip(feet_pos, gait) {
+                penalty += (foot.z - self.radius - height * max_height).powi(2);
+            }
+            reward -= penalty * 1.0;
         }
 
 
-        if episode > 2_000_000 {
+        if episode > 40_000 {
             // Low foot slipping 0.15 Stable stance
             let mut slip_cost = 0.0;
 
@@ -893,81 +892,81 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             }
             // let progress = ((episode as f32 - 30_000.0) / 100_000.0).clamp(0.0, 1.0);
             // reward -= slip_cost * (0.04 * progress);
-            reward -= slip_cost * (0.004);
+            reward -= slip_cost * (0.04);
 
 
         }
 
-        if episode > 1_000_000 {
-            // Food clearance 0.15 Lift feet during swing
-            let mut clearance_reward = 0.0;
+        // if episode > 1_000_000 {
+        //     // Food clearance 0.15 Lift feet during swing
+        //     let mut clearance_reward = 0.0;
 
-            for (foot_pos, _foot_vel) in zip(feet_pos, feet_vel) {
-                if foot_pos.z > self.radius {
-                    let target_clearance = 0.2;
+        //     for (foot_pos, _foot_vel) in zip(feet_pos, feet_vel) {
+        //         if foot_pos.z > self.radius {
+        //             let target_clearance = 0.2;
 
-                    let error = foot_pos.z - self.radius - target_clearance;
-                    clearance_reward += (-error.powi(2) * 100.0).exp();
-                }
-            }
+        //             let error = foot_pos.z - self.radius - target_clearance;
+        //             clearance_reward += (-error.powi(2) * 100.0).exp();
+        //         }
+        //     }
 
-            reward += clearance_reward * 0.10;
-        }
+        //     reward += clearance_reward * 0.10;
+        // }
 
 
-        // Gait
-        if episode > 5_000_000 {
+        // // Gait
+        // if episode > 5_000_000 {
 
-            // Diagonal coordination 0.20 Encourage trot
-            let diagonal_1 = (feet_vel[0] - feet_vel[3]).magnitude2();
-            let diagonal_2 = (feet_vel[2] - feet_vel[1]).magnitude2();
+        //     // Diagonal coordination 0.20 Encourage trot
+        //     let diagonal_1 = (feet_vel[0] - feet_vel[3]).magnitude2();
+        //     let diagonal_2 = (feet_vel[2] - feet_vel[1]).magnitude2();
 
-            let diagonal_reward = (-(diagonal_1 + diagonal_2) * 2.0).exp();
+        //     let diagonal_reward = (-(diagonal_1 + diagonal_2) * 2.0).exp();
 
-            reward += diagonal_reward * 0.02;
+        //     reward += diagonal_reward * 0.02;
 
-            // Smoothness 0.15 Avoid jerky movement
-            let mut smoothness_cost = 0.0;
+        //     // Smoothness 0.15 Avoid jerky movement
+        //     let mut smoothness_cost = 0.0;
 
-            for i in 0..self.state.actions.len() {
-                let delta = self.state.actions[i]
-                    - self.state.prev_actions[i];
+        //     for i in 0..self.state.actions.len() {
+        //         let delta = self.state.actions[i]
+        //             - self.state.prev_actions[i];
 
-                smoothness_cost += delta.powi(2);
-            }
+        //         smoothness_cost += delta.powi(2);
+        //     }
 
-            reward -= smoothness_cost * 0.001;
-        }
+        //     reward -= smoothness_cost * 0.001;
+        // }
 
-        if episode > 1_000_000 {
-            // Foot placement 0.20 Consistent steps
+        // if episode > 1_000_000 {
+        //     // Foot placement 0.20 Consistent steps
 
-            // Gait symmetry: Encourage left/right symmetry
+        //     // Gait symmetry: Encourage left/right symmetry
 
-            let shoulder_symmetry =
-                (self.state.shoulder_angle_0_0 - self.state.shoulder_angle_3_0).powi(2)
-                + (self.state.shoulder_angle_2_0 - self.state.shoulder_angle_1_0).powi(2);
-             reward -= shoulder_symmetry * 0.01;
+        //     let shoulder_symmetry =
+        //         (self.state.shoulder_angle_0_0 - self.state.shoulder_angle_3_0).powi(2)
+        //         + (self.state.shoulder_angle_2_0 - self.state.shoulder_angle_1_0).powi(2);
+        //      reward -= shoulder_symmetry * 0.01;
 
-            let upper_symmetry =
-                (self.state.leg_angle_0_0 + self.state.leg_angle_3_0).powi(2)
-                + (self.state.leg_angle_2_0 + self.state.leg_angle_1_0).powi(2);
-            reward -= upper_symmetry * 0.04;
+        //     let upper_symmetry =
+        //         (self.state.leg_angle_0_0 + self.state.leg_angle_3_0).powi(2)
+        //         + (self.state.leg_angle_2_0 + self.state.leg_angle_1_0).powi(2);
+        //     reward -= upper_symmetry * 0.04;
 
-            let lower_symmetry =
-                (self.state.leg_angle_0_1 + self.state.leg_angle_3_1).powi(2)
-                + (self.state.leg_angle_2_1 + self.state.leg_angle_1_1).powi(2);
-            reward -= lower_symmetry * 0.01;
+        //     let lower_symmetry =
+        //         (self.state.leg_angle_0_1 + self.state.leg_angle_3_1).powi(2)
+        //         + (self.state.leg_angle_2_1 + self.state.leg_angle_1_1).powi(2);
+        //     reward -= lower_symmetry * 0.01;
 
-            // let symmetry_error =
-            //     shoulder_symmetry + upper_symmetry + lower_symmetry;
+        //     // let symmetry_error =
+        //     //     shoulder_symmetry + upper_symmetry + lower_symmetry;
 
-            // let symmetry_reward = 1.0 - symmetry_error;
+        //     // let symmetry_reward = 1.0 - symmetry_error;
 
-            // reward += symmetry_reward * 0.01;
+        //     // reward += symmetry_reward * 0.01;
 
                         
-        }
+        // }
 
         // No negative rewards
         let reward = reward.clamp(0.0, 4.0) * 0.25;
