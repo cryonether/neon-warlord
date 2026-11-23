@@ -69,6 +69,7 @@ impl Gait {
 }
 }
 
+#[allow(unused)]
 #[derive(Clone, Copy)]
 pub enum GaitKind {
     Trot,
