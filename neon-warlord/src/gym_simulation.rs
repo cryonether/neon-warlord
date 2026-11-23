@@ -7,11 +7,13 @@ pub mod neural_network_drawer;
 pub mod verlet_physics_drawer;
 pub mod worker_thread_2;
 
+#[allow(unused)]
 use std::{collections::VecDeque, iter::zip, path::Path};
 
 use forward_renderer::to_rgb;
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
+#[allow(unused)]
 use crate::{
     gym_simulation::{
         graph_lines::{GraphLines, GraphLinesDrawer},
