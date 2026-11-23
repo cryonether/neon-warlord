@@ -71,7 +71,7 @@ fn print_movement() {
     println!("Walk: ");
     let mut gait = Gait::new(GaitKind::Walk, 10.0);
     println!("LF   LH   RF   RH");
-    for i in 0..100 {
+    for _i in 0..100 {
         let elem = gait.get_current();
         println!(
             "{:.2}  {:.2}  {:.2}  {:.2}",
@@ -84,7 +84,7 @@ fn print_movement() {
     println!("Trot: ");
     println!("LF   LH   RF   RH");
     let mut gait = Gait::new(GaitKind::Trot, 10.0);
-    for i in 0..100 {
+    for _i in 0..100 {
         let elem = gait.get_current();
         println!(
             "{:.2}  {:.2}  {:.2}  {:.2}",
