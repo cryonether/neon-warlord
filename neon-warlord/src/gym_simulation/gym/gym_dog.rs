@@ -412,25 +412,10 @@ impl GymDog {
 
             actions: [0.0; 12],
             prev_actions: [0.0; 12],
-
         };
 
-        let mut move_8 = Move8::new();
+        let move_8 = Move8::new();
         let move_8_drawer = Move8Drawer::new(0.1, Vec3::zero());
-
-        // move_8.set_random_position();
-        // let translation = move_8.get_position();
-        // let rotation = move_8.get_direction(&translation);
-        // let angle = rotation.y.atan2(rotation.x);
-        // // let translation = Vec3::new(5.0, 0.0, 0.0);
-        // let rotation = Quat::from_axis_angle(Vec3::unit_z(), cgmath::Rad(angle));
-        // let pivot = Vec3::new(0.0, 0.0, 0.0);
-        // xpbd_rigid_body::transform_rigid_bodies(
-        //     &mut physics.rigid_bodies,
-        //     translation,
-        //     rotation,
-        //     pivot,
-        // );
 
         let gait = Gait::new(GaitKind::Trot, 1.0);
 
@@ -989,14 +974,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         self.state.body_pos
     }
 }
-
-
-// Penalize huge action change
-// let mut _action_change_cost = 0.0;
-// for (action, prev_action) in zip(self.state.actions, self.state.prev_actions) {
-//     _action_change_cost += (action - prev_action).powi(2);
-// }
-// reward -= action_change_cost * 0.01;
 
 
 #[derive(Clone)]

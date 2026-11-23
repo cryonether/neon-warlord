@@ -1,4 +1,4 @@
-//! Gait, like walk or trot
+//! Generates a gait like walk or trot
 
 /// Gait generator for a quadruped robot.
 #[derive(Clone)]

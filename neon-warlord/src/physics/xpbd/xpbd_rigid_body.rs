@@ -137,6 +137,7 @@ impl XpbdRigidBody {
         r.inv_rot() * (*world_pos - p.pos)
     }
 
+    /// Calculates the velocity on a certain point local to the center of mass
     pub fn get_point_velocity(&self, local_point: Vec3) -> Vec3 {
         // Transform local point into world space
         let world_point = self.p.pos + self.r.rot.rotate_vector(local_point);
