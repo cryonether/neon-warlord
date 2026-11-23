@@ -4,4 +4,4 @@ perf.data
 perf.data.old
 profile.json.gz
 report.txt
-gym
+gym/*

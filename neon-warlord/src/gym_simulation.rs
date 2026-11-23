@@ -7,11 +7,13 @@ pub mod neural_network_drawer;
 pub mod verlet_physics_drawer;
 pub mod worker_thread_2;
 
+#[allow(unused)]
 use std::{collections::VecDeque, iter::zip, path::Path};
 
 use forward_renderer::to_rgb;
 use wgpu_renderer::performance_monitor::{Fps, watch::Watch};
 
+#[allow(unused)]
 use crate::{
     gym_simulation::{
         graph_lines::{GraphLines, GraphLinesDrawer},
@@ -139,7 +141,8 @@ where
                 n,
                 m,
                 Vec3::new(0.0, 0.0, 0.0) + Vec3::new(x, y * i as f32 + 50.5, 0.0),
-                250,
+                400,
+                episode,
                 // 1,
             ))));
 
@@ -261,6 +264,7 @@ where
             gym_worker_.ppo.actor.copy_weights(&self.ppo.actor);
             gym_worker_.ppo.critic.copy_weights(&self.ppo.critic);
             gym_worker_.ppo.std_dev = self.ppo.std_dev;
+            gym_worker_.episode = self.episode;
 
             gym_worker_thread.send(gym_worker_);
         }
@@ -312,7 +316,7 @@ where
 
         self.env.update(&mean_action, dt);
         let new_state = self.env.get_state();
-        let (reward, done) = self.env.get_reward();
+        let (reward, done) = self.env.get_reward(self.episode);
 
         for (i, val) in new_state.iter().enumerate() {
             self.graph_inputs.y_push_pop(i, *val * 0.01); // input graph
@@ -340,19 +344,22 @@ where
         }
 
         if self.episode.is_multiple_of(10_000) {
-            std::fs::create_dir_all("gym").expect("Failed to create gym directory");
-            let _ = export_ppo(
-                &self.ppo.actor,
-                &self.ppo.critic,
-                Path::new(&format!("gym/episode_{}.safetensors", self.episode)),
-                self.episode,
-            );
-            let _ = export_ppo(
-                &self.ppo.actor,
-                &self.ppo.critic,
-                Path::new("gym/episode_latest.safetensors"),
-                self.episode,
-            );
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                std::fs::create_dir_all("gym").expect("Failed to create gym directory");
+                let _ = export_ppo(
+                    &self.ppo.actor,
+                    &self.ppo.critic,
+                    Path::new(&format!("gym/episode_{}.safetensors", self.episode)),
+                    self.episode,
+                );
+                let _ = export_ppo(
+                    &self.ppo.actor,
+                    &self.ppo.critic,
+                    Path::new("gym/episode_latest.safetensors"),
+                    self.episode,
+                );
+            }
         }
 
         // ups

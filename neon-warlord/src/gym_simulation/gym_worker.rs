@@ -31,6 +31,7 @@ pub struct GymWorker<
     pub reward: f32,
 
     ticks: Vec<usize>,
+    pub episode: u64,
 }
 
 impl<
@@ -51,6 +52,7 @@ where
         m: usize,
         pos: Vec3,
         nr_steps: usize,
+        episode: u64,
     ) -> Self {
         let radius = 0.1;
 
@@ -79,6 +81,7 @@ where
             ticks,
             nr_steps,
             reward: 0.0,
+            episode,
         }
     }
 }
@@ -113,7 +116,7 @@ where
                 env.update_verlet_physics(dt);
 
                 // reward
-                let (reward, terminated) = env.get_reward();
+                let (reward, terminated) = env.get_reward(self.episode);
                 self.reward += reward;
 
                 // save reward

@@ -143,7 +143,7 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymPole {
         self.state = self.update(force, dt);
     }
 
-    fn get_reward(&self) -> (f32, bool) {
+    fn get_reward(&self, _episode: u64) -> (f32, bool) {
         let sin = self.state.pol_sin_alpha;
         let vel = self.state.angular_velocity;
 
