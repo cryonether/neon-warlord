@@ -21,14 +21,8 @@ impl Gait {
         assert!(duration.is_finite() && duration > 0.0);
 
         let (offsets, duty_factor) = match gait_kind {
-            GaitKind::Trot => (
-                [0.0, 0.5, 0.5, 0.0],
-                0.5,
-            ),
-            GaitKind::Walk => (
-                [0.0, 0.5, 0.75, 0.25],
-                0.75,
-            ),
+            GaitKind::Trot => ([0.0, 0.5, 0.5, 0.0], 0.5),
+            GaitKind::Walk => ([0.0, 0.5, 0.75, 0.25], 0.75),
         };
 
         Self {
@@ -43,30 +37,24 @@ impl Gait {
     pub fn update(&mut self, dt: f32) {
         assert!(dt.is_finite() && dt >= 0.0);
 
-        self.phase = (
-            self.phase + dt / self.duration
-        ).rem_euclid(1.0);
+        self.phase = (self.phase + dt / self.duration).rem_euclid(1.0);
     }
 
     /// Calculate the current normalized foot heights.
     /// Order: LF, LH, RF, RH.
     pub fn get_current(&self) -> [f32; 4] {
         std::array::from_fn(|leg| {
-        let phase = (
-            self.phase - self.offsets[leg]
-        ).rem_euclid(1.0);
+            let phase = (self.phase - self.offsets[leg]).rem_euclid(1.0);
 
-        if phase < self.duty_factor {
-            0.0
-        } else {
-            let swing_phase =
-                (phase - self.duty_factor)
-                / (1.0 - self.duty_factor);
+            if phase < self.duty_factor {
+                0.0
+            } else {
+                let swing_phase = (phase - self.duty_factor) / (1.0 - self.duty_factor);
 
-            (std::f32::consts::PI * swing_phase).sin()
-        }
-    })
-}
+                (std::f32::consts::PI * swing_phase).sin()
+            }
+        })
+    }
 }
 
 #[allow(unused)]
@@ -79,13 +67,16 @@ pub enum GaitKind {
 #[test]
 fn print_movement() {
     // LF, left fore; LH, left hind; RF, right fore; RH, right hind
-    
+
     println!("Walk: ");
     let mut gait = Gait::new(GaitKind::Walk, 10.0);
     println!("LF   LH   RF   RH");
     for i in 0..100 {
         let elem = gait.get_current();
-        println!("{:.2}  {:.2}  {:.2}  {:.2}", elem[0], elem[1], elem[2], elem[3]);
+        println!(
+            "{:.2}  {:.2}  {:.2}  {:.2}",
+            elem[0], elem[1], elem[2], elem[3]
+        );
         gait.update(10.0 / 100.0);
     }
     println!("");
@@ -95,7 +86,10 @@ fn print_movement() {
     let mut gait = Gait::new(GaitKind::Trot, 10.0);
     for i in 0..100 {
         let elem = gait.get_current();
-        println!("{:.2}  {:.2}  {:.2}  {:.2}", elem[0], elem[1], elem[2], elem[3]);
+        println!(
+            "{:.2}  {:.2}  {:.2}  {:.2}",
+            elem[0], elem[1], elem[2], elem[3]
+        );
         gait.update(10.0 / 100.0);
     }
     println!("");

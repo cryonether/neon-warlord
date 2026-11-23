@@ -554,9 +554,8 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         let target_velocity = if self.moving_direction {
             let target_direction = self.move_8.get_direction(&body_pos).normalize();
             target_direction * 6.0
-        }
-        else {
-           Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0)
+        } else {
+            Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0)
         };
 
         self.gait.update(dt);
@@ -632,62 +631,49 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             state.pos_z_target,
             state.vel_x_target,
             state.vel_y_target,
-            
             state.body_pos.z,
-            
             state.body_vel.x,
             state.body_vel.y,
             state.body_vel.z,
-            
             state.body_rot.x,
             state.body_rot.y,
             state.body_rot.z,
-
             state.foot_0_pos.z,
             state.foot_1_pos.z,
             state.foot_2_pos.z,
             state.foot_3_pos.z,
-
             state.foot_0_vel.x,
             state.foot_1_vel.x,
             state.foot_2_vel.x,
             state.foot_3_vel.x,
-
             state.foot_0_vel.y,
             state.foot_1_vel.y,
             state.foot_2_vel.y,
             state.foot_3_vel.y,
-
             state.foot_0_vel.z,
             state.foot_1_vel.z,
             state.foot_2_vel.z,
             state.foot_3_vel.z,
-
             state.shoulder_angle_0_0,
             state.shoulder_angle_1_0,
             state.shoulder_angle_2_0,
             state.shoulder_angle_3_0,
-
             state.leg_angle_0_0,
             state.leg_angle_1_0,
             state.leg_angle_2_0,
             state.leg_angle_3_0,
-
             state.leg_angle_0_1,
             state.leg_angle_1_1,
             state.leg_angle_2_1,
             state.leg_angle_3_1,
-
             state.shoulder_angular_velocity_0_0,
             state.shoulder_angular_velocity_1_0,
             state.shoulder_angular_velocity_2_0,
             state.shoulder_angular_velocity_3_0,
-
             state.leg_angular_velocity_0_0,
             state.leg_angular_velocity_1_0,
             state.leg_angular_velocity_2_0,
             state.leg_angular_velocity_3_0,
-
             state.leg_angular_velocity_0_1,
             state.leg_angular_velocity_1_1,
             state.leg_angular_velocity_2_1,
@@ -704,7 +690,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             // state.prev_actions[9],
             // state.prev_actions[10],
             // state.prev_actions[11],
-
             gait[0],
             gait[1],
             gait[2],
@@ -774,7 +759,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
     }
 
     fn get_reward(&self, episode: u64) -> (f32, bool) {
-
         let mut reward = 0.0;
 
         // Penalize rotation
@@ -796,16 +780,19 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         if episode > 1 {
             // Reward target height
             let target_height = self.state.pos_z_target;
-            let height_cost = 1.0 - ((self.state.body_pos.z - target_height) / target_height).powi(2);
+            let height_cost =
+                1.0 - ((self.state.body_pos.z - target_height) / target_height).powi(2);
             reward += 1.0 * height_cost;
         }
-
-        
 
         // Move
         if episode > 30_000 {
             // Reward target velocity
-            let vel = Vec3::new(self.state.body_vel.x, self.state.body_vel.y, self.state.body_vel.z);
+            let vel = Vec3::new(
+                self.state.body_vel.x,
+                self.state.body_vel.y,
+                self.state.body_vel.z,
+            );
             let target_vel = Vec3::new(self.state.vel_x_target, self.state.vel_y_target, 0.0);
 
             let error = (vel - target_vel).magnitude2();
@@ -818,7 +805,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             };
 
             reward += velocity_cost * 0.6;
-
 
             // Align to target vector
             let alignment_error = 1.0 - target_vel.normalize().dot(self.state.body_dir).max(0.0);
@@ -835,13 +821,13 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         //     - Symmetrical left/right movement.
         //     - Minimal unnecessary joint movement.
         let feet_pos = [
-            &self.state.foot_0_pos, 
+            &self.state.foot_0_pos,
             &self.state.foot_1_pos,
             &self.state.foot_2_pos,
             &self.state.foot_3_pos,
         ];
         let feet_vel = [
-            &self.state.foot_0_vel, 
+            &self.state.foot_0_vel,
             &self.state.foot_1_vel,
             &self.state.foot_2_vel,
             &self.state.foot_3_vel,
@@ -865,7 +851,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             reward -= penalty * 1.0;
         }
 
-
         if episode > 40_000 {
             // Low foot slipping 0.15 Stable stance
             let mut slip_cost = 0.0;
@@ -878,8 +863,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
             // let progress = ((episode as f32 - 30_000.0) / 100_000.0).clamp(0.0, 1.0);
             // reward -= slip_cost * (0.04 * progress);
             reward -= slip_cost * (0.04);
-
-
         }
 
         // if episode > 1_000_000 {
@@ -897,7 +880,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
         //     reward += clearance_reward * 0.10;
         // }
-
 
         // // Gait
         // if episode > 5_000_000 {
@@ -950,7 +932,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
 
         //     // reward += symmetry_reward * 0.01;
 
-                        
         // }
 
         // No negative rewards
@@ -974,7 +955,6 @@ impl Gym<OBSERVATIONS, ACTIONS> for GymDog {
         self.state.body_pos
     }
 }
-
 
 #[derive(Clone)]
 pub struct State {

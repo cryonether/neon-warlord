@@ -81,7 +81,7 @@ where
             ticks,
             nr_steps,
             reward: 0.0,
-            episode
+            episode,
         }
     }
 }
